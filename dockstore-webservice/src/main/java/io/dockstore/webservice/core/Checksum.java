@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Objects;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -54,5 +56,22 @@ public class Checksum {
 
     public String toString() {
         return this.getType() + ":" + this.getChecksum();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Checksum checksum1 = (Checksum)o;
+        return Objects.equals(type, checksum1.type) && Objects.equals(checksum, checksum1.checksum);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, checksum);
     }
 }

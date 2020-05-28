@@ -23,11 +23,14 @@ import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -61,6 +64,19 @@ public class Image {
     @ApiModelProperty(value = "Docker ID of the image", position = 4)
     private String imageID;
 
+    @Column()
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Registry the image belongs to", position = 5)
+    private Registry imageRegistry;
+
+    @Column()
+    @ApiModelProperty(value = "Stores the architecture and, if available, the variant of an image. Separated by a / and only applicable to Docker Hub", position = 6)
+    private String architecture;
+
+    @Column()
+    @ApiModelProperty(value = "Stores the OS and, if available the OS version. Separated by a / and only applicable to Docker Hub", position = 7)
+    private String os;
+
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
@@ -73,11 +89,12 @@ public class Image {
 
     }
 
-    public Image(List<Checksum> checksums, String repository, String tag, String imageID) {
+    public Image(List<Checksum> checksums, String repository, String tag, String imageID, Registry imageRegistry) {
         this.checksums = checksums;
         this.repository = repository;
         this.tag = tag;
         this.imageID = imageID;
+        this.imageRegistry = imageRegistry;
     }
 
     public String getTag() {
@@ -104,13 +121,36 @@ public class Image {
         return this.repository;
     }
 
-
     public void setChecksums(List<Checksum> checksums) {
         this.checksums = checksums;
     }
 
     public List<Checksum> getChecksums() {
         return this.checksums;
+    }
+
+    public Registry getImageRegistry() {
+        return imageRegistry;
+    }
+
+    public void setImageRegistry(final Registry imageRegistry) {
+        this.imageRegistry = imageRegistry;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(final String architecture) {
+        this.architecture = architecture;
+    }
+
+    public String getOs() {
+        return os;
+    }
+
+    public void setOs(final String os) {
+        this.os = os;
     }
 
 }

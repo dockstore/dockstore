@@ -1,0 +1,142 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2020 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.9.0">
+    <changeSet author="gluu (generated)" id="addVersionToEvent">
+        <addColumn tableName="event">
+            <column name="versionid" type="int8"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="removeVersionEventsWithoutVersions" author="">
+        <delete tableName="event">
+            <where>type='ADD_VERSION_TO_ENTRY' and versionid is null</where>
+        </delete>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="AddSubclassColumnToServicesAndWorkflows">
+        <addColumn tableName="service">
+            <column name="descriptortypesubclass" type="varchar(255)" defaultValue="n/a">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="descriptortypesubclass" type="varchar(255)" defaultValue="n/a">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="gluu (generated)" id="changeFilePathsToText">
+        <modifyDataType columnName="path" newDataType="clob" tableName="entry_defaultpaths"/>
+        <modifyDataType columnName="path" newDataType="clob" tableName="sourcefile"/>
+        <modifyDataType columnName="absolutepath" newDataType="clob" tableName="sourcefile"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addLegacyVersionColumn">
+        <addColumn tableName="workflowversion">
+            <column name="islegacyversion" type="bool"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET islegacyversion=true;
+            UPDATE workflowversion SET islegacyversion=false WHERE id IN (SELECT wv.id FROM workflowversion wv WHERE wv.parentid IN (SELECT id FROM workflow WHERE mode='DOCKSTORE_YML'));
+        </sql>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addImageRegistryColumnToImageTable">
+        <addColumn tableName="image">
+            <column name="imageregistry" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="Charles Overbeck" id="makeIsLegacyVersionNotNullable">
+        <comment>Frozen versions are protected by security</comment>
+        <sql dbms="postgresql">
+            alter table workflowversion disable row level security;
+        </sql>
+
+        <comment>Because of row-level security, line 57 left nulls in frozen versions</comment>
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET islegacyversion=false WHERE islegacyversion is null;
+        </sql>
+
+        <sql dbms="postgresql">
+            alter table workflowversion enable row level security;
+        </sql>
+
+        <addDefaultValue tableName="workflowversion" columnName="islegacyversion" defaultValueBoolean="true"/>
+        <addNotNullConstraint tableName="workflowversion" columnName="islegacyversion"/>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addChecksumColumntoSourceFile">
+        <addColumn tableName="sourcefile">
+            <column name="checksums" type="varchar"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="addDockerHubColumnsToImages">
+        <addColumn tableName="image">
+            <column name="architecture" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="image">
+            <column name="os" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="esoth (generated)" id="addUserOrcidIDColumn">
+        <addColumn tableName="enduser">
+            <column name="orcid" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="addNewDefaultVersionColumn">
+        <addColumn tableName="service">
+            <column name="actualdefaultversion" type="int8"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="actualdefaultversion" type="int8"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="actualdefaultversion" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="workflow" constraintName="fk_workflow_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="service" constraintName="fk_service_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="tool" constraintName="fk_tool_default_tag" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tag"/>
+        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.reference</sql>
+        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.name</sql>
+        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.reference</sql>
+        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.name</sql>
+        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.reference</sql>
+        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.name</sql>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="removeOldDefaultVersionColumn">
+        <dropColumn columnName="defaultversion" tableName="service"/>
+        <dropColumn columnName="defaultversion" tableName="tool"/>
+        <dropColumn columnName="defaultversion" tableName="workflow"/>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="dagAndToolTableJsonColumnsToWorkflowVersion">
+        <addColumn tableName="workflowversion">
+            <column name="dagjson" type="text"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="tooltablejson" type="text"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="removeServiceMode" author="aduncan">
+        <sql dbms="postgresql">UPDATE service SET mode='DOCKSTORE_YML' WHERE mode='SERVICE'</sql>
+    </changeSet>
+</databaseChangeLog>

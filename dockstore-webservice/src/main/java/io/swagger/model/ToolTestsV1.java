@@ -39,8 +39,8 @@ public class ToolTestsV1   {
         this.url = containerfile.getUrl();
     }
 
-    public ToolTestsV1 test(String test) {
-        this.test = test;
+    public ToolTestsV1 test(String testParam) {
+        this.test = testParam;
         return this;
     }
 
@@ -58,8 +58,8 @@ public class ToolTestsV1   {
         this.test = test;
     }
 
-    public ToolTestsV1 url(String url) {
-        this.url = url;
+    public ToolTestsV1 url(String urlParam) {
+        this.url = urlParam;
         return this;
     }
 
@@ -87,8 +87,7 @@ public class ToolTestsV1   {
             return false;
         }
         ToolTestsV1 toolTests = (ToolTestsV1) o;
-        return Objects.equals(this.test, toolTests.test) &&
-            Objects.equals(this.url, toolTests.url);
+        return Objects.equals(this.test, toolTests.test) && Objects.equals(this.url, toolTests.url);
     }
 
     @Override

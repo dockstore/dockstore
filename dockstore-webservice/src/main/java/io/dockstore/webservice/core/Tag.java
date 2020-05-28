@@ -89,6 +89,11 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     @Override
+    public Date getDate() {
+        return this.getLastBuilt();
+    }
+
+    @Override
     @ApiModelProperty(position = 108)
     public String getWorkingDirectory() {
         if (!cwlPath.isEmpty()) {

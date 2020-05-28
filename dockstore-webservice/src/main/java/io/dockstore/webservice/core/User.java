@@ -80,7 +80,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)"),
-    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)") })
+    @NamedQuery(name = "io.dockstore.webservice.core.User.countPublishedEntries", query = "SELECT count(e) FROM User u INNER JOIN u.entries e where e.isPublished=true and u.username = :username"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)")
+})
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
     @Id
@@ -203,6 +205,12 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private String temporaryCredential;
 
+    /**
+     * The user's ORCID id in the format xxxx-xxxx-xxxx-xxxx
+     */
+    @Column()
+    private String orcid;
+
 
     public User() {
         entries = new TreeSet<>();
@@ -275,7 +283,7 @@ public class User implements Principal, Comparable<User>, Serializable {
             Token githubToken = githubByUserId.get(0);
             GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
             sourceCodeRepo.checkSourceCodeValidity();
-            sourceCodeRepo.getUserMetadata(this);
+            sourceCodeRepo.syncUserMetadataFromGitHub(this);
             return true;
         }
     }
@@ -489,6 +497,14 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setPrivacyPolicyVersionAcceptanceDate(Date date) {
         this.privacyPolicyVersionAcceptanceDate = date;
+    }
+
+    public String getOrcid() {
+        return this.orcid;
+    }
+
+    public void setOrcid(String orcid) {
+        this.orcid = orcid;
     }
 
     @JsonIgnore

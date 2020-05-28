@@ -21,11 +21,11 @@ public class ToolV1Test {
      * This tests that a null value url is not effected by url api version check
      */
     @Test
-    public void checkToolV1Null(){
+    public void checkToolV1Null() {
         Tool tool = new Tool();
         tool.setVerified(true);
         tool.setSigned(true);
         ToolV1 toolV1 = new ToolV1(tool);
-        Assert.assertEquals(null, toolV1.getUrl());
+        Assert.assertNull(toolV1.getUrl());
     }
 }

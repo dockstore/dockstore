@@ -60,12 +60,14 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author dyuen
@@ -198,17 +200,15 @@ public class ServiceIT extends BaseIT {
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
-        // Add service
-        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
-        assertNotNull(service);
-
-        // Add version with another username
-        service = client.upsertServiceVersion(serviceRepo, "DockstoreTestUser2", "1.0", installationId);
+        // Add version
+        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
+        assertEquals("Should have added one service", 1, services.size());
+        io.swagger.client.model.Workflow service = services.get(0);
 
         assertNotNull(service);
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
         assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
-        assertEquals("Should have 2 users", 2, service.getUsers().size());
+        assertEquals("Should have 1 user", 1, service.getUsers().size());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
@@ -217,10 +217,19 @@ public class ServiceIT extends BaseIT {
 
         // Test user endpoints
         UsersApi usersApi = new UsersApi(webClient);
-        List<io.swagger.client.model.Workflow> services = usersApi.userServices(service.getUsers().get(0).getId());
-        List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(service.getUsers().get(0).getId());
+        final long userId = service.getUsers().get(0).getId();
+        services = usersApi.userServices(userId);
+        List<io.swagger.client.model.Workflow> workflows = usersApi.userWorkflows(userId);
         assertEquals("There should be one service", 1, services.size());
         assertEquals("There should be no workflows", 0, workflows.size());
+
+        // Should not be able to refresh service
+        try {
+            client.refresh(services.get(0).getId());
+            fail("Should not be able refresh a service");
+        } catch (ApiException ex) {
+            assertEquals("Should fail since you cannot refresh services.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
     }
 
     /**
@@ -238,7 +247,8 @@ public class ServiceIT extends BaseIT {
 
         // Add service
         try {
-            client.addService(serviceRepo, "iamnotarealuser", installationId);
+            client.handleGitHubRelease(serviceRepo, "iamnotarealuser", "refs/tags/1.0", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
@@ -247,34 +257,6 @@ public class ServiceIT extends BaseIT {
             "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
             long.class);
         Assert.assertEquals("there should be no matching service", 0, count);
-    }
-
-    /**
-     * Ensures that you cannot create a service if there already exists a service with the same path
-     */
-    @Test
-    public void createServiceDuplicate() throws Exception {
-
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
-        WorkflowsApi client = new WorkflowsApi(webClient);
-
-        String serviceRepo = "DockstoreTestUser2/test-service";
-        String installationId = "1179416";
-
-        // Add service
-        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
-        assertNotNull(service);
-        try {
-            client.addService(serviceRepo, "admin@admin.com", installationId);
-        } catch (ApiException ex) {
-            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
-        }
-
-        final long count = testingPostgres.runSelectStatement(
-            "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
-            long.class);
-        Assert.assertEquals("there should be one matching service", 1, count);
     }
 
     /**
@@ -293,8 +275,8 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Workflow service = client.addService(serviceRepo, BasicIT.USER_2_USERNAME, installationId);
-        assertNotNull(service);
+        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        assertEquals("Should only have one service", 1, services.size());
 
         // Add workflow with same path as service
         final io.swagger.client.model.Workflow workflow = client
@@ -330,24 +312,13 @@ public class ServiceIT extends BaseIT {
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
-        // Add service
-        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
-        assertNotNull(service);
-
         // Add version that doesn't exist
         try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "1.0-fake", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0-fake", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
-
-        final long count = testingPostgres.runSelectStatement(
-            "select count(*) from service where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'test-service'",
-            long.class);
-        Assert.assertEquals("there should be one matching service", 1, count);
-
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where name = '1.0-fake'", long.class);
-        Assert.assertEquals("there should be no matching tag", 0, count2);
     }
 
     /**
@@ -362,24 +333,21 @@ public class ServiceIT extends BaseIT {
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
-        // Add service
-        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
-        assertNotNull(service);
-
         // Add version that has no dockstore.yml
         try {
-            client.upsertServiceVersion(serviceRepo, "admin@admin.com", "no-yml", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/no-yml", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
 
         // Add version that has invalid dockstore.yml
-        io.swagger.client.model.Workflow updatedService = client
-            .upsertServiceVersion(serviceRepo, "admin@admin.com", "invalid-yml", installationId);
-        assertNotNull(updatedService);
-        assertEquals("Should have a new version", 1, updatedService.getWorkflowVersions().size());
-        assertEquals("Should have 1 source file", 1, updatedService.getWorkflowVersions().get(0).getSourceFiles().size());
-        assertFalse("Should not be valid", updatedService.getWorkflowVersions().get(0).isValid());
+        try {
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/invalid-yml", installationId);
+            Assert.fail("Should not reach this statement.");
+        } catch (ApiException ex) {
+            assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
+        }
     }
 
     /**
@@ -396,19 +364,15 @@ public class ServiceIT extends BaseIT {
         String installationId = "1179416";
 
         // Add service
-        io.swagger.client.model.Workflow service = client.addService(serviceRepo, "DockstoreTestUser2", installationId);
-        assertNotNull(service);
-
-        service = client.refresh(service.getId());
-        assertNotNull(service);
-        assertEquals("Should have two new versions (third release has no yaml so do not include)", 2, service.getWorkflowVersions().size());
-
-        // Set default version
-        service = client.updateWorkflowDefaultVersion(service.getId(), "1.0");
-        service = client.refresh(service.getId());
-
-        assertEquals("Should have an author", "Andrew Duncan", service.getAuthor());
-        assertTrue("Should have a description", service.getDescription().contains("This is the coolest service"));
+        List<io.swagger.client.model.Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
+        assertEquals("Should only have one service", 1, services.size());
+        io.swagger.client.model.Workflow service = services.get(0);
+        try {
+            client.refresh(service.getId());
+            fail("Should fail on refresh and not reach this point");
+        } catch (ApiException ex) {
+            assertEquals("Should not be able to refresh a dockstore.yml service.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
     }
 
     /**
@@ -425,7 +389,8 @@ public class ServiceIT extends BaseIT {
 
         // Add service
         try {
-            io.swagger.client.model.Workflow service = client.addService(serviceRepo, "admin@admin.com", installationId);
+            client.handleGitHubRelease(serviceRepo, "admin@admin.com", "refs/tags/1.0", installationId);
+            Assert.fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals("Should have error code 418", LAMBDA_FAILURE, ex.getCode());
         }
@@ -468,20 +433,20 @@ public class ServiceIT extends BaseIT {
             testService.setIsPublished(true);
             testService.setSourceControl(SourceControl.GITHUB);
             testService.setDescriptorType(DescriptorLanguage.SERVICE);
-            testService.setMode(WorkflowMode.SERVICE);
+            testService.setMode(WorkflowMode.DOCKSTORE_YML);
             testService.setOrganization("hydra");
             testService.setRepository("hydra_repo");
-            testService.setDefaultWorkflowPath(".dockstore.yml");
+            testService.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             Service test2Service = new Service();
             test2Service.setDescription("test service");
             test2Service.setIsPublished(true);
             test2Service.setSourceControl(SourceControl.GITHUB);
-            test2Service.setMode(WorkflowMode.SERVICE);
+            test2Service.setMode(WorkflowMode.DOCKSTORE_YML);
             test2Service.setDescriptorType(DescriptorLanguage.SERVICE);
             test2Service.setOrganization("hydra");
             test2Service.setRepository("hydra_repo2");
-            test2Service.setDefaultWorkflowPath(".dockstore.yml");
+            test2Service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
 
             final Map<DescriptorLanguage.FileType, String> defaultPaths = test2Service.getDefaultPaths();
             for (DescriptorLanguage.FileType val : DescriptorLanguage.FileType.values()) {

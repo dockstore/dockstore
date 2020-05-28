@@ -18,11 +18,9 @@ package io.dockstore.client.cli;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -30,7 +28,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
-import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -46,7 +43,7 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -154,7 +151,8 @@ public class BasicIT extends BaseIT {
 
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        usersApi.refresh((long)1);
+        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
@@ -164,7 +162,8 @@ public class BasicIT extends BaseIT {
 
         // refresh
         try {
-            usersApi.refresh((long)1);
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
             fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
@@ -185,7 +184,8 @@ public class BasicIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
         // Refresh all
-        usersApi.refreshWorkflows((long)1);
+        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
+        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
@@ -244,23 +244,24 @@ public class BasicIT extends BaseIT {
             DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
+        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool", 1, events.size());
+        Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
         // Add a tag
         Tag tag = new Tag();
         tag.setName("masterTest");
         tag.setReference("master");
+        tag.setReferenceType(Tag.ReferenceTypeEnum.TAG);
         tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
 
         tags = toolTagsApi.addTags(tool.getId(), tags);
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should have created another event for the new tag", 2, events.size());
+        Assert.assertEquals("Should have created an event for the new tag", 1, events.size());
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be one tag", 1, count);
 
@@ -295,12 +296,13 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
+
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'regular'", long.class);
         Assert.assertEquals("the tool should be Auto", 1, count);
     }
@@ -318,7 +320,7 @@ public class BasicIT extends BaseIT {
             "/testDir/Dockerfile", DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where mode = 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tool where mode = 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'alternate'", long.class);
         Assert.assertEquals("the tool should be Manual still", 1, count);
     }
@@ -340,7 +342,7 @@ public class BasicIT extends BaseIT {
             DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.toString()
+            "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'testtool'", long.class);
         Assert.assertEquals("the tool should be Auto", 1, count);
     }
@@ -394,7 +396,7 @@ public class BasicIT extends BaseIT {
         existingTool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
         existingTool = toolsApi.updateContainer(existingTool.getId(), existingTool);
 
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
             long.class);
         Assert.assertEquals("the tool should now have an associated git repo", 1, count);
@@ -403,7 +405,7 @@ public class BasicIT extends BaseIT {
         existingToolNoBuild.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
         existingToolNoBuild = toolsApi.updateContainer(existingToolNoBuild.getId(), existingToolNoBuild);
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
                 + "' and namespace = 'dockstoretestuser' and name = 'nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
             long.class);
         Assert.assertEquals("the tool should now have an associated git repo", 1, count2);
@@ -521,7 +523,7 @@ public class BasicIT extends BaseIT {
 
     private void autoRegistrationHelper(Registry imageRegistry, String gitRegistry, int expectedToolCount) {
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where  registry = '" + imageRegistry.toString() + "' and giturl like 'git@" + gitRegistry + "%'",
+            "select count(*) from tool where  registry = '" + imageRegistry.getDockerPath() + "' and giturl like 'git@" + gitRegistry + "%'",
             long.class);
         Assert.assertEquals(
             "there should be " + expectedToolCount + " registered from " + imageRegistry + " and " + gitRegistry + ", there are " + count,
@@ -640,6 +642,24 @@ public class BasicIT extends BaseIT {
     }
 
     /**
+     * This tests that a tool's default version can be automatically set during refresh
+     */
+    @Test
+    public void testUpdateToolDefaultVersionDuringRefresh() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "quayandgithub", "regular",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.QUAY_IO, "master", "latest", true);
+        Assert.assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "latest", tool.getDefaultVersion());
+        tool = toolsApi.updateToolDefaultVersion(tool.getId(), "test");
+        Assert.assertEquals("Should be able to overwrite previous default version", "test", tool.getDefaultVersion());
+        tool = toolsApi.refresh(tool.getId());
+        Assert.assertEquals("Refresh should not have set it back to the automatic one", "test", tool.getDefaultVersion());
+
+    }
+
+    /**
      * Tests that a WDL file is supported
      */
     @Test
@@ -649,10 +669,11 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
         tool = toolsApi.refresh(tool.getId());
         tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'", long.class);
         Assert.assertEquals("the given entry should be published", 1, count);
     }
+
 
     /**
      * Tests the manual registration of a standard workflow
@@ -776,7 +797,7 @@ public class BasicIT extends BaseIT {
         // Todo : Manual publish entry with wrong cwl and dockerfile locations, should not be able to manual publish
         systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
+            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.getDockerPath(), "--namespace", "dockstoretestuser", "--name",
             "dockerhubandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git",
             "--git-reference", "master", "--toolname", "regular", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile",
             "--script" });
@@ -790,7 +811,7 @@ public class BasicIT extends BaseIT {
         // Todo : Manual publish entry with wrong cwl and dockerfile locations, should not be able to manual publish
         systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
+            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.getDockerPath(), "--namespace", "dockstoretestuser", "--name",
             "dockerhubandbitbucketalternate", "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalterante.git",
             "--git-reference", "master", "--toolname", "alternate", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile",
             "--script" });
@@ -810,12 +831,12 @@ public class BasicIT extends BaseIT {
         refresh.setDefaultVersion("master");
         existingTool = toolsApi.updateContainer(toolId, refresh);
 
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-            + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
+            + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null", long.class);
         Assert.assertEquals("the tool should have a default version set", 1, count);
 
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'",
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
+                + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and actualdefaultversion is not null and author = 'Dockstore Test User'",
             long.class);
         Assert.assertEquals("the tool should have any metadata set (author)", 1, count2);
 
@@ -934,7 +955,12 @@ public class BasicIT extends BaseIT {
         toRemove.add("notreal.cwl.json");
 
         toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
-        toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+        try {
+            toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+            Assert.fail("Should've have thrown an error when deleting non-existent file");
+        } catch (ApiException e) {
+            assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
+        }
         toolsApi.refresh(existingTool.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
@@ -1205,7 +1231,7 @@ public class BasicIT extends BaseIT {
         // Manual publish
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.GITLAB, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
 
         // Check that tool exists and is published
         final long count = testingPostgres
@@ -1374,64 +1400,5 @@ public class BasicIT extends BaseIT {
         } catch (ApiException e) {
             Assert.assertEquals("Entry not found", e.getMessage());
         }
-    }
-    @Test()
-
-    public void eventResourcePaginationTest() {
-        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
-        ContainersApi toolsApi = new ContainersApi(client);
-        ContainertagsApi toolTagsApi = new ContainertagsApi(client);
-
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
-                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
-        EventsApi eventsApi = new EventsApi(client);
-        List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("No starred entries, so there should be no events returned", 0, events.size());
-        StarRequest starRequest = new StarRequest();
-        starRequest.setStar(true);
-        toolsApi.starEntry(tool.getId(), starRequest);
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertEquals("Should be an event for the tag that was automatically created for the newly registered tool", 1, events.size());
-        // Add and update tag 101 times
-        Set<String> randomTagNames = new HashSet<>();
-
-        for (int i = 0; i < EventDAO.MAX_LIMIT + 10; i++) {
-            randomTagNames.add(RandomStringUtils.randomAlphanumeric(255));
-        }
-        randomTagNames.forEach(randomTagName -> {
-            List<Tag> randomTags = getRandomTags(randomTagName);
-            toolTagsApi.addTags(tool.getId(), randomTags);
-        });
-        try {
-            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT + 1, 0);
-            Assert.fail("Should've failed because it's over the limit");
-        } catch (ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
-        }
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT, 0);
-        Assert.assertEquals("Should have been able to use the max limit", EventDAO.MAX_LIMIT, events.size());
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), EventDAO.MAX_LIMIT - 10, 0);
-        Assert.assertEquals("Should have used a specific limit", EventDAO.MAX_LIMIT  - 10, events.size());
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 1, 0);
-        Assert.assertEquals("Should have been able to use the min limit", 1, events.size());
-        try {
-            events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 0, 0);
-            Assert.fail("Should've failed because it's under the limit");
-        } catch (ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
-        }
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), null, null);
-        Assert.assertEquals("Should have used the default limit", 10, events.size());
-    }
-
-    private List<Tag> getRandomTags(String name) {
-        Tag tag = new Tag();
-        tag.setName(name);
-        tag.setReference("potato");
-        tag.setImageId("4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8");
-        List<Tag> tags = new ArrayList<>();
-        tags.add(tag);
-        return tags;
     }
 }

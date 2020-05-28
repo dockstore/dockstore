@@ -67,17 +67,16 @@ public enum Registry {
         this.customDockerPath = customDockerPath;
     }
 
-    @Override
-    public String toString() {
-        return dockerPath;
-    }
-
     public String getFriendlyName() {
         return friendlyName;
     }
 
     public String getUrl() {
         return url;
+    }
+
+    public String getDockerPath() {
+        return dockerPath;
     }
 
     public boolean isPrivateOnly() {
@@ -103,7 +102,7 @@ public enum Registry {
 
         public RegistryBean(Registry registry) {
             this.value = registry.name();
-            this.dockerPath = registry.toString();
+            this.dockerPath = registry.getDockerPath();
             this.friendlyName = registry.getFriendlyName();
             this.url = registry.url;
             this.privateOnly = Boolean.toString(registry.isPrivateOnly());

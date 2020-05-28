@@ -233,7 +233,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     protected String checkRegistry(String registry) {
         for (Registry registryObject : Registry.values()) {
-            if (Objects.equals(registry.toLowerCase(), registryObject.toString())) {
+            if (Objects.equals(registry.toLowerCase(), registryObject.getDockerPath())) {
                 return registry;
             } else if (Objects.equals(registryObject.name(), Registry.AMAZON_ECR.name())) {
                 if (registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {

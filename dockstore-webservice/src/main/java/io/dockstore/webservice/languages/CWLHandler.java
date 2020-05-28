@@ -32,8 +32,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
+import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.ExpressionTool;
+import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
@@ -236,6 +238,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     @SuppressWarnings("checkstyle:methodlength")
+    //TODO: Occassionally misses dockerpulls. One case is when a dockerPull is nested within a run that's within a step. There are other missed cases though that are TBD.
     public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
         Yaml yaml = new Yaml();
@@ -262,9 +265,9 @@ public class CWLHandler implements LanguageHandlerInterface {
             // Set up GSON for JSON parsing
             Gson gson;
             try {
-                gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+                gson = CWL.getTypeSafeCWLToolDocument();
 
-                final io.cwl.avro.Workflow workflow = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
+                final Workflow workflow = gson.fromJson(cwlJson.toString(), Workflow.class);
 
                 if (workflow == null) {
                     LOG.error("The workflow does not seem to conform to CWL specs.");
@@ -339,7 +342,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                             stepDockerRequirement);
                         stepToType.put(workflowStepId, toolType);
                     } else if (isWorkflow(runAsJson, yaml)) {
-                        io.cwl.avro.Workflow stepWorkflow = gson.fromJson(runAsJson, io.cwl.avro.Workflow.class);
+                        Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
                         stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
                             stepDockerRequirement);
                         stepToType.put(workflowStepId, workflowType);
@@ -562,15 +565,15 @@ public class CWLHandler implements LanguageHandlerInterface {
             List<Object> cltHints = null;
 
             if (isExpressionTool(secondaryFileContents, yaml)) {
-                final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), io.cwl.avro.ExpressionTool.class);
+                final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), ExpressionTool.class);
                 cltRequirements = expressionTool.getRequirements();
                 cltHints = expressionTool.getHints();
             } else if (isTool(secondaryFileContents, yaml)) {
-                final CommandLineTool commandLineTool = gson.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
+                final CommandLineTool commandLineTool = gson.fromJson(entryJson.toString(), CommandLineTool.class);
                 cltRequirements = commandLineTool.getRequirements();
                 cltHints = commandLineTool.getHints();
             } else if (isWorkflow(secondaryFileContents, yaml)) {
-                final io.cwl.avro.Workflow workflow = gson.fromJson(entryJson.toString(), io.cwl.avro.Workflow.class);
+                final Workflow workflow = gson.fromJson(entryJson.toString(), Workflow.class);
                 cltRequirements = workflow.getRequirements();
                 cltHints = workflow.getHints();
             }
@@ -725,7 +728,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
         boolean isValid = true;
-        String validationMessage = null;
+        StringBuilder validationMessage = new StringBuilder();
         Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
@@ -733,21 +736,29 @@ public class CWLHandler implements LanguageHandlerInterface {
             String content = mainDescriptor.get().getContent();
             if (content == null || content.isEmpty()) {
                 isValid = false;
-                validationMessage = "Primary descriptor is empty.";
+                validationMessage.append("Primary descriptor is empty.");
             } else if (!content.contains("class: Workflow")) {
                 isValid = false;
-                validationMessage = "Requires class: Workflow.";
+                validationMessage.append("A CWL workflow requires 'class: Workflow'.");
+                if (content.contains("class: CommandLineTool") || content.contains("class: ExpressionTool")) {
+                    String cwlClass = content.contains("class: CommandLineTool") ? "CommandLineTool" : "ExpressionTool";
+                    validationMessage.append(" This file contains 'class: ").append(cwlClass).append("'. Did you mean to register a tool?");
+                }
             } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
-                validationMessage = "Invalid CWL version.";
+                validationMessage.append("Invalid CWL version.");
             }
         } else {
-            validationMessage = "Primary CWL descriptor is not present.";
+            validationMessage.append("Primary CWL descriptor is not present.");
             isValid = false;
         }
 
-        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
-        return new VersionTypeValidation(isValid, validationMessageObject);
+        if (isValid) {
+            return new VersionTypeValidation(true, Collections.emptyMap());
+        } else {
+            validationMessageObject.put(primaryDescriptorFilePath, validationMessage.toString());
+            return new VersionTypeValidation(false, validationMessageObject);
+        }
     }
 
     @Override
@@ -768,7 +779,10 @@ public class CWLHandler implements LanguageHandlerInterface {
                 validationMessage = "Primary CWL descriptor is empty.";
             } else if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
                 isValid = false;
-                validationMessage = "Requires class: CommandLineTool or ExpressionTool.";
+                validationMessage = "A CWL tool requires 'class: CommandLineTool' or 'class: ExpressionTool'.";
+                if (content.contains("class: Workflow")) {
+                    validationMessage += " This file contains 'class: Workflow'. Did you mean to register a workflow?";
+                }
             } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
                 validationMessage = "Invalid CWL version.";

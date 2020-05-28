@@ -18,11 +18,14 @@ package io.dockstore.webservice.core;
 
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
@@ -79,17 +82,22 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
     private String content;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
     private String path;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")
-    @ApiModelProperty("When true, this version cannot be affected by refreshes to the content or updates to its metadata")
+    @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 5)
     private boolean frozen = false;
+
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = ChecksumConverter.class)
+    @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
+    private List<Checksum> checksums = new ArrayList<>();
 
     // database timestamps
     @Column(updatable = false)
@@ -152,6 +160,14 @@ public class SourceFile implements Comparable<SourceFile> {
             return null;
         }
         return Paths.get(absolutePath).normalize().toString();
+    }
+
+    public List<Checksum> getChecksums() {
+        return checksums;
+    }
+
+    public void setChecksums(final List<Checksum> checksums) {
+        this.checksums = checksums;
     }
 
     public void setAbsolutePath(String absolutePath) {

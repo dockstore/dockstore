@@ -15,10 +15,12 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,7 +43,6 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -233,16 +234,27 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
         }
 
+        String invalidFileNames = String.join(",", invalidFileNames(version));
+        if (!invalidFileNames.isEmpty()) {
+            StringBuilder message = new StringBuilder();
+            message.append("Files must have a name. Unable to save new version due to the following files: ");
+            message.append(invalidFileNames);
+            throw new CustomWebApplicationException(message.toString(), HttpStatus.SC_BAD_REQUEST);
+        }
+
         validatedVersion.setValid(true); // Hosted entry versions must be valid to save
         validatedVersion.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, validatedVersion);
         validatedVersion.setParent(entry);
         long l = getVersionDAO().create(validatedVersion);
         entry.getWorkflowVersions().add(getVersionDAO().findById(l));
-        entry.checkAndSetDefaultVersion(validatedVersion.getName());
+        // Only set if the default version isn't already there
+        if (entry.getDefaultVersion() == null) {
+            entry.checkAndSetDefaultVersion(validatedVersion.getName());
+        }
         // Set entry-level metadata to this latest version
         // TODO: handle when latest version is removed
-        entry.setDefaultVersion(validatedVersion.getName());
+        entry.setActualDefaultVersion(validatedVersion);
         entry.syncMetadataWithDefault();
         FileFormatHelper.updateFileFormats(entry.getWorkflowVersions(), fileFormatDAO);
         // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
@@ -253,8 +265,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         PublicStateManager.getInstance().handleIndexUpdate(newTool, StateManagerMode.UPDATE);
-        Event event = newTool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-        eventDAO.create(event);
+        this.eventDAO.createAddTagToEntryEvent(user, newTool, version);
         return newTool;
     }
 
@@ -298,6 +309,19 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         return result.toString();
+    }
+
+    protected List<String> invalidFileNames(U version) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
+        List<String> invalidFileNames = new ArrayList<>();
+
+        sourceFiles.stream().forEach(sourceFile -> {
+            if (sourceFile.getPath().endsWith("/")) {
+                invalidFileNames.add(sourceFile.getPath());
+            }
+        });
+
+        return invalidFileNames;
     }
 
     /**
@@ -363,6 +387,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
+        // If the version that's about to be deleted is the default version, unset it
+        if (entry.getActualDefaultVersion().getName().equals(version)) {
+            Optional<U> max = entry.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), version))
+                    .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
+            entry.setActualDefaultVersion(max.orElse(null));
+        }
         entry.getWorkflowVersions().removeIf(v -> Objects.equals(v.getName(), version));
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
         return entry;

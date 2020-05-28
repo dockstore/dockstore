@@ -81,6 +81,12 @@ public class Event {
     @ApiModelProperty(value = "User initiating the event.", position = 6)
     private User initiatorUser;
 
+    @ManyToOne
+    @JoinColumn(name = "versionId", referencedColumnName = "id")
+    @ApiModelProperty(value = "Version associated with the event.", position = 8)
+    @JsonIgnoreProperties({"sourceFiles", "inputFileFormats", "outputFileFormats", "validations", "images", "versionEditor"})
+    private Version version;
+
     @Column
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "The event type.", required = true, position = 7)
@@ -186,6 +192,10 @@ public class Event {
         this.type = type;
     }
 
+    public Version getVersion() {
+        return version;
+    }
+
     public enum EventType {
         CREATE_ORG,
         DELETE_ORG,
@@ -214,11 +224,17 @@ public class Event {
         private Collection collection;
         private User initiatorUser;
         private EventType type;
+        private Version version;
 
         public Builder() { }
 
         public Builder withUser(User user) {
             this.user = user;
+            return this;
+        }
+
+        public Builder withVersion(Version version) {
+            this.version = version;
             return this;
         }
 
@@ -266,7 +282,7 @@ public class Event {
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;
             event.type = this.type;
-
+            event.version = this.version;
             return event;
         }
     }

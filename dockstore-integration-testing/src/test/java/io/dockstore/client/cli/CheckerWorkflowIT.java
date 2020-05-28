@@ -94,7 +94,7 @@ public class CheckerWorkflowIT extends BaseIT {
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
-        newTool.setRegistryString(Registry.QUAY_IO.toString());
+        newTool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         newTool.setNamespace("dockstoretestuser2");
         newTool.setToolname("altname");
         newTool.setPrivateAccess(false);
@@ -223,7 +223,7 @@ public class CheckerWorkflowIT extends BaseIT {
             newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
             newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
             newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
-            newTool.setRegistryString(Registry.QUAY_IO.toString());
+            newTool.setRegistryString(Registry.QUAY_IO.getDockerPath());
             newTool.setNamespace("dockstoretestuser2");
             newTool.setToolname("altname");
             newTool.setPrivateAccess(false);
@@ -245,7 +245,7 @@ public class CheckerWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         final Long id = usersApi.getUser().getId();
         if (all) {
-            usersApi.refreshWorkflows(id);
+            usersApi.refreshWorkflowsByOrganization(id, "DockstoreTestUser2");
         } else {
             usersApi.refreshWorkflowsByOrganization(id, stubCheckerWorkflow.getOrganization());
         }
@@ -460,7 +460,7 @@ public class CheckerWorkflowIT extends BaseIT {
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
-        newTool.setRegistryString(Registry.QUAY_IO.toString());
+        newTool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         newTool.setNamespace("dockstoretestuser2");
         newTool.setToolname("_altname");
         newTool.setPrivateAccess(false);

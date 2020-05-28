@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.8.6</version>
+    <version>1.9.0-alpha.9-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -31,30 +31,30 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
-        <dropwizard.version>1.3.16</dropwizard.version>
+        <dropwizard.version>1.3.17</dropwizard.version>
         <dockstore-client.version>1.8.0-beta.1</dockstore-client.version>
 
         <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
-        <swagger-annotations-version>1.5.23</swagger-annotations-version>
-        <openapi-annotations-version>2.0.9</openapi-annotations-version>
-        <assertj.version>3.9.1</assertj.version>
-        <jackson.version>2.9.10.20191020</jackson.version>
-        <jackson.major.version>2.9.10</jackson.major.version>
+        <swagger-annotations-version>1.6.0</swagger-annotations-version>
+        <openapi-annotations-version>2.1.1</openapi-annotations-version>
+        <assertj.version>3.14.0</assertj.version>
+        <jackson.version>2.10.1</jackson.version>
+        <jackson.major.version>2.10.1</jackson.major.version>
         <jersey-version>2.25.1</jersey-version>
-        <junit-version>4.12</junit-version>
+        <junit-version>4.13</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>2.5.25</aws.version>
-        <powermock.version>2.0.0</powermock.version>
+        <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.28.2</mockito.version>
-        <cwlavro.version>2.0.4.2</cwlavro.version>
+        <cwlavro.version>2.0.4.4</cwlavro.version>
         <okhttp.version>3.14.2</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
-        <swagger-ui.version>3.23.11</swagger-ui.version>
+        <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
-        <httpcomponents.version>4.5.8</httpcomponents.version>
-        <httpcore.version>4.4.11</httpcore.version>
+        <httpcomponents.version>4.5.10</httpcomponents.version>
+        <httpcore.version>4.4.12</httpcore.version>
         <jetty-servlet.version>9.4.18.v20190429</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
         <scala.version>2.12.8</scala.version>
@@ -73,7 +73,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.8.6</tag>
+        <tag>1.8.2</tag>
     </scm>
 
     <repositories>
@@ -109,7 +109,7 @@
             </snapshots>
             <id>jcenter</id>
             <name>bintray</name>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com</url>
         </repository>
         <!-- broad -->
         <repository>
@@ -126,7 +126,7 @@
         <repository>
             <id>sagebionetworks</id>
             <name>sagebionetworks-releases</name>
-            <url>http://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
+            <url>https://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
         </repository>
         <repository>
             <id>mockito</id>
@@ -137,8 +137,8 @@
 
     <licenses>
         <license>
-            <name>GNU General Public License (GPLv3)</name>
-            <url>http://www.gnu.org/licenses/gpl-3.0.html</url>
+            <name>Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
 
@@ -177,7 +177,7 @@
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
                 <artifactId>system-rules</artifactId>
-                <version>1.17.1</version>
+                <version>1.19.0</version>
                 <!-- junit:junit-dep is deprecated, and junit:junit replaces it. -->
                 <exclusions>
                     <exclusion>
@@ -247,7 +247,7 @@
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.11</version>
+                <version>1.13</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson/jackson-bom -->
             <dependency>
@@ -260,6 +260,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.major.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson.major.version}</version>
             </dependency>
 
@@ -289,7 +294,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.6</version>
+                <version>1.8</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
@@ -324,6 +329,12 @@
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
                 <version>5.4.3.Final</version>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>1.1.0.Final</version>
             </dependency>
 
             <!-- jersey -->
@@ -382,7 +393,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.8.1</version>
+                <version>3.9</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -402,7 +413,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.24.1-GA</version>
+                <version>3.25.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -412,7 +423,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.2</version>
+                <version>2.7</version>
             </dependency>
 
             <dependency>
@@ -696,7 +707,7 @@
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
-                <version>1.8.1</version>
+                <version>1.9.1</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
@@ -704,14 +715,14 @@
                 <version>20180130</version>
             </dependency>
             <dependency>
-                <groupId>ro.fortsoft.pf4j</groupId>
+                <groupId>org.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
-                <version>1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.19</version>
+                <version>1.20</version>
             </dependency>
             <dependency>
                 <groupId>javax.ws.rs</groupId>
@@ -722,7 +733,7 @@
             <dependency>
                 <groupId>io.dockstore</groupId>
                 <artifactId>zenodo-client-generated</artifactId>
-                <version>0.1</version>
+                <version>0.2</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
@@ -755,9 +766,9 @@
                 <version>1.1.1</version>
             </dependency>
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>2.3.1</version>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>2.3.2</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -834,7 +845,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.4</version>
+                    <version>0.8.5</version>
                 </plugin>
                 <plugin>
                     <groupId>com.googlecode.maven-download-plugin</groupId>
@@ -849,10 +860,11 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.0</version>
+                    <version>3.8.1</version>
                     <configuration>
                         <release>11</release>
                         <showDeprecation>true</showDeprecation>
+                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -872,7 +884,6 @@
                         </excludes>
                     </configuration>
                 </plugin>
-                <!-- version fixed at 2.17 due to https://sourceforge.net/p/eclipse-cs/discussion/274376/thread/ba316e08/?limit=25 -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
@@ -881,7 +892,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.24</version>
+                            <version>8.29</version>
                         </dependency>
                     </dependencies>
                     <configuration>
@@ -906,7 +917,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>3.2.1</version>
                     <executions>
                         <execution>
                             <id>attach-sources</id>
@@ -1063,8 +1074,15 @@
                 <plugin>
                     <groupId>io.swagger</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>2.4.8</version>
+                    <version>2.4.12</version>
                 </plugin>
+                <!-- https://mvnrepository.com/artifact/io.swagger.codegen.v3/swagger-codegen-maven-plugin -->
+                <plugin>
+                    <groupId>io.swagger.codegen.v3</groupId>
+                    <artifactId>swagger-codegen-maven-plugin</artifactId>
+                    <version>3.0.16</version>
+                </plugin>
+
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
@@ -1075,6 +1093,11 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
                     <version>2.7</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>2.0.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1238,7 +1261,7 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.2.0</version>
+                <version>1.3.2</version>
                 <configuration>
                     <groups>java.,javax.,*</groups>
                     <staticAfter>true</staticAfter>
@@ -1248,6 +1271,48 @@
                         <id>sort-imports</id>
                         <goals>
                             <goal>sort</goal><!-- runs at process-sources phase by default -->
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.0.0</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                    <includeOnlyProperties>
+                        <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+                        <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
+                    </includeOnlyProperties>
+                    <commitIdGenerationMode>full</commitIdGenerationMode>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>2.0.0</version>
+                <configuration>
+                    <outputDirectory>${project.basedir}</outputDirectory>
+                    <missingFile>THIRD-PARTY-LICENSES.properties</missingFile>
+                    <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
+                    <sortArtifactByName>true</sortArtifactByName>
+                    <failOnMissing>true</failOnMissing>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>aggregate-add-third-party</goal>
                         </goals>
                     </execution>
                 </executions>

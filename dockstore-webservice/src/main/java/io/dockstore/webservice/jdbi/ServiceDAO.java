@@ -20,13 +20,12 @@ import java.util.List;
 
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.database.WorkflowPath;
-import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
 /**
  * @author dyuen
  */
-public class ServiceDAO extends AbstractDAO<Service> {
+public class ServiceDAO extends EntryDAO<Service> {
     public ServiceDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
     }

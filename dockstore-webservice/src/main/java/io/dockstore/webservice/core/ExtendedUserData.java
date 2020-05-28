@@ -16,10 +16,10 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,10 +32,10 @@ public class ExtendedUserData {
     @ApiModelProperty(value = "Whether a user can change their username")
     private boolean canChangeUsername;
 
-    public ExtendedUserData(User user, PermissionsInterface authorizer) {
-        Hibernate.initialize(user.getEntries());
+    public ExtendedUserData(User user, PermissionsInterface authorizer, UserDAO userDAO) {
+        long publishedEntries = userDAO.findPublishedEntries(user.getUsername());
         try {
-            this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished) && !authorizer.isSharing(user)
+            this.canChangeUsername = publishedEntries == 0 && !authorizer.isSharing(user)
                     && user.getOrganizations().size() == 0;
         } catch (Exception e) {
             LOG.error("SAM is improperly configured.", e);

@@ -140,10 +140,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String email;
 
     @Column
-    @ApiModelProperty(value = "This is the default version of the entry", position = 7)
-    private String defaultVersion;
-
-    @Column
     @JsonProperty("is_published")
     @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
@@ -200,7 +196,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyEnumerated(EnumType.STRING)
-    @Column(name = "path", nullable = false)
+    @Column(name = "path", nullable = false, columnDefinition = "text")
     @MapKeyColumn(name = "filetype")
     @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
@@ -226,6 +222,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     public abstract EntryType getEntryType();
 
+    @JsonIgnore
+    public abstract boolean isHosted();
+
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
     public Long getCheckerId() {
@@ -235,7 +234,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
             return checkerWorkflow.getId();
         }
     }
-
 
     public void setConceptDoi(String conceptDoi) {
         this.conceptDoi = conceptDoi;
@@ -292,23 +290,18 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * Currently unused because too many entries do not have a default version set
      */
     public void syncMetadataWithDefault() {
-        T realDefaultVersion = this.getRealDefaultVersion();
+        T realDefaultVersion = this.getActualDefaultVersion();
         if (realDefaultVersion != null) {
             this.setMetadataFromVersion(realDefaultVersion);
         }
     }
-
+    @ApiModelProperty(value = "This is the name of the default version of the entry", position = 7)
     public String getDefaultVersion() {
-        return defaultVersion;
-    }
-
-    public void setDefaultVersion(String defaultVersion) {
-        this.defaultVersion = defaultVersion;
-    }
-
-    @JsonIgnore
-    public T getRealDefaultVersion() {
-        return this.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(this.defaultVersion)).findFirst().orElse(null);
+        if (this.getActualDefaultVersion() != null) {
+            return this.getActualDefaultVersion().getName();
+        } else {
+            return null;
+        }
     }
 
     public void setAuthor(String newAuthor) {
@@ -493,14 +486,19 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return getWorkflowVersions().remove(workflowVersion);
     }
 
+    public abstract void setActualDefaultVersion(T version);
+
+    @JsonIgnore
+    public abstract T getActualDefaultVersion();
+
     /**
      * @param newDefaultVersion
      * @return true if defaultVersion is a valid Docker tag
      */
     public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
-        for (Version version : this.getWorkflowVersions()) {
+        for (T version : this.getWorkflowVersions()) {
             if (Objects.equals(newDefaultVersion, version.getName())) {
-                this.setDefaultVersion(newDefaultVersion);
+                this.setActualDefaultVersion(version);
                 this.syncMetadataWithDefault();
                 return true;
             }

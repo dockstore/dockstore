@@ -34,17 +34,23 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.User;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
+import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
@@ -70,7 +76,7 @@ public class RefreshByOrgIT {
     private static ObjectMapper objectMapper;
     private static Long id;
     private static List<Tool> previousTools;
-    private static List<Workflow> previousWorkflows;
+    private static List<BioWorkflow> previousWorkflows;
     private static TestingPostgres testingPostgres;
 
     @AfterClass
@@ -92,7 +98,7 @@ public class RefreshByOrgIT {
 
     private void checkInitialDB() throws IOException {
         // The DB initially has no workflows
-        List<Workflow> currentWorkflows = getWorkflows();
+        List<BioWorkflow> currentWorkflows = getWorkflows();
         // Leaving this in here so we don't forget to change this when there is a workflow in the test DB
         assertThat(currentWorkflows.size()).isGreaterThanOrEqualTo(0);
 
@@ -142,6 +148,51 @@ public class RefreshByOrgIT {
         testRefreshToolsByOrg3();
         currentTools = getTools();
         assertThat(currentTools.size() - previousTools.size()).isEqualTo(0);
+    }
+
+    /**
+     * This tests if the user can quickly register a single tool with Quay.io org and repo specified
+     */
+    @Test
+    public void testRefreshToolByOrgAndRepo() {
+        final String exceptionMessage = "Could not get repository from Quay.io";
+        final String knownValidOrganization = "dockstoretestuser2";
+        final String knownValidRepository = "md5sum";
+        ApiClient apiClient = getWebClient(true, "DockstoreTestUser2", testingPostgres);
+        UsersApi usersApi = new UsersApi(apiClient);
+        User user = usersApi.getUser();
+        Long userId = user.getId();
+        List<DockstoreTool> dockstoreToolsBeforeRefresh = usersApi.userContainers(userId);
+        boolean hasTool = hasTool(dockstoreToolsBeforeRefresh, knownValidOrganization, knownValidRepository);
+        Assert.assertFalse(hasTool);
+        List<DockstoreTool> dockstoreToolsAfterRefresh = usersApi.refreshToolsByOrganization(userId, knownValidOrganization, knownValidRepository);
+        Assert.assertEquals("Should have 1 more tool than before", dockstoreToolsBeforeRefresh.size() + 1, dockstoreToolsAfterRefresh.size());
+        hasTool = hasTool(dockstoreToolsAfterRefresh, knownValidOrganization, knownValidRepository);
+        Assert.assertTrue("Should've have added a single tool", hasTool);
+        try {
+            usersApi.refreshToolsByOrganization(userId, "fakeOrganization", "fakeRepository");
+            Assert.fail("Should have an exception when repo and org does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(exceptionMessage, e.getMessage());
+        }
+        try {
+            usersApi.refreshToolsByOrganization(userId, knownValidOrganization, "fakeRepository");
+            Assert.fail("Should have an exception when repo does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(exceptionMessage, e.getMessage());
+        }
+        try {
+            usersApi.refreshToolsByOrganization(userId, "fakeOrganization", "md5sum");
+            Assert.fail("Should have an exception when org does not exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(exceptionMessage, e.getMessage());
+        }
+    }
+
+    private boolean hasTool(List<DockstoreTool> dockstoreTools, String organization, String repository) {
+        return dockstoreTools.stream().anyMatch(
+            dockstoreTool -> dockstoreTool.getName().equals(repository) && dockstoreTool.getNamespace().equals(organization)
+                && dockstoreTool.getRegistry().equals(DockstoreTool.RegistryEnum.QUAY_IO));
     }
 
     /**
@@ -199,7 +250,7 @@ public class RefreshByOrgIT {
         checkInitialDB();
 
         testRefreshWorkflowsByOrg1();
-        List<Workflow> currentWorkflows = getWorkflows();
+        List<BioWorkflow> currentWorkflows = getWorkflows();
         assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(NEW_DOCKSTORE_TEST_USER_2_WORKFLOWS_ARRAY.size());
         previousWorkflows = currentWorkflows;
 
@@ -228,7 +279,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg1() throws IOException {
         String url = usersURLPrefix + "/workflows/DockstoreTestUser2/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
+        List<BioWorkflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -243,7 +294,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg2() throws IOException {
         String url = usersURLPrefix + "/workflows/dockstore/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
+        List<BioWorkflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -256,7 +307,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg3() throws IOException {
         String url = usersURLPrefix + "/workflows/mmmrrrggglll/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
+        List<BioWorkflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -268,7 +319,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg4() throws IOException {
         String url = usersURLPrefix + "/workflows/dockstore_testuser2/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
+        List<BioWorkflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -282,7 +333,7 @@ public class RefreshByOrgIT {
      */
     private void testRefreshWorkflowsByOrg5() throws IOException {
         String url = usersURLPrefix + "/workflows/dockstore.test.user2/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
+        List<BioWorkflow> workflows = clientHelperWorkflow(url);
         // Remove all the tools that have the same name as the previous ones
         workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
         // Ensure that there are at least 14 new tools
@@ -291,15 +342,15 @@ public class RefreshByOrgIT {
             workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
     }
 
-    private List<Workflow> clientHelperWorkflow(String url) throws IOException {
+    private List<BioWorkflow> clientHelperWorkflow(String url) throws IOException {
         Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
-        return objectMapper.readValue(entity, new TypeReference<List<BioWorkflow>>() {
+        return objectMapper.readValue(entity, new TypeReference<>() {
         });
     }
 
-    private List<Workflow> getWorkflows() throws IOException {
+    private List<BioWorkflow> getWorkflows() throws IOException {
         String url = usersURLPrefix + "/workflows";
         return clientHelperWorkflow(url);
     }

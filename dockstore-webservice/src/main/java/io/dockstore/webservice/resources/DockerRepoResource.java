@@ -38,6 +38,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -45,17 +46,16 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -91,6 +91,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.model.DescriptorType;
+import io.swagger.quay.client.model.QuayRepo;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
@@ -117,7 +118,7 @@ public class DockerRepoResource
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published tools, authentication can be provided for restricted tools";
 
     @Context
-    private javax.ws.rs.container.ResourceContext rc;
+    private ResourceContext rc;
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -129,14 +130,14 @@ public class DockerRepoResource
     private final HttpClient client;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
+    private final String dashboardPrefix;
     private final EventDAO eventDAO;
-    private final ObjectMapper objectMapper;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
 
-    public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
-        String bitbucketClientSecret, WorkflowResource workflowResource, EntryResource entryResource) {
-        objectMapper = mapper;
+    public DockerRepoResource(final HttpClient client, final SessionFactory sessionFactory, final DockstoreWebserviceConfiguration configuration,
+        final WorkflowResource workflowResource, final EntryResource entryResource) {
+
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.tagDAO = new TagDAO(sessionFactory);
@@ -146,8 +147,9 @@ public class DockerRepoResource
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.client = client;
 
-        this.bitbucketClientID = bitbucketClientID;
-        this.bitbucketClientSecret = bitbucketClientSecret;
+        this.bitbucketClientID = configuration.getBitbucketClientID();
+        this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
+        this.dashboardPrefix = configuration.getDashboard();
 
         this.workflowResource = workflowResource;
         this.entryResource = entryResource;
@@ -156,14 +158,10 @@ public class DockerRepoResource
     }
 
     List<Tool> refreshToolsForUser(Long userId, String organization) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
-        if (!tokens.isEmpty()) {
-            Token bitbucketToken = tokens.get(0);
-            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-        }
+        refreshBitbucketToken(userId);
 
         // Get user's quay and git tokens
-        tokens = tokenDAO.findByUserId(userId);
+        List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
         Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
         Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
@@ -173,7 +171,7 @@ public class DockerRepoResource
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         // Get a list of all image registries
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
         final List<AbstractImageRegistry> allRegistries = factory.getAllRegistries();
 
         // Get a list of all namespaces from all image registries
@@ -183,10 +181,40 @@ public class DockerRepoResource
             LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
 
             updatedTools.addAll(abstractImageRegistry
-                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken,
-                    organization, eventDAO));
+                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+                    gitlabToken, organization, eventDAO, dashboardPrefix));
         }
         return updatedTools;
+    }
+
+    List<Tool> refreshToolsForUser(Long userId, String organization, String repository) {
+        refreshBitbucketToken(userId);
+
+        // Get user's quay and git tokens
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+
+        // with Docker Hub support it is now possible that there is no quayToken
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
+
+        // Get a list of all namespaces from Quay.io only
+        if (quayToken == null) {
+            throw new CustomWebApplicationException("Missing required Quay.io token", HttpStatus.SC_BAD_REQUEST);
+        }
+        QuayImageRegistry registry = new QuayImageRegistry(quayToken);
+        return registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+            gitlabToken, organization, eventDAO, dashboardPrefix, repository);
+    }
+
+    private void refreshBitbucketToken(long userId) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
     }
 
     private static void checkTokens(final Token quayToken, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
@@ -267,14 +295,14 @@ public class DockerRepoResource
                 gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
 
         // Get all registries
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
         final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
 
         if (abstractImageRegistry == null) {
             throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
                 HttpStatus.SC_NOT_FOUND);
         }
-        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo, eventDAO);
+        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo, eventDAO, dashboardPrefix);
     }
 
     @GET
@@ -500,14 +528,14 @@ public class DockerRepoResource
         }
 
         // Check if tool has tags
-        if (toolParam.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkContainerForTags(toolParam, user.getId())) {
+        if (toolParam.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && !checkContainerForTags(toolParam, user.getId())) {
             LOG.info(user.getUsername() + ": tool has no tags.");
             throw new CustomWebApplicationException(
                 "Tool " + toolParam.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Check if user owns repo, or if user is in the organization which owns the tool
-        if (toolParam.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkIfUserOwns(toolParam, user.getId())) {
+        if (toolParam.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && !checkIfUserOwns(toolParam, user.getId())) {
             LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
             throw new CustomWebApplicationException("User does not own the tool " + toolParam.getPath()
                 + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
@@ -528,7 +556,6 @@ public class DockerRepoResource
         if (tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
             throw new CustomWebApplicationException("Tool maintainer email is required for private tools.", HttpStatus.SC_BAD_REQUEST);
         }
-        boolean releaseCreated = false;
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
@@ -536,8 +563,9 @@ public class DockerRepoResource
         for (Tag tag : toolParam.getWorkflowVersions()) {
             tag.setParent(tool);
             final long l = tagDAO.create(tag);
-            createdTags.add(tagDAO.findById(l));
-            releaseCreated = true;
+            Tag byId = tagDAO.findById(l);
+            createdTags.add(byId);
+            this.eventDAO.createAddTagToEntryEvent(user, tool, byId);
         }
         tool.getWorkflowVersions().clear();
         tool.getWorkflowVersions().addAll(createdTags);
@@ -554,10 +582,6 @@ public class DockerRepoResource
             tool.setGitUrl(convertHttpsToSsh(tool.getGitUrl()));
         }
 
-        if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-            eventDAO.create(event);
-        }
         return toolDAO.findById(id);
     }
 
@@ -576,7 +600,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
                 HttpStatus.SC_NOT_FOUND);
         }
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
 
         final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
         final List<Tag> tags = imageRegistry.getTags(tool);
@@ -957,7 +981,10 @@ public class DockerRepoResource
         FileType fileType =
             (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
+            boolean fileDeleted = sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
+            if (!fileDeleted) {
+                throw new CustomWebApplicationException("There are no existing test parameter files with the path: " + path, HttpStatus.SC_NOT_FOUND);
+            }
         }
 
         return tag.getSourceFiles();
@@ -1054,29 +1081,30 @@ public class DockerRepoResource
         // get quay token
         Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
 
-        if (quayToken == null && Objects.equals(tool.getRegistry(), Registry.QUAY_IO.toString())) {
+        if (quayToken == null && Objects.equals(tool.getRegistry(), Registry.QUAY_IO.getDockerPath())) {
             LOG.info("WARNING: QUAY.IO token not found!");
             throw new CustomWebApplicationException("A valid Quay.io token is required to add this tool.", HttpStatus.SC_BAD_REQUEST);
-        }
+        } else if (quayToken != null) {
+            // set up
+            QuayImageRegistry factory = new QuayImageRegistry(quayToken);
 
-        // set up
-        QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+            // get quay username
+            String quayUsername = quayToken.getUsername();
 
-        // get quay username
-        String quayUsername = quayToken.getUsername();
+            // call quay api, check if user owns or is part of owning organization
+            final Optional<QuayRepo> toolFromQuay = factory.getToolFromQuay(tool);
 
-        // call quay api, check if user owns or is part of owning organization
-        Map<String, Object> map = factory.getQuayInfo(tool);
+            if (toolFromQuay.isPresent()) {
+                final QuayRepo quayInfo = toolFromQuay.get();
+                String namespace = quayInfo.getNamespace();
+                boolean isOrg = quayInfo.isIsOrganization();
 
-        if (map != null) {
-            String namespace = map.get("namespace").toString();
-            boolean isOrg = (Boolean)map.get("is_organization");
-
-            if (isOrg) {
-                List<String> namespaces = factory.getNamespaces();
-                return namespaces.stream().anyMatch(nm -> nm.equals(namespace));
-            } else {
-                return (namespace.equals(quayUsername));
+                if (isOrg) {
+                    List<String> namespaces = factory.getNamespaces();
+                    return namespaces.stream().anyMatch(nm -> nm.equals(namespace));
+                } else {
+                    return (namespace.equals(quayUsername));
+                }
             }
         }
         return false;

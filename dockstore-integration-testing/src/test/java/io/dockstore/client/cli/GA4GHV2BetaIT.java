@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  * @author gluu
  * @since 02/01/18
  */
-public class GA4GHV2IT extends GA4GHIT {
+public class GA4GHV2BetaIT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v2/";
 
     public String getApiVersion() {
@@ -360,6 +360,10 @@ public class GA4GHV2IT extends GA4GHIT {
         response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(Tool.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
+
+        // test garbage source control value
+        response = checkedResponse(baseURL + "tools/%23workflow%2Fgarbagio%2FfakeOrganization%2FfakeRepository%2FPotato", HttpStatus.SC_NOT_FOUND);
+        assertThat(response == null);
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);

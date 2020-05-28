@@ -74,6 +74,10 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.kohsuke.github.GitHub;
@@ -92,7 +96,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/auth/tokens")
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "tokens", description = ResourceConstants.TOKENS)
+@Tag(name = "tokens", description = ResourceConstants.TOKENS)
 public class TokenResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     /**
      * Global instance of the HTTP transport.
@@ -107,6 +111,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final String ORCID_URL = "https://orcid.org/";
     private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_1;
     private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
@@ -128,8 +133,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String zenodoClientSecret;
     private final String googleClientID;
     private final String googleClientSecret;
+    private final String orcidClientID;
+    private final String orcidClientSecret;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
+
+    private final String orcidSummary = "Add a new orcid.org token";
+    private final String orcidDescription = "Using OAuth code from ORCID, request and store tokens from ORCID API";
 
     public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
             DockstoreWebserviceConfiguration configuration) {
@@ -149,6 +159,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.zenodoAuthUrl = configuration.getUiConfig().getZenodoAuthUrl();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
+        this.orcidClientID = configuration.getOrcidClientID();
+        this.orcidClientSecret = configuration.getOrcidClientSecret();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -224,6 +236,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         cachingAuthenticator.invalidate(token.getContent());
 
         tokenDAO.delete(token);
+
+        // also erase the user's ORCID id if deleting an ORCID token
+        if (token.getTokenSource() == TokenType.ORCID_ORG) {
+            User byId = userDAO.findById(user.getId());
+            byId.setOrcid(null);
+        }
 
         token = tokenDAO.findById(tokenId);
         if (token == null) {
@@ -529,7 +547,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             tokenDAO.create(githubToken);
             user = userDAO.findById(userID);
             GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
-            gitHubSourceCodeRepo.getUserMetadata(user);
+            gitHubSourceCodeRepo.syncUserMetadataFromGitHub(user);
         }
         return dockstoreToken;
     }
@@ -617,6 +635,73 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/orcid.org")
+    @ApiOperation(value = orcidSummary, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
+            notes = orcidDescription, response = Token.class)
+    @Operation(operationId = "addOrcidToken", summary = orcidSummary, description = orcidDescription,
+            security = @SecurityRequirement(name = "bearer"))
+    public Token addOrcidToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth final User user,
+                               @QueryParam("code") final String code) {
+        String accessToken;
+        String refreshToken;
+        String username;
+        String orcid;
+
+        if (code.isEmpty()) {
+            throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                JSON_FACTORY, new GenericUrl(ORCID_URL + "oauth/token"),
+                new ClientParametersAuthentication(orcidClientID, orcidClientSecret), orcidClientID,
+                ORCID_URL + "/authorize").build();
+
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList("/authenticate"))
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+            accessToken = tokenResponse.getAccessToken();
+            refreshToken = tokenResponse.getRefreshToken();
+
+            // ORCID API returns the username and orcid id along with the tokens
+            // get them to store in the token and user tables
+            username = tokenResponse.get("name").toString();
+            orcid = tokenResponse.get("orcid").toString();
+
+        } catch (IOException e) {
+            LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage(), e);
+            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (user != null) {
+            // save the ORCID to the enduser table
+            User byId = userDAO.findById(user.getId());
+            byId.setOrcid(orcid);
+
+            List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
+
+            if (tokens.isEmpty()) {
+                Token token = new Token();
+                token.setTokenSource(TokenType.ORCID_ORG);
+                token.setContent(accessToken);
+                token.setRefreshToken(refreshToken);
+                token.setUserId(user.getId());
+                token.setUsername(username);
+
+                long create = tokenDAO.create(token);
+                LOG.info("ORCID token created for {}", user.getUsername());
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("ORCID token already exists for {}", user.getUsername());
+                throw new CustomWebApplicationException("ORCID token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
+            }
+        } else {
+            LOG.info("Could not find user");
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+        }
+    }
 
 
     @GET

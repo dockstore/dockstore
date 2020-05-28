@@ -79,7 +79,7 @@ public class ValidationIT extends BaseIT {
         c.setGitUrl("https://github.com/DockstoreTestUser2/TestEntryValidation");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/validTool.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.toString());
+        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(false);
         c.setNamespace("DockstoreTestUser2");
         c.setToolname("test5");
@@ -387,6 +387,23 @@ public class ValidationIT extends BaseIT {
         Assert.assertTrue("Should be valid", isTagValid(tool, "master"));
         toolsApi.deleteTestParameterFiles(tool.getId(), testParameterFiles, "WDL", "master");
         tool = toolsApi.refresh(tool.getId());
+    }
+
+    /**
+     * This tests that validation works as expected on services
+     * Requires GitHub Repo DockstoreTestUser2/test-service, missingFile branch
+     */
+    @Test
+    public void testService() {
+        WorkflowsApi client = setupWorkflowWebService();
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
+        // Add a service with a dockstore.yml that lists a file that is missing in the repository - should be invalid
+        List<Workflow> services = client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/heads/missingFile", installationId);
+        Assert.assertEquals("Should have added one service", 1, services.size());
+        Workflow service = services.get(0);
+        Assert.assertFalse("Should be invalid due to missing file in dockstore.yml", isWorkflowVersionValid(service, "missingFile"));
     }
 
     @Test

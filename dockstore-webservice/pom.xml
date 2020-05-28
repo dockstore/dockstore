@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.8.6</version>
+        <version>1.9.0-alpha.9-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -53,40 +53,33 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
         </dependency>
-        <!-- DOCKSTORE-2428 - demo how to add new workflow language
-        <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>silly-workflow-language-interface</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        -->
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
@@ -94,7 +87,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -414,7 +407,6 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
-            <version>1.1.0.Final</version>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -493,7 +485,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -571,7 +562,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.8.6</version>
+            <version>1.9.0-alpha.9-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -636,10 +627,6 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
         </dependency>
         <dependency>
             <groupId>io.cwl</groupId>
@@ -727,7 +714,7 @@
         <dependency>
             <groupId>org.kohsuke</groupId>
             <artifactId>github-api</artifactId>
-            <version>1.92</version>
+            <version>1.101</version>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>
@@ -744,8 +731,8 @@
             <artifactId>activation</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -770,6 +757,14 @@
                     <artifactId>jaxb-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.pf4j</groupId>
+            <artifactId>pf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
     </dependencies>
 
@@ -915,7 +910,6 @@
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
                                 <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
-                                <usedDepdenency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</usedDepdenency>
                                 <usedDependency>javax.activation:activation</usedDependency>
                             </usedDependencies>
                         </configuration>
@@ -930,8 +924,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <!-- skip the swagger generated classes -->
-                    <excludes>**/swagger/**/*</excludes>
                     <!-- skip the generated description class -->
                     <sourceDirectories>
                         <directory>${project.build.sourceDirectory}</directory>
@@ -964,6 +956,12 @@
                             <filesets>
                                 <fileset>
                                     <directory>tool-registry-validator</directory>
+                                </fileset>
+                                <fileset>
+					<directory>src/main/resources/openapi3</directory>
+					<includes>
+						<include>unsortedopenapi.yaml</include>
+					</includes>
                                 </fileset>
                             </filesets>
                         </configuration>
@@ -1043,14 +1041,15 @@
                 <artifactId>swagger-maven-plugin</artifactId>
                 <version>${openapi-annotations-version}</version>
                 <configuration>
-                    <outputFileName>openapi</outputFileName>
+                    <outputFileName>unsortedopenapi</outputFileName>
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
                     <outputFormat>YAML</outputFormat>
-                    <openapiFilePath>${project.basedir}/src/main/resources/configurationFilePath.yaml</openapiFilePath>
                     <prettyPrint>true</prettyPrint>
                     <resourcePackages>
                         <package>io.swagger.api</package>
+                        <package>io.openapi.api</package>
                         <package>io.swagger.model</package>
+                        <package>io.openapi.model</package>
                         <package>io.dockstore.webservice.resources</package>
                         <package>io.dockstore.webservice.resources.rss</package>
                         <package>io.dockstore.webservice.resources.proposedGA4GH</package>
@@ -1068,17 +1067,35 @@
                 </executions>
             </plugin>
             <plugin>
+                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <executions>
+                    <execution>
+                        <id>Sort OpenAPI.yaml</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/scripts/sortOpenAPIYaml.sh</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <configuration>
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+                    <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5_gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
                         <dateLibrary>legacy</dateLibrary>
                         <java8>true</java8>
                         <useRuntimeException>true</useRuntimeException>
                         <modelPackage>io.swagger.model</modelPackage>
+                        <apiPackage>io.swagger.api</apiPackage>
                     </configOptions>
                     <generateApis>true</generateApis>
                     <generateApiTests>false</generateApiTests>
@@ -1087,13 +1104,50 @@
                     <generateModelTests>false</generateModelTests>
                     <generateModelDocumentation>false</generateModelDocumentation>
                     <generateSupportingFiles>true</generateSupportingFiles>
-                    <ignoreFileOverride>${pom.basedir}/src/main/resources/swagger-templates/swagger-codegen-ignore</ignoreFileOverride>
                     <withXml>true</withXml>
                     <library>jersey2</library>
+                    <ignoreFileOverride>${pom.basedir}/src/main/resources/swagger-templates/swagger-codegen-ignore</ignoreFileOverride>
                     <templateDirectory>${pom.basedir}/src/main/resources/swagger-templates</templateDirectory>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>v2-beta</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.swagger.codegen.v3</groupId>
+                <artifactId>swagger-codegen-maven-plugin</artifactId>
+                <configuration>
+                    <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
+                    <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0_gxformat2/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <language>jaxrs-jersey</language>
+                    <configOptions>
+                        <dateLibrary>legacy</dateLibrary>
+                        <java8>true</java8>
+                        <useRuntimeException>true</useRuntimeException>
+                        <modelPackage>io.openapi.model</modelPackage>
+                        <apiPackage>io.openapi.api</apiPackage>
+                    </configOptions>
+                    <generateApis>true</generateApis>
+                    <generateApiTests>false</generateApiTests>
+                    <generateApiDocumentation>false</generateApiDocumentation>
+                    <generateModels>true</generateModels>
+                    <generateModelTests>false</generateModelTests>
+                    <generateModelDocumentation>false</generateModelDocumentation>
+                    <generateSupportingFiles>true</generateSupportingFiles>
+                    <withXml>true</withXml>
+                    <library>jersey2</library>
+                    <ignoreFileOverride>${pom.basedir}/src/main/resources/openapi-templates/swagger-codegen-ignore</ignoreFileOverride>
+                    <templateDirectory>${pom.basedir}/src/main/resources/openapi-templates</templateDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>v2-final</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
@@ -1124,7 +1178,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <file>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</file>
+                    <filesToInclude>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java,${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</filesToInclude>
                     <regex>false</regex>
                     <replacements>
                         <replacement>
@@ -1167,19 +1221,23 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
+                <!-- This is to validate the openapi.yaml. The generated code is ignored -->
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>4.2.3</version>
                 <executions>
-                    <!-- Execute script, translate swagger to open, and clean up-->
                     <execution>
-                        <id>process-openapi</id>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>generate</goal>
                         </goals>
-                        <phase>install</phase>
                         <configuration>
-                            <executable>${basedir}/swagger2open.sh</executable>
+                            <inputSpec>${project.basedir}/src/main/resources/openapi3/openapi.yaml</inputSpec>
+                            <generatorName>powershell</generatorName>
+                            <!-- the following options don't seem to work, but might work someday -->
+                            <generateApis>false</generateApis>
+                            <generateModels>false</generateModels>
+                            <generateSupportingFiles>false</generateSupportingFiles>
+                            <addCompileSourceRoot>false</addCompileSourceRoot>
                         </configuration>
                     </execution>
                 </executions>

@@ -313,7 +313,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Retrieve all events for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
     @Operation(operationId = "getOrganizationEvents", summary = "Retrieve all events for an organization.", description = "Retrieve all events for an organization. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
-    public List<Event> getOrganizationEvents(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public List<Event> getOrganizationEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id,
             @ApiParam(value = "Start index of paging.  If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.", defaultValue = DEFAULT_OFFSET) @Parameter(description = "Start index of paging.  If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.", name = "offset", in = ParameterIn.QUERY, required = true) @DefaultValue(DEFAULT_OFFSET) @QueryParam("offset") Integer offset,
             @ApiParam(value = "Amount of records to return in a given page, limited to "
@@ -342,11 +342,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Organization organization = organizationDAO.findApprovedById(organizationId);
         checkOrganization(organization);
         Set<User> starredUsers = organization.getStarredUsers();
-        if (!starredUsers.contains(user)) {
-            organization.addStarredUser(user);
+        if (request.getStar()) {
+            starOrganizationHelper(organization, starredUsers, user);
         } else {
-            throw new CustomWebApplicationException(
-                    "You cannot star the organization " + organization.getName() + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+            unstarOrganizationHelper(organization, starredUsers, user);
         }
 
     }
@@ -356,17 +355,31 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @Path("/{organizationId}/unstar")
     @ApiOperation(value = "Unstar an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Deprecated(since = "1.9.0")
     @Operation(operationId = "unstarOrganization", summary = "Unstar an organization.", description = "Unstar an organization.", security = @SecurityRequirement(name = "bearer"))
     public void unstarOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
                             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findApprovedById(organizationId);
         checkOrganization(organization);
         Set<User> starredUsers = organization.getStarredUsers();
+        unstarOrganizationHelper(organization, starredUsers, user);
+    }
+
+    private void starOrganizationHelper(Organization organization, Set<User> starredUsers, User user) {
+        if (!starredUsers.contains(user)) {
+            organization.addStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException(
+                "You cannot star the organization " + organization.getName() + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private void unstarOrganizationHelper(Organization organization, Set<User> starredUsers, User user) {
         if (starredUsers.contains(user)) {
             organization.removeStarredUser(user);
         } else {
             throw new CustomWebApplicationException(
-                    "You cannot unstar the organization " + organization.getName() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+                "You cannot unstar the organization " + organization.getName() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
