@@ -1916,6 +1916,55 @@ public class WorkflowIT extends BaseIT {
 
     }
 
+    @Test
+    public void testGettingSourceFilesForWorkflowVersion() {
+
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
+
+        // Sourcefiles for workflowversions
+        Workflow workflow = workflowsApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "", "cwl", "/test.json");
+        workflow = workflowsApi.refresh(workflow.getId());
+
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion1 -> workflowVersion1.getName().equals("testCWL")).findFirst().get();
+
+        List<io.dockstore.openapi.client.model.SourceFile> sourceFiles = workflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
+
+        // Check that filtering works
+        List<String> fileTypes = new ArrayList<>();
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_CWL.toString());
+        sourceFiles = workflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
+
+        fileTypes.clear();
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_WDL.toString());
+        sourceFiles = workflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(0, sourceFiles.size());
+
+        // Check that you can't retrieve a version's sourcefiles if it doesn't belong to the workflow
+        Workflow workflow2 = workflowsApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
+                        "test", "cwl", null);
+        workflow2 = workflowsApi.refresh(workflow2.getId());
+        WorkflowVersion workflow2Version = workflow2.getWorkflowVersions().get(0);
+        boolean throwsError = false;
+        try {
+            sourceFiles = workflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflow2Version.getId(), null);
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            fail("Should not be able to grab sourcefile for a version not belonging to a workflow");
+        }
+    }
+
     /**
      * We need an EntryVersionHelper instance so we can call EntryVersionHelper.writeStreamAsZip; getDAO never gets invoked.
      */
