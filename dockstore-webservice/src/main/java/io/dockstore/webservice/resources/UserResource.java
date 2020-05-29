@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -57,6 +58,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -75,6 +77,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -105,6 +108,9 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 /**
  * @author xliu
@@ -126,6 +132,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final BioWorkflowDAO bioWorkflowDAO;
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
+    private final LambdaEventDAO lambdaEventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
@@ -145,6 +152,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.toolDAO = new ToolDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -820,6 +828,19 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         });
 
         return getStrippedBioworkflows(userDAO.findById(user.getId()));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/github/events")
+    @Operation(operationId = "getUserGitHubEvents", description = "Get all of the GitHub Events for the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
+            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+        final User user = userDAO.findById(authUser.getId());
+        return lambdaEventDAO.findByUser(user, offset, limit);
     }
 
     @GET
