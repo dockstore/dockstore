@@ -796,8 +796,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
             @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
         final User user = userDAO.findById(authUser.getId());
-        if (!Objects.equals(userId, user.getId())) {
-            throw new CustomWebApplicationException("The user Id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
+        if (user == null || !Objects.equals(userId, user.getId())) {
+            throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
         }
         // Ignore hosted workflows
         List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
