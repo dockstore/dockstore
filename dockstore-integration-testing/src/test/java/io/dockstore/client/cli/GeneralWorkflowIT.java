@@ -619,7 +619,10 @@ public class GeneralWorkflowIT extends BaseIT {
         Assert.assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertEquals("Refresh should not have set it back to the automatic one", "testBoth", workflow.getDefaultVersion());
-
+        // Mimic version on Dockstore no longer present on GitHub
+        testingPostgres.runUpdateStatement("UPDATE workflowversion SET name = 'deletedGitHubBranch', reference ='deletedGitHubBranch' where name='testBoth'");
+        workflow = workflowsApi.refresh(workflow.getId());
+        Assert.assertEquals("the old default was deleted during refresh, it should automatically set the default version again", "master", workflow.getDefaultVersion());
     }
 
     /**
