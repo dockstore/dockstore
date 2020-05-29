@@ -83,8 +83,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
 
-    private final String bitbucketClientSecret;
-    private final String bitbucketClientID;
+    protected final String bitbucketClientSecret;
+    protected final String bitbucketClientID;
     private final Class<T> entityClass;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
@@ -106,19 +106,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.entityClass = clazz;
     }
 
-    protected List<Token> checkOnBitbucketToken(User user) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-        if (!tokens.isEmpty()) {
-            Token bitbucketToken = tokens.get(0);
-            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
-            String payload = "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
-            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
-        }
-
-        return tokenDAO.findByUserId(user.getId());
-    }
-
     /**
      * Finds all workflows from a general Dockstore path that are of type FULL
      * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
@@ -133,7 +120,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
-        List<Token> tokens = checkOnBitbucketToken(user);
+        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
 
         final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
         final String gitHubTokenContent = getToken(tokens, TokenType.GITHUB_COM);
