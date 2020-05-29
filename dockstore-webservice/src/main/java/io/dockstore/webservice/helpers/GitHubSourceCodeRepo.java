@@ -932,7 +932,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
-            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.", LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.",
+                    LAMBDA_FAILURE);
         }
 
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();

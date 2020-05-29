@@ -46,6 +46,7 @@ import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notification;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -87,6 +88,7 @@ import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
+import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
@@ -163,7 +165,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class,
-            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class) {
+            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -328,6 +330,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory(), httpClient));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));
