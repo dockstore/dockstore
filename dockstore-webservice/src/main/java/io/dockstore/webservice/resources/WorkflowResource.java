@@ -68,6 +68,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -114,6 +115,7 @@ import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -259,7 +261,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
 
-        List<Token> tokens = checkOnBitbucketToken(user);
+        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
 
         boolean foundAtLeastOneToken = false;
         for (TokenType type : TokenType.values()) {
@@ -905,11 +907,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}")
+    @Operation(operationId = "getWorkflowByPath", summary = "Get a workflow by path.", description = "Requires full path (including workflow name if applicable).", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a workflow by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
-    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
+            @Parameter(name = "services", description = "Whether to get a service or workflow", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "false")) @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
@@ -1852,7 +1856,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
 
         // Find matching source control
-        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -1909,7 +1913,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
-        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -1952,16 +1956,42 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-        @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
-        @ApiParam(value = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
-        @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
-        @ApiParam(value = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
+        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+        @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
+        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
         return githubWebhookRelease(repository, username, gitReference, installationId);
+    }
+
+    @POST
+    @Path("/github/install")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @Parameter(name = "repositories", description = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
+            @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+            @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        LOG.info("GitHub app installed on the repositories " + repositories + "(" + username + ")");
+        Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
+        Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
+            LambdaEvent lambdaEvent = new LambdaEvent();
+            lambdaEvent.setRepository(repository);
+            lambdaEvent.setGithubUsername(username);
+            lambdaEvent.setType(LambdaEvent.LambdaEventType.INSTALL);
+            triggerUser.ifPresent(lambdaEvent::setUser);
+            lambdaEventDAO.create(lambdaEvent);
+        });
+        return Response.status(HttpStatus.SC_OK).build();
     }
 
     @DELETE
@@ -1973,10 +2003,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
     public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
-            @ApiParam(value = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
-            @ApiParam(value = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference) {
+            @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
+            @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @QueryParam("username") String username,
+            @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
+            @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
-        githubWebhookDelete(repository, gitReference);
+        githubWebhookDelete(repository, gitReference, username, installationId);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 }

@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -50,11 +52,13 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -73,6 +77,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -86,6 +91,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -100,6 +106,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 /**
  * @author xliu
@@ -108,7 +119,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
-public class UserResource implements AuthenticatedResourceInterface {
+public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -121,13 +132,18 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final BioWorkflowDAO bioWorkflowDAO;
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
+    private final LambdaEventDAO lambdaEventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
     private SessionFactory sessionFactory;
 
+    private final String bitbucketClientSecret;
+    private final String bitbucketClientID;
+
+    @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
@@ -136,12 +152,15 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.toolDAO = new ToolDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
         this.cachingAuthenticator = cachingAuthenticator;
         this.client = client;
+        this.bitbucketClientID = configuration.getBitbucketClientID();
+        this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
     }
 
     @GET
@@ -484,10 +503,11 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/{organization}/refresh")
+    @Operation(operationId = "refreshWorkflowsByOrganization", description = "Refresh all workflows owned by the authenticated user with specified organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
     @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @Parameter(name = "organization", description = "Organization", required = true, in = ParameterIn.PATH) @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
 
         checkUser(authUser, userId);
 
@@ -508,9 +528,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "userWorkflows", description = "List all workflows owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
     @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+            @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         if (fetchedUser == null) {
@@ -552,6 +573,17 @@ public class UserResource implements AuthenticatedResourceInterface {
         final List<Workflow> services = getServices(user);
         EntryVersionHelper.stripContent(services, this.userDAO);
         return services;
+    }
+
+    private List<Workflow> getBioworkflows(User user) {
+        return workflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
+    }
+
+    // TODO: Replace with code similar to the new userWorkflows endpoint once it is optimised
+    private List<Workflow> getStrippedBioworkflows(User user) {
+        final List<Workflow> bioworkflows = getBioworkflows(user);
+        EntryVersionHelper.stripContent(bioworkflows, this.userDAO);
+        return bioworkflows;
     }
 
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
@@ -762,6 +794,55 @@ public class UserResource implements AuthenticatedResourceInterface {
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
+    @PATCH
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/workflows")
+    @ApiOperation(value = "Adds a user to any Dockstore workflows that they should have access to.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
+            @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
+        final User user = userDAO.findById(authUser.getId());
+        if (user == null || !Objects.equals(userId, user.getId())) {
+            throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
+        }
+        // Ignore hosted workflows
+        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
+                Collectors.toList());
+
+        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+                .stream()
+                .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
+                .collect(Collectors.toList());
+
+        scTokens.stream().forEach(token -> {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+            Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+
+            organizations.forEach(organization -> {
+                List<Workflow> workflows = workflowDAO.findByOrganization(token.getTokenSource().getSourceControl(), organization);
+                workflows.stream().forEach(workflow -> workflow.getUsers().add(user));
+            });
+        });
+
+        return getStrippedBioworkflows(userDAO.findById(user.getId()));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/github/events")
+    @Operation(operationId = "getUserGitHubEvents", description = "Get all of the GitHub Events for the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
+            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+        final User user = userDAO.findById(authUser.getId());
+        return lambdaEventDAO.findByUser(user, offset, limit);
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -826,7 +907,7 @@ public class UserResource implements AuthenticatedResourceInterface {
      * @return mapping of git url to repository path
      */
     private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
-        List<Token> scTokens = tokenDAO.findByUserId(user.getId())
+        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());

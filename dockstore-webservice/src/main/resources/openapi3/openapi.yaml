@@ -509,6 +509,28 @@ components:
         value:
           type: string
       type: object
+    LambdaEvent:
+      properties:
+        githubUsername:
+          type: string
+        id:
+          format: int64
+          type: integer
+        message:
+          type: string
+        reference:
+          type: string
+        repository:
+          type: string
+        success:
+          type: boolean
+        type:
+          enum:
+          - PUSH
+          - DELETE
+          - INSTALL
+          type: string
+      type: object
     Organization:
       properties:
         aliases:
@@ -2678,6 +2700,40 @@ paths:
       summary: Get a list of test JSONs
       tags:
       - GA4GHV20
+  /lambdaEvents/{organization}:
+    get:
+      description: Get all of the Lambda Events for the given GitHub organization.
+      operationId: getLambdaEventsByOrganization
+      parameters:
+      - in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          default: "0"
+          type: string
+      - in: query
+        name: limit
+        schema:
+          default: 100
+          format: int32
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LambdaEvent'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - lambdaEvents
   /metadata/config.json:
     get:
       description: Configuration, NO authentication
@@ -2962,7 +3018,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4022,6 +4078,34 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/github/events:
+    get:
+      description: Get all of the GitHub Events for the logged in user.
+      operationId: getUserGitHubEvents
+      parameters:
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          default: 100
+          format: int32
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LambdaEvent'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/registries:
     get:
       description: Get all of the git registries accessible to the logged in user.
@@ -4201,20 +4285,154 @@ paths:
           description: default response
       tags:
       - users
+  /users/{userId}/workflows:
+    get:
+      description: List all workflows owned by the authenticated user.
+      operationId: userWorkflows
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
+    patch:
+      description: Adds the logged-in user to any Dockstore workflows that they should
+        have access to.
+      operationId: addUserToDockstoreWorkflows
+      parameters:
+      - description: User to update
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: This is here to appease Swagger. It requires PATCH methods to
+          have a body, even if it is empty. Please leave it empty.
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
+  /users/{userId}/workflows/{organization}/refresh:
+    get:
+      description: Refresh all workflows owned by the authenticated user with specified
+        organization.
+      operationId: refreshWorkflowsByOrganization
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Organization
+        in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /workflows/github:
     delete:
       description: Handles the deletion of a branch on GitHub. Will delete all workflow
         versions that match in all workflows that share the same repository.
       operationId: handleGitHubBranchDeletion
       parameters:
-      - in: query
+      - description: Repository path (ex. dockstore/dockstore-ui2)
+        in: query
         name: repository
+        required: true
         schema:
           type: string
-      - in: query
+      - description: Username of user on GitHub who triggered action
+        in: query
+        name: username
+        required: true
+        schema:
+          type: string
+      - description: Full git reference for a GitHub branch/tag. Ex. refs/heads/master
+          or refs/tags/v1.0
+        in: query
         name: gitReference
+        required: true
         schema:
           type: string
+      - description: GitHub installation ID
+        in: query
+        name: installationId
+        required: true
+        schema:
+          type: string
+      responses:
+        "418":
+          description: This code tells AWS Lambda not to retry.
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/github/install:
+    post:
+      description: Handle the installation of our GitHub app onto a repository or
+        organization.
+      operationId: handleGitHubInstallation
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                installationId:
+                  type: string
+                repositories:
+                  type: string
+                username:
+                  type: string
+              required:
+              - installationId
+              - repositories
+              - username
+              type: object
       responses:
         "418":
           description: This code tells AWS Lambda not to retry.
@@ -4240,10 +4458,21 @@ paths:
                   type: string
                 username:
                   type: string
+              required:
+              - gitReference
+              - installationId
+              - repository
+              - username
               type: object
       responses:
-        "418":
-          description: This code tells AWS Lambda not to retry.
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
       security:
       - bearer: []
       tags:
@@ -4281,6 +4510,40 @@ paths:
       summary: Creates a new revision of a hosted workflow from a zip
       tags:
       - hosted
+  /workflows/path/workflow/{repository}:
+    get:
+      description: Requires full path (including workflow name if applicable).
+      operationId: getWorkflowByPath
+      parameters:
+      - description: Repository path
+        in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - description: 'Comma-delimited list of fields to include: validations, aliases'
+        in: query
+        name: include
+        schema:
+          type: string
+      - description: Whether to get a service or workflow
+        in: query
+        name: services
+        schema:
+          default: false
+          type: boolean
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - bearer: []
+      summary: Get a workflow by path.
+      tags:
+      - workflows
   /workflows/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}:
     delete:
       description: Delete a stubbed workflow for a registry and repository path.
@@ -4496,6 +4759,8 @@ tags:
   name: entries
 - description: Created and modify hosted entries in the dockstore
   name: hosted
+- description: Query lambda events triggered by GitHub Apps
+  name: lambdaEvents
 - description: Information about Dockstore like RSS, sitemap, lists of dependencies,
     etc.
   name: metadata
