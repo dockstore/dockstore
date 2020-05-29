@@ -275,6 +275,13 @@ public class WebhookIT extends BaseIT {
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals("Should fail because user cannot access org.", HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
+
+        // Try adding version with empty test parameter file (should work)
+        client.handleGitHubRelease("refs/heads/emptytestparameter", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
+
+        assertTrue("Should have emptytestparameter version that is valid", workflow2.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "emptytestparameter")).findFirst().get().isValid());
+
     }
 
     /**
