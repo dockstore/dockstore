@@ -3018,7 +3018,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4283,6 +4283,95 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: default response
+      tags:
+      - users
+  /users/{userId}/workflows:
+    get:
+      description: List all workflows owned by the authenticated user.
+      operationId: userWorkflows
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
+    patch:
+      description: Adds the logged-in user to any Dockstore workflows that they should
+        have access to.
+      operationId: addUserToDockstoreWorkflows
+      parameters:
+      - description: User to update
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: This is here to appease Swagger. It requires PATCH methods to
+          have a body, even if it is empty. Please leave it empty.
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
+  /users/{userId}/workflows/{organization}/refresh:
+    get:
+      description: Refresh all workflows owned by the authenticated user with specified
+        organization.
+      operationId: refreshWorkflowsByOrganization
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - description: Organization
+        in: path
+        name: organization
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Workflow'
+                type: array
+          description: default response
+      security:
+      - bearer: []
       tags:
       - users
   /workflows/github:

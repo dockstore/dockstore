@@ -85,6 +85,25 @@ public class UserResourceIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
+    @Test
+    public void testAddUserToOrgs() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
+        List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
+
+        // Remove an association with an entry
+        long numberOfWorkflows = workflows.size();
+        testingPostgres.runUpdateStatement("delete from user_entry where entryid = 951");
+        long newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
+        assertEquals("Should have one less workflow", numberOfWorkflows - 1, newNumberOfWorkflows);
+
+        // Add user back to workflow
+        workflows = userApi.addUserToDockstoreWorkflows((long)1, "");
+        newNumberOfWorkflows = workflows.size();
+        assertEquals("Should have the original number of workflows", numberOfWorkflows, newNumberOfWorkflows);
+        assertTrue("Should have the workflow DockstoreTestUser/dockstore-whalesay-2", workflows.stream().anyMatch(workflow -> Objects.equals("dockstore-whalesay-2", workflow.getRepository()) && Objects.equals("DockstoreTestUser", workflow.getOrganization())));
+    }
+
     @Test(expected = ApiException.class)
     public void testChangingNameFail() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
