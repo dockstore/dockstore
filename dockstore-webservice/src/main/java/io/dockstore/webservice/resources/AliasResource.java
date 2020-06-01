@@ -25,6 +25,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -33,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 @Path("/aliases")
 @Api("/aliases")
@@ -56,10 +61,11 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
     @Timed
     @UnitOfWork
     @Path("workflow-versions/{workflowVersionId}")
+    @Operation(operationId = "addAliases", description = "Add aliases linked to a workflow version in Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "addAliases", value = "Add aliases linked to a workflow version in Dockstore.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive "
             + "and may contain internal hyphens), given in a comma-delimited list.", response = WorkflowVersion.class)
-    public WorkflowVersion addAliases(@ApiParam(hidden = true) @Auth User user,
+    public WorkflowVersion addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "workflow version to modify.", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
             @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
         return addAliasesAndCheck(user, workflowVersionId, aliases, true);
@@ -69,10 +75,11 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("workflow-versions/{alias}")
+    @Operation(operationId = "getWorkflowVersionPathInfoByAlias", description = "Retrieves workflow version path information by alias.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieves workflow version path information by alias.", notes = OPTIONAL_AUTH_MESSAGE,
             response = WorkflowVersion.WorkflowVersionPathInfo.class, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public WorkflowVersion.WorkflowVersionPathInfo getWorkflowVersionPathInfoByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public WorkflowVersion.WorkflowVersionPathInfo getWorkflowVersionPathInfoByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth Optional<User> user,
             @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
 
         final WorkflowVersion workflowVersion = this.workflowVersionDAO.findByAlias(alias);

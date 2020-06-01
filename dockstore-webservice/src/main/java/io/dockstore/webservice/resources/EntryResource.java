@@ -66,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Prototype for methods that apply identically across tools and workflows.
@@ -109,9 +110,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork
     @Override
     @Path("/{id}/aliases")
+    @Operation(operationId = "addAliases", description = "Add aliases linked to a entry in Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "addAliases", value = "Add aliases linked to a entry in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Entry.class)
-    public Entry addAliases(@ApiParam(hidden = true) @Auth User user,
+    public Entry addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
                                @ApiParam(value = "Entry to modify.", required = true) @PathParam("id") Long id,
                                @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
         return AliasableResourceInterface.super.addAliases(user, id, aliases);
@@ -121,6 +123,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{id}/collections")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "entryCollections", description = "Get the collections and organizations that contain the published entry")
     @ApiOperation(value = "Get the collections and organizations that contain the published entry", notes = "Entry must be published", response = CollectionOrganization.class, responseContainer = "List")
     public List<CollectionOrganization> entryCollections(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);

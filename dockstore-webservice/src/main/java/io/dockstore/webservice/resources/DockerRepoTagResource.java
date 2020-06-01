@@ -98,8 +98,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{containerId}/tags")
+    @Operation(operationId = "getTagsByPath", description = "Get tags for a tool by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get tags for a tool by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "Set")
-    public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth User user,
+    public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
         return tool.getWorkflowVersions();
@@ -109,8 +110,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
+    @Operation(operationId = "updateTags", description = "Update the tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> updateTags(@ApiParam(hidden = true) @Auth User user,
+    public Set<Tag> updateTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of modified tags", required = true) List<Tag> tags) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
@@ -148,8 +150,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
+    @Operation(operationId = "addTags", description = "Add new tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add new tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> addTags(@ApiParam(hidden = true) @Auth User user,
+    public Set<Tag> addTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of new tags", required = true) List<Tag> tags) {
 
@@ -185,8 +188,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags/{tagId}")
+    @Operation(operationId = "deleteTags", description = "Delete tag linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete tag linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public Response deleteTags(@ApiParam(hidden = true) @Auth User user,
+    public Response deleteTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
@@ -225,8 +229,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @UnitOfWork
     @Beta
     @Path("/{containerId}/requestDOI/{tagId}")
+    @Operation(operationId = "requestDOIForToolTag", description = "Request a DOI for this version of a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Request a DOI for this version of a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Auth User user,
+    public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to request DOI.", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
