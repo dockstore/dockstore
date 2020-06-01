@@ -329,6 +329,37 @@ public class CRUDClientIT extends BaseIT {
         assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
     }
 
+    @Test
+    public void testValidHostedFileNames() throws IOException {
+        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
+        Workflow hostedWorkflow = api
+                .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.WDL.toString(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
+        file.setPath("/Dockstore.wdl");
+        SourceFile file2 = new SourceFile();
+        file2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
+        file2.setPath("/");
+        List sourceFiles = new ArrayList();
+        sourceFiles.add(file);
+        sourceFiles.add(file2);
+
+        String msg = "Files must have a name";
+        thrown.expectMessage(msg);
+        Workflow workflow = api.editHostedWorkflow(hostedWorkflow.getId(), sourceFiles);
+
+        sourceFiles.remove(file2);
+        file2.setPath("folder/");
+        sourceFiles.add(file2);
+        thrown.expectMessage(msg);
+        workflow = api.editHostedWorkflow(hostedWorkflow.getId(), sourceFiles);
+
+        sourceFiles.remove(file2);
+        file2.setPath("/name.wdl");
+        workflow = api.editHostedWorkflow(hostedWorkflow.getId(), sourceFiles);
+    }
+
     /**
      * Ensures that only valid descriptor types can be used to create a hosted tool
      */

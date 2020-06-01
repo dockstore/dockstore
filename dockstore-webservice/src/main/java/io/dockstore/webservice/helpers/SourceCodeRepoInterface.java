@@ -56,6 +56,8 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+
 /**
  * This defines the set of operations that is needed to interact with a particular
  * source code repository.
@@ -188,7 +190,7 @@ public abstract class SourceCodeRepoInterface {
         Service service = (Service)initializeWorkflow(repositoryId, new Service());
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
-        service.setDefaultWorkflowPath(".dockstore.yml");
+        service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         return service;
     }
 
@@ -675,6 +677,7 @@ public abstract class SourceCodeRepoInterface {
      * @return True if valid workflow version, false otherwise
      */
     private boolean isValidVersion(WorkflowVersion version) {
-        return version.getValidations().stream().allMatch(Validation::isValid);
+        return version.getValidations().stream().filter(validation -> !Objects.equals(validation.getType(),
+                DescriptorLanguage.FileType.DOCKSTORE_YML)).allMatch(Validation::isValid);
     }
 }

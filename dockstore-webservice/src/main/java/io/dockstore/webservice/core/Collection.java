@@ -2,8 +2,10 @@ package io.dockstore.webservice.core;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -139,7 +141,8 @@ public class Collection implements Serializable, Aliasable {
     }
 
     public Set<Entry> getEntries() {
-        return entries.stream().filter(entry -> entry.getIsPublished()).collect(Collectors.toSet());
+        return entries.stream().filter(entry -> entry.getIsPublished()).sorted(Comparator.comparing(Entry::getId)).collect(Collectors.toCollection(
+                LinkedHashSet::new));
     }
 
     public void setEntries(Set<Entry> entries) {

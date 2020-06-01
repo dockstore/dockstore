@@ -271,7 +271,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         return version;
     }
 
-
     /**
      * A workflow version is valid if it has a valid descriptor set and all valid test parameter files
      * @param version Workflow Version to validate

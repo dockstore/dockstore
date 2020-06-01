@@ -47,7 +47,7 @@
         <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.28.2</mockito.version>
-        <cwlavro.version>2.0.4.3</cwlavro.version>
+        <cwlavro.version>2.0.4.4</cwlavro.version>
         <okhttp.version>3.14.2</okhttp.version>
         <slf4j.version>1.7.26</slf4j.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
@@ -294,7 +294,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.6</version>
+                <version>1.8</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
@@ -423,7 +423,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.2</version>
+                <version>2.7</version>
             </dependency>
 
             <dependency>
@@ -733,7 +733,7 @@
             <dependency>
                 <groupId>io.dockstore</groupId>
                 <artifactId>zenodo-client-generated</artifactId>
-                <version>0.1</version>
+                <version>0.2</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>

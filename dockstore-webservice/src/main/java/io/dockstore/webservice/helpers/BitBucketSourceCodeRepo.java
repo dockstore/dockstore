@@ -249,17 +249,23 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             Branch branch = refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(repositoryId.split("/")[0], version.getReference(),
-                repositoryId.split("/")[0]);
-            Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
-                repositoryId.split("/")[0]);
+                repositoryId.split("/")[1]);
             if (branch != null) {
                 return branch.getTarget().getHash();
             }
+        } catch (ApiException ex) {
+            LOG.error(gitUsername + ": apiexception on reading branch commitid", ex);
+            // this is not so critical to warrant a http error code
+        }
+
+        try {
+            Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
+                    repositoryId.split("/")[1]);
             if (tag != null) {
                 return tag.getTarget().getHash();
             }
-        } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading commitid" + e.getMessage());
+        } catch (ApiException ex) {
+            LOG.error(gitUsername + ": apiexception on reading tag commitid", ex);
             // this is not so critical to warrant a http error code
         }
         return null;
@@ -308,6 +314,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         // Use default test parameter file if either new version or existing version that hasn't been edited
                         createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
                         workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+
+                        version.setCommitID(getCommitID(repositoryId, version));
 
                         version = versionValidation(version, workflow, calculatedPath);
                     }

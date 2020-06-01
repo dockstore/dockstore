@@ -24,10 +24,12 @@ import java.util.Optional;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -43,6 +45,7 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -954,7 +957,12 @@ public class BasicIT extends BaseIT {
         toRemove.add("notreal.cwl.json");
 
         toolsApi.addTestParameterFiles(existingTool.getId(), toAdd, "cwl", "", "master");
-        toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+        try {
+            toolsApi.deleteTestParameterFiles(existingTool.getId(), toRemove, "cwl", "master");
+            Assert.fail("Should've have thrown an error when deleting non-existent file");
+        } catch (ApiException e) {
+            assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
+        }
         toolsApi.refresh(existingTool.getId());
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", long.class);
@@ -1395,4 +1403,58 @@ public class BasicIT extends BaseIT {
             Assert.assertEquals("Entry not found", e.getMessage());
         }
     }
+
+    @Test
+    public void testGettingSourceFilesForTag() {
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        io.dockstore.openapi.client.api.ContainertagsApi toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(openAPIWebClient);
+
+        // Sourcefiles for tags
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", null);
+        Tag tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst().get();
+        tool = toolApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+
+        List<SourceFile> sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
+
+        // Check that filtering works
+        List<String> fileTypes = new ArrayList<>();
+        fileTypes.add(DescriptorLanguage.FileType.DOCKERFILE.toString());
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_CWL.toString());
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_WDL.toString());
+
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
+
+        fileTypes.remove(1);
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(2, sourceFiles.size());
+
+        fileTypes.clear();
+        fileTypes.add(DescriptorLanguage.FileType.NEXTFLOW_CONFIG.toString());
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(0, sourceFiles.size());
+
+        // Check that you can't grab a tag's sourcefiles if it doesn't belong to the tool.
+        DockstoreTool tool2 = manualRegisterAndPublish(toolApi, "dockstoretestuser", "private_test_repo", "tool1",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+        Tag tool2tag = tool2.getWorkflowVersions().get(0);
+        boolean throwsError = false;
+        try {
+            sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tool2tag.getId(), null);
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            Assert.fail("Should not be able to grab sourcefile for a version not belonging to a tool");
+        }
+    }
+
 }

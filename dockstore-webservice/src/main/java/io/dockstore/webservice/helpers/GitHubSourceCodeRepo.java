@@ -38,6 +38,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
@@ -51,6 +52,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -80,6 +82,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 
 /**
@@ -316,7 +319,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setGitUrl("git@github.com:" + repositoryId + ".git");
         service.setLastUpdated(new Date());
         service.setDescriptorType(DescriptorLanguage.SERVICE);
-        service.setDefaultWorkflowPath("/.dockstore.yml");
+        service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
 
         // Validate subclass
@@ -357,7 +360,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (UnsupportedOperationException ex) {
             throw new CustomWebApplicationException("The given descriptor type is not supported: " + subclass, LAMBDA_FAILURE);
         }
-        workflow.setDefaultWorkflowPath("/.dockstore.yml");
+        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         return workflow;
     }
 
@@ -375,8 +378,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
                 Triple<String, Date, String> referenceTriple = getRef(ref, repository);
-                if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
-                    references.add(referenceTriple);
+                if (referenceTriple != null) {
+                    if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
+                        references.add(referenceTriple);
+                    }
                 }
             }
         } catch (GHFileNotFoundException e) {
@@ -679,20 +684,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         version.setWorkflowPath(primaryDescriptorPath);
 
+        Map<String, String> validationMessage = new HashMap<>();
+
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
-            SourceFile file = new SourceFile();
-            file.setAbsolutePath(primaryDescriptorPath);
-            file.setPath(primaryDescriptorPath);
-            file.setContent(fileContent);
+            SourceFile primaryDescriptorFile = new SourceFile();
+            primaryDescriptorFile.setAbsolutePath(primaryDescriptorPath);
+            primaryDescriptorFile.setPath(primaryDescriptorPath);
+            primaryDescriptorFile.setContent(fileContent);
             DescriptorLanguage.FileType identifiedType = workflow.getDescriptorType().getFileType();
-            file.setType(identifiedType);
-            version.setWorkflowPath(primaryDescriptorPath);
+            primaryDescriptorFile.setType(identifiedType);
 
-            version = combineVersionAndSourcefile(repository.getFullName(), file, workflow, identifiedType, version, existingDefaults);
+            version = combineVersionAndSourcefile(repository.getFullName(), primaryDescriptorFile, workflow, identifiedType, version, existingDefaults);
 
             if (testParameterPaths != null) {
+                List<String> missingParamFiles = new ArrayList<>();
                 for (String testParameterPath : testParameterPaths) {
                     String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
                     if (testJsonContent != null) {
@@ -704,19 +711,29 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         testJson.setContent(testJsonContent);
 
                         // Only add test parameter file if it hasn't already been added
-                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch(
-                            (SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
+                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
                         if (!hasDuplicate) {
                             version.getSourceFiles().add(testJson);
                         }
+                    } else {
+                        missingParamFiles.add(testParameterPath);
                     }
+                }
+
+                if (missingParamFiles.size() > 0) {
+                    validationMessage.put(DOCKSTORE_YML_PATH, String.format("%s: %s.", missingParamFiles.size() == 1 ? "The following file is missing" : "The following files are missing",
+                            missingParamFiles.stream().map(paramFile -> String.format("'%s'", paramFile)).collect(Collectors.joining(", "))));
                 }
             }
         } else {
             // File not found or null
-            LOG.info("Could not find file " + primaryDescriptorPath + " in repo " + repository);
-            return null;
+            LOG.info("Could not find the file " + primaryDescriptorPath + " in repo " + repository);
+            validationMessage.put(DOCKSTORE_YML_PATH, "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.");
         }
+
+        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessage.isEmpty(), validationMessage);
+        Validation dockstoreYmlValidation = new Validation(DescriptorLanguage.FileType.DOCKSTORE_YML, dockstoreYmlValidationMessage);
+        version.addOrUpdateValidation(dockstoreYmlValidation);
 
         return version;
     }
@@ -728,20 +745,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @return dockstore YML file
      */
     public SourceFile getDockstoreYml(String repositoryId, String gitReference) {
-        String dockstoreYmlPath = "/.dockstore.yml";
         GHRepository repository;
         try {
             repository = getRepository(repositoryId);
         } catch (CustomWebApplicationException ex) {
             throw new CustomWebApplicationException("Could not find repository " + repositoryId + ".", LAMBDA_FAILURE);
         }
-        String dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
+        String dockstoreYmlContent = this.readFileFromRepo(DOCKSTORE_YML_PATH, gitReference, repository);
         if (dockstoreYmlContent != null) {
             // Create file for .dockstore.yml
             SourceFile dockstoreYml = new SourceFile();
             dockstoreYml.setContent(dockstoreYmlContent);
-            dockstoreYml.setPath(dockstoreYmlPath);
-            dockstoreYml.setAbsolutePath(dockstoreYmlPath);
+            dockstoreYml.setPath(DOCKSTORE_YML_PATH);
+            dockstoreYml.setAbsolutePath(DOCKSTORE_YML_PATH);
             dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
 
             return dockstoreYml;
@@ -916,7 +932,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
-            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.", LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.",
+                    LAMBDA_FAILURE);
         }
 
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();

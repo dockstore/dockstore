@@ -20,6 +20,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -39,6 +40,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -50,6 +52,7 @@ import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
@@ -75,12 +78,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final WorkflowVersionDAO workflowVersionDAO;
     protected final EventDAO eventDAO;
     protected final FileDAO fileDAO;
+    protected final LambdaEventDAO lambdaEventDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
 
-    private final String bitbucketClientSecret;
-    private final String bitbucketClientID;
+    protected final String bitbucketClientSecret;
+    protected final String bitbucketClientID;
     private final Class<T> entityClass;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
@@ -93,25 +97,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.fileDAO = new FileDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
         gitHubAppId = configuration.getGitHubAppId();
 
         this.entityClass = clazz;
-    }
-
-    protected List<Token> checkOnBitbucketToken(User user) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-        if (!tokens.isEmpty()) {
-            Token bitbucketToken = tokens.get(0);
-            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
-            String payload = "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
-            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
-        }
-
-        return tokenDAO.findByUserId(user.getId());
     }
 
     /**
@@ -128,7 +120,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
-        List<Token> tokens = checkOnBitbucketToken(user);
+        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
 
         final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
         final String gitHubTokenContent = getToken(tokens, TokenType.GITHUB_COM);
@@ -266,14 +258,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * - Delete version for corresponding service and workflow
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
+     * @param username Git user who triggered the event
+     * @param installationId GitHub App installation ID
      * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String gitReference) {
+    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username, String installationId) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
             String msg = "Reference " + gitReference + " is not of the valid form";
             LOG.error(msg);
+            sessionFactory.getCurrentSession().clear();
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.DELETE);
+            lambdaEvent.setMessage(msg);
+            lambdaEvent.setSuccess(false);
+            lambdaEventDAO.create(lambdaEvent);
+            sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
 
@@ -283,6 +283,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         // Delete all non-frozen versions that have the same git reference name
         workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
+        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.DELETE);
+        lambdaEventDAO.create(lambdaEvent);
         return workflows;
     }
 
@@ -316,17 +318,53 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     gitHubSourceCodeRepo, user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
+
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
+            lambdaEventDAO.create(lambdaEvent);
             return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
-            // TODO: Eventually want to record something to the database so that the user can know the type of lambda errors run into
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.info(msg, ex);
+            sessionFactory.getCurrentSession().clear();
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
+            lambdaEvent.setSuccess(false);
+            lambdaEvent.setMessage(ex.getMessage());
+            lambdaEventDAO.create(lambdaEvent);
+            sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
-        } catch (NullPointerException ex) {
+        } catch (Exception ex) {
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
+            sessionFactory.getCurrentSession().clear();
+            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, installationId, LambdaEvent.LambdaEventType.PUSH);
+            lambdaEvent.setSuccess(false);
+            lambdaEvent.setMessage(ex.getMessage());
+            lambdaEventDAO.create(lambdaEvent);
+            sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    /**
+     * Create a basic lambda event
+     * @param repository repository path
+     * @param gitReference full git reference (ex. refs/heads/master)
+     * @param username Username of GitHub user who triggered the event
+     * @param installationId The GitHub App Installation ID
+     * @param type Event type
+     * @return New lambda event
+     */
+    private LambdaEvent createBasicEvent(String repository, String gitReference, String username, String installationId, LambdaEvent.LambdaEventType type) {
+        LambdaEvent lambdaEvent = new LambdaEvent();
+        lambdaEvent.setRepository(repository);
+        lambdaEvent.setReference(gitReference);
+        lambdaEvent.setGithubUsername(username);
+        lambdaEvent.setType(type);
+        User user = userDAO.findByGitHubUsername(username);
+        if (user != null) {
+            lambdaEvent.setUser(user);
+        }
+        return lambdaEvent;
     }
 
     /**
@@ -418,7 +456,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
                 LOG.info("Converting workflow to DOCKSTORE_YML");
                 workflowToUpdate.setMode(DOCKSTORE_YML);
-                workflowToUpdate.setDefaultWorkflowPath("/.dockstore.yml");
+                workflowToUpdate.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
             }
         }
 
