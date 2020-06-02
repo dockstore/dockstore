@@ -620,9 +620,10 @@ public class DockerRepoResource
         checkUser(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
-
-        tool.getWorkflowVersions().clear();
+        deleteTool.setActualDefaultVersion(null);
         toolDAO.delete(tool);
+        tool.getWorkflowVersions().clear();
+        eventDAO.deleteEventByEntryID(tool.getId());
         tool = toolDAO.findById(containerId);
         if (tool == null) {
             PublicStateManager.getInstance().handleIndexUpdate(deleteTool, StateManagerMode.DELETE);
