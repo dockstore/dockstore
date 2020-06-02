@@ -29,6 +29,6 @@ public class Dockstore12Validator implements ConstraintValidator<ValidDockstore1
 
     @Override
     public boolean isValid(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
-        return !value.getServices().isEmpty() || !value.getWorkflows().isEmpty();
+        return value.getService() != null || !value.getWorkflows().isEmpty();
     }
 }

@@ -314,7 +314,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             final List<Workflow> workflows = new ArrayList();
-            workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getServices(), repository, gitReference,
+            workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
@@ -405,10 +405,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsFromDockstoreYml(List<Service12> services, String repository, String gitReference,
+    private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference,
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
-        for (Service12 service: services) {
+        if (service != null){
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
