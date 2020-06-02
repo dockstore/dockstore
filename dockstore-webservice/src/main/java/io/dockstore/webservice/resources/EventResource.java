@@ -47,6 +47,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.hibernate.Hibernate;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
@@ -85,17 +86,35 @@ public class EventResource {
         switch (eventSearchType) {
         case STARRED_ENTRIES:
             Set<Long> entryIDs = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-            return this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit);
+            List<Event> eventsByEntryIDs = this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit);
+            eagerLoadEventEntries(eventsByEntryIDs);
+            return eventsByEntryIDs;
         case STARRED_ORGANIZATION:
             Set<Long> organizationIDs = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
-            return this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit);
+            List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit);
+            eagerLoadEventEntries(allByOrganizationIds);
+            return allByOrganizationIds;
         case ALL_STARRED:
             Set<Long> organizationIDs2 = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
             Set<Long> entryIDs2 = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
-            return this.eventDAO.findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit);
+            List<Event> allByOrganizationIdsOrEntryIds = this.eventDAO
+                    .findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit);
+            eagerLoadEventEntries(allByOrganizationIdsOrEntryIds);
+            return allByOrganizationIdsOrEntryIds;
         default:
             return Collections.emptyList();
         }
+    }
+
+    private void eagerLoadEventEntries(List<Event> events) {
+        events.forEach(event -> {
+            Hibernate.initialize(event.getUser());
+            Hibernate.initialize(event.getOrganization());
+            Hibernate.initialize(event.getTool());
+            Hibernate.initialize(event.getWorkflow());
+            Hibernate.initialize(event.getCollection());
+            Hibernate.initialize(event.getInitiatorUser());
+        });
     }
 }
 

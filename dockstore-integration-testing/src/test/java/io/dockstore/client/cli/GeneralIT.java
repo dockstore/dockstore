@@ -548,6 +548,22 @@ public class GeneralIT extends BaseIT {
         return tool;
     }
 
+    @Test
+    public void testToolDelete() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+
+        DockstoreTool tool = createManualTool();
+        tool.setDefaultDockerfilePath("/testDir/Dockerfile");
+        tool.setDefaultCwlPath("/testDir/Dockstore.cwl");
+        tool.setDefaultWdlPath("/testDir/Dockstore.wdl");
+        tool.setGitUrl("git@github.com:dockstoretestuser2/quayandgithubalternate.git");
+        tool = toolApi.registerManual(tool);
+        tool = toolApi.refresh(tool.getId());
+
+        toolApi.deleteContainer(tool.getId());
+    }
+
     /**
      * Will test deleting a tag from a manually registered container
      */
