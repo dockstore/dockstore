@@ -297,6 +297,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // Why is the path not set here?
+        } catch (GHFileNotFoundException e) {
+            LOG.info(gitUsername + ": GitHub reports file not found: " + e.getCause().getLocalizedMessage());
+            throw new CustomWebApplicationException("GitHub reports file not found: " + e.getCause().getLocalizedMessage(), HttpStatus.SC_BAD_REQUEST);
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot getNewWorkflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub", HttpStatus.SC_SERVICE_UNAVAILABLE);
