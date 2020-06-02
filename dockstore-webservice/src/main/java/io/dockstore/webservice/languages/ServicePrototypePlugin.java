@@ -113,7 +113,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(contents);
             // TODO: Temporary; followup with https://github.com/dockstore/dockstore/issues/3356
             final Service12 service = dockstoreYaml12.getService();
-            if (service == null) {
+            if (service != null) {
                 final Service12 service12 = service;
                 metadata.setAuthor(service12.getAuthor());
                 metadata.setDescription(service12.getDescription());
