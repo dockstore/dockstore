@@ -29,7 +29,7 @@ public class YamlWorkflow {
     private String subclass;
     @NotNull
     private String primaryDescriptorPath;
-    @NotNull // But can be empty
+
     private List<String> testParameterFiles = new ArrayList<>();
 
     public String getName() {

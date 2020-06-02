@@ -28,6 +28,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
@@ -236,6 +237,12 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     public List<Workflow> findPublishedByOrganization(String organization) {
         return list(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
             .setParameter("organization", organization));
+    }
+
+    public List<Workflow> findByOrganization(SourceControl sourceControl, String organization) {
+        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
+                .setParameter("organization", organization)
+                .setParameter("sourceControl", sourceControl));
     }
 
     public Workflow findByAlias(String alias) {
