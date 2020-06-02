@@ -408,7 +408,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference,
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
-        if (service != null){
+        if (service != null) {
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
