@@ -113,7 +113,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Operation(operationId = "addAliases", description = "Add aliases linked to a entry in Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "addAliases", value = "Add aliases linked to a entry in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Entry.class)
-    public Entry addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Entry addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
                                @ApiParam(value = "Entry to modify.", required = true) @PathParam("id") Long id,
                                @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases) {
         return AliasableResourceInterface.super.addAliases(user, id, aliases);
@@ -141,7 +141,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiOperation(value = "Create a discourse topic for an entry.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     @Operation(description = "Create a discourse topic for an entry.", security = @SecurityRequirement(name = "bearer"))
-    public Entry setDiscourseTopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Entry setDiscourseTopic(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "The id of the entry to add a topic to.", required = true)
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
             @PathParam("id") Long id) {

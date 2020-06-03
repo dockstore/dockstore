@@ -100,7 +100,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Path("/path/{containerId}/tags")
     @Operation(operationId = "getTagsByPath", description = "Get tags for a tool by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get tags for a tool by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "Set")
-    public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
         return tool.getWorkflowVersions();
@@ -112,7 +112,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Path("/{containerId}/tags")
     @Operation(operationId = "updateTags", description = "Update the tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> updateTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Set<Tag> updateTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of modified tags", required = true) List<Tag> tags) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
@@ -152,7 +152,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Path("/{containerId}/tags")
     @Operation(operationId = "addTags", description = "Add new tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add new tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> addTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Set<Tag> addTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of new tags", required = true) List<Tag> tags) {
 
@@ -190,7 +190,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Path("/{containerId}/tags/{tagId}")
     @Operation(operationId = "deleteTags", description = "Delete tag linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete tag linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public Response deleteTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Response deleteTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
@@ -231,7 +231,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Path("/{containerId}/requestDOI/{tagId}")
     @Operation(operationId = "requestDOIForToolTag", description = "Request a DOI for this version of a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Request a DOI for this version of a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
-    public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to request DOI.", required = true) @PathParam("tagId") Long tagId) {
         Tool tool = findToolByIdAndCheckToolAndUser(containerId, user);
@@ -277,7 +277,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Path("{containerId}/tags/{tagId}/sourcefiles")
     @ApiOperation(value = "Retrieve sourcefiles for a container's version",  hidden = true)
     @Operation(operationId = "getTagsSourcefiles", description = "Retrieve sourcefiles for a container's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public SortedSet<SourceFile> getTagsSourceFiles(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth Optional<User> user,
+    public SortedSet<SourceFile> getTagsSourceFiles(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "containerId", description = "Container to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
             @Parameter(name = "tagId", description = "Tag to retrieve the sourcefiles from", required = true, in = ParameterIn.PATH) @PathParam("tagId") Long tagId,
             @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by") @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
