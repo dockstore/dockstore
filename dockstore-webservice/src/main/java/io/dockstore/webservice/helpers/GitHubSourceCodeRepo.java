@@ -616,13 +616,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         List<String> files;
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-            final List<Service12> services = dockstoreYaml12.getServices();
-            if (services.isEmpty()) {
-                LOG.info(".dockstore.yml has no services");
+            final Service12 service = dockstoreYaml12.getService();
+            if (service == null) {
+                LOG.info(".dockstore.yml has no service");
                 return null;
             }
             // TODO: Handle more than one service.
-            files = services.get(0).getFiles();
+            files = service.getFiles();
             // null catch due to .dockstore.yml files like https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "Invalid .dockstore.yml";
