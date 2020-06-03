@@ -526,12 +526,17 @@ components:
       type: object
     LambdaEvent:
       properties:
+        eventDate:
+          format: date-time
+          type: string
         githubUsername:
           type: string
         id:
           format: int64
           type: integer
         message:
+          type: string
+        organization:
           type: string
         reference:
           type: string
@@ -1606,7 +1611,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.0-alpha.9
+  version: 1.9.0-alpha.10-SNAPSHOT
 openapi: 3.0.1
 paths:
   /api/ga4gh/v1/tools:
@@ -3033,7 +3038,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []

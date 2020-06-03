@@ -75,7 +75,7 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         Root<LambdaEvent> event = query.from(LambdaEvent.class);
 
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.like(event.get("repository"), organization + "/%"));
+        predicates.add(cb.equal(event.get("organization"), organization));
         query.orderBy(cb.desc(event.get("id")));
         query.where(predicates.toArray(new Predicate[]{}));
 
