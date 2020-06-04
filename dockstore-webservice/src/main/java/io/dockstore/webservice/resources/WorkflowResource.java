@@ -1985,7 +1985,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
-            lambdaEvent.setRepository(repository);
+            String[] splitRepository = repository.split("/");
+            lambdaEvent.setOrganization(splitRepository[0]);
+            lambdaEvent.setRepository(splitRepository[1]);
             lambdaEvent.setGithubUsername(username);
             lambdaEvent.setType(LambdaEvent.LambdaEventType.INSTALL);
             triggerUser.ifPresent(lambdaEvent::setUser);
