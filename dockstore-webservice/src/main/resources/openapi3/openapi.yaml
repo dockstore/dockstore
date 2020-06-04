@@ -1749,7 +1749,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
       - bearer: []
@@ -2491,7 +2491,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
       - bearer: []
@@ -3645,7 +3645,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4568,7 +4568,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -4699,7 +4699,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -6153,13 +6153,9 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< HEAD
-                $ref: '#/components/schemas/Aliasable'
-=======
                 items:
                   $ref: '#/components/schemas/Tool'
                 type: array
->>>>>>> develop
           description: default response
       security:
       - bearer: []
