@@ -81,7 +81,7 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
     @UnitOfWork(readOnly = true)
     @Path("/dockerRegistries")
     @Operation(operationId = "getUserDockerRegistries", description = "Get all of the Docker registries accessible to the logged-in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public List<String> getUserDockerRegistries(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
+    public List<String> getUserDockerRegistries(@Parameter(hidden = true, name = "user")@Auth User authUser) {
         return tokenDAO.findByUserId(authUser.getId())
                 .stream()
                 .filter(token -> DOCKER_REGISTRY_TOKENS.contains(token.getTokenSource()))
@@ -94,7 +94,7 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
     @UnitOfWork(readOnly = true)
     @Path("/dockerRegistries/{dockerRegistry}/organizations")
     @Operation(operationId = "getDockerRegistriesOrganization", description = "Get all of the organizations/namespaces of the Docker registry accessible to the logged-in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public List<String> getDockerRegistryOrganization(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public List<String> getDockerRegistryOrganization(@Parameter(hidden = true, name = "user")@Auth User authUser,
             @Parameter(name = "dockerRegistry", description = DOCKER_REGISTRY_PARAM_DESCRIPTION, required = true, in = ParameterIn.PATH) @PathParam("dockerRegistry") String dockerRegistry) {
         List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
         if (!tokens.isEmpty()) {
@@ -121,7 +121,7 @@ public class UserResourceDockerRegistries implements AuthenticatedResourceInterf
     @UnitOfWork(readOnly = true)
     @Path("/dockerRegistries/{dockerRegistry}/organizations/{organization}/repositories")
     @Operation(operationId = "getDockerRegistryOrganizationRepositories", description = "Get names of repositories associated with a specific namespace and Docker registry of the logged-in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public List<String> getDockerRegistryOrganizationRepositories(@Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public List<String> getDockerRegistryOrganizationRepositories(@Parameter(hidden = true, name = "user")@Auth User authUser,
             @PathParam("dockerRegistry") @Parameter(name = "dockerRegistry", description = DOCKER_REGISTRY_PARAM_DESCRIPTION, required = true, in = ParameterIn.PATH) String dockerRegistry,
             @PathParam("organization") @Parameter(name = "organization", description = ORGANIZATION_PARAM_DESCRIPTION, required = true, in = ParameterIn.PATH) String organization) {
         List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
