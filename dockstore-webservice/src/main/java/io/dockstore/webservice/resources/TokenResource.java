@@ -86,6 +86,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
@@ -169,11 +170,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/{tokenId}")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "listToken", description = "Get a specific token by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a specific token by id.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
-    public Token listToken(@ApiParam(hidden = true) @Auth User user,
+    public Token listToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
         checkUser(user, token.getUserId());
@@ -185,8 +187,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/quay.io")
+    @Operation(operationId = "addQuayToken", description = "Add a new quay IO token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addQuayToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("access_token") String accessToken) {
+    public Token addQuayToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -225,9 +228,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @DELETE
     @Path("/{tokenId}")
     @UnitOfWork
+    @Operation(operationId = "deleteToken", description = "Delete a token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete a token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
-    public Response deleteToken(@ApiParam(hidden = true) @Auth User user,
+    public Response deleteToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
         checkUser(user, token.getUserId());
@@ -255,8 +259,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/gitlab.com")
+    @Operation(operationId = "addGitlabToken", description = "Add a new gitlab.com token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
+    public Token addGitlabToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("code") String code) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(GITLAB_URL + "oauth/token"),
                 new ClientParametersAuthentication(gitlabClientID, gitlabClientSecret), gitlabClientID, GITLAB_URL + "oauth/authorize")
@@ -349,9 +354,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/google")
+    @Operation(operationId = "addGoogleToken", description = "Allow satellizer to post a new Google token to Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Allow satellizer to post a new Google token to Dockstore.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the Google token", response = Token.class)
-    public Token addGoogleToken(@ApiParam(hidden = true) @Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
+    public Token addGoogleToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
@@ -455,6 +461,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github")
+    @Operation(operationId = "addToken", description = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
@@ -469,11 +476,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github.com")
+    @Operation(operationId = "addGithubToken", description = "Add a new github.com token, used by accounts page.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new github.com token, used by accounts page.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addGithubToken(@ApiParam(hidden = true) @Auth User authUser, @QueryParam("code") String code) {
+    public Token addGithubToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @QueryParam("code") String code) {
         // never create a new user via account linking page
         return handleGitHubUser(authUser, code, false);
     }
@@ -577,11 +585,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org")
+    @Operation(operationId = "addBitbucketToken", description = "Add a new bitbucket.org token, used by quay.io redirect.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addBitbucketToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
+    public Token addBitbucketToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("code") String code) {
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
         }
@@ -708,11 +717,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/zenodo.org")
+    @Operation(operationId = "addZenodoToken", description = "Add a new zenodo.org token, used by accounts page.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new zenodo.org token, used by accounts page.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addZenodoToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
+    public Token addZenodoToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("code") String code) {
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide a Zenodo access code", HttpStatus.SC_BAD_REQUEST);
         }
