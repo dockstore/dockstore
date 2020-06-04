@@ -165,8 +165,8 @@
             <column name="organization" type="TEXT"/>
         </addColumn>
         <sql dbms="postgresql">
-            UPDATE lambdaevent SET "organization" = split_part(repository,'/',0)
-            UPDATE lambdaevent SET "repository" = split_part(repository,'/',1)
+            UPDATE lambdaevent SET organization = split_part(repository,'/',1);
+            UPDATE lambdaevent SET repository = split_part(repository,'/',2);
         </sql>
     </changeSet>
 </databaseChangeLog>
