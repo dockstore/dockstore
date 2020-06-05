@@ -545,12 +545,17 @@ components:
       type: object
     LambdaEvent:
       properties:
+        eventDate:
+          format: date-time
+          type: string
         githubUsername:
           type: string
         id:
           format: int64
           type: integer
         message:
+          type: string
+        organization:
           type: string
         reference:
           type: string
@@ -1744,7 +1749,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
       - bearer: []
@@ -2486,7 +2491,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
       - bearer: []
@@ -3640,7 +3645,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -4563,7 +4568,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []
@@ -4694,7 +4699,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []

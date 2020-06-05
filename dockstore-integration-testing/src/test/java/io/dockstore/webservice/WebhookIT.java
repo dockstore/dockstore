@@ -264,7 +264,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should have event with ID 4", orgEvents.stream().anyMatch(lambdaEvent -> Objects.equals(4L, lambdaEvent.getId())));
 
         // Change organization to test filter
-        testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'DockstoreTestUser3/workflow-dockstore-yml' WHERE id = '1'");
+        testingPostgres.runUpdateStatement("UPDATE lambdaevent SET repository = 'workflow-dockstore-yml', organization = 'DockstoreTestUser3' WHERE id = '1'");
 
         orgEvents = lambdaEventsApi.getLambdaEventsByOrganization("DockstoreTestUser2", "0", 10);
         assertEquals("There should now be 5 events", 5, orgEvents.size());
