@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import java.util.Date;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -90,7 +91,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Override
     public Date getDate() {
-        return this.getLastBuilt();
+        return Stream.of(this.getLastBuilt(), this.getDbCreateDate()).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     @Override
