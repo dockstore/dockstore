@@ -152,7 +152,9 @@ public class CRUDClientIT extends BaseIT {
         first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
+        // Default version automatically updated to the latest version (3).
         dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "3");
+        assertEquals("Default version should have updated to the next newest one", "2", dockstoreTool.getDefaultVersion());
         assertEquals("should only be two revisions", 2, dockstoreTool.getWorkflowVersions().size());
 
         //check that all revisions have editing users
