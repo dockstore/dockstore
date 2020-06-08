@@ -114,8 +114,9 @@ import static org.junit.Assert.fail;
  */
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class WorkflowIT extends BaseIT {
+    public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
+        SourceControl.GITHUB.toString() + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW =
@@ -210,8 +211,13 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+        Workflow workflow1 = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        workflowApi.refresh(workflow1.getId());
+
+        final List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -235,8 +241,11 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
-        workflows.addAll(usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2"));
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -393,7 +402,9 @@ public class WorkflowIT extends BaseIT {
         // Test json is cleared after an organization refresh
         UsersApi usersApi = new UsersApi(webClient);
         long userId = 1;
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+        workflow = workflowApi.refresh(workflow.getId());
+
+        final List<Workflow> workflows = usersApi.userWorkflows(userId);
         branchDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
         assertNull(branchDagJson);
         branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
@@ -745,9 +756,15 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
-        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser"));
-        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "dockstoretesting"));
+
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        List<Workflow> workflows = usersApi.userWorkflows(userId);
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
@@ -764,7 +781,6 @@ public class WorkflowIT extends BaseIT {
         long nfWorkflowCount = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
         assertTrue("Nextflow workflow not found", nfWorkflowCount > 0);
         Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
         mtaNf.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
@@ -832,7 +848,13 @@ public class WorkflowIT extends BaseIT {
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
-        usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
 
         assertTrue("should remain with nothing published ",
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
@@ -1361,9 +1383,6 @@ public class WorkflowIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
-
-        // Get workflows
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
 
         // Manually register workflow
         boolean success = true;

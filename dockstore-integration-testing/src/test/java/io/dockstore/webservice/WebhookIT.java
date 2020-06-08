@@ -33,7 +33,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.LambdaEvent;
-import io.swagger.client.model.User;
 import io.swagger.client.model.Validation;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
@@ -143,9 +142,7 @@ public class WebhookIT extends BaseIT {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
 
-        // Refresh org should not throw a failure even though you cannot refresh the Dockstore.yml workflow
-        User user = usersApi.getUser();
-        List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+        List<Workflow> workflows = usersApi.addUserToDockstoreWorkflows(usersApi.getUser().getId(), "");
         assertTrue("There should still be a dockstore.yml workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.DOCKSTORE_YML)));
         assertTrue("There should be at least one stub workflow", workflows.stream().anyMatch(wf -> Objects.equals(wf.getMode(), Workflow.ModeEnum.STUB)));
 

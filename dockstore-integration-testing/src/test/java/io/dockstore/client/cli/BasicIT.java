@@ -182,12 +182,12 @@ public class BasicIT extends BaseIT {
     @Test
     public void testRefreshWorkflow() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
-        UsersApi usersApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
-        // Refresh all
-        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
-        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
+
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);

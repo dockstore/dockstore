@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
@@ -64,11 +65,9 @@ public class ExtendedNextflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
 
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser");
-
-        for (Workflow workflow : workflows) {
-            assertNotSame("", workflow.getWorkflowName());
-        }
+        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        assertNotSame("", workflow.getWorkflowName());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null, false);
@@ -102,8 +101,8 @@ public class ExtendedNextflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
         // get workflow stubs
-        usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser");
-        usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2");
+        workflowApi.manualRegister(SourceControl.BITBUCKET.toString(), "dockstore_testuser2/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
         Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
@@ -170,8 +169,17 @@ public class ExtendedNextflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
         // get workflow stubs
-        usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser");
-        usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2");
+
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "DockstoreTestUser/kallisto-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
+
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, false);
