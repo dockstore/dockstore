@@ -390,7 +390,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         // If the version that's about to be deleted is the default version, unset it
         if (entry.getActualDefaultVersion().getName().equals(version)) {
             Optional<U> max = entry.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), version))
-                    .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
+                    .max(Comparator.comparingLong(ver -> ver.getDbCreateDate().getTime()));
             entry.setActualDefaultVersion(max.orElse(null));
         }
         entry.getWorkflowVersions().removeIf(v -> Objects.equals(v.getName(), version));
