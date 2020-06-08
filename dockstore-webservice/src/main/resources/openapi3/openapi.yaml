@@ -545,12 +545,17 @@ components:
       type: object
     LambdaEvent:
       properties:
+        eventDate:
+          format: date-time
+          type: string
         githubUsername:
           type: string
         id:
           format: int64
           type: integer
         message:
+          type: string
+        organization:
           type: string
         reference:
           type: string
@@ -1700,7 +1705,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.0-alpha.10-SNAPSHOT
+  version: 1.9.0-alpha.10
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -1744,7 +1749,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
       - bearer: []
@@ -4694,7 +4699,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -6609,7 +6614,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
       - bearer: []

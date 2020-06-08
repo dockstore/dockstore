@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.9.0-alpha.10-SNAPSHOT"
+  version: "1.9.0-alpha.10"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -7104,37 +7104,46 @@ definitions:
     type: "object"
     required:
     - "githubUsername"
+    - "organization"
     - "reference"
     - "repository"
     - "type"
     properties:
+      eventDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       id:
         type: "integer"
         format: "int64"
         description: "Unique ID of the event."
+      organization:
+        type: "string"
+        position: 1
+        description: "The organization from the event."
       repository:
         type: "string"
         position: 1
         description: "The repository from the event."
       githubUsername:
         type: "string"
-        position: 2
+        position: 3
         description: "The name of the user on GitHub that triggers the event."
       reference:
         type: "string"
-        position: 3
+        position: 4
         description: "The git reference from the event."
       success:
         type: "boolean"
-        position: 4
+        position: 5
         description: "Whether or not the event was successful."
       message:
         type: "string"
-        position: 5
+        position: 6
         description: "The message associated with the event."
       type:
         type: "string"
-        position: 6
+        position: 7
         description: "The type of event."
         enum:
         - "PUSH"

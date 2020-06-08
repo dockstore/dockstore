@@ -17,6 +17,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -42,33 +43,37 @@ public class LambdaEvent {
     private long id;
 
     @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "The organization from the event.", required = true, position = 1)
+    private String organization;
+
+    @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "The repository from the event.", required = true, position = 1)
     private String repository;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The name of the user on GitHub that triggers the event.", required = true, position = 2)
+    @ApiModelProperty(value = "The name of the user on GitHub that triggers the event.", required = true, position = 3)
     private String githubUsername;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The git reference from the event.", required = true, position = 3)
+    @ApiModelProperty(value = "The git reference from the event.", required = true, position = 4)
     private String reference;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
-    @ApiModelProperty(value = "Whether or not the event was successful.", position = 4)
+    @ApiModelProperty(value = "Whether or not the event was successful.", position = 5)
     private boolean success = true;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "The message associated with the event.", position = 5)
+    @ApiModelProperty(value = "The message associated with the event.", position = 6)
     private String message;
 
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "The type of event.", required = true, position = 6)
+    @ApiModelProperty(value = "The type of event.", required = true, position = 7)
     private LambdaEventType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", referencedColumnName = "id")
-    @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 7)
+    @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
     @JsonIgnore
     private User user;
 
@@ -80,12 +85,25 @@ public class LambdaEvent {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    @JsonProperty("eventDate")
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
     public long getId() {
         return id;
     }
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
     }
 
     public String getRepository() {
