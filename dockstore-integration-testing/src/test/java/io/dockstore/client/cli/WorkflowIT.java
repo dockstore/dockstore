@@ -50,6 +50,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.ImageData;
+import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -213,9 +214,10 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        Workflow workflow1 = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        workflowApi.refresh(workflow1.getId());
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
+                "/test.json");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
 
         final List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
@@ -241,10 +243,10 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "",
+                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+        workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "",
+                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
         List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
         for (Workflow workflow : workflows) {
@@ -756,14 +758,11 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
-
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
+        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        refreshByOrganizationReplacement(workflowApi, openAPIWebClient);
+
         List<Workflow> workflows = usersApi.userWorkflows(userId);
 
         // Check that there are multiple workflows
@@ -832,6 +831,20 @@ public class WorkflowIT extends BaseIT {
 
     }
 
+    private void refreshByOrganizationReplacement(WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
+        io.dockstore.openapi.client.api.UsersApi openUsersApi = new io.dockstore.openapi.client.api.UsersApi(openAPIWebClient);
+        for (SourceControl control : SourceControl.values()) {
+            List<String> userOrganizations = openUsersApi.getUserOrganizations(control.name());
+            for (String org : userOrganizations) {
+                List<Repository> userOrganizationRepositories = openUsersApi.getUserOrganizationRepositories(control.name(), org);
+                for (Repository repo : userOrganizationRepositories) {
+                    workflowApi.manualRegister(control.name(), repo.getPath(), "/Dockstore.cwl", "",
+                            DescriptorLanguage.CWL.getLowerShortName(), "");
+                }
+            }
+        }
+    }
+
     /**
      * This test does not use admin rights, note that a number of operations go through the UserApi to get this to work
      *
@@ -841,20 +854,15 @@ public class WorkflowIT extends BaseIT {
     public void testPublishingAndListingOfPublished() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
 
         // should start with nothing published
         assertTrue("should start with nothing published ",
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
 
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        refreshByOrganizationReplacement(workflowApi, openAPIWebClient);
 
         assertTrue("should remain with nothing published ",
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
