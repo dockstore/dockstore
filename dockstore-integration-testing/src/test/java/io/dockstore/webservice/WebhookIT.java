@@ -26,6 +26,7 @@ import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.swagger.client.ApiClient;
@@ -49,6 +50,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -102,6 +104,8 @@ public class WebhookIT extends BaseIT {
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), workflowRepo, "/Dockstore.wdl",
                 "foobar", "wdl", "/test.json");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
+                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
         
         // Refresh should work
         workflow = workflowApi.refresh(workflow.getId());
