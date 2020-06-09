@@ -442,6 +442,9 @@ public class CRUDClientIT extends BaseIT {
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
         // Update the default version of the tool
         containersApi.updateToolDefaultVersion(hostedTool.getId(), first.get().getName());
+
+        // test deletion of hosted tool for #3171
+        containersApi.deleteContainer(hostedTool.getId());
     }
 
     /**
