@@ -143,10 +143,6 @@ public enum DescriptorLanguage {
         return shortName;
     }
 
-    public String getLowerShortName() {
-        return shortName.toLowerCase();
-    }
-
     public String getFriendlyName() {
         return friendlyName;
     }
