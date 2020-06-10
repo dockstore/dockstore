@@ -118,7 +118,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repo = github.getRepository(repositoryId);
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + fileName + " " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFile while trying to get the repository " + repositoryId + " " + e.getMessage());
             return null;
         }
         return readFileFromRepo(fileName, reference, repo);
@@ -180,7 +180,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return decodedContentAndMetadata.getRight();
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFileFromRepo " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage());
             return null;
         } finally {
             GHRateLimit endRateLimit = getGhRateLimitQuietly();

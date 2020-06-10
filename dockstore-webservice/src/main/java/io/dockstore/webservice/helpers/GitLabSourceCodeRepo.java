@@ -73,7 +73,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, fileName, reference);
             return new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOG.error("could not read file " + fileName + " on " + reference);
+            LOG.error(gitUsername + ": IOException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
         }
         return null;
     }

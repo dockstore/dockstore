@@ -97,7 +97,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": FOUND: {}", fileName);
             return fileContent;
         } catch (ApiException e) {
-            LOG.error("unable to readFile: " + fileName);
+            LOG.error(gitUsername + ": ApiException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
             return null;
         }
     }
