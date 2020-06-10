@@ -132,7 +132,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
             return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
             return null;
         }
     }
@@ -860,7 +860,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage());
             // this is not so critical to warrant a http error code
         }
     }
@@ -879,7 +879,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage());
             // this is not so critical to warrant a http error code
         }
         return null;
