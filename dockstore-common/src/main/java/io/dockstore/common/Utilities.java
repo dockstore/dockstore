@@ -83,17 +83,16 @@ public final class Utilities {
     }
 
     public static ImmutablePair<String, String> executeCommand(String command) {
-        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), null);
+        return executeCommand(command, null);
     }
 
     public static ImmutablePair<String, String> executeCommand(String command, File workingDir) {
-        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), workingDir);
+        return executeCommand(command, workingDir, DEFAULT_TIMEOUT_MILLISECONDS);
     }
 
     public static ImmutablePair<String, String> executeCommand(String command, File workingDir, long timeout) {
         return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), workingDir, timeout);
     }
-
 
     public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream) {
         return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), null);
