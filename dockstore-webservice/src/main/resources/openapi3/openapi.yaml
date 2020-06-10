@@ -1749,7 +1749,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -2450,11 +2450,6 @@ paths:
         name: entryName
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -2481,11 +2476,6 @@ paths:
         name: version
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -2511,7 +2501,10 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/User'
+              items:
+                $ref: '#/components/schemas/SourceFile'
+              type: array
+              uniqueItems: true
       responses:
         default:
           content:
@@ -4568,7 +4561,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
       - bearer: []
@@ -6604,11 +6597,6 @@ paths:
         name: entryName
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -6635,11 +6623,6 @@ paths:
         name: version
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -6665,7 +6648,10 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/User'
+              items:
+                $ref: '#/components/schemas/SourceFile'
+              type: array
+              uniqueItems: true
       responses:
         default:
           content:
