@@ -54,7 +54,7 @@ public final class Utilities {
     private static final Map<String, ConfigurationBuilder<INIConfiguration>> MAP = new HashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
-    private static final long DEFAULT_TIMEOUT = 60000;
+    private static final long DEFAULT_TIMEOUT_MILLISECONDS = 60000;
 
     private Utilities() {
         // hide the default constructor for a utility class
@@ -86,8 +86,12 @@ public final class Utilities {
         return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), null);
     }
 
-    public static ImmutablePair<String, String> executeCommand(String command, File workingDir, long timeout) {
+    public static ImmutablePair<String, String> executeCommand(String command, File workingDir) {
         return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), workingDir);
+    }
+
+    public static ImmutablePair<String, String> executeCommand(String command, File workingDir, long timeout) {
+        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), workingDir, timeout);
     }
 
 
@@ -101,7 +105,7 @@ public final class Utilities {
 
     public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream,
             File workingDir, Map<String, String> additionalEnvironment) {
-        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), workingDir, additionalEnvironment, DEFAULT_TIMEOUT);
+        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), workingDir, additionalEnvironment, DEFAULT_TIMEOUT_MILLISECONDS);
     }
 
     /**
@@ -112,7 +116,7 @@ public final class Utilities {
      */
     private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
             Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir) {
-        return executeCommand(command, dumpOutput, stdoutStream, stderrStream, workingDir, null, DEFAULT_TIMEOUT);
+        return executeCommand(command, dumpOutput, stdoutStream, stderrStream, workingDir, null, DEFAULT_TIMEOUT_MILLISECONDS);
     }
 
     /**
