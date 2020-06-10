@@ -54,7 +54,7 @@ public final class Utilities {
     private static final Map<String, ConfigurationBuilder<INIConfiguration>> MAP = new HashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
-    private static final long DEFAULT_TIMEOUT = 20000;
+    private static final long DEFAULT_TIMEOUT = 60000;
 
     private Utilities() {
         // hide the default constructor for a utility class
