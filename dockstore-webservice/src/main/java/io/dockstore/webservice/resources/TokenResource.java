@@ -388,6 +388,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             if (authUser.isPresent()) {
                 userID = authUser.get().getId();
             } else if (user != null) {
+                if (user.isCurator() || user.getIsAdmin()) {
+                    throw new CustomWebApplicationException("Admins and curators may not login with Google", HttpStatus.SC_UNAUTHORIZED);
+                }
                 userID = user.getId();
             } else {
                 throw new CustomWebApplicationException("Login failed, you may need to register an account", HttpStatus.SC_UNAUTHORIZED);
