@@ -2428,7 +2428,7 @@ paths:
   /containers/hostedEntry:
     post:
       description: Create a hosted tool.
-      operationId: createHosted_1
+      operationId: createHostedTool_1
       parameters:
       - in: query
         name: registry
@@ -2464,7 +2464,7 @@ paths:
   /containers/hostedEntry/{entryId}:
     delete:
       description: Delete a revision of a hosted tool.
-      operationId: deleteHostedVersion_1
+      operationId: deleteHostedToolVersion_1
       parameters:
       - in: path
         name: entryId
@@ -2489,7 +2489,7 @@ paths:
       - hosted
     patch:
       description: Non-idempotent operation for creating new revisions of hosted tools.
-      operationId: editHosted
+      operationId: editHostedTool
       parameters:
       - in: path
         name: entryId
@@ -6575,7 +6575,7 @@ paths:
   /workflows/hostedEntry:
     post:
       description: Create a hosted workflow.
-      operationId: createHosted_2
+      operationId: createHostedWorkflow_1
       parameters:
       - in: query
         name: registry
@@ -6611,7 +6611,7 @@ paths:
   /workflows/hostedEntry/{entryId}:
     delete:
       description: Delete a revision of a hosted workflow.
-      operationId: deleteHostedVersion_2
+      operationId: deleteHostedWorkflowVersion_1
       parameters:
       - in: path
         name: entryId
@@ -6636,7 +6636,7 @@ paths:
       - hosted
     patch:
       description: Non-idempotent operation for creating new revisions of hosted workflows
-      operationId: editHosted_1
+      operationId: editHostedWorkflow
       parameters:
       - in: path
         name: entryId
