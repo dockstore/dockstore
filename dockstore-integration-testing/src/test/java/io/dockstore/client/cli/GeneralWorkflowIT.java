@@ -1148,7 +1148,7 @@ public class GeneralWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
 
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/parameter_test_workflow", "testname", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/parameter_test_workflow", "testname", DescriptorLanguage.CWL.getShortName(),
                 SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Check that user has been updated

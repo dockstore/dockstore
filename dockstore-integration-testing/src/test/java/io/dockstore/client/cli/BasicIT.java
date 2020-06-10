@@ -59,6 +59,7 @@ import org.junit.experimental.categories.Category;
 import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -175,6 +176,24 @@ public class BasicIT extends BaseIT {
             Assert.assertEquals("there should be no change in count of tools", secondToolCount, thirdToolCount);
         }
     }
+
+    /**
+     * Tests that registration works with non-short names
+     */
+    @Test
+    public void testRegistrationWithNonLowerCase() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+
+        // refresh a specific workflow
+        Workflow workflow = workflowsApi
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+        workflow = workflowsApi.refresh(workflow.getId());
+        assertFalse(workflow.getWorkflowVersions().isEmpty());
+    }
+
 
     /**
      * Tests that refresh workflows works, also that refreshing without a github token should not destroy workflows or their existing versions
