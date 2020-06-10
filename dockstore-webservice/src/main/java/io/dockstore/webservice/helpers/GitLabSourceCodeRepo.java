@@ -85,7 +85,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             List<GitlabRepositoryTree> repositoryTree = gitlabAPI.getRepositoryTree(project, pathToDirectory, reference, false);
             return repositoryTree.stream().map(GitlabRepositoryTree::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error("could not read directory listing " + pathToDirectory + " on " + reference);
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
         }
         return Lists.newArrayList();
     }

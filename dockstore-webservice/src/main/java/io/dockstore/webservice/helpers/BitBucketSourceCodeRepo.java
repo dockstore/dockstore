@@ -124,7 +124,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return files;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
             return null;
         }
     }
