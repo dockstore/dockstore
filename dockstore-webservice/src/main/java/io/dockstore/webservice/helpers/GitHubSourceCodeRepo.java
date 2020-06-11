@@ -119,7 +119,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             repo = github.getRepository(repositoryId);
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on readFile while trying to get the repository " + repositoryId + " " + e.getMessage());
-            return null;
+            throw new CustomWebApplicationException("Could not get repository " + repositoryId + " from GitHub.", HttpStatus.SC_BAD_REQUEST);
         }
         return readFileFromRepo(fileName, reference, repo);
     }
