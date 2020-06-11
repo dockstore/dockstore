@@ -68,6 +68,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -121,7 +122,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry")
     @Timed
     @UnitOfWork
-    public T createHosted(@ApiParam(hidden = true) @Auth User user,
+    public T createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
         @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
         @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") String descriptorType,
@@ -179,7 +180,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
-    public T editHosted(@ApiParam(hidden = true) @Auth User user,
+    public T editHosted(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
@@ -380,7 +381,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
-    public T deleteHostedVersion(@ApiParam(hidden = true) @Auth User user,
+    public T deleteHostedVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
         T entry = getEntryDAO().findById(entryId);
