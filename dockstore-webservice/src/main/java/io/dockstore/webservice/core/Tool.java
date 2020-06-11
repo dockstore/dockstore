@@ -148,7 +148,7 @@ public class Tool extends Entry<Tool, Tag> {
 
     @JsonIgnore
     @OneToOne(targetEntity = Tag.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id")
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
     private Tag actualDefaultVersion;
 
     @Transient
