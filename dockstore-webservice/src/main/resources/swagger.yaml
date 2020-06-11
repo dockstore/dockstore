@@ -4770,37 +4770,6 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /users/{userId}/workflows/{organization}/refresh:
-    get:
-      tags:
-      - "users"
-      summary: "Refresh all workflows owned by the authenticated user with specified\
-        \ organization."
-      description: ""
-      operationId: "refreshWorkflowsByOrganization"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "organization"
-        in: "path"
-        description: "Organization"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /workflows/github:
     delete:
       tags:

@@ -50,6 +50,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.ImageData;
+import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -114,8 +115,9 @@ import static org.junit.Assert.fail;
  */
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class WorkflowIT extends BaseIT {
+    public static final String DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME = "DockstoreTestUser2/hello-dockstore-workflow";
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
+        SourceControl.GITHUB.toString() + "/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW =
@@ -148,8 +150,6 @@ public class WorkflowIT extends BaseIT {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    private final String clientConfig = ResourceHelpers.resourceFilePath("clientConfig");
-    private final String jsonFilePath = ResourceHelpers.resourceFilePath("wc-job.json");
 
     private WorkflowDAO workflowDAO;
     private WorkflowVersionDAO workflowVersionDAO;
@@ -210,8 +210,14 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
+                "/test.json");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+
+        final List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -235,8 +241,11 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(user.getId(), "DockstoreTestUser2");
-        workflows.addAll(usersApi.refreshWorkflowsByOrganization(user.getId(), "dockstore_testuser2"));
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
+                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+        workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "",
+                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+        List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
         for (Workflow workflow : workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -310,7 +319,7 @@ public class WorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
 
-        Workflow workflow = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl", SourceControl.GITHUB,
+        Workflow workflow = manualRegisterAndPublish(workflowApi, DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "", "cwl", SourceControl.GITHUB,
             "/Dockstore.cwl", false);
 
         // using hosted apis to delete normal workflow should fail
@@ -393,7 +402,9 @@ public class WorkflowIT extends BaseIT {
         // Test json is cleared after an organization refresh
         UsersApi usersApi = new UsersApi(webClient);
         long userId = 1;
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+        workflow = workflowApi.refresh(workflow.getId());
+
+        final List<Workflow> workflows = usersApi.userWorkflows(userId);
         branchDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
         assertNull(branchDagJson);
         branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
@@ -745,9 +756,12 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(webClient);
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
-        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser"));
-        workflows.addAll(usersApi.refreshWorkflowsByOrganization(userId, "dockstoretesting"));
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        refreshByOrganizationReplacement(workflowApi, openAPIWebClient);
+
+        List<Workflow> workflows = usersApi.userWorkflows(userId);
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
@@ -764,7 +778,6 @@ public class WorkflowIT extends BaseIT {
         long nfWorkflowCount = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
         assertTrue("Nextflow workflow not found", nfWorkflowCount > 0);
         Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
         mtaNf.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
@@ -816,6 +829,20 @@ public class WorkflowIT extends BaseIT {
 
     }
 
+    private void refreshByOrganizationReplacement(WorkflowsApi workflowApi, io.dockstore.openapi.client.ApiClient openAPIWebClient) {
+        io.dockstore.openapi.client.api.UsersApi openUsersApi = new io.dockstore.openapi.client.api.UsersApi(openAPIWebClient);
+        for (SourceControl control : SourceControl.values()) {
+            List<String> userOrganizations = openUsersApi.getUserOrganizations(control.name());
+            for (String org : userOrganizations) {
+                List<Repository> userOrganizationRepositories = openUsersApi.getUserOrganizationRepositories(control.name(), org);
+                for (Repository repo : userOrganizationRepositories) {
+                    workflowApi.manualRegister(control.name(), repo.getPath(), "/Dockstore.cwl", "",
+                            DescriptorLanguage.CWL.getLowerShortName(), "");
+                }
+            }
+        }
+    }
+
     /**
      * This test does not use admin rights, note that a number of operations go through the UserApi to get this to work
      *
@@ -825,14 +852,15 @@ public class WorkflowIT extends BaseIT {
     public void testPublishingAndListingOfPublished() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
 
         // should start with nothing published
         assertTrue("should start with nothing published ",
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-        usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
+
+        refreshByOrganizationReplacement(workflowApi, openAPIWebClient);
 
         assertTrue("should remain with nothing published ",
             workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
@@ -862,7 +890,7 @@ public class WorkflowIT extends BaseIT {
         assertNotNull("did not get published workflow", publishedWorkflowByPath);
 
         // publish everything so pagination testing makes more sense (going to unfortunately use rate limit)
-        Lists.newArrayList("github.com/DockstoreTestUser2/hello-dockstore-workflow",
+        Lists.newArrayList("github.com/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
             "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "github.com/DockstoreTestUser2/parameter_test_workflow")
             .forEach(path -> {
                 Workflow workflow = workflowApi.getWorkflowByPath(path, null, false);
@@ -904,7 +932,7 @@ public class WorkflowIT extends BaseIT {
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
-            .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl", "/test.json");
+            .manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "altname", "wdl", "/test.json");
 
         // Manually register workflow bitbucket
         Workflow bitbucketWorkflow = workflowApi
@@ -976,7 +1004,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json");
+        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", "wdl", "/test.json");
 
         workflow = workflowsApi.refresh(workflow.getId());
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
@@ -1042,7 +1070,7 @@ public class WorkflowIT extends BaseIT {
                 for (ImageData imageData :trsVersion.getImages()) {
                     assertNotNull(imageData.getChecksum());
                     imageData.getChecksum().stream().forEach(checksum -> {
-                        assertTrue(checksum.getType().equals(DOCKER_IMAGE_SHA_TYPE_FOR_TRS));
+                        assertEquals(checksum.getType(), DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
                         assertFalse(checksum.getChecksum().isEmpty());
                     });
                     assertNotNull(imageData.getRegistryHost());
@@ -1350,7 +1378,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     /**
-     * Tests that trying to register a duplicate workflow fails, and that registering a non-existant repository failes
+     * Tests that trying to register a duplicate workflow fails, and that registering a non-existant repository fails
      *
      * @throws ApiException exception used for errors coming back from the web service
      */
@@ -1360,15 +1388,12 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Get workflows
-        final List<Workflow> workflows = usersApi.refreshWorkflowsByOrganization(userId, "DockstoreTestUser2");
 
         // Manually register workflow
         boolean success = true;
         try {
-            workflowApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json");
+            workflowApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", "wdl", "/test.json");
+            workflowApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", "wdl", "/test.json");
         } catch (ApiException c) {
             success = false;
         } finally {
@@ -1926,7 +1951,7 @@ public class WorkflowIT extends BaseIT {
 
         // Sourcefiles for workflowversions
         Workflow workflow = workflowsApi
-                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "", "cwl", "/test.json");
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", "cwl", "/test.json");
         workflow = workflowsApi.refresh(workflow.getId());
 
         WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion1 -> workflowVersion1.getName().equals("testCWL")).findFirst().get();

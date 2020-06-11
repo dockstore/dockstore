@@ -24,6 +24,7 @@ import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
@@ -52,6 +53,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -89,7 +91,16 @@ public class UserResourceIT extends BaseIT {
     public void testAddUserToOrgs() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
-        List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.addUserToDockstoreWorkflows(userApi.getUser().getId(), "");
+
 
         // Remove an association with an entry
         long numberOfWorkflows = workflows.size();
@@ -227,8 +238,9 @@ public class UserResourceIT extends BaseIT {
         User user = userApi.getUser();
         assertNotNull(user);
         // try to delete with published workflows
-        userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
-        userApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser2");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getLowerShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted

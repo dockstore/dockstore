@@ -2455,7 +2455,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
       - bearer: []
@@ -4692,7 +4692,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
       security:
       - bearer: []
@@ -6424,38 +6424,6 @@ paths:
         schema:
           format: int64
           type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
-                type: array
-          description: default response
-      security:
-      - bearer: []
-      tags:
-      - users
-  /users/{userId}/workflows/{organization}/refresh:
-    get:
-      description: Refresh all workflows owned by the authenticated user with specified
-        organization.
-      operationId: refreshWorkflowsByOrganization
-      parameters:
-      - description: User ID
-        in: path
-        name: userId
-        required: true
-        schema:
-          format: int64
-          type: integer
-      - description: Organization
-        in: path
-        name: organization
-        required: true
-        schema:
-          type: string
       responses:
         default:
           content:
