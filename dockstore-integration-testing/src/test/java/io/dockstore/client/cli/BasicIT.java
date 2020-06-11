@@ -59,6 +59,7 @@ import org.junit.experimental.categories.Category;
 import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -177,17 +178,35 @@ public class BasicIT extends BaseIT {
     }
 
     /**
+     * Tests that registration works with non-short names
+     */
+    @Test
+    public void testRegistrationWithNonLowerCase() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+
+        // refresh a specific workflow
+        Workflow workflow = workflowsApi
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+        workflow = workflowsApi.refresh(workflow.getId());
+        assertFalse(workflow.getWorkflowVersions().isEmpty());
+    }
+
+
+    /**
      * Tests that refresh workflows works, also that refreshing without a github token should not destroy workflows or their existing versions
      */
     @Test
     public void testRefreshWorkflow() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
-        UsersApi usersApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
-        // Refresh all
-        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
-        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
+
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);

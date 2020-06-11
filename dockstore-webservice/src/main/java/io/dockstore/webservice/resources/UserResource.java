@@ -484,15 +484,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
     }
 
-    // TODO: Only update the ones that have changed
-    private void bulkUpsertWorkflows(User authUser) {
-        List<Entry> workflowEntries = workflowDAO.findMyEntriesPublished(authUser.getId()).stream().map(Entry.class::cast)
-                .collect(Collectors.toList());
-        if (!workflowEntries.isEmpty()) {
-            PublicStateManager.getInstance().bulkUpsert(workflowEntries);
-        }
-    }
-
     private void checkToolTokens(User authUser, Long userId, String organization) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         List<Tool> tools = userContainers(authUser, userId);
@@ -512,31 +503,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (uniqueRegistry.contains(Registry.GITLAB) && gitLabToken == null) {
             throw new CustomWebApplicationException("You have GitLab tools but no GitLab token to refresh the tools with. Please add a GitLab token", HttpStatus.SC_BAD_REQUEST);
         }
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/workflows/{organization}/refresh")
-    @Operation(operationId = "refreshWorkflowsByOrganization", description = "Refresh all workflows owned by the authenticated user with specified organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
-    @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-            @Parameter(name = "organization", description = "Organization", required = true, in = ParameterIn.PATH) @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
-
-        checkUser(authUser, userId);
-
-        // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser, organization, new HashSet<>());
-        userDAO.clearCache();
-        // Refresh the user
-        authUser = userDAO.findById(authUser.getId());
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
-        bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
     }
 
     @GET
