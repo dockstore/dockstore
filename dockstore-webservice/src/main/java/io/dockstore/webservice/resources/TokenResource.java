@@ -108,6 +108,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      * Global instance of the JSON factory.
      */
     public static final JsonFactory JSON_FACTORY = new JacksonFactory();
+    public static final String ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE = "Admins and curators may not login with Google";
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -388,6 +389,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             if (authUser.isPresent()) {
                 userID = authUser.get().getId();
             } else if (user != null) {
+                if (user.isCurator() || user.getIsAdmin()) {
+                    throw new CustomWebApplicationException(ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE, HttpStatus.SC_UNAUTHORIZED);
+                }
                 userID = user.getId();
             } else {
                 throw new CustomWebApplicationException("Login failed, you may need to register an account", HttpStatus.SC_UNAUTHORIZED);
