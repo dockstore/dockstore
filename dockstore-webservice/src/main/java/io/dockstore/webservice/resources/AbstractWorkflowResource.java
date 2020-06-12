@@ -506,9 +506,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
 
             Optional<WorkflowVersion> addedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), remoteWorkflowVersion.getName())).findFirst();
-            if (addedVersion.isPresent()) {
-                gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.get().getWorkflowPath(), addedVersion.get(), workflow.getDescriptorType(), repository);
-            }
+            addedVersion.ifPresent(workflowVersion -> gitHubSourceCodeRepo
+                    .updateVersionMetadata(workflowVersion.getWorkflowPath(), workflowVersion, workflow.getDescriptorType(), repository));
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
