@@ -55,16 +55,12 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
         boolean isValid = true;
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(contents);
-            final List<Service12> services = dockstoreYaml12.getServices();
-            if (services.isEmpty()) {
+            final Service12 service = dockstoreYaml12.getService();
+            if (service == null) {
                 validationMessageObject.put(initialPath, "No services are defined.");
                 isValid = false;
-            } else if (services.size() > 1) {
-                // TODO: Temporary; followup with https://github.com/dockstore/dockstore/issues/3356
-                validationMessageObject.put(initialPath, "No more than one service can be defined in .dockstore.yml.");
-                isValid = false;
             } else {
-                final List<String> files = services.get(0).getFiles();
+                final List<String> files = service.getFiles();
                 if (files == null) {
                     validationMessageObject.put(initialPath, "The key 'files' does not exist.");
                     isValid = false;
@@ -116,9 +112,9 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(contents);
             // TODO: Temporary; followup with https://github.com/dockstore/dockstore/issues/3356
-            final List<Service12> services = dockstoreYaml12.getServices();
-            if (!services.isEmpty()) {
-                final Service12 service12 = services.get(0);
+            final Service12 service = dockstoreYaml12.getService();
+            if (service != null) {
+                final Service12 service12 = service;
                 metadata.setAuthor(service12.getAuthor());
                 metadata.setDescription(service12.getDescription());
             }

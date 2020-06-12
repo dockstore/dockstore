@@ -32,6 +32,7 @@ import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +95,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Override
     public Date getDate() {
-        return this.getLastBuilt();
+        return ObjectUtils.firstNonNull(this.getLastBuilt(), this.getDbCreateDate());
     }
 
     @Override

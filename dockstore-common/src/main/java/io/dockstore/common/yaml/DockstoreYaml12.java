@@ -32,7 +32,7 @@ public class DockstoreYaml12 implements DockstoreYaml {
 
     private String version;
     private List<YamlWorkflow> workflows = new ArrayList<>();
-    private List<Service12> services = new ArrayList<>();
+    private Service12 service;
 
     public void setVersion(final String version) {
         this.version = version;
@@ -48,14 +48,12 @@ public class DockstoreYaml12 implements DockstoreYaml {
         this.workflows = workflows;
     }
 
-    @Valid
-    @NotNull // But may be empty
-    public List<Service12> getServices() {
-        return services;
+    public Service12 getService() {
+        return service;
     }
 
-    public void setServices(final List<Service12> services) {
-        this.services = services;
+    public void setService(final Service12 service) {
+        this.service = service;
     }
 
     @NotNull

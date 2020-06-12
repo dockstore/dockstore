@@ -29,6 +29,7 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -89,8 +90,8 @@ public class DockstoreYamlTest {
         final List<String> testParameterFiles = workflow.getTestParameterFiles();
         assertEquals(1, testParameterFiles.size());
         assertEquals("/dockstore.wdl.json", testParameterFiles.get(0));
-        final List<Service12> services = dockstoreYaml.getServices();
-        assertEquals(1, services.size());
+        final Service12 service = dockstoreYaml.getService();
+        assertNotNull(service);
     }
 
     @Test
@@ -128,7 +129,7 @@ public class DockstoreYamlTest {
     public void testRead11As12() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE11_YAML);
         assertEquals(0, dockstoreYaml12.getWorkflows().size());
-        assertEquals(1, dockstoreYaml12.getServices().size());
+        assertNotNull(dockstoreYaml12.getService());
     }
 
     @Test

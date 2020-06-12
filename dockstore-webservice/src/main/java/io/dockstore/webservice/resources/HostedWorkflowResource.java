@@ -74,6 +74,7 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.common.DescriptorLanguage.getDefaultDescriptorPath;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author dyuen
@@ -108,6 +109,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
+    @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
@@ -167,6 +169,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
     
     @Override
+    @Operation(operationId = "editHostedWorkflow", description = "Non-idempotent operation for creating new revisions of hosted workflows", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
@@ -219,6 +222,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
+    @Operation(operationId = "deleteHostedWorkflowVersion", description = "Delete a revision of a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "deleteHostedWorkflowVersion", value = "Delete a revision of a hosted workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow deleteHostedVersion(User user, Long entryId, String version) {
