@@ -230,7 +230,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private void checkIfAccountHasBeenLinked(String username, TokenType tokenType) {
         Token existingToken = tokenDAO.findTokenByUserNameAndTokenSource(username, tokenType);
         if (existingToken != null) {
-            String msg = "A '" + tokenType.toString() + "' token already exists on Dockstore for the third party service with the account name '" + username + "'";
+            String msg = "A '" + tokenType.toString() + "' token already exists on Dockstore for the account '" + username + "'";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_CONFLICT);
         }
