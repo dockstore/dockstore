@@ -200,29 +200,39 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String username = getUserName(url, asString);
 
         if (user != null) {
-            List<Token> tokens = tokenDAO.findQuayByUserId(user.getId());
-
-            if (tokens.isEmpty()) {
-                Token token = new Token();
-                token.setTokenSource(TokenType.QUAY_IO);
-                token.setContent(accessToken);
-                token.setUserId(user.getId());
-                if (username != null) {
-                    token.setUsername(username);
-                } else {
-                    LOG.info("Quay.io tokenusername is null, did not create token");
-                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
-                }
-                long create = tokenDAO.create(token);
-                LOG.info("Quay token created for {}", user.getUsername());
-                return tokenDAO.findById(create);
+            Token token = new Token();
+            token.setTokenSource(TokenType.QUAY_IO);
+            token.setContent(accessToken);
+            token.setUserId(user.getId());
+            if (username != null) {
+                token.setUsername(username);
             } else {
-                LOG.info("Quay token already exists for {}", user.getUsername());
-                throw new CustomWebApplicationException("Quay token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
+                LOG.info("Quay.io tokenusername is null, did not create token");
+                throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
+
+            checkIfAccountHasBeenLinked(username, TokenType.QUAY_IO);
+            long create = tokenDAO.create(token);
+            LOG.info("Quay token created for {}", user.getUsername());
+            return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+        }
+    }
+
+    /**
+     * Checks if an account has already been connected to Dockstore
+     * For services that don't require refresh tokens
+     * @param username Username on account being added
+     * @param tokenType The type of token being added
+     */
+    private void checkIfAccountHasBeenLinked(String username, TokenType tokenType) {
+        Token existingToken = tokenDAO.findTokenByUserNameAndTokenSource(username, tokenType);
+        if (existingToken != null) {
+            String msg = "A '" + tokenType.toString() + "' token already exists on Dockstore for the third party service with the account name '" + username + "'";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_CONFLICT);
         }
     }
 
@@ -286,26 +296,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String username = getUserName(url, asString);
 
         if (user != null) {
-            List<Token> tokens = tokenDAO.findGitlabByUserId(user.getId());
-
-            if (tokens.isEmpty()) {
-                Token token = new Token();
-                token.setTokenSource(TokenType.GITLAB_COM);
-                token.setContent(accessToken);
-                token.setUserId(user.getId());
-                if (username != null) {
-                    token.setUsername(username);
-                } else {
-                    LOG.info("Gitlab.com tokenusername is null, did not create token");
-                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
-                }
-                long create = tokenDAO.create(token);
-                LOG.info("Gitlab token created for {}", user.getUsername());
-                return tokenDAO.findById(create);
+            Token token = new Token();
+            token.setTokenSource(TokenType.GITLAB_COM);
+            token.setContent(accessToken);
+            token.setUserId(user.getId());
+            if (username != null) {
+                token.setUsername(username);
             } else {
-                LOG.info("Gitlab token already exists for {}", user.getUsername());
-                throw new CustomWebApplicationException("Gitlab token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
+                LOG.info("Gitlab.com tokenusername is null, did not create token");
+                throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
+
+            checkIfAccountHasBeenLinked(username, TokenType.GITLAB_COM);
+            long create = tokenDAO.create(token);
+            LOG.info("Gitlab token created for {}", user.getUsername());
+            return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
@@ -420,6 +425,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             LOG.info("Could not find user's Google token. Making new one...");
             // CREATE GOOGLE TOKEN
             googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM);
+            checkIfAccountHasBeenLinked(googleLoginName, TokenType.GOOGLE_COM);
             tokenDAO.create(googleToken);
             // Update user profile too
             user = userDAO.findById(userID);
@@ -556,6 +562,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             githubToken.setContent(accessToken);
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
+            checkIfAccountHasBeenLinked(githubLogin, TokenType.GITHUB_COM);
             tokenDAO.create(githubToken);
             user = userDAO.findById(userID);
             GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
@@ -621,27 +628,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String username = getUserName(url, asString2);
 
         if (user != null) {
-            List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-            if (tokens.isEmpty()) {
-                Token token = new Token();
-                token.setTokenSource(TokenType.BITBUCKET_ORG);
-                token.setContent(accessToken);
-                token.setRefreshToken(refreshToken);
-                token.setUserId(user.getId());
-                if (username != null) {
-                    token.setUsername(username);
-                } else {
-                    LOG.info("Bitbucket.org token username is null, did not create token");
-                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
-                }
-                long create = tokenDAO.create(token);
-                LOG.info("Bitbucket token created for {}", user.getUsername());
-                return tokenDAO.findById(create);
+            Token token = new Token();
+            token.setTokenSource(TokenType.BITBUCKET_ORG);
+            token.setContent(accessToken);
+            token.setRefreshToken(refreshToken);
+            token.setUserId(user.getId());
+            if (username != null) {
+                token.setUsername(username);
             } else {
-                LOG.info("Bitbucket token already exists for {}", user.getUsername());
-                throw new CustomWebApplicationException("Bitbucket token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
+                LOG.info("Bitbucket.org token username is null, did not create token");
+                throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
+            checkIfAccountHasBeenLinked(username, TokenType.BITBUCKET_ORG);
+            long create = tokenDAO.create(token);
+            LOG.info("Bitbucket token created for {}", user.getUsername());
+            return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
@@ -693,23 +694,17 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             User byId = userDAO.findById(user.getId());
             byId.setOrcid(orcid);
 
-            List<Token> tokens = tokenDAO.findOrcidByUserId(user.getId());
+            Token token = new Token();
+            token.setTokenSource(TokenType.ORCID_ORG);
+            token.setContent(accessToken);
+            token.setRefreshToken(refreshToken);
+            token.setUserId(user.getId());
+            token.setUsername(username);
 
-            if (tokens.isEmpty()) {
-                Token token = new Token();
-                token.setTokenSource(TokenType.ORCID_ORG);
-                token.setContent(accessToken);
-                token.setRefreshToken(refreshToken);
-                token.setUserId(user.getId());
-                token.setUsername(username);
-
-                long create = tokenDAO.create(token);
-                LOG.info("ORCID token created for {}", user.getUsername());
-                return tokenDAO.findById(create);
-            } else {
-                LOG.info("ORCID token already exists for {}", user.getUsername());
-                throw new CustomWebApplicationException("ORCID token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
-            }
+            checkIfAccountHasBeenLinked(username, TokenType.ORCID_ORG);
+            long create = tokenDAO.create(token);
+            LOG.info("ORCID token created for {}", user.getUsername());
+            return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
@@ -751,34 +746,25 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         if (user != null) {
-            List<Token> tokens = tokenDAO.findZenodoByUserId(user.getId());
-
-            if (tokens.isEmpty()) {
-                Token token = new Token();
-                token.setTokenSource(TokenType.ZENODO_ORG);
-                token.setContent(accessToken);
-                token.setRefreshToken(refreshToken);
-                token.setUserId(user.getId());
-                // Zenodo does not return a user name in the token response
-                // so set the token user name to the Dockstore user name
-                // otherwise we will get a DB error when trying to
-                // link another user's Zenodo credentials
-                token.setUsername(user.getUsername());
-                long create = tokenDAO.create(token);
-                LOG.info("Zenodo token created for {}", user.getUsername());
-                return tokenDAO.findById(create);
-            } else {
-                LOG.info("Zenodo token already exists for {}", user.getUsername());
-                throw new CustomWebApplicationException("Zenodo token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
-            }
+            Token token = new Token();
+            token.setTokenSource(TokenType.ZENODO_ORG);
+            token.setContent(accessToken);
+            token.setRefreshToken(refreshToken);
+            token.setUserId(user.getId());
+            // Zenodo does not return a user name in the token response
+            // so set the token user name to the Dockstore user name
+            // otherwise we will get a DB error when trying to
+            // link another user's Zenodo credentials
+            token.setUsername(user.getUsername());
+            checkIfAccountHasBeenLinked(user.getUsername(), TokenType.ZENODO_ORG);
+            long create = tokenDAO.create(token);
+            LOG.info("Zenodo token created for {}", user.getUsername());
+            return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
         }
     }
-
-
-
 
     private String getUserName(String url, Optional<String> asString2) {
         String username;
