@@ -118,8 +118,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repo = github.getRepository(repositoryId);
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
-            return null;
+            LOG.error(gitUsername + ": IOException on readFile while trying to get the repository " + repositoryId + " " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not get repository " + repositoryId + " from GitHub.", HttpStatus.SC_BAD_REQUEST);
         }
         return readFileFromRepo(fileName, reference, repo);
     }
@@ -132,7 +132,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
             return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
             return null;
         }
     }
@@ -180,7 +180,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return decodedContentAndMetadata.getRight();
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFileFromRepo " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage());
             return null;
         } finally {
             GHRateLimit endRateLimit = getGhRateLimitQuietly();
@@ -860,7 +860,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage());
             // this is not so critical to warrant a http error code
         }
     }
@@ -879,7 +879,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage());
             // this is not so critical to warrant a http error code
         }
         return null;
