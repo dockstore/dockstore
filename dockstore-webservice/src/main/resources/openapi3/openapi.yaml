@@ -2428,7 +2428,7 @@ paths:
   /containers/hostedEntry:
     post:
       description: Create a hosted tool.
-      operationId: createHosted_1
+      operationId: createHostedTool_1
       parameters:
       - in: query
         name: registry
@@ -2450,11 +2450,6 @@ paths:
         name: entryName
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -2469,7 +2464,7 @@ paths:
   /containers/hostedEntry/{entryId}:
     delete:
       description: Delete a revision of a hosted tool.
-      operationId: deleteHostedVersion_1
+      operationId: deleteHostedToolVersion_1
       parameters:
       - in: path
         name: entryId
@@ -2481,11 +2476,6 @@ paths:
         name: version
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           content:
@@ -2499,7 +2489,7 @@ paths:
       - hosted
     patch:
       description: Non-idempotent operation for creating new revisions of hosted tools.
-      operationId: editHosted
+      operationId: editHostedTool
       parameters:
       - in: path
         name: entryId
@@ -2511,7 +2501,10 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/User'
+              items:
+                $ref: '#/components/schemas/SourceFile'
+              type: array
+              uniqueItems: true
       responses:
         default:
           content:
@@ -6550,7 +6543,7 @@ paths:
   /workflows/hostedEntry:
     post:
       description: Create a hosted workflow.
-      operationId: createHosted_2
+      operationId: createHostedWorkflow_1
       parameters:
       - in: query
         name: registry
@@ -6572,11 +6565,32 @@ paths:
         name: entryName
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - hosted
+  /workflows/hostedEntry/{entryId}:
+    delete:
+      description: Delete a revision of a hosted workflow.
+      operationId: deleteHostedWorkflowVersion_1
+      parameters:
+      - in: path
+        name: entryId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: query
+        name: version
+        schema:
+          type: string
       responses:
         default:
           content:
@@ -6588,10 +6602,9 @@ paths:
       - bearer: []
       tags:
       - hosted
-  /workflows/hostedEntry/{entryId}:
     patch:
       description: Non-idempotent operation for creating new revisions of hosted workflows
-      operationId: editHosted_1
+      operationId: editHostedWorkflow
       parameters:
       - in: path
         name: entryId
@@ -6603,7 +6616,10 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/User'
+              items:
+                $ref: '#/components/schemas/SourceFile'
+              type: array
+              uniqueItems: true
       responses:
         default:
           content:
