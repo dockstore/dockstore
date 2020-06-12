@@ -20,6 +20,7 @@ package io.dockstore.webservice;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT;
@@ -224,6 +225,17 @@ public class WebhookIT extends BaseIT {
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
         assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
         assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
+
+        // Master version should have metadata set
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
+        assertEquals("Should have author set", "Test User", masterVersion.get().getAuthor());
+        assertEquals("Should have email set", "test@dockstore.org", masterVersion.get().getEmail());
+        assertEquals("Should have email set", "This is a description", masterVersion.get().getDescription());
+
+        masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
+        assertEquals("Should have author set", "Test User", masterVersion.get().getAuthor());
+        assertEquals("Should have email set", "test@dockstore.org", masterVersion.get().getEmail());
+        assertEquals("Should have email set", "This is a description", masterVersion.get().getDescription());
 
         boolean hasLegacyVersion = workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.isLegacyVersion());
         assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);

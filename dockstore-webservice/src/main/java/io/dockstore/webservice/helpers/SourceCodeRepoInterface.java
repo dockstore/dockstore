@@ -373,7 +373,7 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    private void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
+    public void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
         if (Strings.isNullOrEmpty(filePath)) {
