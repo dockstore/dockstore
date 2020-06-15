@@ -538,16 +538,21 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowBeforeFreezing = workflowsApi.refresh(githubWorkflow.getId());
         master = workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
         master.setFrozen(false);
-        List<WorkflowVersion> workflowVersions = workflowsApi
-            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
-        master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
-        assertTrue(master.isFrozen());
+
+        try {
+            List<WorkflowVersion> workflowVersions = workflowsApi
+                    .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Cannot update frozen workflow version"));
+        }
+        // master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
+        // assertTrue(master.isFrozen());
 
         // but should be able to change doi stuff
         master.setFrozen(true);
         master.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
         master.setDoiURL("foo");
-        workflowVersions = workflowsApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
+        List<WorkflowVersion> workflowVersions = workflowsApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
         assertEquals("foo", master.getDoiURL());
         assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, master.getDoiStatus());

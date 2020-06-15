@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1390,19 +1391,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // (see io.dockstore.webservice.core.WorkflowVersion.updateByUser)
         // Check for this and assemble a list of these workflow versions so we can throw an exception and
         // notify the user about the attempt to modify these versions
-        List<WorkflowVersion> disallowedModificationFrozenWorkflowVersionsList = workflowVersions.stream()
-                .filter(workflowVersion -> mapOfExistingWorkflowVersions.entrySet().stream()
-                        .anyMatch(entry ->
-                                entry.getKey().equals(workflowVersion.getId())
-                                        && entry.getValue().isFrozen()
-                                        && (!entry.getValue().getWorkflowPath().equals(workflowVersion.getWorkflowPath())
-                                        || !entry.getValue().getLastModified().equals(workflowVersion.getLastModified()))))
-                .collect(Collectors.toList());
+        List<WorkflowVersion> disallowedModificationFrozenWorkflowVersionsList =
+                 mapOfExistingWorkflowVersions.values().stream()
+                         .filter(existingWorkflowVersion -> workflowVersions.stream()
+                                         .anyMatch(newWorkflowVersion -> (
+                                                 existingWorkflowVersion.getId() == newWorkflowVersion.getId()
+                                                         && existingWorkflowVersion.isFrozen()
+                                                         && (!existingWorkflowVersion.getWorkflowPath().equals(newWorkflowVersion.getWorkflowPath())
+                                                         || existingWorkflowVersion.getLastModified().compareTo(newWorkflowVersion.getLastModified()) != 0))
+                         )
+                         ).collect(Collectors.toList());
 
         if (!disallowedModificationFrozenWorkflowVersionsList.isEmpty()) {
             String disallowedModificationFrozenWorkflowVersions = disallowedModificationFrozenWorkflowVersionsList.stream()
-                    .map(WorkflowVersion::getWorkflowPath).collect(Collectors.joining());
-            throw new CustomWebApplicationException(CANNOT_UPDATE_FROZEN_WORKFLOW_VERSION + "with workflow paths: "
+                    .map(WorkflowVersion::getId).map(Object::toString).collect(Collectors.joining());
+            throw new CustomWebApplicationException(CANNOT_UPDATE_FROZEN_WORKFLOW_VERSION + " with workflow id: "
                     + disallowedModificationFrozenWorkflowVersions, HttpStatus.SC_BAD_REQUEST);
         }
 
