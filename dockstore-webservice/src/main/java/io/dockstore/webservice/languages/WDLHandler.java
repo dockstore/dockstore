@@ -246,8 +246,11 @@ public class WDLHandler implements LanguageHandlerInterface {
                 String content = FileUtils.readFileToString(tempMainDescriptor, StandardCharsets.UTF_8);
                 try {
                     checkForRecursiveHTTPImports(content, new HashSet<>());
-                } catch (IOException | CustomWebApplicationException e) {
+                } catch (IOException e) {
                     validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
+                    return new VersionTypeValidation(false, validationMessageObject);
+                } catch (CustomWebApplicationException e) {
+                    validationMessageObject.put(primaryDescriptorFilePath, e.getErrorMessage());
                     return new VersionTypeValidation(false, validationMessageObject);
                 }
 
