@@ -498,11 +498,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.get().setCommitID(remoteWorkflowVersion.getCommitID());
                 existingWorkflowVersion.get().setDagJson(null);
                 existingWorkflowVersion.get().setToolTableJson(null);
+                existingWorkflowVersion.get().setReferenceType(remoteWorkflowVersion.getReferenceType());
 
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion.get(), remoteWorkflowVersion);
             } else {
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
             }
+
+            Optional<WorkflowVersion> addedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), remoteWorkflowVersion.getName())).findFirst();
+            addedVersion.ifPresent(workflowVersion -> gitHubSourceCodeRepo
+                    .updateVersionMetadata(workflowVersion.getWorkflowPath(), workflowVersion, workflow.getDescriptorType(), repository));
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
