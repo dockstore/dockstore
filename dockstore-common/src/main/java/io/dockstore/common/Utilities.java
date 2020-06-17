@@ -54,7 +54,7 @@ public final class Utilities {
     private static final Map<String, ConfigurationBuilder<INIConfiguration>> MAP = new HashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
-    private static final long DEFAULT_TIMEOUT_MILLISECONDS = 60000;
+    private static final long DEFAULT_TIMEOUT_MILLISECONDS = 0;  // if 0, do not set timeout at all
 
     private Utilities() {
         // hide the default constructor for a utility class
@@ -175,7 +175,13 @@ public final class Utilities {
                 // get stdout and stderr
                 executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
                 executor.execute(parse, procEnvironment, resultHandler);
-                resultHandler.waitFor(timeout);
+
+                // wait for the duration of the timeout, unless timeout set to 0
+                if (timeout == 0) {
+                    resultHandler.waitFor();
+                } else {
+                    resultHandler.waitFor(timeout);
+                }
                 // not sure why commons-exec does not throw an exception
                 if (resultHandler.getExitValue() != 0) {
                     resultHandler.getException().printStackTrace();
