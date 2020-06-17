@@ -405,11 +405,8 @@ public class UserResourceIT extends BaseIT {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        User user = userApi.getUser();
 
-        Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
-
-        userApi.refreshToolsByOrganization((long)1, "dockstore.test.user2", null);
+        workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());

@@ -4527,7 +4527,7 @@ paths:
       - name: "dockerRegistry"
         in: "query"
         description: "Docker registry"
-        required: false
+        required: true
         type: "string"
       responses:
         200:
