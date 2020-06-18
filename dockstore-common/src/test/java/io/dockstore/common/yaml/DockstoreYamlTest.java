@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.dropwizard.testing.FixtureHelpers;
+import junit.framework.TestCase;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -196,8 +197,9 @@ public class DockstoreYamlTest {
         final String content = DOCKSTORE12_YAML.replaceFirst("workflows", "workflow");
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(content);
+            TestCase.fail("Should not be able to validate .dockstore.yml");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            Assert.assertTrue(e.getMessage().contains("Error reading .dockstore.yml:"));
+            Assert.assertTrue(e.getMessage().contains("Error reading .dockstore.yml: Cannot create property=workflow"));
         }
     }
 
