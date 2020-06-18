@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import io.dropwizard.testing.FixtureHelpers;
 import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -180,6 +181,24 @@ public class DockstoreYamlTest {
         assertEquals(3, workflows.size());
         assertEquals(1, workflows.stream().filter(w -> "CWL".equals(w.getSubclass())).count());
         assertEquals(1, workflows.stream().filter(w -> "cwl".equals(w.getSubclass())).count());
+    }
+
+
+    @Test
+    public void testIncorrectProperty()  {
+        // Replace:
+        // ...
+        // workflows:
+        //
+        // With incorrect:
+        // ...
+        // workflow:
+        final String content = DOCKSTORE12_YAML.replaceFirst("workflows", "workflow");
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12(content);
+        } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+            Assert.assertTrue(e.getMessage().contains("Error reading .dockstore.yml:"));
+        }
     }
 
 }
