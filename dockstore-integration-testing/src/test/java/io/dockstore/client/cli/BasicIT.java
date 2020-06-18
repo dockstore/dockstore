@@ -196,7 +196,7 @@ public class BasicIT extends BaseIT {
     }
 
     @Test
-    public void testRefreshToolNoVersions(){
+    public void testRefreshToolNoVersions() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", null);
