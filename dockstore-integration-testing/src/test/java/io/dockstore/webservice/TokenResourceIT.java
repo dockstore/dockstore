@@ -375,7 +375,7 @@ public class TokenResourceIT {
             otherUserTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
             fail();
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
             Assert.assertTrue(e.getMessage().contains("already exists"));
             // Call should fail
         }
@@ -392,7 +392,7 @@ public class TokenResourceIT {
             otherUserTokensApi.addGithubToken(getFakeCode(SUFFIX1));
             fail();
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
             Assert.assertTrue(e.getMessage().contains("already exists"));
             // Call should fail
         }
