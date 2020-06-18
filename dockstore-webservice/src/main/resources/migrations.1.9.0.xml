@@ -114,12 +114,16 @@
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="workflow" constraintName="fk_workflow_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="service" constraintName="fk_service_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="tool" constraintName="fk_tool_default_tag" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tag"/>
-        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.name</sql>
-        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.name</sql>
-        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.name</sql>
+        <sql>update tool e set actualdefaultversion = t.id from tag t where t.parentid = e.id and e.defaultversion = t.reference</sql>
+        <sql>update tool e set actualdefaultversion = t.id from tag t where t.parentid = e.id and e.defaultversion = t.name</sql>
+        <sql>update workflow e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.reference</sql>
+        <sql>update workflow e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.name</sql>
+        <sql>update service e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.reference</sql>
+        <sql>update service e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.name</sql>
+        <!-- No two entries should have the same actualdefaultversion -->
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="tool" constraintName="unique_default_version_tool" deferrable="false" initiallyDeferred="false"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="workflow" constraintName="unique_default_version_workflow" deferrable="false" initiallyDeferred="false"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="service" constraintName="unique_default_version_service" deferrable="false" initiallyDeferred="false"/>
     </changeSet>
     <changeSet author="gluu (generated)" id="removeOldDefaultVersionColumn">
         <dropColumn columnName="defaultversion" tableName="service"/>
