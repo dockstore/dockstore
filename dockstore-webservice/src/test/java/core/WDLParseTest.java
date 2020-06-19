@@ -183,6 +183,7 @@ public class WDLParseTest {
         File recursiveWDL = new File(ResourceHelpers.resourceFilePath("recursive.wdl"));
         String primaryDescriptorFilePath = recursiveWDL.getAbsolutePath();
         SourceFile sourceFile = new SourceFile();
+        VersionTypeValidation versionTypeValidation = null;
         try {
             sourceFile.setContent(FileUtils.readFileToString(recursiveWDL, StandardCharsets.UTF_8));
             sourceFile.setAbsolutePath(recursiveWDL.getAbsolutePath());
@@ -191,13 +192,14 @@ public class WDLParseTest {
             Set<SourceFile> sourceFileSet = new HashSet<>();
             sourceFileSet.add(sourceFile);
             WDLHandler wdlHandler = new WDLHandler();
-            wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
-            Assert.fail();
+            versionTypeValidation = wdlHandler.validateEntrySet(sourceFileSet, primaryDescriptorFilePath, type);
         } catch (IOException e) {
             Assert.fail();
         } catch (CustomWebApplicationException e) {
             assertTrue(StringUtils.contains(e.getErrorMessage(), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
         }
+        assertTrue(StringUtils.contains(versionTypeValidation.getMessage().get(recursiveWDL.getAbsolutePath()), ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT));
+
     }
 
     /**
