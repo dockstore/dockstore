@@ -186,7 +186,7 @@ public class DockstoreYamlTest {
 
 
     @Test
-    public void testIncorrectProperty()  {
+    public void testIncorrectProperty() {
         // Replace:
         // ...
         // workflows:
@@ -200,6 +200,8 @@ public class DockstoreYamlTest {
             TestCase.fail("Should not be able to validate .dockstore.yml");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             Assert.assertTrue(e.getMessage().contains("Error reading .dockstore.yml: Cannot create property=workflow"));
+        } catch (Exception e) {
+            TestCase.fail("Should have seen a DockstoreYamlException");
         }
     }
 
