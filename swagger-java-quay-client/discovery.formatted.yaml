@@ -509,6 +509,19 @@ definitions:
     required:
       - role
     type: object
+  PullRobot:
+    description: Dockstore observed return object of pull_robot
+    properties:
+      kind:
+        description: TBD
+        type: string
+      name:
+        description: TBD
+        type: string
+      is_robot:
+        description: TBD
+        type: boolean
+    type: object
   QuayRepo:
     description: Dockstore observed return object
     properties:
@@ -611,7 +624,7 @@ definitions:
         type: string
       pull_robot:
         description: Username of a Quay robot account to use as pull credentials
-        type: string
+        $ref: "#/definitions/PullRobot"
       subdirectory:
         description: Subdirectory in which the Dockerfile can be found. You can only specify this or dockerfile_path
         type: string
