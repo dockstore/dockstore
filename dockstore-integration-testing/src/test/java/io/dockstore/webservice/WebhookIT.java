@@ -106,7 +106,7 @@ public class WebhookIT extends BaseIT {
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), workflowRepo, "/Dockstore.wdl",
                 "foobar", "wdl", "/test.json");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
-                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+                DescriptorLanguage.CWL.getShortName(), "/test.json");
         
         // Refresh should work
         workflow = workflowApi.refresh(workflow.getId());

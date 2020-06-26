@@ -215,7 +215,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
                 "/test.json");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
+                DescriptorLanguage.WDL.getShortName(), "");
 
         final List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
@@ -242,9 +242,9 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
         workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
-                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+                DescriptorLanguage.CWL.getShortName(), "/test.json");
         workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "",
-                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+                DescriptorLanguage.CWL.getShortName(), "/test.json");
         List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
         for (Workflow workflow : workflows) {
@@ -837,7 +837,7 @@ public class WorkflowIT extends BaseIT {
                 List<Repository> userOrganizationRepositories = openUsersApi.getUserOrganizationRepositories(control.name(), org);
                 for (Repository repo : userOrganizationRepositories) {
                     workflowApi.manualRegister(control.name(), repo.getPath(), "/Dockstore.cwl", "",
-                            DescriptorLanguage.CWL.getLowerShortName(), "");
+                            DescriptorLanguage.CWL.getShortName(), "");
                 }
             }
         }
