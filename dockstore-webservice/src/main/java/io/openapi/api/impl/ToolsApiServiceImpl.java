@@ -17,9 +17,6 @@
 package io.openapi.api.impl;
 
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -40,13 +37,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -58,6 +51,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.database.TrsTool;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -71,7 +65,6 @@ import io.openapi.model.FileWrapper;
 import io.openapi.model.ToolFile;
 import io.openapi.model.ToolVersion;
 import io.swagger.api.impl.ToolsImplCommon;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.http.HttpStatus;
@@ -81,8 +74,6 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
@@ -266,135 +257,138 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(registry).append(organization).append(name)
             .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
             .append(user.orElseGet(User::new).getId()).build();
-        final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
-        if (trsResponses.isPresent()) {
-            return trsResponses.get().build();
-        }
-
-        final List<Entry<?, ?>> all = new ArrayList<>();
-
-        // short circuit id and alias filters, these are a bit weird because they have a max of one result
-        if (id != null) {
-            ParsedRegistryID parsedID = new ParsedRegistryID(id);
-            Entry<?, ?> entry = getEntry(parsedID, user);
-            all.add(entry);
-        } else if (alias != null) {
-            all.add(toolDAO.getGenericEntryByAlias(alias));
-        } else {
-            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
-                all.addAll(toolDAO.findAllPublished());
-            }
-            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
-                all.addAll(workflowDAO.findAllPublished());
-            }
-            all.sort(Comparator.comparing(Entry::getGitUrl));
-        }
-
-        List<io.openapi.model.Tool> results = new ArrayList<>();
-        for (Entry<?, ?> c : all) {
-            // filters just for tools
-            if (c instanceof Tool) {
-                Tool tool = (Tool)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
-                    continue;
-                }
-                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
-                    continue;
-                }
-                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
-                    continue;
-                }
-                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
-                    continue;
-                }
-                if (checker != null && checker) {
-                    // tools are never checker workflows
-                    continue;
-                }
-            }
-            // filters just for tools
-            if (c instanceof Workflow) {
-                Workflow workflow = (Workflow)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
-                    continue;
-                }
-                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
-                    continue;
-                }
-                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
-                    continue;
-                }
-                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
-                    continue;
-                }
-                if (checker != null && workflow.isIsChecker() != checker) {
-                    continue;
-                }
-            }
-            // common filters between tools and workflows
-            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
-                continue;
-            }
-            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
-                continue;
-            }
-            // if passing, for each container that matches the criteria, convert to standardised format and return
-            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
-            if (tool != null) {
-                results.add(tool);
-            }
-        }
-
-        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
-
-        List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
-        int offsetInteger = 0;
-        if (offset != null) {
-            offsetInteger = Integer.parseInt(offset);
-        }
-        if (offsetInteger >= pagedResults.size()) {
-            results = new ArrayList<>();
-        } else {
-            results = pagedResults.get(offsetInteger);
-        }
-        final Response.ResponseBuilder responseBuilder = Response.ok(results);
-        responseBuilder.header("current_offset", offset);
-        responseBuilder.header("current_limit", actualLimit);
-        try {
-            int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
-            responseBuilder.header("self_link",
-                new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
-                    value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
-            // construct links to other pages
-            List<String> filters = new ArrayList<>();
-            handleParameter(id, "id", filters);
-            handleParameter(organization, "organization", filters);
-            handleParameter(name, "name", filters);
-            handleParameter(toolname, "toolname", filters);
-            handleParameter(description, "description", filters);
-            handleParameter(author, "author", filters);
-            handleParameter(registry, "registry", filters);
-            handleParameter(String.valueOf(actualLimit), "limit", filters);
-
-            if (offsetInteger + 1 < pagedResults.size()) {
-                URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
-                        + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
-                responseBuilder.header("next_page", nextPageURI.toURL().toString());
-            }
-            URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
-                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
-            responseBuilder.header("last_page", lastPageURI.toURL().toString());
-
-        } catch (URISyntaxException | MalformedURLException e) {
-            throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
-        }
-        trsListener.loadTRSResponse(hashcode, responseBuilder);
-        return responseBuilder.build();
+        //        final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
+        final List<TrsTool> allTrsPublished = workflowDAO.findAllTrsPublished(Optional.ofNullable(registry),
+                Optional.ofNullable(organization), Optional.ofNullable(checker), Optional.ofNullable(toolname), Optional.ofNullable(author), Optional.ofNullable(description));
+        return Response.ok(allTrsPublished).build();
+        //        if (trsResponses.isPresent()) {
+        //            return trsResponses.get().build();
+        //        }
+        //
+        //        final List<Entry<?, ?>> all = new ArrayList<>();
+        //
+        //        // short circuit id and alias filters, these are a bit weird because they have a max of one result
+        //        if (id != null) {
+        //            ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        //            Entry<?, ?> entry = getEntry(parsedID, user);
+        //            all.add(entry);
+        //        } else if (alias != null) {
+        //            all.add(toolDAO.getGenericEntryByAlias(alias));
+        //        } else {
+        //            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+        //                all.addAll(toolDAO.findAllPublished());
+        //            }
+        //            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+        //                all.addAll(workflowDAO.findAllPublished());
+        //            }
+        //            all.sort(Comparator.comparing(Entry::getGitUrl));
+        //        }
+        //
+        //        List<io.openapi.model.Tool> results = new ArrayList<>();
+        //        for (Entry<?, ?> c : all) {
+        //            // filters just for tools
+        //            if (c instanceof Tool) {
+        //                Tool tool = (Tool)c;
+        //                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
+        //                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
+        //                    continue;
+        //                }
+        //                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
+        //                    continue;
+        //                }
+        //                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
+        //                    continue;
+        //                }
+        //                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
+        //                    continue;
+        //                }
+        //                if (checker != null && checker) {
+        //                    // tools are never checker workflows
+        //                    continue;
+        //                }
+        //            }
+        //            // filters just for tools
+        //            if (c instanceof Workflow) {
+        //                Workflow workflow = (Workflow)c;
+        //                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
+        //                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
+        //                    continue;
+        //                }
+        //                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
+        //                    continue;
+        //                }
+        //                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
+        //                    continue;
+        //                }
+        //                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
+        //                    continue;
+        //                }
+        //                if (checker != null && workflow.isIsChecker() != checker) {
+        //                    continue;
+        //                }
+        //            }
+        //            // common filters between tools and workflows
+        //            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
+        //                continue;
+        //            }
+        //            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
+        //                continue;
+        //            }
+        //            // if passing, for each container that matches the criteria, convert to standardised format and return
+        //            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
+        //            if (tool != null) {
+        //                results.add(tool);
+        //            }
+        //        }
+        //
+        //        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
+        //
+        //        List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
+        //        int offsetInteger = 0;
+        //        if (offset != null) {
+        //            offsetInteger = Integer.parseInt(offset);
+        //        }
+        //        if (offsetInteger >= pagedResults.size()) {
+        //            results = new ArrayList<>();
+        //        } else {
+        //            results = pagedResults.get(offsetInteger);
+        //        }
+        //        final Response.ResponseBuilder responseBuilder = Response.ok(results);
+        //        responseBuilder.header("current_offset", offset);
+        //        responseBuilder.header("current_limit", actualLimit);
+        //        try {
+        //            int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
+        //            responseBuilder.header("self_link",
+        //                new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
+        //                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
+        //                    value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
+        //            // construct links to other pages
+        //            List<String> filters = new ArrayList<>();
+        //            handleParameter(id, "id", filters);
+        //            handleParameter(organization, "organization", filters);
+        //            handleParameter(name, "name", filters);
+        //            handleParameter(toolname, "toolname", filters);
+        //            handleParameter(description, "description", filters);
+        //            handleParameter(author, "author", filters);
+        //            handleParameter(registry, "registry", filters);
+        //            handleParameter(String.valueOf(actualLimit), "limit", filters);
+        //
+        //            if (offsetInteger + 1 < pagedResults.size()) {
+        //                URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
+        //                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
+        //                        + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
+        //                responseBuilder.header("next_page", nextPageURI.toURL().toString());
+        //            }
+        //            URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
+        //                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
+        //                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
+        //            responseBuilder.header("last_page", lastPageURI.toURL().toString());
+        //
+        //        } catch (URISyntaxException | MalformedURLException e) {
+        //            throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
+        //        }
+        //        trsListener.loadTRSResponse(hashcode, responseBuilder);
+        //        return responseBuilder.build();
     }
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {

@@ -40,6 +40,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.TrsTool;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -190,6 +191,12 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<T> findAllPublished() {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
+    }
+
+    public List<TrsTool> findAllTrsPublished(final Optional<String> registry, final Optional<String> organization,
+            final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author,
+            final Optional<String> description) {
+        return null;
     }
 
     public long countAllHosted(long userid) {

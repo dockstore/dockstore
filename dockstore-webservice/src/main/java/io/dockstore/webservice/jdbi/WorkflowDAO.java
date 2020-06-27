@@ -25,13 +25,20 @@ import java.util.stream.Collectors;
 import javax.persistence.NoResultException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.BioWorkflow_;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.TrsTool;
+import io.dockstore.webservice.core.database.WorkflowTrsTool;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -247,6 +254,60 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public Workflow findByAlias(String alias) {
         return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+    }
+
+    @Override
+    public List<TrsTool> findAllTrsPublished(final Optional<String> registry, final Optional<String> organization,
+            final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author,
+            final Optional<String> description) {
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<TrsTool> query = cb.createQuery(TrsTool.class);
+        final Root<BioWorkflow> root = query.from(BioWorkflow.class);
+        final Join<BioWorkflow, BioWorkflow> join = root.join(BioWorkflow_.checkerWorkflow, JoinType.LEFT);
+        query.select(cb.construct(WorkflowTrsTool.class, root.get(BioWorkflow_.id),
+                root.get(BioWorkflow_.organization),
+                root.get(BioWorkflow_.description),
+                root.get(BioWorkflow_.sourceControl),
+                root.get(BioWorkflow_.descriptorType),
+                root.get(BioWorkflow_.repository),
+                root.get(BioWorkflow_.workflowName),
+                join.get(BioWorkflow_.sourceControl),
+                join.get(BioWorkflow_.organization),
+                join.get(BioWorkflow_.repository),
+                join.get(BioWorkflow_.workflowName)
+                ));
+        Predicate predicate = cb.isTrue(root.get(BioWorkflow_.isPublished));
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.organization), organization);
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.workflowName), toolname);
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.author), author);
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.description), description);
+        if (checker.isPresent()) {
+            predicate = cb.and(predicate, cb.isTrue(root.get(BioWorkflow_.isChecker)));
+        }
+        query.where(predicate);
+        final Query<TrsTool> toolQuery = currentSession().createQuery(query);
+        final List<TrsTool> tools = toolQuery.getResultList();
+        return filterByRegistry(registry, tools);
+    }
+
+    // Filter is on SourceControl().toString(), which returns a value defined
+    // in Java, different from what is stored in the DB. So yeah, don't think we
+    // can do this in SQL. Fortunately, these objects should now be pretty light, and
+    // I assume this filter is rarely used, so typically may not be a major impact.
+    private List<TrsTool> filterByRegistry(final Optional<String> registry, final List<TrsTool> tools) {
+        return registry.map(s -> tools.stream()
+                .filter(tool -> tool.getSourceControl().toString().contains(s))
+                .collect(Collectors.toList()))
+                .orElse(tools);
+    }
+
+    private Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
+        return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
+                .orElse(existingPredicate);
+    }
+
+    private String wildcardLike(String value) {
+        return '%' + value + '%';
     }
 
     /**
