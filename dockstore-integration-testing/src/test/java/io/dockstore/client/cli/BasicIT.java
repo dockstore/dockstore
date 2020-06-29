@@ -60,6 +60,7 @@ import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -192,6 +193,23 @@ public class BasicIT extends BaseIT {
                 .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
         workflow = workflowsApi.refresh(workflow.getId());
         assertFalse(workflow.getWorkflowVersions().isEmpty());
+    }
+
+    @Test
+    public void testRefreshToolNoVersions() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", null);
+        tool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        containersApi.updateContainer(tool.getId(), tool);
+        containersApi.refresh(tool.getId());
+
+
+        tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/nobuildsatall", null);
+        tool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        containersApi.updateContainer(tool.getId(), tool);
+        DockstoreTool refresh = containersApi.refresh(tool.getId());
+        assertNull(refresh.getDefaultVersion());
     }
 
 
