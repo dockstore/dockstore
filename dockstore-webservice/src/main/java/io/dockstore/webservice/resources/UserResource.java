@@ -543,24 +543,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return workflows;
     }
 
-    private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
-        List<Workflow> workflows = new ArrayList<>();
-        myWorkflows.forEach(myWorkflow -> {
-            Workflow workflow = new BioWorkflow();
-            workflow.setOrganization(myWorkflow.getOrganization());
-            workflow.setId(myWorkflow.getId());
-            workflow.setSourceControl(myWorkflow.getSourceControl());
-            workflow.setIsPublished(myWorkflow.isPublished());
-            workflow.setWorkflowName(myWorkflow.getWorkflowName());
-            workflow.setRepository(myWorkflow.getRepository());
-            workflow.setMode(myWorkflow.getMode());
-            workflow.setGitUrl(myWorkflow.getGitUrl());
-            workflow.setDescription(myWorkflow.getDescription());
-            workflows.add(workflow);
-        });
-        return workflows;
-    }
-
     @GET
     @Path("/{userId}/services")
     @Timed
