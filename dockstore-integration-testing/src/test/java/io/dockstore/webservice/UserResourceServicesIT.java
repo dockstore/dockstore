@@ -16,9 +16,6 @@
 
 package io.dockstore.webservice;
 
-import java.util.List;
-import java.util.Optional;
-
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
@@ -29,8 +26,6 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.specto.hoverfly.junit.rule.HoverflyRule;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Workflow;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -41,18 +36,15 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.SERVICES_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.SUFFIX1;
 import static io.dockstore.common.Hoverfly.SUFFIX2;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests services endpoints from UserResource
@@ -135,29 +127,4 @@ public class UserResourceServicesIT {
         fakeGithubToken.setUserId(id);
         return fakeGithubToken;
     }
-
-    @Test
-    public void refreshWithAppInstalledOnOrg() {
-        final UsersApi userApi = new UsersApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME_2, testingPostgres));
-        assertEquals(0, userApi.userServices(GITHUB_USER2_ID).size());
-        userApi.syncUserServices();
-        final List<Workflow> services = userApi.userServices(GITHUB_USER2_ID);
-        assertEquals(2, services.size()); // 2 from fixtures/GitHubUser1Repos.json
-        final Optional<Workflow> jdockerService = services.stream().filter(w -> w.getRepository().equals("jbrowse-docker")).findFirst();
-        assertEquals(0, jdockerService.get().getWorkflowVersions().size());
-        final Optional<Workflow> xenahubService = services.stream().filter(w -> w.getRepository().equals("xenahub")).findFirst();
-        assertEquals(1, xenahubService.get().getWorkflowVersions().size());
-    }
-
-    @Test
-    public void refreshWithAppInstalledOnRepo() {
-        final UsersApi userApi = new UsersApi(getWebClient(true, BaseIT.ADMIN_USERNAME, testingPostgres));
-        assertEquals(0, userApi.userServices(GITHUB_USER1_ID).size());
-        userApi.syncUserServices();
-        final List<Workflow> services = userApi.userServices(GITHUB_USER1_ID);
-        assertEquals(1, services.size()); // 1 because only 1 repo has the app installed.
-        final Optional<Workflow> xenahubService = services.stream().filter(w -> w.getRepository().equals("xenahub")).findFirst();
-        assertEquals(1, xenahubService.get().getWorkflowVersions().size());
-    }
-
 }

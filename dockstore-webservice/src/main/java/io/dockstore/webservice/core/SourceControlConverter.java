@@ -31,6 +31,9 @@ public class SourceControlConverter implements AttributeConverter<SourceControl,
 
     @Override
     public String convertToDatabaseColumn(SourceControl attribute) {
+        if (attribute == null) {
+            return null;
+        }
         return attribute.toString();
     }
 

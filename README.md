@@ -3,11 +3,12 @@
 [![codecov](https://codecov.io/gh/dockstore/dockstore/branch/develop/graph/badge.svg)](https://codecov.io/gh/dockstore/dockstore)
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2630727.svg)](https://doi.org/10.5281/zenodo.2630727)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3628791.svg)](https://doi.org/10.5281/zenodo.3628791)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
 [![CircleCI](https://circleci.com/gh/dockstore/dockstore/tree/develop.svg?style=svg)](https://circleci.com/gh/dockstore/dockstore/tree/develop)
 [![Documentation Status](https://readthedocs.org/projects/dockstore/badge/?version=develop)](https://dockstore.readthedocs.io/en/develop/?badge=develop)
+[![Docker Repository on Quay](https://quay.io/repository/dockstore/dockstore-webservice/status "Docker Repository on Quay")](https://quay.io/repository/dockstore/dockstore-webservice)
 
 
 # Dockstore
@@ -114,7 +115,6 @@ The dependency environment for Dockstore is described by our
 [Travis-CI config](https://github.com/dockstore/dockstore/blob/develop/.travis.yml). In addition to the dependencies for 
 Dockstore users, note the setup instructions for postgres. Specifically, you will need to have postgres installed 
 and setup with the database user specified in [.travis.yml](https://github.com/dockstore/dockstore/blob/develop/.travis.yml#L26) (ideally, postgres is need only for integration tests but not unit tests).
-Additional, OpenAPI generation requires swagger2openapi installed with `npm install -g swagger2openapi@2.11.16`.
 
 ### Building
 

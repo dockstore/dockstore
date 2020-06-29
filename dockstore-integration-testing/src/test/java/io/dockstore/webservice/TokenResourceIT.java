@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.resources.TokenResource;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.specto.hoverfly.junit.rule.HoverflyRule;
 import io.swagger.client.ApiClient;
@@ -73,6 +75,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * This test does not require confidential data. It does however require the Hoverfly's self-signed certificate.
@@ -188,7 +191,7 @@ public class TokenResourceIT {
             // shouldn't be able to even get the token
             try {
                 tokensApi.listToken(currToken.getId());
-                Assert.fail("Should not be able to list a deleted token");
+                fail("Should not be able to list a deleted token");
             } catch (ApiException e) {
                 boolean firstExceptionCheck = e.getMessage().contains("There was an error processing your request");
                 boolean secondExceptionCheck = "Credentials are required to access this resource.".equals(e.getMessage());
@@ -270,6 +273,27 @@ public class TokenResourceIT {
         Assert.assertEquals(TokenType.DOCKSTORE.toString(), fakeGitHubCode.getTokenSource());
     }
 
+    @Test
+    public void adminsAndCuratorsMayNotLoginWithGoogle() {
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
+        createAccount1(unAuthenticatedTokensApi);
+        setAdmin(GOOGLE_ACCOUNT_USERNAME1, true);
+        try {
+            unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+            fail("An admin should not be able to log in via Google");
+        } catch (ApiException ex) {
+            assertEquals(ex.getMessage(), TokenResource.ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE);
+        }
+        // Verify a non-admin can still login with Google
+        setAdmin(GOOGLE_ACCOUNT_USERNAME1, false);
+        unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
+    }
+
+    private void setAdmin(String user, boolean admin) {
+        final String sql = MessageFormat.format("update enduser set isadmin={0} where username=''{1}''", admin, user);
+        testingPostgres.runUpdateStatement(sql);
+    }
+
     private void registerAndLinkUnavailableTokens(TokensApi unAuthenticatedTokensApi) {
         // Should not be able to register new Dockstore account when profiles already exist
         registerNewUsersWithExisting(unAuthenticatedTokensApi);
@@ -310,7 +334,7 @@ public class TokenResourceIT {
         // Cannot create new user with the same Google account
         try {
             unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
-            Assert.fail();
+            fail();
         } catch (ApiException e) {
             Assert.assertEquals("User already exists, cannot register new user", e.getMessage());
             // Call should fail
@@ -319,7 +343,7 @@ public class TokenResourceIT {
         // Cannot create new user with the same GitHub account
         try {
             unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
-            Assert.fail();
+            fail();
         } catch (ApiException e) {
             Assert.assertTrue(e.getMessage().contains("already exists"));
             // Call should fail
@@ -349,9 +373,9 @@ public class TokenResourceIT {
         // Cannot add token to other user with the same Google account
         try {
             otherUserTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
-            Assert.fail();
+            fail();
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
             Assert.assertTrue(e.getMessage().contains("already exists"));
             // Call should fail
         }
@@ -366,9 +390,9 @@ public class TokenResourceIT {
         TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME2, testingPostgres));
         try {
             otherUserTokensApi.addGithubToken(getFakeCode(SUFFIX1));
-            Assert.fail();
+            fail();
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
             Assert.assertTrue(e.getMessage().contains("already exists"));
             // Call should fail
         }

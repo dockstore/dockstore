@@ -219,7 +219,7 @@ public class SwaggerClientIT extends BaseIT {
         c.setGitUrl("https://github.com/denis-yuen/test1");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.toString());
+        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
@@ -279,15 +279,15 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
-    public void testGA4GHV1Path() throws IOException {
+    public void testGA4GHPath() throws IOException {
         // we need to explictly test the path rather than use the swagger generated client classes to enforce the path
         ApiClient client = getAdminWebClient();
         final String basePath = client.getBasePath();
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools");
+        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools");
         final List<String> strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
 
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata");
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/metadata");
         final List<String> metadataStrings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
         assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly_name")));
@@ -316,9 +316,9 @@ public class SwaggerClientIT extends BaseIT {
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
         assertEquals(1, tools.size());
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.toString(), null, null, null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(1, tools.size());
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.toString(), null, null, null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(0, tools.size());
     }
 
@@ -399,7 +399,7 @@ public class SwaggerClientIT extends BaseIT {
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
         URL url = UriBuilder.fromPath(basePath)
-            .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor").build()
+            .path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor").build()
             .toURL();
 
         List<String> strings = Resources.readLines(url, StandardCharsets.UTF_8);
@@ -408,14 +408,14 @@ public class SwaggerClientIT extends BaseIT {
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
         url = UriBuilder.fromPath(basePath).path(
-            DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor/" + encodedPath)
+            DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor/" + encodedPath)
             .build().toURL();
         strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
         url = UriBuilder.fromPath(basePath)
-            .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/tests").build()
+            .path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/tests").build()
             .toURL();
         strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.get(0).contains("testparameterstuff"));
@@ -782,10 +782,10 @@ public class SwaggerClientIT extends BaseIT {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
     }
 
     @Test

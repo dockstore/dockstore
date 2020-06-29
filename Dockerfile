@@ -1,9 +1,12 @@
 FROM maven:3.6.2-jdk-11 AS maven
+RUN wget https://github.com/mikefarah/yq/releases/download/3.1.2/yq_linux_amd64 \
+    && chmod a+x yq_linux_amd64 \
+    && mv yq_linux_amd64 /usr/bin/yq
 
 COPY . /
 RUN mvn clean install -DskipTests
 
-FROM ubuntu:18.04
+FROM openjdk:11.0.6-jdk
 
 # Update the APT cache
 # prepare for Java download
@@ -16,19 +19,13 @@ RUN apt-get update \
     locales \
     curl \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 
-# install java
-RUN add-apt-repository ppa:openjdk-r/ppa
-RUN apt-get update \
-    && apt-get install openjdk-11-jdk=11.0.5+10-0ubuntu1.1~18.04 -y --no-install-recommends \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
-COPY --from=maven /dockstore-webservice/target/d*SNAPSHOT.jar /home
+# copy the jar not ending in 's', to make sure we get don't get the one ending in 'sources'
+COPY --from=maven /dockstore-webservice/target/dockstore-webservice*[^s].jar /home
 
 # install dockerize
 ENV DOCKERIZE_VERSION v0.2.0

@@ -15,13 +15,19 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,15 +37,30 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LanguageHandlerHelper;
+import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.dockerhub.DockerHubImage;
+import io.dockstore.webservice.core.dockerhub.DockerHubTag;
+import io.dockstore.webservice.core.dockerhub.Results;
+import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.swagger.quay.client.ApiClient;
+import io.swagger.quay.client.ApiException;
+import io.swagger.quay.client.Configuration;
+import io.swagger.quay.client.api.RepositoryApi;
+import io.swagger.quay.client.model.QuayRepo;
+import io.swagger.quay.client.model.QuayTag;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +71,17 @@ import org.yaml.snakeyaml.error.YAMLException;
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
  */
 public interface LanguageHandlerInterface {
+    String QUAY_URL = "https://quay.io/api/v1/";
+    String DOCKERHUB_URL = AbstractImageRegistry.DOCKERHUB_URL;
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
+    Gson GSON = new Gson();
+    ApiClient API_CLIENT = Configuration.getDefaultApiClient();
+    Pattern AMAZON_ECR_PATTERN = Pattern.compile("(.+)(\\.dkr\\.ecr\\.)(.+)(\\.amazonaws.com/)(.+)");
+    Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
+    // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
+    Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*):(.+)");
+    // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
+    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+:(.+)");
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -161,13 +192,13 @@ public interface LanguageHandlerInterface {
      * @param nodeDockerInfo     also looks like a list of node ids mapped to a triple describing where it came from and some docker information?
      * @return Cytoscape compatible JSON with nodes and edges
      */
-    default String setupJSONDAG(List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
+    default String setupJSONDAG(List<Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
         Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
         List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
         List<Map<String, Map<String, String>>> edges = new ArrayList<>();
 
         // Iterate over steps, make nodes and edges
-        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
+        for (Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();
             String dockerUrl = null;
             if (nodeDockerInfo.get(stepId) != null) {
@@ -246,7 +277,7 @@ public interface LanguageHandlerInterface {
             }
         }
 
-        //call the gson to string transformer
+        //call the GSON to string transformer
         return convertToJSONString(tools);
     }
 
@@ -271,6 +302,7 @@ public interface LanguageHandlerInterface {
      * @param dockerEntry has the docker name
      * @return URL
      */
+    // TODO: Don't assume that it's dockerhub when it's not Quay. Potentially add support for other registries and add message that the registry is unsupported
     default String getURLFromEntry(String dockerEntry, ToolDAO toolDAO) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
@@ -324,6 +356,189 @@ public interface LanguageHandlerInterface {
         return url;
     }
 
+    default Optional<Registry> determineImageRegistry(String image) {
+        if (image.startsWith("quay.io/")) {
+            return Optional.of(Registry.QUAY_IO);
+        } else if (image.startsWith("images.sbgenomics")) {
+            return Optional.of(Registry.SEVEN_BRIDGES);
+        } else if (image.startsWith("registry.gitlab.com")) {
+            return Optional.of(Registry.GITLAB);
+        } else if (GOOGLE_PATTERN.matcher(image).matches()) {
+            return Optional.empty();
+        } else if (AMAZON_ECR_PATTERN.matcher(image).matches()) {
+            return Optional.of(Registry.AMAZON_ECR);
+        } else if ((DOCKER_HUB.matcher(image).matches() || OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches())) {
+            return Optional.of(Registry.DOCKER_HUB);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    // TODO: Implement then gitlab, seven bridges, amazon, google if possible;
+    default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
+        List<Map<String, String>> dockerTools = new ArrayList<>();
+        dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
+
+        // Eliminate duplicate docker strings
+        Set<String> dockerStrings = dockerTools.stream().map(dockertool -> dockertool.get("docker")).filter(Objects::nonNull).collect(Collectors.toSet());
+
+        Set<Image> dockerImages = new HashSet<>();
+
+        for (String image : dockerStrings) {
+            String[] splitDocker;
+            String[] splitTag;
+
+            Optional<Registry> registry = determineImageRegistry(image);
+            Registry registryFound = registry.isEmpty() ? null : registry.get();
+            if (registryFound == null || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
+                continue;
+            } else if (registryFound == Registry.QUAY_IO) {
+                try {
+                    splitDocker = image.split("/");
+                    splitTag = splitDocker[2].split(":");
+                } catch (ArrayIndexOutOfBoundsException ex) {
+                    LOG.error("URL to image on Quay incomplete", ex);
+                    continue;
+                }
+
+                if (splitTag.length > 1) {
+                    String repo = splitDocker[1] + "/" + splitTag[0];
+                    String tagName = splitTag[1];
+                    Set<Image> quayImages = getImageResponseFromQuay(repo, tagName);
+                    dockerImages.addAll(quayImages);
+
+                } else {
+                    LOG.error("Could not find image version specified for " + splitDocker[1]);
+                }
+            } else if (registryFound == Registry.DOCKER_HUB) {
+                // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
+                if (DOCKER_HUB.matcher(image).matches()) {
+                    try {
+                        splitDocker = image.split("/");
+                        splitTag = splitDocker[1].split(":");
+                    } catch (ArrayIndexOutOfBoundsException ex) {
+                        LOG.error("URL to image on DockerHub incomplete", ex);
+                        continue;
+                    }
+
+                    String repo = splitDocker[0] + "/" + splitTag[0];
+                    String tagName = splitTag[1];
+
+                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
+                    dockerImages.addAll(dockerHubImages);
+                } else {
+                    try {
+                        splitDocker = image.split(":");
+                    } catch (ArrayIndexOutOfBoundsException ex) {
+                        LOG.error("URL to image on DockerHub incomplete", ex);
+                        continue;
+                    }
+                    // <repo>:<version> -> python:2.7
+                    String repo = "library" + "/" + splitDocker[0];
+                    String tagName = splitDocker[1];
+
+                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
+                    dockerImages.addAll(dockerHubImages);
+                }
+            }
+        }
+        return dockerImages;
+    }
+
+    default Set<Image> getImagesFromDockerHub(final String repo, final String tagName) {
+        Set<Image> dockerHubImages = new HashSet<>();
+        Map<String, String> errorMap = new HashMap<>();
+        Optional<String> response;
+        boolean versionFound = false;
+        String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags?name=" + tagName;
+        DockerHubTag dockerHubTag = new DockerHubTag();
+        do {
+            try {
+                URL url = new URL(repoUrl);
+                response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
+            } catch (IOException ex) {
+                LOG.error("Unable to get DockerHub response for " + repo);
+                response = Optional.empty();
+            }
+
+            if (response.isPresent()) {
+
+                final String json = response.get();
+                errorMap = (Map<String, String>)GSON.fromJson(json, errorMap.getClass());
+                if (errorMap.get("message") != null) {
+                    LOG.error("Error response from DockerHub: " + errorMap.get("message"));
+                    return dockerHubImages;
+                }
+
+                // DockerHub seems to give empty results if something is not found, other fields are marked as null
+                dockerHubTag = GSON.fromJson(json, DockerHubTag.class);
+                List<Results> results = Arrays.asList(dockerHubTag.getResults());
+                if (results.isEmpty()) {
+                    LOG.error("Could not find any results for " + repo);
+                    break;
+                }
+
+                for (Results r : results) {
+                    if (r.getName().equals(tagName)) {
+                        List<DockerHubImage> images = Arrays.asList(r.getImages());
+                        // For every version, DockerHub can provide multiple images, one for each os/architecture
+                        images.stream().forEach(dockerHubImage -> {
+                            final String manifestDigest = dockerHubImage.getDigest();
+                            Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
+                            List<Checksum> checksums = Collections.singletonList(checksum);
+                            Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB);
+
+                            String osInfo = formatDockerHubInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
+                            String archInfo = formatDockerHubInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
+                            archImage.setOs(osInfo);
+                            archImage.setArchitecture(archInfo);
+
+                            dockerHubImages.add(archImage);
+                        });
+                        versionFound = true;
+                        break;
+                    }
+                }
+                if (!versionFound) {
+                    repoUrl = dockerHubTag.getNext();
+                }
+            }
+        } while (response.isPresent() && !versionFound && dockerHubTag.getNext() != null);
+        return dockerHubImages;
+    }
+
+    default String formatDockerHubInfo(String type, String version) {
+        String imageInfo = null;
+        if (type != null) {
+            imageInfo = type;
+            if (version != null) {
+                imageInfo = imageInfo + "/" + version;
+            }
+        }
+        return imageInfo;
+    }
+
+    default Set<Image> getImageResponseFromQuay(String repo, String tagName) {
+        Set<Image> quayImages = new HashSet<>();
+        RepositoryApi api = new RepositoryApi(API_CLIENT);
+        try {
+
+            final QuayRepo quayRepo = api.getRepo(repo, false);
+            QuayTag tag = quayRepo.getTags().get(tagName);
+            if (tag == null) {
+                LOG.error("Unable to get find tag: " + tagName + " from Quay in repo " + repo);
+                return quayImages;
+            }
+            final String digest = tag.getManifestDigest();
+            final String imageID = tag.getImageId();
+            List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
+            quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
+        } catch (ApiException ex) {
+            LOG.error("Could not read from " + repo, ex);
+        }
+        return quayImages;
+    }
+
     /**
      * Resolves a relative path based on an absolute parent path
      * @param parentPath Absolute path to parent file
@@ -351,7 +566,7 @@ public interface LanguageHandlerInterface {
         final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
 
         // Initialize data structures for DAG
-        List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs = new ArrayList<>();
+        List<Pair<String, String>> nodePairs = new ArrayList<>();
         Map<String, String> callToType = new HashMap<>();
 
         // Initialize data structures for Tool table
@@ -383,7 +598,7 @@ public interface LanguageHandlerInterface {
         }
 
         // Determine start node edges
-        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
+        for (Pair<String, String> node : nodePairs) {
             ToolInfo toolInfo = toolInfoMap.get(node.getLeft());
             if (toolInfo.toolDependencyList.size() == 0) {
                 toolInfo.toolDependencyList.add("UniqueBeginKey");

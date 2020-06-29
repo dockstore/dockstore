@@ -32,6 +32,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
@@ -55,9 +56,6 @@ import org.apache.commons.io.FilenameUtils;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion>, Aliasable {
-
-
-
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "workflowversion_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
@@ -75,6 +73,10 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102)
     private Date lastModified;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
+    private boolean isLegacyVersion = true;
+
     /**
      * In theory, this should be in a ServiceVersion.
      * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
@@ -82,8 +84,21 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "The subclass of this for services.", position = 103)
     private Service.SubClass subClass = null;
 
+    @JsonIgnore
+    @Column(columnDefinition = "TEXT")
+    private String dagJson;
+
+    @JsonIgnore
+    @Column(columnDefinition = "TEXT")
+    private String toolTableJson;
+
     public WorkflowVersion() {
         super();
+    }
+
+    @Override
+    public Date getDate() {
+        return this.getLastModified();
     }
 
     @Override
@@ -186,6 +201,30 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.aliases = aliases;
     }
 
+    public boolean isLegacyVersion() {
+        return isLegacyVersion;
+    }
+
+    public void setLegacyVersion(boolean legacyVersion) {
+        isLegacyVersion = legacyVersion;
+    }
+
+    public String getDagJson() {
+        return dagJson;
+    }
+
+    public void setDagJson(final String dagJson) {
+        this.dagJson = dagJson;
+    }
+
+    public String getToolTableJson() {
+        return toolTableJson;
+    }
+
+    public void setToolTableJson(final String toolTableJson) {
+        this.toolTableJson = toolTableJson;
+    }
+
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "
             + "contains the Dockstore path to the workflow and the version tag name.")
     public static final class WorkflowVersionPathInfo {
@@ -207,5 +246,4 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
             return tagName;
         }
     }
-
 }

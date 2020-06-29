@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Dockstore Community Forum
+    url: https://discuss.dockstore.org/c/dockstore-arch/7
+    about: Please ask and answer questions here.
+  - name: Dockstore Security and Internal Issues
+    url: https://ucsc-cgl.atlassian.net/browse/DOCK
+    about: Please report security vulnerabilities here.

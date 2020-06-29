@@ -255,10 +255,17 @@ public abstract class GA4GHIT {
     protected abstract void assertVersion(String toolVersion);
 
     Response checkedResponse(String path) {
+        return checkedResponse(path, HttpStatus.SC_OK);
+    }
+
+    Response checkedResponse(String path, int expectedStatus) {
         String nginxRewrittenPath = TestUtility.mimicNginxRewrite(path, basePath);
         Response response = client.target(nginxRewrittenPath).request().get();
         response.bufferEntity();
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertThat(response.getStatus()).isEqualTo(expectedStatus);
+        if (expectedStatus != HttpStatus.SC_OK) {
+            return null;
+        }
         String stringResponse = response.readEntity(String.class);
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(stringResponse);

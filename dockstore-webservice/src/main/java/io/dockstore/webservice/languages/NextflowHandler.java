@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -514,7 +515,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();
             if (content.contains("manifest")) {
-                return new VersionTypeValidation(true, null);
+                return new VersionTypeValidation(true, Collections.emptyMap());
             } else {
                 validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.";
             }

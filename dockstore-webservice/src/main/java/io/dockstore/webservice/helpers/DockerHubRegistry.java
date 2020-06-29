@@ -49,7 +49,7 @@ public class DockerHubRegistry extends AbstractImageRegistry {
     @Override
     public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
         for (Tool tool : apiTools) {
-            tool.setRegistry(Registry.DOCKER_HUB.toString());
+            tool.setRegistry(Registry.DOCKER_HUB.getDockerPath());
         }
     }
 
@@ -61,5 +61,10 @@ public class DockerHubRegistry extends AbstractImageRegistry {
     @Override
     public boolean canConvertToAuto(Tool tool) {
         return false;
+    }
+
+    @Override
+    public Tool getToolFromNamespaceAndRepo(final String organization, final String repository) {
+        return unsupportedOperation();
     }
 }

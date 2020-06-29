@@ -46,6 +46,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.hibernate.Hibernate;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
@@ -62,7 +63,7 @@ import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 @Path("/events")
 @Api("events")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "events")
+@Tag(name = "events")
 public class EventResource {
     private static final String PAGINATION_DEFAULT_STRING = "10";
     private static final String SUMMARY = "Get events based on filters.";

@@ -199,7 +199,7 @@ public class ExtendedTRSIT extends BaseIT {
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
         tool.setNamespace("dockstoretestuser2");
         tool.setName("dockstore-cgpmap");
-        tool.setRegistryString(Registry.QUAY_IO.toString());
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
         tool.setDefaultVersion("symbolic.v1");
         tool.setDefaultCWLTestParameterFile("/examples/cgpmap/bamOut/bam_input.json");
 

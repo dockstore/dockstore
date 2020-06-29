@@ -21,6 +21,8 @@ import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import io.swagger.v3.oas.annotations.Parameter;
+
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.User;
@@ -36,7 +38,7 @@ import javax.ws.rs.*;
 import javax.validation.constraints.*;
 {{/useBeanValidation}}
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/{{{baseName}}}")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/{{{baseName}}}")
 {{#hasConsumes}}@Consumes({ {{#consumes}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/consumes}} }){{/hasConsumes}}
 {{#hasProduces}}@Produces({ {{#produces}}"{{{mediaType}}}"{{#hasMore}}, {{/hasMore}}{{/produces}} }){{/hasProduces}}
 @io.swagger.annotations.Api(description = "the {{{baseName}}} API")
@@ -83,7 +85,7 @@ public class {{classname}}  {
     @io.swagger.annotations.ApiResponses(value = { {{#responses}}
         @io.swagger.annotations.ApiResponse(code = {{{code}}}, message = "{{{message}}}", response = {{{baseType}}}.class{{#containerType}}, responseContainer = "{{{containerType}}}"{{/containerType}}){{#hasMore}},
         {{/hasMore}}{{/responses}} })
-    public Response {{nickname}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}},{{/allParams}}@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext, @ApiParam(hidden = true) @Auth Optional<User> user)
+    public Response {{nickname}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}},{{/allParams}}@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext, @Parameter(hidden = true) @ApiParam(hidden = true) @Auth Optional<User> user)
     throws NotFoundException {
         return delegate.{{nickname}}({{#allParams}}{{#isFile}}{{paramName}}InputStream, {{paramName}}Detail{{/isFile}}{{^isFile}}{{paramName}}{{/isFile}},{{/allParams}}securityContext, containerContext, user);
     }

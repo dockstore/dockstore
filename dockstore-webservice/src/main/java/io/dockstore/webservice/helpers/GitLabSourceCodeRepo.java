@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,13 +32,11 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import org.apache.http.HttpStatus;
 import org.gitlab.api.GitlabAPI;
 import org.gitlab.api.TokenType;
 import org.gitlab.api.models.GitlabBranch;
@@ -74,7 +73,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, fileName, reference);
             return new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOG.error("could not read file " + fileName + " on " + reference);
+            LOG.error(gitUsername + ": IOException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
         }
         return null;
     }
@@ -86,7 +85,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             List<GitlabRepositoryTree> repositoryTree = gitlabAPI.getRepositoryTree(project, pathToDirectory, reference, false);
             return repositoryTree.stream().map(GitlabRepositoryTree::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error("could not read directory listing " + pathToDirectory + " on " + reference);
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
         }
         return Lists.newArrayList();
     }
@@ -101,9 +100,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return reposByGitUrl;
         } catch (IOException e) {
-            LOG.error("could not find projects due to ", e);
-            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
         }
+    }
+
+    @Override
+    public String getName() {
+        return "GitLab";
     }
 
     @Override
@@ -127,19 +130,26 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
 
         try {
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
             List<GitlabTag> tagList = gitlabAPI.getTags(repositoryId);
             List<GitlabBranch> branches = gitlabAPI.getBranches(project);
             tagList.forEach(tag -> {
-                Date committedDate = tag.getCommit().getCommittedDate();
-                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), tag.getName())) {
+                    Date committedDate = tag.getCommit().getCommittedDate();
+                    String commitId = tag.getCommit().getId();
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate, commitId);
+                }
             });
             branches.forEach(branch -> {
-                Date committedDate = branch.getCommit().getCommittedDate();
-                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(), Version.ReferenceType.BRANCH, committedDate);
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), branch.getName())) {
+                    Date committedDate = branch.getCommit().getCommittedDate();
+                    String commitId = branch.getCommit().getId();
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(),
+                            Version.ReferenceType.BRANCH, committedDate, commitId);
+                }
             });
         } catch (IOException e) {
             LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
@@ -149,7 +159,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @SuppressWarnings("checkstyle:parameternumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate) {
+        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId) {
         // Initialize workflow version
         WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
         String calculatedPath = version.getWorkflowPath();
@@ -161,6 +171,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
         version.setReferenceType(type);
         version.setLastModified(committedDate);
+        version.setCommitID(commitId);
         // Use default test parameter file if either new version or existing version that hasn't been edited
         createTestParameterFiles(workflow, id, branchName, version, identifiedType);
         version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults);
@@ -177,7 +188,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     protected String getCommitID(String repositoryId, Version version) {
-        //TODO: optimize here for gitlab by returning actual sha1
+        try {
+            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabBranch gitlabBranch = gitlabAPI.getBranch(project, version.getReference());
+            return gitlabBranch.getCommit().getId();
+        } catch (IOException ex) {
+            LOG.error("could not find " + repositoryId, ex);
+        }
         return null;
     }
 
@@ -227,9 +244,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
      */
     @Override
     public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
+        // Need to remove root slash from path
+        String convertedPath = path.startsWith("/") ? path.substring(1) : path;
         try {
             GitlabProject project = gitlabAPI.getProject(id.split("/")[0], id.split("/")[1]);
-            GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, path, branch);
+            GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, convertedPath, branch);
             if (repositoryFile != null) {
                 SourceFile file = new SourceFile();
                 file.setType(type);

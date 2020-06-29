@@ -20,17 +20,21 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 @Path("/curation")
 @Api("/curation")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "curation", description = ResourceConstants.CURATION)
+@Tag(name = "curation", description = ResourceConstants.CURATION)
 public class NotificationResource {
     private static final Logger LOG = LoggerFactory.getLogger(NotificationResource.class);
 
@@ -46,6 +50,7 @@ public class NotificationResource {
     @GET
     @Path("/notifications/{id}")
     @UnitOfWork
+    @Operation(operationId = "getNotification", description = "Return the notification with given id")
     @ApiOperation(value = "Return the notification with given id", notes = "NO Authentication", responseContainer = "List", response = Notification.class)
     public Notification getNotification(@PathParam("id") Long id) {
         Notification notification = notificationDAO.findById(id);
@@ -57,6 +62,7 @@ public class NotificationResource {
     @GET
     @Path("/notifications")
     @UnitOfWork
+    @Operation(operationId = "getActiveNotifications", description = "Return all active notifications")
     @ApiOperation(value = "Return all active notifications", notes = "NO Authentication", responseContainer = "List", response = Notification.class)
     public List<Notification> getActiveNotifications() {
         return notificationDAO.getActiveNotifications();
@@ -67,6 +73,7 @@ public class NotificationResource {
     @Path("/notifications")
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
+    @Operation(operationId = "createNotification", description = "Create a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Create a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
     public Notification createNotification(@ApiParam(value = "Notification to create", required = true) Notification notification) {
@@ -79,6 +86,7 @@ public class NotificationResource {
     @Path("/notifications/{id}")
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
+    @Operation(operationId = "deleteNotification", description = "Delete a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Curator/admin only")
     public void deleteNotification(@ApiParam(value = "Notification to delete", required = true) @PathParam("id") Long id) {
         Notification notification = notificationDAO.findById(id);
@@ -90,6 +98,7 @@ public class NotificationResource {
     @Path("/notifications/{id}")
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
+    @Operation(operationId = "updateNotification", description = "Update a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
     public Notification updateNotification(@ApiParam(value = "Notification to update", required = true) @PathParam("id") long id,

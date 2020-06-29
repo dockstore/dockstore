@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
@@ -50,8 +52,11 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -84,6 +89,14 @@ public abstract class SourceCodeRepoInterface {
         return filename.matches("(?i:/?readme([.]md)?)");
     }
 
+    public Map<String, String> handleGetWorkflowGitUrl2RepositoryIdError(Exception e) {
+        LOG.error("could not find projects due to ", e);
+        throw new CustomWebApplicationException(
+                String.format("could not read projects from %s, please re-link your %s token", getName(), getName()), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    }
+
+    public abstract String getName();
+
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
@@ -102,7 +115,7 @@ public abstract class SourceCodeRepoInterface {
      * @param files the files collection we want to add to
      * @param fileType the type of file
      */
-    void readFile(String repositoryId, Version tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
+    public void readFile(String repositoryId, Version<?> tag, Collection<SourceFile> files, DescriptorLanguage.FileType fileType, String path) {
         Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
         sourceFile.ifPresent(files::add);
     }
@@ -113,7 +126,7 @@ public abstract class SourceCodeRepoInterface {
      * @param tag the version of source control we want to read from
      * @param fileType the type of file
      */
-    public Optional<SourceFile> readFile(String repositoryId, Version tag, DescriptorLanguage.FileType fileType, String path) {
+    public Optional<SourceFile> readFile(String repositoryId, Version<?> tag, DescriptorLanguage.FileType fileType, String path) {
         String fileResponse = this.readGitRepositoryFile(repositoryId, fileType, tag, path);
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
@@ -176,8 +189,8 @@ public abstract class SourceCodeRepoInterface {
     public Service initializeService(String repositoryId) {
         Service service = (Service)initializeWorkflow(repositoryId, new Service());
         service.setDescriptorType(DescriptorLanguage.SERVICE);
-        service.setMode(WorkflowMode.SERVICE);
-        service.setDefaultWorkflowPath(".dockstore.yml");
+        service.setMode(WorkflowMode.DOCKSTORE_YML);
+        service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         return service;
     }
 
@@ -188,10 +201,11 @@ public abstract class SourceCodeRepoInterface {
      * @param workflow
      * @param existingWorkflow
      * @param existingDefaults
+     * @param versionName
      * @return workflow with associated workflow versions
      */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults);
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName);
 
     /**
      * Creates a basic workflow object with default values
@@ -206,48 +220,61 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
-     *
-     * @param repositoryId
-     * @param existingWorkflow
+     * If versionName is present this will only pull one version
+     * @param repositoryId Repository ID (ex. dockstore/dockstore-ui2)
+     * @param existingWorkflow Optional existing workflow
+     * @param versionName Optional version name to refresh
      * @return workflow
      */
-    public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
+    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
-        // Nextflow and (future) dockstore.yml workflow can be detected and handled without stubs
-
-        // Determine if workflow should be returned as a STUB or FULL
+        // When there is no existing workflow just return a CWL stub
         if (existingWorkflow.isEmpty()) {
-            // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
             workflow.setDescriptorType(DescriptorLanguage.CWL);
             return workflow;
         }
+
+        // Do not refresh stub workflows
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
-            // when there is an existing stub workflow, just return the new stub as well
             return workflow;
         }
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (Objects.equals(existingWorkflow.get().getDescriptorType(), DescriptorLanguage.SERVICE)) {
-            workflow.setMode(WorkflowMode.SERVICE);
-        } else {
+        if (!Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
             workflow.setMode(WorkflowMode.FULL);
         }
 
-        // if it exists, extract paths from the previous workflow entry
+        // Create a map of existing versions
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        // Copy over existing workflow versions
         existingWorkflow.get().getWorkflowVersions()
                 .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
+
+        // Cannot refresh dockstore.yml workflow version unless it is a targeted refresh of a legacy version
+        if (Objects.equals(existingWorkflow.get().getMode(), WorkflowMode.DOCKSTORE_YML)) {
+            // Throw error if version name not set, version name set but does not already exist, or version name set and exists but is not a legacy version
+            if (versionName.isEmpty() || !existingDefaults.containsKey(versionName.get()) || (existingDefaults.containsKey(versionName.get()) && !existingDefaults.get(versionName.get()).isLegacyVersion())) {
+                String msg = "Cannot refresh .dockstore.yml workflows";
+                LOG.error(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+        }
 
         // Copy workflow information from source (existingWorkflow) to target (workflow)
         existingWorkflow.get().copyWorkflow(workflow);
 
-        // Create branches and associated source files
+        // Create versions and associated source files
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
-        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
-        // setting last modified date can be done uniformly
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName);
+
+        if (versionName.isPresent() && workflow.getWorkflowVersions().size() == 0) {
+            String msg = "Version " + versionName.get() + " was not found on Git repository";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Setting last modified date can be done uniformly
         Optional<Date> max = workflow.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
         if (max.isPresent()) {
@@ -272,20 +299,19 @@ public abstract class SourceCodeRepoInterface {
      *
      * @param entry entry to update
      * @param type the type of language to look for
-     * @return the entry again
      */
-    Entry updateEntryMetadata(final Entry entry, final DescriptorLanguage type) {
+    public void updateEntryMetadata(final Entry<?, ?> entry, final DescriptorLanguage type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
         if (repositoryId == null) {
             LOG.info("Could not find repository information.");
-            return entry;
+            return;
         }
 
         // If no tags or workflow versions, have no metadata
         if (entry.getWorkflowVersions().isEmpty()) {
-            return entry;
+            return;
         }
 
         if (entry instanceof Tool) {
@@ -309,18 +335,25 @@ public abstract class SourceCodeRepoInterface {
                 updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
             });
         }
-        return entry;
     }
 
     /**
+     * Currently this function is only ran when during tool/workflow refreshes
      * Sets the default version if there isn't already one present.
      * This is required because entry-level metadata depends on the default version
+     * Makes sure that the entry actually has that workflowVersion
+     * First tries to get the default branch from the Git repository and sets it there.
+     * If the current versions do not have that, then it falls back to the newest version.
      *
      * @param entry
      * @param repositoryId
      */
     public void setDefaultBranchIfNotSet(Entry entry, String repositoryId) {
-        if (entry.getDefaultVersion() == null) {
+        Version defaultVersion = entry.getActualDefaultVersion();
+        Set<Long> workflowVersionIds = (Set<Long>)entry.getWorkflowVersions().stream().map(version -> ((Version)version).getId()).collect(Collectors.toSet());
+        if (defaultVersion == null  || !workflowVersionIds.contains(defaultVersion.getId())) {
+            // Set null for now in case workflowVersions doesn't contain the current default version for some reason
+            entry.setActualDefaultVersion(null);
             String branch = getMainBranch(entry, repositoryId);
             if (branch == null) {
                 String message = String.format("%s : Error getting the main branch.", repositoryId);
@@ -332,12 +365,19 @@ public abstract class SourceCodeRepoInterface {
                             String reference = workflowVersion.getReference();
                             return branch.equals(reference);
                         }).findFirst();
-                firstWorkflowVersion.ifPresent(version -> entry.checkAndSetDefaultVersion(version.getName()));
+                firstWorkflowVersion.ifPresentOrElse(version -> entry.checkAndSetDefaultVersion(version.getName()), () -> {
+                    if (!workflowVersions.isEmpty()) {
+                        Version newestVersion = Collections.max(workflowVersions, Comparator.comparingLong(s -> s.getDate().getTime()));
+                        entry.setActualDefaultVersion(newestVersion);
+                    } else {
+                        entry.setActualDefaultVersion(null);
+                    }
+                });
             }
         }
     }
 
-    private void updateVersionMetadata(String filePath, Version version, DescriptorLanguage type, String repositoryId) {
+    public void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
         if (Strings.isNullOrEmpty(filePath)) {
@@ -376,7 +416,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return repository id of an entry, now standardised to be organization/repo_name
      */
-    public abstract String getRepositoryId(Entry entry);
+    public abstract String getRepositoryId(Entry<?, ?> entry);
 
     /**
      * Returns the branch of interest used to determine tool and workflow metadata
@@ -385,7 +425,7 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @return Branch of interest
      */
-    public abstract String getMainBranch(Entry entry, String repositoryId);
+    public abstract String getMainBranch(Entry<?, ?> entry, String repositoryId);
 
     /**
 
@@ -394,7 +434,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return
      */
-    String getBranchNameFromDefaultVersion(Entry entry) {
+    public String getBranchNameFromDefaultVersion(Entry<?, ?> entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
             for (Tag tag : ((Tool)entry).getWorkflowVersions()) {
@@ -420,7 +460,7 @@ public abstract class SourceCodeRepoInterface {
      * @param existingDefaults
      * @return workflow version
      */
-    WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow,
+    protected WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults) {
         WorkflowVersion version = new WorkflowVersion();
         version.setName(branch);
@@ -506,7 +546,7 @@ public abstract class SourceCodeRepoInterface {
      * @param specificPath if specified, look for a specific file, otherwise return the "default" for a fileType
      * @return  a FileResponse instance
      */
-    public String readGitRepositoryFile(String repositoryId, DescriptorLanguage.FileType fileType, Version version, String specificPath) {
+    public String readGitRepositoryFile(String repositoryId, DescriptorLanguage.FileType fileType, Version<?> version, String specificPath) {
 
         final String reference = version.getReference();
 
@@ -555,7 +595,7 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version version, String filepath) {
+    public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version<?> version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }
@@ -566,16 +606,11 @@ public abstract class SourceCodeRepoInterface {
 
     public abstract SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type);
 
-    void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
+    protected void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
         DescriptorLanguage.FileType identifiedType) {
         if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
             // Set Filetype
-            DescriptorLanguage.FileType testJsonType = null;
-            if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_CWL)) {
-                testJsonType = DescriptorLanguage.FileType.CWL_TEST_JSON;
-            } else if (identifiedType.equals(DescriptorLanguage.FileType.DOCKSTORE_WDL)) {
-                testJsonType = DescriptorLanguage.FileType.WDL_TEST_JSON;
-            }
+            DescriptorLanguage.FileType testJsonType = DescriptorLanguage.getDescriptorLanguage(identifiedType).getTestParamType();
 
             // Check if test parameter file has already been added
             final DescriptorLanguage.FileType finalFileType = testJsonType;
@@ -594,14 +629,14 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId
      * @param version
      */
-    public abstract void updateReferenceType(String repositoryId, Version version);
+    public abstract void updateReferenceType(String repositoryId, Version<?> version);
 
     /**
      * Given a version of a tool or workflow, return the corresponding current commit id
      * @param repositoryId
      * @param version
      */
-    protected abstract String getCommitID(String repositoryId, Version version);
+    protected abstract String getCommitID(String repositoryId, Version<?> version);
 
     /**
      * Returns a workflow version with validation information updated
@@ -646,6 +681,7 @@ public abstract class SourceCodeRepoInterface {
      * @return True if valid workflow version, false otherwise
      */
     private boolean isValidVersion(WorkflowVersion version) {
-        return version.getValidations().stream().allMatch(Validation::isValid);
+        return version.getValidations().stream().filter(validation -> !Objects.equals(validation.getType(),
+                DescriptorLanguage.FileType.DOCKSTORE_YML)).allMatch(Validation::isValid);
     }
 }

@@ -28,14 +28,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -62,7 +65,10 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -77,7 +83,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -91,6 +96,7 @@ import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.ServiceEntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
@@ -109,7 +115,10 @@ import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -126,7 +135,8 @@ import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
-import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -136,7 +146,7 @@ import static io.dockstore.webservice.core.WorkflowMode.SERVICE;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
 @Produces(MediaType.APPLICATION_JSON)
-@io.swagger.v3.oas.annotations.tags.Tag(name = "workflows", description = ResourceConstants.WORKFLOWS)
+@Tag(name = "workflows", description = ResourceConstants.WORKFLOWS)
 public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     implements EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
     SourceControlResourceInterface {
@@ -149,6 +159,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String PAGINATION_LIMIT = "100";
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
+    private static final String IMAGES = "images";
+    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
@@ -156,11 +168,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final EntryResource entryResource;
     private final ServiceEntryDAO serviceEntryDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
+    private final VersionDAO versionDAO;
 
     private final PermissionsInterface permissionsInterface;
     private final String zenodoUrl;
     private final String zenodoClientID;
     private final String zenodoClientSecret;
+    private final String dashboardPrefix;
 
     private final String dockstoreUrl;
     private final String dockstoreGA4GHBaseUrl;
@@ -173,6 +187,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.versionDAO = new VersionDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
 
@@ -182,6 +197,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         zenodoUrl = configuration.getZenodoUrl();
         zenodoClientID = configuration.getZenodoClientID();
         zenodoClientSecret = configuration.getZenodoClientSecret();
+        dashboardPrefix = configuration.getDashboard();
 
         dockstoreUrl = URIHelper.createBaseUrl(configuration.getExternalConfig().getScheme(),
                 configuration.getExternalConfig().getHostname(), configuration.getExternalConfig().getUiPort());
@@ -195,12 +211,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
-    @Override
-    protected Workflow initializeEntity(String repository, GitHubSourceCodeRepo sourceCodeRepo) {
-        return sourceCodeRepo.initializeWorkflow(repository, new BioWorkflow());
-    }
-
-
     /**
      * TODO: this should not be a GET either
      *
@@ -212,9 +222,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/restub")
     @Timed
     @UnitOfWork
+    @Operation(operationId = "restub", summary = "Restub a workflow", description = "Restub a workflow", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Restub a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
-    public Workflow restub(@ApiParam(hidden = true) @Auth User user,
+    public Workflow restub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         // Check that workflow is valid to restub
@@ -231,6 +242,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (WorkflowVersion version : workflow.getWorkflowVersions()) {
             workflowVersionDAO.delete(version);
         }
+        workflow.setActualDefaultVersion(null);
         workflow.getWorkflowVersions().clear();
 
         // Do we maintain the checker workflow association? For now we won't
@@ -250,7 +262,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
 
-        List<Token> tokens = checkOnBitbucketToken(user);
+        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
 
         boolean foundAtLeastOneToken = false;
         for (TokenType type : TokenType.values()) {
@@ -307,7 +319,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
          */
         boolean statsCollection = false;
         if (statsCollection) {
-            List<Workflow> workflows = userDAO.findById(user.getId()).getEntries().stream().filter(entry -> entry instanceof Workflow)
+            List<Workflow> workflows = bioWorkflowDAO.findMyEntries(user.getId()).stream()
                 .map(obj -> (Workflow)obj).collect(Collectors.toList());
             for (Workflow workflow : workflows) {
                 workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
@@ -323,33 +335,35 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
             LOG.info("refreshing " + entry.getKey());
 
-            // Get all workflows with the same giturl)
+            // Get all workflows with the same giturl (ignore dockstore.yml workflows)
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
             if (byGitUrl.size() > 0) {
                 // Workflows exist with the given git url
                 for (Workflow workflow : byGitUrl) {
                     // check whitelist for already processed workflows
-                    if (alreadyProcessed.contains(workflow.getId())) {
+                    if (alreadyProcessed.contains(workflow.getId()) || Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
                         continue;
                     }
 
+                    logFullWorkflowRefresh(workflow);
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow));
+                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty());
 
                     // Take ownership of these workflows
                     workflow.getUsers().add(user);
 
                     // Update the existing matching workflows based off of the new information
-                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user);
+                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user, Optional.empty());
                     alreadyProcessed.add(workflow.getId());
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.empty());
+                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty());
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
+                    logFullWorkflowRefresh(newWorkflow);
                     final long workflowID = workflowDAO.create(newWorkflow);
 
                     // need to create nested data models
@@ -357,10 +371,33 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     workflowFromDB.getUsers().add(user);
 
                     // Update newly created template workflow (workflowFromDB) with found data from the repository
-                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user);
+                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
                     alreadyProcessed.add(workflowFromDB.getId());
                 }
             }
+        }
+    }
+
+    /**
+     * Logs a refresh statement with the workflow's descriptor language if workflow is a FULL workflow.
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
+     * @param workflow                workflow that is being refreshed
+     */
+    private void logFullWorkflowRefresh(final Workflow workflow) {
+        if (workflow.getMode() == WorkflowMode.FULL) {
+            LOG.info(String.format("%s: Refreshing %s workflow named %s", dashboardPrefix, workflow.getDescriptorType(), workflow.getEntryPath()));
+        }
+    }
+
+    /**
+     * Logs a version refresh statement with the workflow's descriptor language if workflow is a FULL workflow .
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
+     * @param workflow
+     * @param workflowVersion
+     */
+    private void logWorkflowVersionRefresh(final Workflow workflow, final String workflowVersion) {
+        if (workflow.getMode() == WorkflowMode.FULL) {
+            LOG.info(String.format("%s: Refreshing version %s for %s workflow named %s", dashboardPrefix, workflowVersion, workflow.getDescriptorType(), workflow.getEntryPath()));
         }
     }
 
@@ -368,85 +405,109 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
+    @Operation(operationId = "refresh", description = "Refresh one particular workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
+    public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        checkEntry(workflow);
-        checkUser(user, workflow);
-        checkNotHosted(workflow);
+        return refreshWorkflow(user, workflowId, Optional.empty());
+    }
+
+    @GET
+    @Path("/{workflowId}/refresh/{version}")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "refreshVersion", description = "Refresh one particular workflow version.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(nickname = "refreshVersion", value = "Refresh one particular workflow version.", notes = "Refresh existing or new version of a workflow.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow refreshVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "version", required = true) @PathParam("version") String version) {
+        if (version == null || version.isBlank()) {
+            String msg = "Version is a required field for this endpoint.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+        return refreshWorkflow(user, workflowId, Optional.of(version));
+    }
+
+    /**
+     * Refresh a workflow, pulling in all versions from remote sources
+     * Optionally pass version to only refresh a specific version
+     * @param user User who made call
+     * @param workflowId ID of workflow
+     * @param version Name of the workflow version
+     * @return Updated workflow
+     */
+    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version) {
+        Workflow existingWorkflow = workflowDAO.findById(workflowId);
+        checkEntry(existingWorkflow);
+        checkUser(user, existingWorkflow);
+        checkNotHosted(existingWorkflow);
+        checkNotService(existingWorkflow);
         // get a live user for the following
         user = userDAO.findById(user.getId());
         // Update user data
         user.updateUserMetadata(tokenDAO);
 
         // Set up source code interface and ensure token is set up
-        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(workflow.getGitUrl(), user);
+        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(existingWorkflow.getGitUrl(), user);
 
-        // do a full refresh when targeted like this
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
-        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
-            workflow.setMode(SERVICE);
-        } else {
-            workflow.setMode(WorkflowMode.FULL);
+        if (!Objects.equals(existingWorkflow.getMode(), DOCKSTORE_YML)) {
+            existingWorkflow.setMode(WorkflowMode.FULL);
         }
 
-        // look for checker workflows to associate with if applicable
-        if (workflow instanceof BioWorkflow && !workflow.isIsChecker() && workflow.getDescriptorType() == CWL
-            || workflow.getDescriptorType() == WDL) {
-            String workflowName = workflow.getWorkflowName() == null ? "" : workflow.getWorkflowName();
-            String checkerWorkflowName = "/" + workflowName + (workflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
-            BioWorkflow byPath = workflowDAO.findByPath(workflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
-            if (byPath != null && workflow.getCheckerWorkflow() == null) {
-                workflow.setCheckerWorkflow(byPath);
+        // Look for checker workflows to associate with if applicable
+        if (existingWorkflow instanceof BioWorkflow && !existingWorkflow.isIsChecker() && existingWorkflow.getDescriptorType() == CWL || existingWorkflow.getDescriptorType() == WDL) {
+            String workflowName = existingWorkflow.getWorkflowName() == null ? "" : existingWorkflow.getWorkflowName();
+            String checkerWorkflowName = "/" + workflowName + (existingWorkflow.getDescriptorType() == CWL ? CWL_CHECKER : WDL_CHECKER);
+            BioWorkflow byPath = workflowDAO.findByPath(existingWorkflow.getPath() + checkerWorkflowName, false, BioWorkflow.class).orElse(null);
+            if (byPath != null && existingWorkflow.getCheckerWorkflow() == null) {
+                existingWorkflow.setCheckerWorkflow(byPath);
             }
         }
 
-        // new workflow is the workflow as found on github (source control)
+        if (version.isEmpty()) {
+            logFullWorkflowRefresh(existingWorkflow);
+        } else {
+            logWorkflowVersionRefresh(existingWorkflow, version.get());
+        }
+
+        // Create a new workflow based on the current state of the Git repository
         final Workflow newWorkflow = sourceCodeRepo
-            .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
-        workflow.getUsers().add(user);
-        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user);
+                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version);
+        existingWorkflow.getUsers().add(user);
+
+        // Use new workflow to update existing workflow
+        updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
         FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
         // Refresh checker workflow
-        if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
-            refresh(user, workflow.getCheckerWorkflow().getId());
+        if (!existingWorkflow.isIsChecker() && existingWorkflow.getCheckerWorkflow() != null) {
+            if (version.isEmpty()) {
+                refresh(user, existingWorkflow.getCheckerWorkflow().getId());
+            } else {
+                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get());
+            }
         }
-        workflow.getWorkflowVersions().forEach(Version::updateVerified);
-        String repositoryId = sourceCodeRepo.getRepositoryId(workflow);
-        sourceCodeRepo.setDefaultBranchIfNotSet(workflow, repositoryId);
-        workflow.syncMetadataWithDefault();
-        // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-        return workflow;
-    }
+        existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
+        String repositoryId = sourceCodeRepo.getRepositoryId(existingWorkflow);
+        sourceCodeRepo.setDefaultBranchIfNotSet(existingWorkflow, repositoryId);
+        existingWorkflow.syncMetadataWithDefault();
 
-    @PUT
-    @Path("/path/workflow/{repository}/upsertVersion/")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @ApiOperation(value = "Add or update a workflow version for a given GitHub tag to all workflows associated with the given repository (ex. dockstore/dockstore-ui2).", notes = "To be called by a lambda function.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "list")
-    public List<Workflow> upsertVersions(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String repository,
-            @ApiParam(value = "Git reference for new GitHub tag", required = true) @QueryParam("gitReference") String gitReference,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        // Call common upsert code
-        String dockstoreWorkflowPath = upsertVersionHelper(repository, gitReference, user, WorkflowMode.FULL, null);
-
-        return findAllWorkflowsByPath(dockstoreWorkflowPath, WorkflowMode.FULL);
+        PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow, StateManagerMode.UPDATE);
+        return existingWorkflow;
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}")
+    @Operation(operationId = "getWorkflow", description = "Retrieve a workflow", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getWorkflow", value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
-    public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
+    public Workflow getWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
@@ -454,7 +515,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
@@ -463,9 +524,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/labels")
+    @Operation(operationId = "updateLabels", description = "Update the labels linked to a workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "updateLabels", value = "Update the labels linked to a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
-    public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user,
+    public Workflow updateLabels(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -476,10 +538,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
+    @Operation(operationId = "updateWorkflow", description = "Update the workflow with the given workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "updateWorkflow", value = "Update the workflow with the given workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class,
             notes = "Updates descriptor type (if stub), default workflow path, default file path, and default version")
-    public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
+    public Workflow updateWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow wf = workflowDAO.findById(workflowId);
@@ -507,9 +570,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/defaultVersion")
+    @Operation(operationId = "updateDefaultVersion", description = "Update the default version of a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the default version of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
-    public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
+    public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Version name to set as default", required = true) String version) {
         return (Workflow)updateDefaultVersionHelper(version, workflowId, user);
@@ -565,9 +629,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
+    @Operation(operationId = "requestDOIForWorkflowVersion", description = "Request a DOI for this version of a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
-    public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+    public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -659,9 +724,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
+    @Operation(operationId = "updateWorkflowPath", description = "Reset the workflow paths.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Reset the workflow paths.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Resets the workflow paths of all versions to match the default workflow path from the workflow object passed.", response = Workflow.class)
-    public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
+    public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
 
@@ -687,9 +753,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/users")
+    @Operation(operationId = "getUsers", description = "Get users of a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getUsers", value = "Get users of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
-    public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
+    public List<User> getUsers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
@@ -703,11 +770,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/published/{workflowId}")
+    @Operation(operationId = "getPublishedWorkflow", description = "Get a published workflow.")
     @ApiOperation(value = "Get a published workflow.", notes = "Hidden versions will not be visible. NO authentication", response = Workflow.class)
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return filterContainersForHiddenTags(workflow);
     }
@@ -716,6 +784,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/organization/{organization}/published")
+    @Operation(operationId = "getPublishedWorkflowsByOrganization", description = "List all published workflows of an organization.")
     @ApiOperation(value = "List all published workflows of an organization.", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getPublishedWorkflowsByOrganization(
         @ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
@@ -728,9 +797,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/publish")
+    @Operation(operationId = "publish", description = "Publish or unpublish a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "publish", value = "Publish or unpublish a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
-    public Workflow publish(@ApiParam(hidden = true) @Auth User user,
+    public Workflow publish(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -792,6 +862,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("published")
+    @Operation(operationId = "allPublishedWorkflows", description = "List all published workflows.")
     @ApiOperation(value = "List all published workflows.", tags = {
         "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allPublishedWorkflows(
@@ -819,10 +890,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("shared")
+    @Operation(operationId = "sharedWorkflows", description = "Retrieve all workflows shared with user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieve all workflows shared with user.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, tags = {
         "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
-    public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
+    public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         final Map<Role, List<String>> workflowsSharedWithUser  = this.permissionsInterface.workflowsSharedWithUser(user);
 
         final List<String> paths =
@@ -848,17 +920,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}")
+    @Operation(operationId = "getWorkflowByPath", summary = "Get a workflow by path.", description = "Requires full path (including workflow name if applicable).", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a workflow by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
-    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
+    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
+            @Parameter(name = "services", description = "Whether to get a service or workflow", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "false")) @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         return workflow;
     }
@@ -919,9 +993,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/permissions")
+    @Operation(operationId = "getWorkflowPermissions", description = "Get all permissions for a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get all permissions for a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
-    public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user,
+    public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
@@ -934,9 +1009,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/actions")
+    @Operation(operationId = "getWorkflowActions", description = "Gets all actions a user can perform on a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Gets all actions a user can perform on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
-    public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
+    public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
@@ -949,9 +1025,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
+    @Operation(operationId = "addWorkflowPermission", description = "Set the specified permission for a user on a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Set the specified permission for a user on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
-    public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
+    public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user permission", required = true) Permission permission,
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
@@ -969,9 +1046,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
+    @Operation(operationId = "removeWorkflowRole", description = "Remove the specified user role for a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Remove the specified user role for a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
-    public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
+    public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
         @ApiParam(value = "role", required = true) @QueryParam("role") Role role, @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
@@ -986,9 +1064,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}")
+    @Operation(operationId = "getEntryByPath", description = "Get an entry by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get an entry by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including entry name if applicable).", response = Entry.class)
-    public Entry getEntryByPath(@ApiParam(hidden = true) @Auth User user,
+    public Entry getEntryByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, false);
 
@@ -1007,6 +1086,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}/published")
+    @Operation(operationId = "getPublishedEntryByPath", description = "Get a published entry by path.")
     @ApiOperation(nickname = "getPublishedEntryByPath", value = "Get a published entry by path.", notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getPublishedEntryByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, true);
@@ -1023,9 +1103,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
+    @Operation(operationId = "getAllWorkflowByPath", description = "Get a list of workflows by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getAllWorkflowByPath", value = "Get a list of workflows by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require workflow name.", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
+    public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
         checkEntry(workflows);
@@ -1037,6 +1118,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/published")
+    @Operation(operationId = "getPublishedWorkflowByPath", description = "Get a published workflow by path")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
@@ -1044,7 +1126,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
-        initializeValidations(include, workflow);
+        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
         filterContainersForHiddenTags(workflow);
 
@@ -1065,9 +1147,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/versions")
+    @Operation(operationId = "tags", description = "List the versions for a published workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "tags", value = "List the versions for a published workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
-    public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
+    public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findPublishedById(workflowId);
         checkEntry(repository);
         return new ArrayList<>(repository.getWorkflowVersions());
@@ -1077,10 +1160,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/primaryDescriptor")
+    @Operation(operationId = "primaryDescriptor", description = "Get the primary descriptor file.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "primaryDescriptor", value = "Get the primary descriptor file.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
         @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
@@ -1091,10 +1175,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/descriptor/{relative-path}")
+    @Operation(operationId = "secondaryDescriptorPath", description = "Get the corresponding descriptor file from source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptorPath", value = "Get the corresponding descriptor file from source control.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
@@ -1105,10 +1190,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/secondaryDescriptors")
+    @Operation(operationId = "secondaryDescriptors", description = "Get the corresponding descriptor documents from source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "secondaryDescriptors", value = "Get the corresponding descriptor documents from source control.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
         return getAllSecondaryFiles(workflowId, tag, fileType, user);
@@ -1120,10 +1206,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/testParameterFiles")
+    @Operation(operationId = "getTestParameterFiles", description = "Get the corresponding test parameter files.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getTestParameterFiles", value = "Get the corresponding test parameter files.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("version") String version) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1136,9 +1223,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
+    @Operation(operationId = "addTestParameterFiles", description = "Add test parameter files for a given version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "addTestParameterFiles", value = "Add test parameter files for a given version.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody,
@@ -1149,8 +1237,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkNotHosted(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
-            String msg = "The workflow \'" + workflow.getWorkflowPath()
-                + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
+            String msg = "The workflow '" + workflow.getWorkflowPath()
+                + "' is a STUB. Refresh the workflow if you want to add test parameter files";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1159,7 +1247,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorfklowVersion.isEmpty()) {
-            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.";
+            String msg = "The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1180,9 +1268,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
+    @Operation(operationId = "deleteTestParameterFiles", description = "Delete test parameter files for a given version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "deleteTestParameterFiles", value = "Delete test parameter files for a given version.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
         @QueryParam("version") String version) {
@@ -1195,9 +1284,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorkflowVersion.isEmpty()) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.");
-            throw new CustomWebApplicationException(
-                "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.",
+            LOG.info("The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.");
+            throw new CustomWebApplicationException("The version '" + version + "' for workflow '"
+                + workflow.getWorkflowPath() + "' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1209,7 +1298,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Remove test parameter files
         FileType testParameterType = workflow.getTestParameterType();
         testParameterPaths
-            .forEach(path -> sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType));
+            .forEach(path -> {
+                boolean fileDeleted = sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType);
+                if (!fileDeleted) {
+                    throw new CustomWebApplicationException("There are no existing test parameter files with the path: " + path, HttpStatus.SC_NOT_FOUND);
+                }
+            });
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
@@ -1219,9 +1313,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @Path("/manualRegister")
     @SuppressWarnings("checkstyle:ParameterNumber")
+    @Operation(operationId = "manualRegister", description = "Manually register a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Manually register a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Manually register workflow (public or private).", response = Workflow.class)
-    public Workflow manualRegister(@ApiParam(hidden = true) @Auth User user,
+    public Workflow manualRegister(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
         @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
         @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
@@ -1229,15 +1324,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
         @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
-        // Validate descriptor path based on type
-        if ("nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith("nextflow.config")) {
-            throw new CustomWebApplicationException(
-                    "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                            + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
-        } else if (!"nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
-            throw new CustomWebApplicationException(
-                    "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
-                            + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
+        for (DescriptorLanguage typeItem : DescriptorLanguage.values()) {
+            if (typeItem.getShortName().equalsIgnoreCase(descriptorType)) {
+                // check that plugin is active
+                if (typeItem.isPluginLanguage() && !LanguageHandlerFactory.getPluginMap().containsKey(typeItem)) {
+                    throw new CustomWebApplicationException("plugin for " + typeItem.getShortName() + " is not installed",
+                        HttpStatus.SC_BAD_REQUEST);
+                }
+                if (typeItem.getDefaultPrimaryDescriptorExtensions().stream().noneMatch(defaultWorkflowPath::endsWith)) {
+                    throw new CustomWebApplicationException(
+                        "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                            + " and ends in an extension from" + String.join(",", typeItem.getDefaultPrimaryDescriptorExtensions()),
+                        HttpStatus.SC_BAD_REQUEST);
+                }
+            }
         }
 
         // Validate source control registry
@@ -1259,18 +1359,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Save into database and then pull versions
         Workflow workflowFromDB = saveNewWorkflow(newWorkflow, user);
-        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user);
+        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
         return workflowDAO.findById(workflowFromDB.getId());
-
     }
 
     @PUT
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/workflowVersions")
+    @Operation(operationId = "updateWorkflowVersion", description = "Update the workflow versions linked to a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the workflow versions linked to a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates workflow path, reference, and hidden attributes.", response = WorkflowVersion.class, responseContainer = "List")
-    public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+    public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
 
@@ -1299,7 +1399,44 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     existingTag.setDirtyBit(true);
                 }
 
+                boolean wasFrozen = existingTag.isFrozen();
                 existingTag.updateByUser(version);
+                boolean nowFrozen = existingTag.isFrozen();
+                // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
+                if (!wasFrozen && nowFrozen) {
+                    String toolsJSONTable;
+                    LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
+                    // Store tool table json
+                    if (existingTag.getToolTableJson() == null) {
+                        toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                        existingTag.setToolTableJson(toolsJSONTable);
+                    } else {
+                        toolsJSONTable = existingTag.getToolTableJson();
+                    }
+                    Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
+                    existingTag.getImages().addAll(images);
+
+                    // Grab checksum for file descriptors if not already available.
+                    for (SourceFile sourceFile : existingTag.getSourceFiles()) {
+                        Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
+                        if (sha.isPresent()) {
+                            List<Checksum> checksums = new ArrayList<>();
+                            checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                            if (sourceFile.getChecksums() == null) {
+                                sourceFile.setChecksums(checksums);
+                            } else if (sourceFile.getChecksums().isEmpty()) {
+                                sourceFile.getChecksums().addAll(checksums);
+                            }
+                        }
+
+                    }
+
+                    // store dag
+                    if (existingTag.getDagJson() == null) {
+                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                        existingTag.setDagJson(dagJson);
+                    }
+                }
             }
         }
         Workflow result = workflowDAO.findById(workflowId);
@@ -1310,11 +1447,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     @GET
     @Timed
-    @UnitOfWork(readOnly = true)
+    @UnitOfWork()
     @Path("/{workflowId}/dag/{workflowVersionId}")
+    @Operation(operationId = "getWorkflowDag", description = "Get the DAG for a given workflow version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the DAG for a given workflow version.", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public String getWorkflowDag(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public String getWorkflowDag(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1324,12 +1462,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
+        // json in db cleared after a refresh
+        if (workflowVersion.getDagJson() != null) {
+            return workflowVersion.getDagJson();
+        }
+
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
+
+            workflowVersion.setDagJson(dagJson);
+            return dagJson;
         }
         return null;
     }
@@ -1343,11 +1489,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     @GET
     @Timed
-    @UnitOfWork(readOnly = true)
+    @UnitOfWork()
     @Path("/{workflowId}/tools/{workflowVersionId}")
+    @Operation(operationId = "getTableToolContent", description = "Get the Tools for a given workflow version.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the Tools for a given workflow version.", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public String getTableToolContent(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public String getTableToolContent(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
@@ -1359,15 +1506,40 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (workflowVersion == null) {
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
         }
+
+        // json in db cleared after a refresh
+        if (workflowVersion.getToolTableJson() != null) {
+            return workflowVersion.getToolTableJson();
+        }
+
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            workflowVersion.setToolTableJson(toolTableJson);
+            return toolTableJson;
         }
 
         return null;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles")
+    @ApiOperation(value = "Retrieve sourcefiles for an entry's version",  hidden = true)
+    @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+            @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+            @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+            @Parameter(name = "fileTypes", description = "List of file types to filter sourcefiles by", in = ParameterIn.QUERY) @QueryParam("fileTypes") List<DescriptorLanguage.FileType> fileTypes) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkOptionalAuthRead(user, workflow);
+
+        return getVersionsSourcefiles(workflowId, workflowVersionId, fileTypes, versionDAO);
     }
 
     /**
@@ -1426,8 +1598,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/star")
+    @Operation(operationId = "starEntry", description = "Star a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "starEntry", value = "Star a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public void starEntry(@ApiParam(hidden = true) @Auth User user,
+    public void starEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1443,9 +1616,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/unstar")
+    @Operation(operationId = "unstarEntry", description = "Unstar a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @Deprecated(since = "1.8.0")
-    public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
+    public void unstarEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
@@ -1456,6 +1630,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/starredUsers")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "getStarredUsers", description = "Returns list of users who starred the given workflow.")
     @ApiOperation(nickname = "getStarredUsers", value = "Returns list of users who starred the given workflow.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
         @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
@@ -1469,10 +1644,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{entryId}/registerCheckerWorkflow/{descriptorType}")
+    @Operation(operationId = "registerCheckerWorkflow", description = "Register a checker workflow and associates it with the given tool/workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     @SuppressWarnings("checkstyle:MagicNumber")
-    public Entry registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user,
+    public Entry registerCheckerWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
         @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath") String testParameterPath,
         @ApiParam(value = "Entry Id of parent tool/workflow.", required = true) @PathParam("entryId") Long entryId,
@@ -1620,15 +1796,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     /**
      * If include contains validations field, initialize the workflows validations for all of its workflow versions
      * If include contains aliases field, initialize the aliases for all of its workflow versions
+     * If include contains images field, initialize the images for all of its workflow versions
      * @param include
      * @param workflow
      */
-    private void initializeValidations(String include, Workflow workflow) {
+    private void initializeAdditionalFields(String include, Workflow workflow) {
         if (checkIncludes(include, VALIDATIONS)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
         if (checkIncludes(include, ALIASES)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getAliases()));
+        }
+        if (checkIncludes(include, IMAGES)) {
+            workflow.getWorkflowVersions().stream().filter(v -> v.isFrozen()).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
         }
     }
 
@@ -1637,9 +1817,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return this.workflowDAO;
     }
 
+    /**
+     * Throws an exception if the workflow is hosted
+     * @param workflow
+     */
     private void checkNotHosted(Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Throws an exception if the workflow is a service
+     * @param workflow
+     */
+    private void checkNotService(Workflow workflow) {
+        if (workflow.getDescriptorType() == DescriptorLanguage.SERVICE) {
+            throw new CustomWebApplicationException("Cannot modify services this way", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -1647,10 +1841,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{workflowId}/zip/{workflowVersionId}")
+    @Operation(operationId = "getWorkflowZip", description = "Download a ZIP file of a workflow and all associated files.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @Produces("application/zip")
-    public Response getWorkflowZip(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public Response getWorkflowZip(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
@@ -1674,9 +1869,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{alias}/aliases")
+    @Operation(operationId = "getWorkflowByAlias", description = "Retrieves a workflow by alias.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieves a workflow by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Workflow.class, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Auth Optional<User> user,
+    public Workflow getWorkflowByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         final Workflow workflow = this.workflowDAO.findByAlias(alias);
         checkEntry(workflow);
@@ -1690,7 +1886,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
     @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
-    public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public BioWorkflow addWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                    @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
                                    @Parameter(name = "organization", description = "Git repository organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
                                    @Parameter(name = "repositoryName", description = "Git repository name", required = true, in = ParameterIn.PATH) @PathParam("repositoryName") String repositoryName) {
@@ -1698,7 +1894,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
 
         // Find matching source control
-        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -1748,14 +1944,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
     @Operation(operationId = "deleteWorkflow", description = "Delete a stubbed workflow for a registry and repository path.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
-    public void deleteWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public void deleteWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
                                @Parameter(name = "organization", description = "Git repository organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization,
                                @Parameter(name = "repositoryName", description = "Git repository name", required = true, in = ParameterIn.PATH) @PathParam("repositoryName") String repositoryName) {
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
-        List<Token> scTokens = checkOnBitbucketToken(foundUser)
+        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -1792,16 +1988,67 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
     }
 
-    /**
-     * Finds the tool by Id, and then checks that it exists and that the user has access to it
-     * @param entryId Id of tool of interest
-     * @param user User to authenticate
-     * @return Tool
-     */
-    private Workflow findWorkflowByIdAndCheckWorkflowAndUser(Long entryId, User user) {
-        Workflow workflow = workflowDAO.findById(entryId);
-        checkEntry(workflow);
-        checkUser(user, workflow);
-        return workflow;
+    @POST
+    @Path("/github/release")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
+        @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+        @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
+        @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
+        return githubWebhookRelease(repository, username, gitReference, installationId);
+    }
+
+    @POST
+    @Path("/github/install")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handle the installation of our GitHub app onto a repository or organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handle the installation of our GitHub app onto a repository or organization.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    public Response handleGitHubInstallation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @Parameter(name = "repositories", description = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
+            @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
+            @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
+        LOG.info("GitHub app installed on the repositories " + repositories + "(" + username + ")");
+        Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
+        Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
+            LambdaEvent lambdaEvent = new LambdaEvent();
+            String[] splitRepository = repository.split("/");
+            lambdaEvent.setOrganization(splitRepository[0]);
+            lambdaEvent.setRepository(splitRepository[1]);
+            lambdaEvent.setGithubUsername(username);
+            lambdaEvent.setType(LambdaEvent.LambdaEventType.INSTALL);
+            triggerUser.ifPresent(lambdaEvent::setUser);
+            lambdaEventDAO.create(lambdaEvent);
+        });
+        return Response.status(HttpStatus.SC_OK).build();
+    }
+
+    @DELETE
+    @Path("/github")
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))
+    @ApiOperation(value = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
+    public Response handleGitHubBranchDeletion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @QueryParam("repository") String repository,
+            @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @QueryParam("username") String username,
+            @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
+            @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
+        LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
+        githubWebhookDelete(repository, gitReference, username, installationId);
+        return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 }

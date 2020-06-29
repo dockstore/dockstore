@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,7 +97,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": FOUND: {}", fileName);
             return fileContent;
         } catch (ApiException e) {
-            LOG.error("unable to readFile: " + fileName);
+            LOG.error(gitUsername + ": ApiException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
             return null;
         }
     }
@@ -123,7 +124,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return files;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
             return null;
         }
     }
@@ -146,11 +147,15 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return collect;
         } catch (ApiException e) {
-            LOG.error("could not find projects due to ", e);
-            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token",
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return this.handleGetWorkflowGitUrl2RepositoryIdError(e);
         }
     }
+
+    @Override
+    public String getName() {
+        return "Bitbucket";
+    }
+
 
     /**
      * Gets arbitrary URLs that Bitbucket seems to use for pagination
@@ -244,17 +249,23 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             Branch branch = refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(repositoryId.split("/")[0], version.getReference(),
-                repositoryId.split("/")[0]);
-            Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
-                repositoryId.split("/")[0]);
+                repositoryId.split("/")[1]);
             if (branch != null) {
                 return branch.getTarget().getHash();
             }
+        } catch (ApiException ex) {
+            LOG.error(gitUsername + ": apiexception on reading branch commitid", ex);
+            // this is not so critical to warrant a http error code
+        }
+
+        try {
+            Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
+                    repositoryId.split("/")[1]);
             if (tag != null) {
                 return tag.getTarget().getHash();
             }
-        } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading commitid" + e.getMessage());
+        } catch (ApiException ex) {
+            LOG.error(gitUsername + ": apiexception on reading tag commitid", ex);
             // this is not so critical to warrant a http error code
         }
         return null;
@@ -281,7 +292,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             PaginatedRefs paginatedRefs = refsApi
@@ -290,21 +301,24 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
                     String branchName = ref.getName();
-                    OffsetDateTime date = ref.getTarget().getDate();
-                    WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
-                    version.setLastModified(Date.from(date.toInstant()));
-                    String calculatedPath = version.getWorkflowPath();
-                    // Now grab source files
-                    DescriptorLanguage.FileType identifiedType = workflow.getFileType();
-                    // TODO: No exceptions are caught here in the event of a failed call
-                    SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                    if (versionName.isEmpty() || Objects.equals(branchName, versionName.get())) {
+                        OffsetDateTime date = ref.getTarget().getDate();
+                        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+                        version.setLastModified(Date.from(date.toInstant()));
+                        String calculatedPath = version.getWorkflowPath();
+                        // Now grab source files
+                        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
+                        // TODO: No exceptions are caught here in the event of a failed call
+                        SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                    // Use default test parameter file if either new version or existing version that hasn't been edited
-                    createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
-                    workflow.addWorkflowVersion(
-                        combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                        // Use default test parameter file if either new version or existing version that hasn't been edited
+                        createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
+                        workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
 
-                    version = versionValidation(version, workflow, calculatedPath);
+                        version.setCommitID(getCommitID(repositoryId, version));
+
+                        version = versionValidation(version, workflow, calculatedPath);
+                    }
                 });
 
                 if (paginatedRefs.getNext() != null) {

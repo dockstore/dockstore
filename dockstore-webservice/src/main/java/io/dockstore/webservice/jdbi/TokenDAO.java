@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -81,11 +82,19 @@ public class TokenDAO extends AbstractDAO<Token> {
         return list(namedQuery("io.dockstore.webservice.core.Token.findZenodoByUserId").setParameter("userId", userId));
     }
 
+    public List<Token> findOrcidByUserId(final long userId) {
+        return list(namedQuery("io.dockstore.webservice.core.Token.findOrcidByUserId").setParameter("userId", userId));
+    }
+
     public Token findByContent(String content) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findByContent").setParameter("content", content));
     }
 
     public Token findTokenByGitHubUsername(String githubUsername) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findTokenByGitHubUsername").setParameter("username", githubUsername));
+    }
+
+    public Token findTokenByUserNameAndTokenSource(String username, TokenType tokenSource) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findTokenByUserNameAndTokenSource").setParameter("username", username).setParameter("tokenSource", tokenSource));
     }
 }

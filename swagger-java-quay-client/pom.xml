@@ -22,7 +22,7 @@
     <name>swagger-java-quay-client</name>
 
     <parent>
-        <version>1.8.7-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -39,7 +39,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/discovery.formatted.json</inputSpec>
+                            <inputSpec>${project.basedir}/discovery.formatted.yaml</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>

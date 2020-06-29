@@ -24,6 +24,7 @@ import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
@@ -34,7 +35,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.BioWorkflow;
 import io.swagger.client.model.Collection;
-import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
@@ -53,6 +53,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -84,6 +85,34 @@ public class UserResourceIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+    }
+
+    @Test
+    public void testAddUserToOrgs() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.addUserToDockstoreWorkflows(userApi.getUser().getId(), "");
+
+
+        // Remove an association with an entry
+        long numberOfWorkflows = workflows.size();
+        testingPostgres.runUpdateStatement("delete from user_entry where entryid = 951");
+        long newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
+        assertEquals("Should have one less workflow", numberOfWorkflows - 1, newNumberOfWorkflows);
+
+        // Add user back to workflow
+        workflows = userApi.addUserToDockstoreWorkflows((long)1, "");
+        newNumberOfWorkflows = workflows.size();
+        assertEquals("Should have the original number of workflows", numberOfWorkflows, newNumberOfWorkflows);
+        assertTrue("Should have the workflow DockstoreTestUser/dockstore-whalesay-2", workflows.stream().anyMatch(workflow -> Objects.equals("dockstore-whalesay-2", workflow.getRepository()) && Objects.equals("DockstoreTestUser", workflow.getOrganization())));
     }
 
     @Test(expected = ApiException.class)
@@ -209,7 +238,9 @@ public class UserResourceIT extends BaseIT {
         User user = userApi.getUser();
         assertNotNull(user);
         // try to delete with published workflows
-        userApi.refreshWorkflows(user.getId());
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getLowerShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
@@ -290,8 +321,10 @@ public class UserResourceIT extends BaseIT {
 
         List<Repository> repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()).findAny().isPresent());
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && !repo.isPresent()));
 
         // Register a workflow
         BioWorkflow ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
@@ -301,8 +334,10 @@ public class UserResourceIT extends BaseIT {
         // dockstoretesting/basic-workflow should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()).findAny().isPresent());
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-tool") && !repo.isPresent()));
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent()));
 
         // Try deleting a workflow
         workflowsApi.deleteWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
@@ -319,7 +354,8 @@ public class UserResourceIT extends BaseIT {
         workflowsApi.refresh(ghWorkflow.getId());
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstoretesting/basic-workflow") && repo.isPresent() && !repo.isCanDelete()));
 
         // Test Gitlab
         orgs = userApi.getUserOrganizations(SourceControl.GITLAB.name());
@@ -328,8 +364,10 @@ public class UserResourceIT extends BaseIT {
 
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()).findAny().isPresent());
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-md5sum-unified") && !repo.isPresent()));
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && !repo.isPresent()));
 
         // Register a workflow
         BioWorkflow glWorkflow = workflowsApi.addWorkflow(SourceControl.GITLAB.name(), "dockstore.test.user2", "dockstore-workflow-example");
@@ -338,7 +376,8 @@ public class UserResourceIT extends BaseIT {
         // dockstore.test.user2/dockstore-workflow-example should be present now
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITLAB.name(), "dockstore.test.user2");
         assertTrue(repositories.size() > 0);
-        assertTrue(repositories.stream().filter(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()).findAny().isPresent());
+        assertTrue(
+            repositories.stream().anyMatch(repo -> Objects.equals(repo.getPath(), "dockstore.test.user2/dockstore-workflow-example") && repo.isPresent()));
 
         // Try registering the workflow again (duplicate) should fail
         try {
@@ -370,11 +409,12 @@ public class UserResourceIT extends BaseIT {
 
         Workflow addedWorkflow = workflowsApi.manualRegister("gitlab", "dockstore.test.user2/dockstore-workflow-md5sum-unified", "/Dockstore.cwl", "", "cwl", "/test.json");
 
-        List<DockstoreTool> tools = userApi.refresh(user.getId());
+        userApi.refreshToolsByOrganization((long)1, "dockstore.test.user2", null);
+
         List<EntryUpdateTime> entries = userApi.getUserEntries(10, null);
         assertFalse(entries.isEmpty());
-        assertEquals("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPath());
-        assertEquals("dockstore-workflow-md5sum-unified", entries.get(entries.size() - 1).getPrettyPath());
+        assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified")));
+        assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
 
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);

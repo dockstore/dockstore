@@ -29,15 +29,18 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
@@ -78,7 +81,18 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntryLiteByUserId", query = "SELECT new io.dockstore.webservice.core.database.EntryLite$EntryLiteTool(t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate as entryUpdated, MAX(v.dbUpdateDate) as versionUpdated) "
+                + "FROM Tool t LEFT JOIN t.workflowVersions v "
+                + "WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) "
+                + "GROUP BY t.registry, t.namespace, t.name, t.toolname, t.dbUpdateDate"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespace", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository", query = "SELECT t from Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId) AND t.registry = :registry AND t.namespace = :namespace AND t.name = :repository"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.getPublishedEntriesByUserId", query = "SELECT t FROM Tool t WHERE t.isPublished = true AND t.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
+})
+
+
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {
@@ -132,6 +146,11 @@ public class Tool extends Entry<Tool, Tag> {
     @Cascade(CascadeType.DETACH)
     private final SortedSet<Tag> workflowVersions;
 
+    @JsonIgnore
+    @OneToOne(targetEntity = Tag.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
+    private Tag actualDefaultVersion;
+
     @Transient
     @JsonProperty
     private Set<Tag> tags = null;
@@ -145,6 +164,16 @@ public class Tool extends Entry<Tool, Tag> {
         // this.userId = userId;
         this.name = name;
         workflowVersions = new TreeSet<>();
+    }
+
+    @Override
+    public void setActualDefaultVersion(Tag version) {
+        this.actualDefaultVersion = version;
+    }
+
+    @Override
+    public Tag getActualDefaultVersion() {
+        return this.actualDefaultVersion;
     }
 
     @JsonProperty
@@ -263,6 +292,11 @@ public class Tool extends Entry<Tool, Tag> {
         return mode;
     }
 
+    @Override
+    public boolean isHosted() {
+        return getMode().equals(ToolMode.HOSTED);
+    }
+
     public void setMode(ToolMode mode) {
         this.mode = mode;
     }
@@ -327,7 +361,7 @@ public class Tool extends Entry<Tool, Tag> {
             return null;
         }
         for (Registry r : Registry.values()) {
-            if (r.toString() != null && r.toString().equals(this.registry)) {
+            if (r.getDockerPath() != null && r.getDockerPath().equals(this.registry)) {
                 return r;
             }
         }
@@ -351,7 +385,7 @@ public class Tool extends Entry<Tool, Tag> {
         case GITLAB:
         case QUAY_IO:
         case DOCKER_HUB:
-            this.setRegistry(registryThing.toString());
+            this.setRegistry(registryThing.getDockerPath());
             break;
         case SEVEN_BRIDGES:
         case AMAZON_ECR:

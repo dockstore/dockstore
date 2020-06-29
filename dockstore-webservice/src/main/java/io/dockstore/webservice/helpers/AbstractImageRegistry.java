@@ -45,8 +45,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -83,6 +81,7 @@ public abstract class AbstractImageRegistry {
     public static final String DOCKERHUB_URL = "https://hub.docker.com/v2/";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractImageRegistry.class);
     private static final String GITLAB_URL = "https://gitlab.com/api/v4/";
+    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
 
     /**
@@ -128,25 +127,32 @@ public abstract class AbstractImageRegistry {
      */
     public abstract boolean canConvertToAuto(Tool tool);
 
+    public abstract Tool getToolFromNamespaceAndRepo(String organization, String repository);
+
+    protected Tool unsupportedOperation() throws CustomWebApplicationException {
+        throw new CustomWebApplicationException("Unsupported operation, only Quay.io is supported for now", HttpStatus.SC_BAD_REQUEST);
+    }
+
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
-     * @param userId         The ID of the user
-     * @param userDAO        ...
-     * @param toolDAO        ...
-     * @param tagDAO         ...
-     * @param fileDAO        ...
-     * @param client         An HttpClient used by source code repositories
-     * @param githubToken    The user's GitHub token
-     * @param bitbucketToken The user's Bitbucket token
-     * @param gitlabToken    The user's GitLab token
-     * @param organization   If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @param userId            The ID of the user
+     * @param userDAO           ...
+     * @param toolDAO           ...
+     * @param tagDAO            ...
+     * @param fileDAO           ...
+     * @param client            An HttpClient used by source code repositories
+     * @param githubToken       The user's GitHub token
+     * @param bitbucketToken    The user's Bitbucket token
+     * @param gitlabToken       The user's GitLab token
+     * @param organization      If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @param dashboardPrefix   A string that prefixes logging statements to indicate that it will be used for Cloudwatch & Grafana.
      * @return The list of tools that have been updated
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
-            String organization, final EventDAO eventDAO) {
+            String organization, final EventDAO eventDAO, final String dashboardPrefix) {
         // Get all the namespaces for the given registry
         List<String> namespaces;
         if (organization != null) {
@@ -158,31 +164,79 @@ public abstract class AbstractImageRegistry {
         // Get all the tools based on the found namespaces
         List<Tool> apiTools = getToolsFromNamespace(namespaces);
 
+        String registryString = getRegistry().getDockerPath();
+
         // Add manual tools to list of api tools
         User user = userDAO.findById(userId);
-        List<Tool> manualTools = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
-
-        // Get all tools in the db for the given registry
-        List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO, toolDAO));
-
-        // Filter DB tools and API tools to only include relevant tools
-        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry().toString()));
-
-        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry().toString()));
+        List<Tool> userTools = toolDAO.findByUserRegistryNamespace(userId, registryString, organization);
+        // manualTools:
+        //  - isManualMode
+        //  - isTool
+        //  - belongs to user
+        //  - correct registry
+        //  - correct organization/namespace
+        List<Tool> manualTools = userTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
+        // notManualTools is similar except it's not manualMode
+        List<Tool> notManualTools = userTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH.equals(tool.getMode())).collect(Collectors.toList());
         apiTools.addAll(manualTools);
 
-        // Remove tools that can't be updated (Manual tools)
-        dbTools.removeIf(tool1 -> tool1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
-        apiTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
-        dbTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
         // Update api tools with build information
         updateAPIToolsWithBuildInformation(apiTools);
 
         // Update db tools by copying over from api tools
-        List<Tool> newDBTools = updateTools(apiTools, dbTools, user, toolDAO);
+        List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
+            logToolRefresh(dashboardPrefix, tool);
+
+            List<Tag> toolTags = getTags(tool);
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+        }
+
+        return newDBTools;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public List<Tool> refreshTool(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
+            String organization, final EventDAO eventDAO, final String dashboardPrefix, String repository) {
+
+        // Get all the tools based on the found namespaces
+        List<Tool> apiTools;
+        if (repository != null) {
+            apiTools = new ArrayList<>(Collections.singletonList(getToolFromNamespaceAndRepo(organization, repository)));
+        } else {
+            throw new CustomWebApplicationException("Trying to refresh/register a tool without a repository name", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Add manual tools to list of api tools
+        String registryString = getRegistry().getDockerPath();
+        
+        User user = userDAO.findById(userId);
+        List<Tool> userRegistryNamespaceRepositoryTools = toolDAO
+                .findByUserRegistryNamespaceRepository(userId, registryString, organization, repository);
+        List<Tool> manualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> ToolMode.MANUAL_IMAGE_PATH
+                .equals(tool.getMode())).collect(
+                Collectors.toList());
+        List<Tool> notManualTools = userRegistryNamespaceRepositoryTools.stream().filter(tool -> !ToolMode.MANUAL_IMAGE_PATH
+                .equals(tool.getMode())).collect(
+                Collectors.toList());
+        apiTools.addAll(manualTools);
+
+        // Update api tools with build information
+        updateAPIToolsWithBuildInformation(apiTools);
+
+        // Update db tools by copying over from api tools
+        List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
+
+        // Get tags and update for each tool
+        for (Tool tool : newDBTools) {
+            logToolRefresh(dashboardPrefix, tool);
+
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
@@ -200,11 +254,13 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO, String dashboardPrefix) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
         List<Tool> apiTools = new ArrayList<>();
+
+        logToolRefresh(dashboardPrefix, tool);
 
         // Find a tool with the given tool's path and is not manual
         // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
@@ -220,12 +276,12 @@ public abstract class AbstractImageRegistry {
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
         if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null && tool.getRegistry()
-                .equals(Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
+                .equals(Registry.QUAY_IO.getDockerPath()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 
         // Check if manual Quay repository can be changed to automatic
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && tool.getRegistry().equals(Registry.QUAY_IO.toString())) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
             if (canConvertToAuto(tool)) {
                 tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
             }
@@ -259,9 +315,9 @@ public abstract class AbstractImageRegistry {
 
         List<Tag> toolTags;
         // Get tags and update for each tool
-        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.getDockerPath())) {
             toolTags = getTagsDockerHub(tool);
-        } else if (tool.getRegistry().equals(Registry.GITLAB.toString())) {
+        } else if (tool.getRegistry().equals(Registry.GITLAB.getDockerPath())) {
             toolTags = getTagsGitLab(tool);
         } else {
             toolTags = getTags(tool);
@@ -275,6 +331,21 @@ public abstract class AbstractImageRegistry {
         updatedTool.syncMetadataWithDefault();
         // Return the updated tool
         return updatedTool;
+    }
+
+    /**
+     * Logs a refresh statement with the tool's descriptor language(s).
+     * These logs will be monitored by CloudWatch and displayed on Grafana.
+     * @param dashboardPrefix     dashboard string that will prefix the log
+     * @param tool                tool that is being refreshed
+     */
+    private void logToolRefresh(final String dashboardPrefix, final Tool tool) {
+        List<String> descriptorTypes = tool.getDescriptorType();
+        String name = tool.getEntryPath();
+
+        for (String descriptorType : descriptorTypes) {
+            LOG.info(String.format("%s: Refreshing %s tool named %s", dashboardPrefix, descriptorType, name));
+        }
     }
 
     public List<Tag> getTagsDockerHub(Tool tool) {
@@ -307,12 +378,14 @@ public abstract class AbstractImageRegistry {
 
                     List<DockerHubImage> dockerHubImages = Arrays.asList(r.getImages());
                     List<Checksum> checksums = new ArrayList<>();
+                    // For every version, DockerHub can provide multiple images, one for each architecture
                     for (DockerHubImage i : dockerHubImages) {
                         final String manifestDigest = i.getDigest();
                         checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+                        Image image = new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB);
+                        image.setArchitecture(i.getArchitecture());
+                        tag.getImages().add(image);
                     }
-                    Set<Image> images = Collections.singleton(new Image(checksums, repo, tag.getName(), r.getImageID()));
-                    tag.getImages().addAll(images);
                     tags.add(tag);
                 }
 
@@ -362,8 +435,7 @@ public abstract class AbstractImageRegistry {
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final EventDAO eventDAO, final User user) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getWorkflowVersions());
-        boolean releaseCreated = false;
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
                 LOG.info(tool.getToolPath() + " : Tags for tool {} did not get updated because new tags were not found",
@@ -441,7 +513,7 @@ public abstract class AbstractImageRegistry {
                     tag.setParent(tool);
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
-                    releaseCreated = true;
+                    eventDAO.createAddTagToEntryEvent(user, tool, tag);
                     tool.addWorkflowVersion(tag);
 
                     if (!tag.isAutomated()) {
@@ -463,7 +535,7 @@ public abstract class AbstractImageRegistry {
         }
 
         // For tools from dockerhub, grab/update the image and checksum information
-        if (tool.getRegistry().equals(Registry.DOCKER_HUB.toString()) || tool.getRegistry().equals(Registry.GITLAB.toString())) {
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.getDockerPath()) || tool.getRegistry().equals(Registry.GITLAB.getDockerPath())) {
             updateNonQuayImageInformation(newTags, tool, existingTags);
         }
 
@@ -501,10 +573,6 @@ public abstract class AbstractImageRegistry {
         FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
-        if (releaseCreated) {
-            Event event = tool.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).build();
-            eventDAO.create(event);
-        }
         toolDAO.create(tool);
     }
 
@@ -533,7 +601,7 @@ public abstract class AbstractImageRegistry {
     private void updateImageInformation(Tool tool, Tag newTag, Tag oldTag) {
         // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
         // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
-        if (oldTag.getImages().isEmpty() && tool.getRegistry().equals(Registry.QUAY_IO.toString())) {
+        if (oldTag.getImages().isEmpty() && tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
             oldTag.getImages().addAll(newTag.getImages());
         } else {
             oldTag.getImages().removeAll(oldTag.getImages());
@@ -581,8 +649,7 @@ public abstract class AbstractImageRegistry {
                                 List<Checksum> checksums = new ArrayList<>();
 
                                 checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-                                Set<Image> images = Collections.singleton(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null));
-                                tag.getImages().addAll(images);
+                                tag.getImages().add(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null, Registry.GITLAB));
                                 tags.add(tag);
                             }
                         }
@@ -612,9 +679,21 @@ public abstract class AbstractImageRegistry {
         // copy content over to existing files
         for (SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
+            List<Checksum> checksums = new ArrayList<>();
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
+
+                    Optional<String> sha = FileFormatHelper.calcSHA1(oldFile.getContent());
+                    if (sha.isPresent()) {
+                        checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+                        if (oldFile.getChecksums() == null) {
+                            oldFile.setChecksums(checksums);
+                        } else {
+                            oldFile.getChecksums().clear();
+                            oldFile.getChecksums().addAll(checksums);
+                        }
+                    }
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -630,6 +709,10 @@ public abstract class AbstractImageRegistry {
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
+            Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
+            if (sha.isPresent()) {
+                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
+            }
             tag.addSourceFile(file);
         }
 
@@ -797,23 +880,6 @@ public abstract class AbstractImageRegistry {
         sourcefile.setAbsolutePath(path);
         sourcefile.setType(type);
         return sourcefile;
-    }
-
-    /**
-     * Gets tools for the current user
-     *
-     * @param userId
-     * @param userDAO
-     * @return
-     */
-    private List<Tool> getToolsFromUser(Long userId, UserDAO userDAO, ToolDAO toolDAO) {
-        final Set<Entry> entries = userDAO.findById(userId).getEntries();
-        List<Tool> toolList = new ArrayList<>();
-        // getting tools indirectly via the user seems to retrieve shallow tools that cause lazy load issues during deletion
-        // optimize post 1.5.0, see #1779
-        entries.stream().filter(entry -> entry instanceof Tool).map(tool -> toolDAO.findById(tool.getId())).filter(Objects::nonNull)
-            .forEach(toolList::add);
-        return toolList;
     }
 
     /**

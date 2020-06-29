@@ -46,13 +46,15 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.swagger.api.impl.ToolsApiServiceImpl;
+import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,8 +108,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      * @param organization
      * @return
      */
-    private List<Entry> getPublishedByOrganization(String organization) {
-        final List<Entry> published = new ArrayList<>();
+    private List<Entry<?, ?>> getPublishedByOrganization(String organization) {
+        final List<Entry<?, ?>> published = new ArrayList<>();
         published.addAll(workflowDAO.findPublishedByOrganization(organization));
         published.addAll(toolDAO.findPublishedByNamespace(organization));
         published.sort(Comparator.comparing(Entry::getGitUrl));
@@ -119,12 +121,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return Response.ok().entity(getPublishedByOrganization(organization)).build();
     }
 
-    private List<io.swagger.model.Tool> workflowOrgGetList(String organization) {
+    private List<io.openapi.model.Tool> workflowOrgGetList(String organization) {
         List<Workflow> published = workflowDAO.findPublishedByOrganization(organization);
         return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config)).collect(Collectors.toList());
     }
 
-    private List<io.swagger.model.Tool> entriesOrgGetList(String organization) {
+    private List<io.openapi.model.Tool> entriesOrgGetList(String organization) {
         List<Tool> published = toolDAO.findPublishedByNamespace(organization);
         return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config)).collect(Collectors.toList());
     }
@@ -211,9 +213,19 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
-            } catch (IOException e) {
-                LOG.error("Could not use elastic search index", e);
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } catch (ResponseException e) {
+                // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
+                int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
+                int statusCode = e.getResponse().getStatusLine().getStatusCode();
+                LOG.error("Could not use Elasticsearch search", e);
+                if (ArrayUtils.contains(codesToResurface, statusCode)) {
+                    throw new CustomWebApplicationException(e.getMessage(), statusCode);
+                } else {
+                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            } catch (IOException e2) {
+                LOG.error("Could not use Elasticsearch search", e2);
+                throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
         return Response.ok().entity(0).build();
@@ -226,8 +238,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
         ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
         ToolsApiServiceImpl.ParsedRegistryID parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
-        Entry entry = impl.getEntry(parsedID, Optional.empty());
-        Optional<? extends Version> versionOptional;
+        Entry<?, ?> entry = impl.getEntry(parsedID, Optional.empty());
+        Optional<? extends Version<?>> versionOptional;
 
         if (entry instanceof Workflow) {
             Workflow workflow = (Workflow)entry;
@@ -241,7 +253,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         if (versionOptional.isPresent()) {
-            Version version = versionOptional.get();
+            Version<?> version = versionOptional.get();
             // so in this stream we need to standardize relative to the main descriptor
             Optional<SourceFile> correctSourceFile = impl
                 .lookForFilePath(version.getSourceFiles(), relativePath, version.getWorkingDirectory());

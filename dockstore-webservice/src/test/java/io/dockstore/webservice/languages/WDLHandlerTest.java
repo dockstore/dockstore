@@ -175,6 +175,11 @@ public class WDLHandlerTest {
             return null;
         }
 
+        @Override
+        public String getName() {
+            return "gatk";
+        }
+
         // From here on down these methods are not invoked in our tests
         @Override
         public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
@@ -198,7 +203,7 @@ public class WDLHandlerTest {
 
         @Override
         public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-                Map<String, WorkflowVersion> existingDefaults) {
+                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
             return null;
         }
 

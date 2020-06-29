@@ -39,6 +39,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.EntryLite;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -150,6 +151,16 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 
+    public List<EntryLite> findEntryVersions(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId").setParameter("userId", userId));
+    }
+    public List<T> findMyEntries(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId").setParameter("userId", userId));
+    }
+    public List<T> findMyEntriesPublished(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId").setParameter("userId", userId));
+    }
+
     public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
         return list(namedQuery("Entry.getCollectionWorkflows").setParameter("collectionId", collectionId));
     }
@@ -161,7 +172,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
         return list(namedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
     }
-
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
         return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
     }

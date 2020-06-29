@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <version>1.8.7-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -40,10 +40,10 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.8.7-SNAPSHOT</version>
+            <version>1.9.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>ro.fortsoft.pf4j</groupId>
+            <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
             <!-- !!! VERY IMPORTANT -->
             <scope>provided</scope>

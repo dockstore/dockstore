@@ -3,8 +3,10 @@ package io.dockstore.webservice.core;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -144,7 +146,7 @@ public class Collection implements Serializable, Aliasable {
 
     @JsonProperty("entries")
     public List<CollectionEntry> getCollectionEntries() {
-        return collectionEntries;
+        return collectionEntries.stream().sorted(Comparator.comparing(CollectionEntry::getId)).collect(Collectors.toCollection(LinkedList::new));
     }
 
     public void setEntries(Set<Entry> entries) {

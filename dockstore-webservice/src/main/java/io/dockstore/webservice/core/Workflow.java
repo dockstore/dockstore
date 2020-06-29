@@ -28,9 +28,11 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -40,6 +42,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -70,7 +73,10 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent")
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
@@ -109,15 +115,25 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
     @Convert(converter = DescriptorLanguageConverter.class)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL, WDL, or Nextflow (Defaults to CWL)", required = true, position = 18, allowableValues = "CWL, WDL, NFL, service")
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "CWL, WDL, NFL, gxformat2, service")
     private DescriptorLanguage descriptorType;
 
     // TODO: Change this to LAZY, this is the source of all our problems
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
+    @Convert(converter = DescriptorLanguageSubclassConverter.class)
+    @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
+    private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
+
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     private final SortedSet<WorkflowVersion> workflowVersions;
+
+    @JsonIgnore
+    @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
+    private WorkflowVersion actualDefaultVersion;
 
     protected Workflow() {
         workflowVersions = new TreeSet<>();
@@ -168,16 +184,33 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
         targetWorkflow.setDescriptorType(getDescriptorType());
-        targetWorkflow.setDefaultVersion(getDefaultVersion());
+        targetWorkflow.setDescriptorTypeSubclass(getDescriptorTypeSubclass());
+        targetWorkflow.setActualDefaultVersion(this.getActualDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
         targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
         targetWorkflow.setIsChecker(isIsChecker());
         targetWorkflow.setConceptDoi(getConceptDoi());
+        targetWorkflow.setMode(getMode());
+    }
+
+    @Override
+    public void setActualDefaultVersion(WorkflowVersion version) {
+        this.actualDefaultVersion = version;
+    }
+
+    @Override
+    public WorkflowVersion getActualDefaultVersion() {
+        return this.actualDefaultVersion;
     }
 
     @JsonProperty
     public WorkflowMode getMode() {
         return mode;
+    }
+
+    @Override
+    public boolean isHosted() {
+        return getMode().equals(WorkflowMode.HOSTED);
     }
 
     public void setMode(WorkflowMode mode) {
@@ -260,6 +293,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return Objects.requireNonNullElse(this.descriptorType, DescriptorLanguage.CWL);
     }
 
+    public DescriptorLanguageSubclass getDescriptorTypeSubclass() {
+        return descriptorTypeSubclass;
+    }
+
+    public void setDescriptorTypeSubclass(final DescriptorLanguageSubclass descriptorTypeSubclass) {
+        this.descriptorTypeSubclass = descriptorTypeSubclass;
+    }
+
     @JsonIgnore
     public DescriptorLanguage.FileType getFileType() {
         return this.getDescriptorType().getFileType();
@@ -301,6 +342,19 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         @Override
         public DescriptorLanguage convertToEntityAttribute(String dbData) {
             return DescriptorLanguage.convertShortStringToEnum(dbData);
+        }
+    }
+
+    public static class DescriptorLanguageSubclassConverter implements AttributeConverter<DescriptorLanguageSubclass, String> {
+
+        @Override
+        public String convertToDatabaseColumn(DescriptorLanguageSubclass attribute) {
+            return attribute.getShortName();
+        }
+
+        @Override
+        public DescriptorLanguageSubclass convertToEntityAttribute(String dbData) {
+            return DescriptorLanguageSubclass.convertShortNameStringToEnum(dbData);
         }
     }
 }

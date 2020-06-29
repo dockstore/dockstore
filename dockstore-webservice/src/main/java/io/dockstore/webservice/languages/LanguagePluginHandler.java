@@ -16,14 +16,19 @@
 package io.dockstore.webservice.languages;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.core.DescriptionSource;
@@ -40,6 +45,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
     public static final Logger LOG = LoggerFactory.getLogger(LanguagePluginHandler.class);
     private final MinimalLanguageInterface minimalLanguageInterface;
+    private final Gson gson = new Gson();
 
     LanguagePluginHandler(Class<? extends MinimalLanguageInterface> workflowLanguagePluginClass) {
         try {
@@ -72,7 +78,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
             return ((RecommendedLanguageInterface)minimalLanguageInterface).validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
         } else {
-            return new VersionTypeValidation(true, new HashMap<>());
+            return new VersionTypeValidation(true, Collections.emptyMap());
         }
     }
 
@@ -118,19 +124,30 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return new VersionTypeValidation(true, new HashMap<>());
+        return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        return new VersionTypeValidation(true, new HashMap<>());
+        return new VersionTypeValidation(true, Collections.emptyMap());
     }
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
 
-        MinimalLanguageInterface.FileReader reader = path -> sourceCodeRepoInterface.readFile(repositoryId, path, version.getReference());
+        MinimalLanguageInterface.FileReader reader = new MinimalLanguageInterface.FileReader() {
+
+            @Override
+            public String readFile(String path) {
+                return sourceCodeRepoInterface.readFile(repositoryId, path, version.getReference());
+            }
+
+            @Override
+            public List<String> listFiles(String pathToDirectory) {
+                return sourceCodeRepoInterface.listFiles(repositoryId, pathToDirectory, version.getReference());
+            }
+        };
 
         final Map<String, Pair<String, MinimalLanguageInterface.GenericFileType>> stringPairMap = minimalLanguageInterface
             .indexWorkflowFiles(filepath, content, reader);
@@ -139,9 +156,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             final SourceFile sourceFile = new SourceFile();
             sourceFile.setPath(entry.getKey());
             sourceFile.setContent(entry.getValue().getLeft());
-            // DOCKSTORE-2428 - demo how to add new workflow language
-            // sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SWL);
-            if (minimalLanguageInterface.isService()) {
+            if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
             }
@@ -154,6 +169,25 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     @Override
     public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
         ToolDAO dao) {
+
+        if (type == Type.DAG && minimalLanguageInterface instanceof CompleteLanguageInterface) {
+            final Map<String, Object> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
+                .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            return gson.toJson(maps);
+        } else if (type == Type.TOOLS &&  minimalLanguageInterface instanceof CompleteLanguageInterface) {
+            // TODO: hook up tools here for Galaxy
+            final List<CompleteLanguageInterface.RowData> rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
+                .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            final List<Map<String, String>> collect = rowData.stream().map(row -> {
+                Map<String, String> oldRow = new HashMap();
+                oldRow.put("id", row.toolid);
+                oldRow.put("file", row.filename);
+                oldRow.put("docker", row.dockerContainer);
+                oldRow.put("link", row.link == null ? "" : row.link.toString());
+                return oldRow;
+            }).collect(Collectors.toList());
+            return gson.toJson(collect);
+        }
         return "";
     }
 }
