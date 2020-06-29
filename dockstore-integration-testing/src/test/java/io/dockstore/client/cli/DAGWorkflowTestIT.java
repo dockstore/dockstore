@@ -23,6 +23,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.webservice.core.dag.ElementsDefinition;
 import io.swagger.client.ApiException;
@@ -115,6 +116,25 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
         Assert.assertTrue("edge should connect untar and compile",
             strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
+
+    }
+
+    @Test
+    public void testWorkflowDAGCWLRequirementMap() throws ApiException {
+        // Input: snaptools_create_snap_file.cwl
+        // Repo: SnapTools
+        // Branch: feature/docker_cwl_req_in_min
+        // Test: normal CWL workflow DAG with requirement map
+
+        final List<String> strings = getJSON("DockstoreTestUser2/SnapTools", "/snaptools_create_snap_file.cwl", DescriptorLanguage.CWL.getShortName(), "feature/docker_cwl_req_in_main");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have eight nodes (including start and end)", 8, countNode);
+        Assert.assertTrue("node data should have snaptools_preprocess_reads as tool", strings.get(0).contains("snaptools_preprocess_reads"));
+        Assert.assertTrue("node data should have snaptools_create_ref_genome_size_file as tool", strings.get(0).contains("snaptools_create_ref_genome_size_file"));
+        Assert.assertTrue("edge should connect snaptools_preprocess_reads and snaptools_create_ref_genome_size_file",
+                strings.get(0).contains("\"source\":\"dockstore_snaptools_create_ref_genome_size_file\",\"target\":\"dockstore_snaptools_preprocess_reads\""));
 
     }
 
