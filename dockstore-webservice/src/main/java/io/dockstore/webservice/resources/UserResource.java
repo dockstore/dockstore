@@ -569,7 +569,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     }
 
     private List<Workflow> getBioworkflows(User user) {
-        return workflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
+        return workflowDAO.findMyEntries(user.getId()).stream().filter(BioWorkflow.class::isInstance).collect(Collectors.toList());
     }
 
     // TODO: Replace with code similar to the new userWorkflows endpoint once it is optimised
