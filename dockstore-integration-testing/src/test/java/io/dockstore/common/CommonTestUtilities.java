@@ -297,7 +297,7 @@ public final class CommonTestUtilities {
         try {
             executor.execute(commandLine);
         } catch (IOException e) {
-            LOG.error("Could not execute command. " + e.getMessage());
+            LOG.error("Could not execute command. " + e.getMessage(), e);
             e.printStackTrace();
         }
     }
