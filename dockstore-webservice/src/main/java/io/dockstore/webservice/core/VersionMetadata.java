@@ -40,24 +40,24 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "version_metadata")
 public class VersionMetadata {
     @Column(columnDefinition =  "boolean default false")
-    protected boolean verified;
+    public boolean verified;
 
     @Column()
-    protected String verifiedSource;
+    public String verifiedSource;
 
     @Column()
-    protected String doiURL;
+    public String doiURL;
 
     @Column()
-    protected boolean hidden;
+    public boolean hidden;
 
     @Column(columnDefinition = "text default 'NOT_REQUESTED'", nullable = false)
     @Enumerated(EnumType.STRING)
-    protected Version.DOIStatus doiStatus;
+    public Version.DOIStatus doiStatus;
 
     @Column
     @ApiModelProperty(value = "This is the name of the author stated in the descriptor")
-    protected String author;
+    public String author;
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")

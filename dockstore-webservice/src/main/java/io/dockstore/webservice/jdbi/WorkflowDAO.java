@@ -38,6 +38,7 @@ import io.dockstore.webservice.core.BioWorkflow_;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.TrsTool;
+import io.dockstore.webservice.core.database.TrsToolVersion;
 import io.dockstore.webservice.core.database.WorkflowTrsTool;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -274,7 +275,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
                 join.get(BioWorkflow_.sourceControl),
                 join.get(BioWorkflow_.organization),
                 join.get(BioWorkflow_.repository),
-                join.get(BioWorkflow_.workflowName)
+                join.get(BioWorkflow_.workflowName),
+                root.get(BioWorkflow_.lastUpdated)
                 ));
         Predicate predicate = cb.isTrue(root.get(BioWorkflow_.isPublished));
         predicate = andLike(cb, predicate, root.get(BioWorkflow_.organization), organization);
@@ -287,7 +289,11 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         query.where(predicate);
         final Query<TrsTool> toolQuery = currentSession().createQuery(query);
         final List<TrsTool> tools = toolQuery.getResultList();
-        return filterByRegistry(registry, tools);
+        final List<TrsTool> trsTools = filterByRegistry(registry, tools);
+        final List<TrsToolVersion> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getVersions")
+                .setParameterList("ids", trsTools.stream().map(t -> t.getId()).collect(Collectors.toList())));
+        System.out.println(versions);
+        return trsTools;
     }
 
     // Filter is on SourceControl().toString(), which returns a value defined

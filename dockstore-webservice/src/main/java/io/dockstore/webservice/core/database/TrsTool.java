@@ -1,7 +1,10 @@
 package io.dockstore.webservice.core.database;
 
+import java.util.Date;
+
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
+import io.openapi.model.ToolClass;
 
 public abstract class TrsTool {
     private final long id;
@@ -11,11 +14,12 @@ public abstract class TrsTool {
     private final DescriptorLanguage descriptorType;
     private final String repository; // toolPath for tools, workflowPath for workflow
     private final WorkflowPath checkerWorkflow;
+    private final Date lastUpdated;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public TrsTool(final long id, final String organization, final String description, SourceControl sourceControl,
             final DescriptorLanguage descriptorType, final String repository, final SourceControl checkerSourceControl, final String checkerOrg,
-            final String checkerRepo, final String checkerWorkflowName) {
+            final String checkerRepo, final String checkerWorkflowName, final Date lastUpdated) {
         this.id = id;
         this.organization = organization;
         this.description = description;
@@ -27,6 +31,7 @@ public abstract class TrsTool {
         } else {
             this.checkerWorkflow = new WorkflowPath(checkerSourceControl, checkerOrg, checkerRepo, checkerWorkflowName);
         }
+        this.lastUpdated = lastUpdated;
     }
 
     public long getId() {
@@ -63,7 +68,13 @@ public abstract class TrsTool {
         }
         return null;
     }
+
+    public String getMetaVersion() {
+        return lastUpdated != null ? lastUpdated.toString() : new Date(0).toString();
+    }
     public abstract String getTrsId();
+
+    public abstract ToolClass getToolclass();
 
     //    private List<ToolVersion> versions = new ArrayList<>();
 
