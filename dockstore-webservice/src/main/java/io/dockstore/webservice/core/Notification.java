@@ -48,7 +48,7 @@ public class Notification {
     private String message;
 
     @Column
-    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2)
+    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2, dataType = "integer")
     private Timestamp expiration;
 
     @Column

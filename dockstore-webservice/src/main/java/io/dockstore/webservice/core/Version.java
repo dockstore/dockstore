@@ -152,13 +152,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // database timestamps
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
-    @ApiModelProperty(position = 10)
+    @ApiModelProperty(position = 10, dataType = "integer")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
-    @ApiModelProperty(position = 11)
+    @ApiModelProperty(position = 11, dataType = "integer")
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
