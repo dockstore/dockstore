@@ -8,9 +8,9 @@ package io.dockstore.webservice.core.database;
  */
 public class VersionVerifiedPlatform {
 
-    final private Long versionId;
-    final private String metadata;
-    final private String source;
+    private final Long versionId;
+    private final String metadata;
+    private final String source;
 
     public VersionVerifiedPlatform(final Long versionId, final String source, final String metadata) {
         this.versionId = versionId;
