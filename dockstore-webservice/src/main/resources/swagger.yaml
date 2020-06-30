@@ -2590,11 +2590,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - in: "body"
-        name: "body"
-        required: false
-        schema:
-          $ref: "#/definitions/User"
       - name: "entryId"
         in: "path"
         required: true
@@ -7229,20 +7224,6 @@ definitions:
         format: "date-time"
         position: 6
         description: "Timestamp at which the notification was last updated"
-  Optional:
-    type: "object"
-    properties:
-      empty:
-        type: "boolean"
-      present:
-        type: "boolean"
-  OptionalUser:
-    type: "object"
-    properties:
-      empty:
-        type: "boolean"
-      present:
-        type: "boolean"
   Organization:
     type: "object"
     required:
