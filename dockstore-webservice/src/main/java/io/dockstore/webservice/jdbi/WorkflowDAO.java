@@ -230,23 +230,23 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));
     }
 
     public List<Workflow> findPublishedByOrganization(String organization) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
             .setParameter("organization", organization));
     }
 
     public List<Workflow> findByOrganization(SourceControl sourceControl, String organization) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
                 .setParameter("organization", organization)
                 .setParameter("sourceControl", sourceControl));
     }
 
     public Workflow findByAlias(String alias) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
     /**
@@ -258,7 +258,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      */
     public Optional<Workflow> getWorkflowByWorkflowVersionId(long workflowVersionId) {
         try {
-            Workflow workflow = uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
+            Workflow workflow = uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
                     .setParameter("workflowVersionId", workflowVersionId));
             return Optional.of(workflow);
         } catch (NoResultException nre) {

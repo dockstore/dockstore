@@ -42,6 +42,6 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     }
 
     public Version<T> findVersionInEntry(Long entryId, Long versionId) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Version.findVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Version.findVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
     }
 }
