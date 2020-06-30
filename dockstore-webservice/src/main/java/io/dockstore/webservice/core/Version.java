@@ -72,7 +72,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 // Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
+        @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatfrom.findVerifiedPlatformsForEntry",
+                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata) FROM Version version "
+                        + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
+                        + "version.parent.id = :entryId"
+        )
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -117,7 +122,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private ReferenceType referenceType = ReferenceType.UNSET;
 
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+    // Maybe can change to lazy once db column for descriptorType has been made
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
