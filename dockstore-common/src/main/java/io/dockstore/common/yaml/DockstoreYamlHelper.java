@@ -1,5 +1,6 @@
 package io.dockstore.common.yaml;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.Set;
@@ -21,6 +22,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
+import scala.tools.nsc.transform.patmat.Logic;
 
 public final class DockstoreYamlHelper {
 
