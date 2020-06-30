@@ -8,11 +8,11 @@ package io.dockstore.webservice.core.database;
  */
 public class VersionVerifiedPlatform {
 
-    private long versionId;
-    private String metadata;
-    private String source;
+    final private Long versionId;
+    final private String metadata;
+    final private String source;
 
-    public VersionVerifiedPlatform(long versionId, String source, String metadata) {
+    public VersionVerifiedPlatform(final Long versionId, final String source, final String metadata) {
         this.versionId = versionId;
         this.source = source;
         this.metadata = metadata;
@@ -22,23 +22,11 @@ public class VersionVerifiedPlatform {
         return versionId;
     }
 
-    public void setVersionId(final long versionId) {
-        this.versionId = versionId;
-    }
-
     public String getMetadata() {
         return metadata;
     }
 
-    public void setMetadata(final String metadata) {
-        this.metadata = metadata;
-    }
-
     public String getSource() {
         return source;
-    }
-
-    public void setSource(final String source) {
-        this.source = source;
     }
 }
