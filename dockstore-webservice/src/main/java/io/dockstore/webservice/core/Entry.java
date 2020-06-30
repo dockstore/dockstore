@@ -82,7 +82,8 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "Entry.getCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName) from Service w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getCollectionTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'tool', w.registry, w.namespace, w.name, w.toolname) from Tool w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Entry.getVersions", query = "SELECT new io.dockstore.webservice.core.database.TrsToolVersion(w.w) from Workflow w where w.id in :ids")
+        // TODO rename to get non-hidden versions
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.getVersions", query = "SELECT new io.dockstore.webservice.core.database.TrsToolVersion(wv.id, w.id, vm.author, wv.name, wv.frozen) from Workflow w join w.workflowVersions wv left join wv.versionMetadata vm where w.id in :ids and vm.hidden = FALSE")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({

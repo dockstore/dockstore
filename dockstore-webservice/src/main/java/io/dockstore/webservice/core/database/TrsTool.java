@@ -1,6 +1,8 @@
 package io.dockstore.webservice.core.database;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
@@ -15,6 +17,7 @@ public abstract class TrsTool {
     private final String repository; // toolPath for tools, workflowPath for workflow
     private final WorkflowPath checkerWorkflow;
     private final Date lastUpdated;
+    private final List<TrsToolVersion> versions = new ArrayList<>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public TrsTool(final long id, final String organization, final String description, SourceControl sourceControl,
@@ -76,7 +79,7 @@ public abstract class TrsTool {
 
     public abstract ToolClass getToolclass();
 
-    //    private List<ToolVersion> versions = new ArrayList<>();
-
-
+    public List<TrsToolVersion> getVersions() {
+        return versions;
+    }
 }

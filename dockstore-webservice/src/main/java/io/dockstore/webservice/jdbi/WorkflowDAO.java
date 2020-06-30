@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -292,7 +293,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         final List<TrsTool> trsTools = filterByRegistry(registry, tools);
         final List<TrsToolVersion> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getVersions")
                 .setParameterList("ids", trsTools.stream().map(t -> t.getId()).collect(Collectors.toList())));
-        System.out.println(versions);
+        final Map<Long, List<TrsToolVersion>> versionMap = versions.stream().collect(Collectors.groupingBy(TrsToolVersion::getEntryId));
+        tools.forEach(tool -> tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList())));
         return trsTools;
     }
 
