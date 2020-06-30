@@ -299,7 +299,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .filter(e -> e.getUsers().size() == 1 && !e.getIsPublished())
                 .forEach(entry -> {
                     EntryDAO entryDAO;
-                    if (entry instanceof Workflow) {
+                    if (entry instanceof Service) {
+                        entryDAO = serviceDAO;
+                    } else if (entry instanceof Workflow) {
                         entryDAO = workflowDAO;
                     } else if (entry instanceof Tool) {
                         entryDAO = toolDAO;
