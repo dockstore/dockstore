@@ -195,7 +195,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<TrsTool> findAllTrsPublished(final Optional<String> registry, final Optional<String> organization,
             final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author,
-            final Optional<String> description) {
+            final Optional<String> description, final int limit) {
         return null;
     }
 
