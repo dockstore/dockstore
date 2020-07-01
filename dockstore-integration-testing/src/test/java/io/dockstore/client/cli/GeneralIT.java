@@ -34,17 +34,20 @@ import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Workflow;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -411,6 +414,41 @@ public class GeneralIT extends BaseIT {
                 });
             });
         });
+    }
+
+    @Test
+    public void testGettingVerifiedVersions() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(client);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
+
+        Workflow workflow = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl", "/test.json");
+
+        workflow = workflowApi.refresh(workflow.getId());
+        SourceFile sourceFile = workflow.getWorkflowVersions().get(0).getSourceFiles().get(0);
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(workflow.getId(), publishRequest);
+        List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
+        Assert.assertEquals(0, versionsVerified.size());
+
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
+        versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
+        Assert.assertEquals(1, versionsVerified.size());
+
+        ContainersApi toolApi = new ContainersApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        sourceFile = tool.getWorkflowVersions().get(0).getSourceFiles().get(0);
+        toolApi.publish(tool.getId(), publishRequest);
+        versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
+        Assert.assertEquals(0, versionsVerified.size());
+
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
+        versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
+        Assert.assertEquals(1, versionsVerified.size());
+
     }
 
     public void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {

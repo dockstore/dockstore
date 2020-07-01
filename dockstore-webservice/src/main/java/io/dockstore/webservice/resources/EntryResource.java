@@ -137,7 +137,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return this.toolDAO.findCollectionsByEntryId(entry.getId());
     }
 
-    // TODO: Write tests for this endpoint.
     @GET
     @Path("/{entryId}/verifiedPlatforms")
     @UnitOfWork
