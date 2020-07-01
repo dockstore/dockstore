@@ -1,4 +1,4 @@
-package io.dockstore.webservice.core.database;
+package io.dockstore.webservice.core.dto;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -19,18 +19,21 @@ public class TrsToolVersion {
     private final List<DescriptorLanguage.FileType> descriptorTypes = new ArrayList<>();
     //    private final Boolean containerFile;
     private final String metaVersion;
-    //    private final Boolean verified;
+    private final boolean verified;
     private final List<String> verifiedSource = new ArrayList<>();
-    //    private final Boolean signed;
+    private final boolean signed = false; // We don't support this feature yet
     private final List<String> includedApps = new ArrayList<>();
 
-    public TrsToolVersion(final long id, final long entryId, final String author, final String name, final boolean production,
+    public TrsToolVersion(final long id, final long entryId, final String author, final Boolean verified, final String name, final boolean production,
             final Date date) {
         this.entryId = entryId;
         this.name = name;
         this.production = production;
         this.id = id;
-        this.getAuthor().add(author);
+        if (author != null) {
+            this.getAuthor().add(author);
+        }
+        this.verified = verified != null && verified.booleanValue();
         this.metaVersion = String.valueOf(date != null ? date : new Date(0));
     }
 
@@ -74,6 +77,13 @@ public class TrsToolVersion {
         return metaVersion;
     }
 
+    public boolean isSigned() {
+        return signed;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
 }
 
 

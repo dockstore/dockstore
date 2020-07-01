@@ -1,9 +1,10 @@
-package io.dockstore.webservice.core.database;
+package io.dockstore.webservice.core.dto;
 
 import java.util.Date;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.core.database.WorkflowPath;
 import io.openapi.api.impl.ToolClassesApiServiceImpl;
 import io.openapi.model.ToolClass;
 
@@ -21,7 +22,7 @@ public class WorkflowTrsTool extends TrsTool {
 
     @Override
     public String getTrsId() {
-        return getTrsPrefix() + this.workflowPath.getBioWorkflow().getWorkflowPath();
+        return getTrsPrefix() + '/' + this.workflowPath.getBioWorkflow().getWorkflowPath();
     }
 
     @Override

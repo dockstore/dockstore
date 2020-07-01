@@ -1,4 +1,4 @@
-package io.dockstore.webservice.core.database;
+package io.dockstore.webservice.core.dto;
 
 import io.dockstore.common.DescriptorLanguage;
 
