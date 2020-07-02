@@ -140,8 +140,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @GET
     @Path("/{entryId}/verifiedPlatforms")
     @UnitOfWork
-    @Operation(operationId = "getVerifiedPlatforms", description = "Get the verified platforms for each version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public List<VersionVerifiedPlatform> getVerifiedPlatforms(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+    @ApiOperation(value = "Get the verified platforms for each version of an entry.",  hidden = true)
+    @Operation(operationId = "getVerifiedPlatforms", description = "Get the verified platforms for each version of an entry.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public List<VersionVerifiedPlatform> getVerifiedPlatforms(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkOptionalAuthRead(user, entry);

@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
@@ -425,7 +426,7 @@ public class GeneralIT extends BaseIT {
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
         Workflow workflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl", "/test.json");
+                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
 
         workflow = workflowApi.refresh(workflow.getId());
         SourceFile sourceFile = workflow.getWorkflowVersions().get(0).getSourceFiles().get(0);

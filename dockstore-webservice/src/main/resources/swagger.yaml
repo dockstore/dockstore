@@ -2582,27 +2582,6 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
-  /entries/{entryId}/verifiedPlatforms:
-    get:
-      tags:
-      - "entries"
-      operationId: "getVerifiedPlatforms"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          headers: {}
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/VersionVerifiedPlatform"
   /entries/{id}/aliases:
     post:
       tags:
@@ -8297,16 +8276,6 @@ definitions:
         type: "string"
         position: 24
     description: "Base class for versions of entries in the Dockstore"
-  VersionVerifiedPlatform:
-    type: "object"
-    properties:
-      metadata:
-        type: "string"
-      source:
-        type: "string"
-      versionId:
-        type: "integer"
-        format: "int64"
   Workflow:
     type: "object"
     required:
