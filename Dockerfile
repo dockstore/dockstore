@@ -1,5 +1,5 @@
 FROM maven:3.6.2-jdk-11 AS maven
-RUN wget https://github.com/mikefarah/yq/releases/download/3.1.2/yq_linux_amd64 \
+RUN wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 \
     && chmod a+x yq_linux_amd64 \
     && mv yq_linux_amd64 /usr/bin/yq
 
