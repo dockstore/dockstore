@@ -40,8 +40,10 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -83,6 +85,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
     private final ToolDAO toolDAO;
+    private final VersionDAO versionDAO;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -90,8 +93,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
 
-    public EntryResource(ToolDAO toolDAO, DockstoreWebserviceConfiguration configuration) {
+    public EntryResource(ToolDAO toolDAO, VersionDAO versionDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
+        this.versionDAO = versionDAO;
 
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
@@ -131,6 +135,19 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
         }
         return this.toolDAO.findCollectionsByEntryId(entry.getId());
+    }
+
+    @GET
+    @Path("/{entryId}/verifiedPlatforms")
+    @UnitOfWork
+    @ApiOperation(value = "Get the verified platforms for each version of an entry.",  hidden = true)
+    @Operation(operationId = "getVerifiedPlatforms", description = "Get the verified platforms for each version of an entry.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public List<VersionVerifiedPlatform> getVerifiedPlatforms(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+            @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
+        checkOptionalAuthRead(user, entry);
+        List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
+        return verifiedVersions;
     }
 
     @POST
