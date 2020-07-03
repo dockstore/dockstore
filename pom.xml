@@ -1177,6 +1177,11 @@
                                         <exclude>commons-configuration:commons-configuration</exclude>
                                         <!-- superceded by org.apache.httpcomponents:httpclient -->
                                         <exclude>commons-httpclient:commons-httpclient</exclude>
+                                        <!-- see https://github.com/dropwizard/dropwizard/pull/3069 -->
+                                        <exclude>javax.annotation:javax.annotation-api</exclude>
+                                        <exclude>javax.validation:validation-api</exclude>
+                                        <exclude>javax.activation:activation</exclude>
+                                        <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>
