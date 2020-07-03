@@ -49,6 +49,6 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     }
 
     public List<VersionVerifiedPlatform> findEntryVersionsWithVerifiedPlatforms(Long entryId) {
-        return list(namedQuery("io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms").setParameter("entryId", entryId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms").setParameter("entryId", entryId));
     }
 }
