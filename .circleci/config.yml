@@ -28,7 +28,7 @@ jobs:
       - run: 
           name: Install yq
           command: |
-            wget https://github.com/mikefarah/yq/releases/download/3.1.2/yq_linux_amd64
+            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
             chmod a+x yq_linux_amd64
             sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
