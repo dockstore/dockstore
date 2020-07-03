@@ -78,6 +78,13 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
             <version>1.10.0-alpha.0-SNAPSHOT</version>
+            <exclusions>
+                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
+                <exclusion>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
