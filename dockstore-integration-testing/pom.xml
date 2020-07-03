@@ -66,6 +66,13 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
             <version>1.10.0-alpha.0-SNAPSHOT</version>
+            <exclusions>
+                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
+                <exclusion>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -77,15 +84,6 @@
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
             <version>1.10.0-alpha.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- testing -->
-        <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>dockstore-common</artifactId>
-            <version>1.10.0-alpha.0-SNAPSHOT</version>
-            <scope>test</scope>
-            <type>test-jar</type>
         </dependency>
 
         <dependency>
