@@ -51,7 +51,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
+        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
         query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
@@ -61,7 +61,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (organizationIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
+        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
         query.setParameterList("organizationIDs", organizationIds).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
@@ -71,7 +71,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (organizationIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIdsOrEntryIds");
+        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIdsOrEntryIds");
         query.setParameterList("organizationIDs", organizationIds).setParameter("entryIDs", entryIds)
                 .setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
@@ -85,7 +85,7 @@ public class EventDAO extends AbstractDAO<Event> {
 
     public void deleteEventByEntryID(long entryId) {
         currentSession().flush();
-        Query<Event> query = namedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
+        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
         query.setParameter("entryId", entryId);
         query.executeUpdate();
         currentSession().flush();
