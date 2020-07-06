@@ -53,6 +53,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -255,6 +256,10 @@ public class CWLHandler implements LanguageHandlerInterface {
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
             JSONObject cwlJson = new JSONObject(mapping);
+
+            // CWLAvro only supports requirements and hints as an array, must be converted
+            cwlJson = convertJSONObjectToArray("requirements", cwlJson);
+            cwlJson = convertJSONObjectToArray("hints", cwlJson);
 
             // Other useful variables
             String nodePrefix = "dockstore_";
@@ -564,6 +569,10 @@ public class CWLHandler implements LanguageHandlerInterface {
             List<Object> cltRequirements = null;
             List<Object> cltHints = null;
 
+            // CWLAvro only supports requirements and hints as an array, must be converted
+            entryJson = convertJSONObjectToArray("requirements", entryJson);
+            entryJson = convertJSONObjectToArray("hints", entryJson);
+
             if (isExpressionTool(secondaryFileContents, yaml)) {
                 final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), ExpressionTool.class);
                 cltRequirements = expressionTool.getRequirements();
@@ -581,6 +590,28 @@ public class CWLHandler implements LanguageHandlerInterface {
             stepDockerRequirement = getRequirementOrHint(cltRequirements, cltHints, stepDockerRequirement);
         }
         return stepDockerRequirement;
+    }
+
+    /**
+     * Converts a JSON Object in CWL to JSON Array
+     * @param keyName Name of key to convert (Ex. requirements, hints)
+     * @param entryJson JSON representation of file
+     * @return Updated JSON representation of file
+     */
+    private JSONObject convertJSONObjectToArray(String keyName, JSONObject entryJson) {
+        if (entryJson.has(keyName)) {
+            if (entryJson.get(keyName) instanceof JSONObject) {
+                JSONArray reqArray = new JSONArray();
+                JSONObject requirements = (JSONObject)entryJson.get(keyName);
+                requirements.keySet().stream().forEach(key -> {
+                    JSONObject newReqEntry = requirements.getJSONObject(key);
+                    newReqEntry.put("class", key);
+                    reqArray.put(newReqEntry);
+                });
+                entryJson.put(keyName, reqArray);
+            }
+        }
+        return entryJson;
     }
 
     /**

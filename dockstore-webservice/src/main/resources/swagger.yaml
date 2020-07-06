@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.9.0-alpha.9-SNAPSHOT"
+  version: "1.10.0-alpha.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -46,6 +46,7 @@ tags:
     \ repositories. Implements TRS [2.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0)."
 - name: "hosted"
   description: "Created and modify hosted entries in the dockstore"
+- name: "lambdaEvents"
 - name: "metadata"
   description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
     \ etc."
@@ -2697,6 +2698,46 @@ paths:
               $ref: "#/definitions/Event"
       security:
       - BEARER: []
+  /lambdaEvents/{organization}:
+    get:
+      tags:
+      - "lambdaEvents"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getLambdaEventsByOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organization"
+        in: "path"
+        description: "organization"
+        required: true
+        type: "string"
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        required: false
+        type: "string"
+        default: "0"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/LambdaEvent"
   /metadata/config.json:
     get:
       tags:
@@ -3916,6 +3957,40 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/github/events:
+    get:
+      tags:
+      - "users"
+      summary: "See OpenApi for details"
+      description: ""
+      operationId: "getUserGitHubEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        required: false
+        type: "string"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/LambdaEvent"
   /users/github/sync:
     post:
       tags:
@@ -4638,6 +4713,38 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+    patch:
+      tags:
+      - "users"
+      summary: "Adds a user to any Dockstore workflows that they should have access\
+        \ to."
+      description: ""
+      operationId: "addUserToDockstoreWorkflows"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User to update"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "emptyBody"
+        description: "This is here to appease Swagger. It requires PATCH methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /users/{userId}/workflows/published:
     get:
       tags:
@@ -4663,37 +4770,6 @@ paths:
               $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-  /users/{userId}/workflows/{organization}/refresh:
-    get:
-      tags:
-      - "users"
-      summary: "Refresh all workflows owned by the authenticated user with specified\
-        \ organization."
-      description: ""
-      operationId: "refreshWorkflowsByOrganization"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "organization"
-        in: "path"
-        description: "Organization"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /workflows/github:
     delete:
       tags:
@@ -4707,18 +4783,56 @@ paths:
       parameters:
       - name: "repository"
         in: "query"
-        description: "Repository path (ex. dockstore/dockstore-ui2)"
-        required: true
+        required: false
+        type: "string"
+      - name: "username"
+        in: "query"
+        required: false
         type: "string"
       - name: "gitReference"
         in: "query"
-        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
-          \ or refs/tags/v1.0"
-        required: true
+        required: false
+        type: "string"
+      - name: "installationId"
+        in: "query"
+        required: false
         type: "string"
       responses:
         default:
           description: "successful operation"
+      security:
+      - BEARER: []
+  /workflows/github/install:
+    post:
+      tags:
+      - "workflows"
+      summary: "Handle the installation of our GitHub app onto a repository or organization."
+      description: ""
+      operationId: "handleGitHubInstallation"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repositories"
+        in: "formData"
+        required: false
+        type: "string"
+      - name: "username"
+        in: "formData"
+        required: false
+        type: "string"
+      - name: "installationId"
+        in: "formData"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/github/release:
@@ -4736,24 +4850,19 @@ paths:
       parameters:
       - name: "repository"
         in: "formData"
-        description: "Repository path (ex. dockstore/dockstore-ui2)"
-        required: true
+        required: false
         type: "string"
       - name: "username"
         in: "formData"
-        description: "Username of user on GitHub who triggered action"
-        required: true
+        required: false
         type: "string"
       - name: "gitReference"
         in: "formData"
-        description: "Full git reference for a GitHub branch/tag. Ex. refs/heads/master\
-          \ or refs/tags/v1.0"
-        required: true
+        required: false
         type: "string"
       - name: "installationId"
         in: "formData"
-        description: "GitHub installation ID"
-        required: true
+        required: false
         type: "string"
       responses:
         200:
@@ -6246,9 +6355,8 @@ definitions:
         format: "date-time"
       entries:
         type: "array"
-        uniqueItems: true
         items:
-          $ref: "#/definitions/Entry"
+          $ref: "#/definitions/CollectionEntry"
       id:
         type: "integer"
         format: "int64"
@@ -6284,6 +6392,19 @@ definitions:
         type: "string"
         position: 4
         description: "Short description of the collection"
+  CollectionEntry:
+    type: "object"
+    properties:
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      entryPath:
+        type: "string"
+      entryType:
+        type: "string"
+      id:
+        type: "integer"
+        format: "int64"
   CollectionOrganization:
     type: "object"
     properties:
@@ -6948,6 +7069,55 @@ definitions:
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
+  LambdaEvent:
+    type: "object"
+    required:
+    - "githubUsername"
+    - "organization"
+    - "reference"
+    - "repository"
+    - "type"
+    properties:
+      eventDate:
+        type: "string"
+        format: "date-time"
+        readOnly: true
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Unique ID of the event."
+      organization:
+        type: "string"
+        position: 1
+        description: "The organization from the event."
+      repository:
+        type: "string"
+        position: 1
+        description: "The repository from the event."
+      githubUsername:
+        type: "string"
+        position: 3
+        description: "The name of the user on GitHub that triggers the event."
+      reference:
+        type: "string"
+        position: 4
+        description: "The git reference from the event."
+      success:
+        type: "boolean"
+        position: 5
+        description: "Whether or not the event was successful."
+      message:
+        type: "string"
+        position: 6
+        description: "The message associated with the event."
+      type:
+        type: "string"
+        position: 7
+        description: "The type of event."
+        enum:
+        - "PUSH"
+        - "DELETE"
+        - "INSTALL"
   Limits:
     type: "object"
     properties:

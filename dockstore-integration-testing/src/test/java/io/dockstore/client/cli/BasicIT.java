@@ -24,10 +24,12 @@ import java.util.Optional;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
+import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -57,6 +59,8 @@ import org.junit.experimental.categories.Category;
 import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -175,17 +179,52 @@ public class BasicIT extends BaseIT {
     }
 
     /**
+     * Tests that registration works with non-short names
+     */
+    @Test
+    public void testRegistrationWithNonLowerCase() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+
+        // refresh a specific workflow
+        Workflow workflow = workflowsApi
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+        workflow = workflowsApi.refresh(workflow.getId());
+        assertFalse(workflow.getWorkflowVersions().isEmpty());
+    }
+
+    @Test
+    public void testRefreshToolNoVersions() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", null);
+        tool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        containersApi.updateContainer(tool.getId(), tool);
+        containersApi.refresh(tool.getId());
+
+
+        tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/nobuildsatall", null);
+        tool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        containersApi.updateContainer(tool.getId(), tool);
+        DockstoreTool refresh = containersApi.refresh(tool.getId());
+        assertNull(refresh.getDefaultVersion());
+    }
+
+
+    /**
      * Tests that refresh workflows works, also that refreshing without a github token should not destroy workflows or their existing versions
      */
     @Test
     public void testRefreshWorkflow() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
-        UsersApi usersApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
-        // Refresh all
-        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser");
-        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getLowerShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
+
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
@@ -1401,4 +1440,58 @@ public class BasicIT extends BaseIT {
             Assert.assertEquals("Entry not found", e.getMessage());
         }
     }
+
+    @Test
+    public void testGettingSourceFilesForTag() {
+        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        io.dockstore.openapi.client.api.ContainertagsApi toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(openAPIWebClient);
+
+        // Sourcefiles for tags
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", null);
+        Tag tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst().get();
+        tool = toolApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+
+        List<SourceFile> sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
+
+        // Check that filtering works
+        List<String> fileTypes = new ArrayList<>();
+        fileTypes.add(DescriptorLanguage.FileType.DOCKERFILE.toString());
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_CWL.toString());
+        fileTypes.add(DescriptorLanguage.FileType.DOCKSTORE_WDL.toString());
+
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
+
+        fileTypes.remove(1);
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(2, sourceFiles.size());
+
+        fileTypes.clear();
+        fileTypes.add(DescriptorLanguage.FileType.NEXTFLOW_CONFIG.toString());
+        sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), fileTypes);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(0, sourceFiles.size());
+
+        // Check that you can't grab a tag's sourcefiles if it doesn't belong to the tool.
+        DockstoreTool tool2 = manualRegisterAndPublish(toolApi, "dockstoretestuser", "private_test_repo", "tool1",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+        Tag tool2tag = tool2.getWorkflowVersions().get(0);
+        boolean throwsError = false;
+        try {
+            sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tool2tag.getId(), null);
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            Assert.fail("Should not be able to grab sourcefile for a version not belonging to a tool");
+        }
+    }
+
 }

@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -50,11 +52,13 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -65,6 +69,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
@@ -73,6 +78,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -86,6 +92,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -94,12 +101,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 /**
  * @author xliu
@@ -108,7 +119,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
-public class UserResource implements AuthenticatedResourceInterface {
+public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -121,13 +132,18 @@ public class UserResource implements AuthenticatedResourceInterface {
     private final BioWorkflowDAO bioWorkflowDAO;
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
+    private final LambdaEventDAO lambdaEventDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
     private SessionFactory sessionFactory;
 
+    private final String bitbucketClientSecret;
+    private final String bitbucketClientID;
+
+    @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
+                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
         this.sessionFactory = sessionFactory;
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
@@ -136,20 +152,24 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.toolDAO = new ToolDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
+        this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
         this.cachingAuthenticator = cachingAuthenticator;
         this.client = client;
+        this.bitbucketClientID = configuration.getBitbucketClientID();
+        this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/username/{username}")
+    @Operation(operationId = "listUser", description = "Get a user by username.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User listUser(@ApiParam(hidden = true) @Auth User authUser,
+    public User listUser(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
         User user = userDAO.findByUsername(username);
@@ -161,7 +181,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}")
-    @Operation(operationId = "getSpecificUser")
+    @Operation(operationId = "getSpecificUser", description = "Get user by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(authUser, userId);
@@ -176,7 +196,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user")
-    @Operation(operationId = "getUser")
+    @Operation(operationId = "getUser", description = "Get the logged-in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getUser", value = "Get the logged-in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
@@ -188,8 +208,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user/memberships")
+    @Operation(operationId = "getUserMemberships", description = "Get the logged-in user's memberships.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the logged-in user's memberships.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
-    public Set<OrganizationUser> getUserMemberships(@ApiParam(hidden = true) @Auth User user) {
+    public Set<OrganizationUser> getUserMemberships(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Set<OrganizationUser> organizationUsers = foundUser.getOrganizations();
         organizationUsers.forEach(organizationUser -> Hibernate.initialize(organizationUser.getOrganization()));
@@ -202,8 +223,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/user/extended")
+    @Operation(operationId = "getExtendedUserData", description = "Get additional information about the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get additional information about the authenticated user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
-    public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
+    public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         return new ExtendedUserData(foundUser, this.authorizer, userDAO);
     }
@@ -212,8 +234,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/user/changeUsername")
+    @Operation(operationId = "changeUsername", description = "Change username if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Change username if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User changeUsername(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
+    public User changeUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
         Pattern pattern = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
         if (!pattern.asPredicate().test(username)) {
@@ -243,9 +266,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/user")
+    @Operation(operationId = "selfDestruct", description = "Delete user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean selfDestruct(
-            @ApiParam(hidden = true) @Auth User authUser) {
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         checkUser(authUser, authUser.getId());
         User user = userDAO.findById(authUser.getId());
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
@@ -294,9 +318,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @Path("/user/{userId}")
     @RolesAllowed("admin")
+    @Operation(operationId = "terminateUsers", description = "Terminate user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Terminate user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class, nickname = "terminateUser")
     public boolean terminateUser(
-        @ApiParam(hidden = true) @Auth User authUser,  @ApiParam("User to terminate") @PathParam("userId") long targetUserId) {
+        @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,  @ApiParam("User to terminate") @PathParam("userId") long targetUserId) {
         // note this terminates the user but leaves behind a tombstone to prevent re-login
         checkUser(authUser, authUser.getId());
 
@@ -316,7 +341,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork(readOnly = true)
     @Path("/checkUser/{username}")
     @ApiOperation(value = "Check if user with some username exists.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
-    public boolean checkUserExists(@ApiParam(hidden = true) @Auth User user,
+    @Operation(operationId = "checkUserExists", description = "Check if user with some username exists.", security = @SecurityRequirement(name = "bearer"))
+    public boolean checkUserExists(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
                                    @ApiParam("User name to check") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
         User foundUser = userDAO.findByUsername(username);
@@ -327,8 +353,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens")
+    @Operation(operationId = "getUserTokens", description = "Get tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
+    public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
         return tokenDAO.findByUserId(userId);
@@ -338,8 +365,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/github.com")
+    @Operation(operationId = "getGithubUserTokens", description = "Get Github tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get Github tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
+    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
         return tokenDAO.findGithubByUserId(userId);
@@ -349,8 +377,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/gitlab.com")
+    @Operation(operationId = "getGitlabUserTokens", description = "Get Gitlab tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get Gitlab tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
+    public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
         return tokenDAO.findGitlabByUserId(userId);
@@ -360,8 +389,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/quay.io")
+    @Operation(operationId = "getQuayUserTokens", description = "Get Quay tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get Quay tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
+    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
         return tokenDAO.findQuayByUserId(userId);
@@ -371,8 +401,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens/dockstore")
+    @Operation(operationId = "getDockstoreUserTokens", description = "Get Dockstore tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get Dockstore tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
+    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
         return tokenDAO.findQuayByUserId(userId);
@@ -382,8 +413,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/containers/published")
+    @Operation(operationId = "userPublishedContainers", description = "List all published tools from a user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "List all published tools from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
-    public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
+    public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
 
@@ -399,8 +431,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/workflows/published")
+    @Operation(operationId = "userPublishedWorkflows", description = "List all published workflows from a user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "List all published workflows from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
+    public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
 
@@ -415,8 +448,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/{organization}/refresh")
+    @Operation(operationId = "refreshToolsByOrganization", description = "Refresh all tools owned by the authenticated user with specified organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Refresh all tools owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
-    public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
+    public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
             @ApiParam(value = "Docker registry") @QueryParam("dockerRegistry") String dockerRegistry) {
@@ -450,15 +484,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         }
     }
 
-    // TODO: Only update the ones that have changed
-    private void bulkUpsertWorkflows(User authUser) {
-        List<Entry> workflowEntries = workflowDAO.findMyEntriesPublished(authUser.getId()).stream().map(Entry.class::cast)
-                .collect(Collectors.toList());
-        if (!workflowEntries.isEmpty()) {
-            PublicStateManager.getInstance().bulkUpsert(workflowEntries);
-        }
-    }
-
     private void checkToolTokens(User authUser, Long userId, String organization) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         List<Tool> tools = userContainers(authUser, userId);
@@ -481,61 +506,50 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/workflows/{organization}/refresh")
-    @ApiOperation(value = "Refresh all workflows owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
-
-        checkUser(authUser, userId);
-
-        // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser, organization, new HashSet<>());
-        userDAO.clearCache();
-        // Refresh the user
-        authUser = userDAO.findById(authUser.getId());
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
-        bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
-    }
-
-    @GET
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "userWorkflows", description = "List all workflows owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
     @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
         if (fetchedUser == null) {
             throw new CustomWebApplicationException("The given user does not exist.", HttpStatus.SC_NOT_FOUND);
         }
-        List<Workflow> workflows = getWorkflows(fetchedUser);
-        Session currentSession = sessionFactory.getCurrentSession();
-        workflows.forEach(workflow -> {
-            currentSession.evict(workflow);
-            workflow.setUsers(null);
-            workflow.setWorkflowVersions(new HashSet<>());
-        });
-        return workflows;
+        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
     }
 
     private List<Workflow> getWorkflows(User user) {
         return bioWorkflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
     }
 
+    private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {
+        List<Workflow> workflows = new ArrayList<>();
+        myWorkflows.forEach(myWorkflow -> {
+            Workflow workflow = new BioWorkflow();
+            workflow.setOrganization(myWorkflow.getOrganization());
+            workflow.setId(myWorkflow.getId());
+            workflow.setSourceControl(myWorkflow.getSourceControl());
+            workflow.setIsPublished(myWorkflow.isPublished());
+            workflow.setWorkflowName(myWorkflow.getWorkflowName());
+            workflow.setRepository(myWorkflow.getRepository());
+            workflow.setMode(myWorkflow.getMode());
+            workflow.setGitUrl(myWorkflow.getGitUrl());
+            workflow.setDescription(myWorkflow.getDescription());
+            workflows.add(workflow);
+        });
+        return workflows;
+    }
+
     @GET
     @Path("/{userId}/services")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "userServices", description = "List all services owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "List all services owned by the authenticated user.", nickname = "userServices", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userServices(@ApiParam(hidden = true) @Auth User user,
+    public List<Workflow> userServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User fetchedUser = this.userDAO.findById(userId);
@@ -554,6 +568,17 @@ public class UserResource implements AuthenticatedResourceInterface {
         return services;
     }
 
+    private List<Workflow> getBioworkflows(User user) {
+        return workflowDAO.findMyEntries(user.getId()).stream().filter(BioWorkflow.class::isInstance).collect(Collectors.toList());
+    }
+
+    // TODO: Replace with code similar to the new userWorkflows endpoint once it is optimised
+    private List<Workflow> getStrippedBioworkflows(User user) {
+        final List<Workflow> bioworkflows = getBioworkflows(user);
+        EntryVersionHelper.stripContent(bioworkflows, this.userDAO);
+        return bioworkflows;
+    }
+
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
         final List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
         EntryVersionHelper.stripContent(workflows, this.userDAO);
@@ -569,8 +594,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/{userId}/containers")
     @Timed
     @UnitOfWork(readOnly = true)
+    @Operation(operationId = "userContainers", description = "List all tools owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "List all tools owned by the authenticated user.", nickname = "userContainers", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
-    public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
+    public List<Tool> userContainers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
         final User byId = this.userDAO.findById(userId);
@@ -582,9 +608,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/users/organizations")
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "getUserDockstoreOrganizations", description = "Get all of the Dockstore organizations for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getUserDockstoreOrganizations", description = "Get all of the Dockstore organizations for a user, sorted by most recently updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
-    public List<OrganizationUpdateTime> getUserDockstoreOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public List<OrganizationUpdateTime> getUserDockstoreOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                                             @Parameter(name = "count", description = "Maximum number of organizations to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                             @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         final List<OrganizationUpdateTime> organizations = new ArrayList<>();
@@ -621,9 +647,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/users/entries")
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "getUserEntries", description = "Get all of the entries for a user, sorted by most recently updated.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getUserEntries", description = "Get all of the entries for a user, sorted by most recently updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
-    public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public List<EntryUpdateTime> getUserEntries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                                 @Parameter(name = "count", description = "Maximum number of entries to return", in = ParameterIn.QUERY) @QueryParam("count") Integer count,
                                                 @Parameter(name = "filter", description = "Filter paths with matching text", in = ParameterIn.QUERY) @QueryParam("filter") String filter) {
         //get entries with only minimal columns from database
@@ -647,8 +673,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/starredTools")
+    @Operation(operationId = "getStarredTools", description = "Get the authenticated user's starred tools.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the authenticated user's starred tools.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
-    public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
+    public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -658,8 +685,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/starredWorkflows")
+    @Operation(operationId = "getStarredWorkflows", description = "Get the authenticated user's starred workflows.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the authenticated user's starred workflows.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
-    public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
+    public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -669,8 +697,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/starredOrganizations")
+    @Operation(operationId = "getStarredOrganizations", description = "Get the authenticated user's starred organizations.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the authenticated user's starred organizations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, responseContainer = "List")
-    public Set<Organization> getStarredOrganizations(@ApiParam(hidden = true) @Auth User user) {
+    public Set<Organization> getStarredOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredOrganizations();
     }
@@ -680,8 +709,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @RolesAllowed("admin")
     @Path("/updateUserMetadata")
+    @Operation(operationId = "updateUserMetadata", description = "Update metadata of all users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update metadata of all users.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only.", response = User.class, responseContainer = "List")
-    public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
+    public List<User> updateUserMetadata(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
             u.updateUserMetadata(tokenDAO);
@@ -700,8 +730,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/user/updateUserMetadata")
+    @Operation(operationId = "updateLoggedInUserMetadata", description = "Update metadata for logged in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update metadata for logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
+    public User updateLoggedInUserMetadata(@ApiParam(hidden = true)@Parameter(hidden = true, name = "user")@Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
@@ -715,8 +746,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork(readOnly = true)
     @RolesAllowed({"admin", "curator"})
     @Path("/user/{userId}/limits")
+    @Operation(operationId = "getUserLimits", description = "Returns the specified user's limits. ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Returns the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
-    public Limits getUserLimits(@ApiParam(hidden = true) @Auth User authUser,
+    public Limits getUserLimits(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(userId);
         if (user == null) {
@@ -733,8 +765,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @RolesAllowed({"admin", "curator"})
     @Path("/user/{userId}/limits")
+    @Operation(operationId = "setUserLimits", description = "Update the specified user's limits. ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
-    public Limits setUserLimits(@ApiParam(hidden = true) @Auth User authUser,
+    public Limits setUserLimits(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER)@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Limits to set for a user", required = true) Limits limits) {
         User user = userDAO.findById(userId);
@@ -752,23 +785,73 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/github/sync")
     @Timed
     @UnitOfWork
+    @Operation(operationId = "syncUserWithGitHub", description = "Syncs Dockstore account with GitHub App Installations.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Syncs Dockstore account with GitHub App Installations.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
-    public List<Workflow> syncUserWithGitHub(@ApiParam(hidden = true) @Auth User authUser) {
+    public List<Workflow> syncUserWithGitHub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
         workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
+    @PATCH
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/workflows")
+    @ApiOperation(value = "Adds a user to any Dockstore workflows that they should have access to.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
+    @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
+            @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
+            @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
+        final User user = userDAO.findById(authUser.getId());
+        if (user == null || !Objects.equals(userId, user.getId())) {
+            throw new CustomWebApplicationException("The user id provided does not match the logged-in user id.", HttpStatus.SC_BAD_REQUEST);
+        }
+        // Ignore hosted workflows
+        List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
+                Collectors.toList());
+
+        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+                .stream()
+                .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
+                .collect(Collectors.toList());
+
+        scTokens.stream().forEach(token -> {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+            Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
+
+            organizations.forEach(organization -> {
+                List<Workflow> workflows = workflowDAO.findByOrganization(token.getTokenSource().getSourceControl(), organization);
+                workflows.stream().forEach(workflow -> workflow.getUsers().add(user));
+            });
+        });
+
+        return getStrippedBioworkflows(userDAO.findById(user.getId()));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/github/events")
+    @Operation(operationId = "getUserGitHubEvents", description = "Get all of the GitHub Events for the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @ApiOperation(value = "See OpenApi for details")
+    public List<LambdaEvent> getUserGitHubEvents(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
+            @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") String offset,
+            @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
+        final User user = userDAO.findById(authUser.getId());
+        return lambdaEventDAO.findByUser(user, offset, limit);
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/registries")
-    @Operation(operationId = "getUserRegistries", description = "Get all of the git registries accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getUserRegistries", description = "Get all of the git registries accessible to the logged in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "See OpenApi for details")
-    public List<SourceControl> getUserRegistries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser) {
+    public List<SourceControl> getUserRegistries(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         return tokenDAO.findByUserId(authUser.getId())
                 .stream()
                 .filter(token -> token.getTokenSource().isSourceControlToken())
@@ -782,7 +865,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/registries/{gitRegistry}/organizations")
     @Operation(operationId = "getUserOrganizations", description = "Get all of the organizations for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
-    public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                             @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
         return repositoryUrlToName.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
@@ -794,7 +877,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/registries/{gitRegistry}/organizations/{organization}")
     @Operation(operationId = "getUserOrganizationRepositories", description = "Get all of the repositories for an organization for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")
-    public List<Repository> getUserOrganizationRepositories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User authUser,
+    public List<Repository> getUserOrganizationRepositories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                                            @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry,
                                                            @Parameter(name = "organization", description = "Git organization", required = true, in = ParameterIn.PATH) @PathParam("organization") String organization) {
         Map<String, String> repositoryUrlToName = getGitRepositoryMap(authUser, gitRegistry);
@@ -826,7 +909,7 @@ public class UserResource implements AuthenticatedResourceInterface {
      * @return mapping of git url to repository path
      */
     private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
-        List<Token> scTokens = tokenDAO.findByUserId(user.getId())
+        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());

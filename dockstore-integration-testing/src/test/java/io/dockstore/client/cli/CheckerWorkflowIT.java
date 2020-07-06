@@ -16,14 +16,18 @@
 
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
@@ -242,12 +246,27 @@ public class CheckerWorkflowIT extends BaseIT {
         assertSame(stubCheckerWorkflow.getMode(), Workflow.ModeEnum.STUB);
 
         // should be able to refresh all or the organization when a checker stub is present without a failure (constraints issue from #1405)
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long id = usersApi.getUser().getId();
+        List<Workflow> workflows = new ArrayList<>();
+        workflows.add(workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                        DescriptorLanguage.WDL.getLowerShortName(), ""));
+        workflows.add(workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
+                        DescriptorLanguage.WDL.getLowerShortName(), ""));
+        workflows.add(workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
+                DescriptorLanguage.NEXTFLOW.getLowerShortName(), ""));
+        workflows.add(workflowApi
+                .manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json"));
         if (all) {
-            usersApi.refreshWorkflowsByOrganization(id, "DockstoreTestUser2");
+            for (Workflow workflowItem : workflows) {
+                workflowApi.refresh(workflowItem.getId());
+            }
         } else {
-            usersApi.refreshWorkflowsByOrganization(id, stubCheckerWorkflow.getOrganization());
+            for (Workflow workflowItem : workflows) {
+                if (workflowItem.getOrganization().equalsIgnoreCase(stubCheckerWorkflow.getOrganization())) {
+                    workflowApi.refresh(workflowItem.getId());
+                }
+            }
         }
     }
 

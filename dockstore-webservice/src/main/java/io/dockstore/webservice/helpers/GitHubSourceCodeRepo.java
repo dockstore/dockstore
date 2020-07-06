@@ -118,8 +118,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repo = github.getRepository(repositoryId);
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
-            return null;
+            LOG.error(gitUsername + ": IOException on readFile while trying to get the repository " + repositoryId + " " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not get repository " + repositoryId + " from GitHub.", HttpStatus.SC_BAD_REQUEST);
         }
         return readFileFromRepo(fileName, reference, repo);
     }
@@ -132,7 +132,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
             return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
             return null;
         }
     }
@@ -180,7 +180,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return decodedContentAndMetadata.getRight();
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFileFromRepo " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage());
             return null;
         } finally {
             GHRateLimit endRateLimit = getGhRateLimitQuietly();
@@ -297,8 +297,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // Why is the path not set here?
+        } catch (GHFileNotFoundException e) {
+            LOG.info(gitUsername + ": GitHub reports file not found: " + e.getCause().getLocalizedMessage(), e);
+            throw new CustomWebApplicationException("GitHub reports file not found: " + e.getCause().getLocalizedMessage(), HttpStatus.SC_BAD_REQUEST);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot getNewWorkflow {}");
+            LOG.info(gitUsername + ": Cannot getNewWorkflow {}", e);
             throw new CustomWebApplicationException("Could not reach GitHub", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -613,13 +616,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         List<String> files;
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-            final List<Service12> services = dockstoreYaml12.getServices();
-            if (services.isEmpty()) {
-                LOG.info(".dockstore.yml has no services");
+            final Service12 service = dockstoreYaml12.getService();
+            if (service == null) {
+                LOG.info(".dockstore.yml has no service");
                 return null;
             }
             // TODO: Handle more than one service.
-            files = services.get(0).getFiles();
+            files = service.getFiles();
             // null catch due to .dockstore.yml files like https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/.dockstore.yml
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             String msg = "Invalid .dockstore.yml";
@@ -857,7 +860,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage());
             // this is not so critical to warrant a http error code
         }
     }
@@ -876,7 +879,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage());
             // this is not so critical to warrant a http error code
         }
         return null;
@@ -932,7 +935,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         Triple<String, Date, String> ref = getRef(ghRef, ghRepository);
         if (ref == null) {
-            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.", LAMBDA_FAILURE);
+            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid branch/tag.",
+                    LAMBDA_FAILURE);
         }
 
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();

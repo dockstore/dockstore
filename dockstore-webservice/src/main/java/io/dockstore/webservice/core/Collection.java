@@ -2,10 +2,12 @@ package io.dockstore.webservice.core;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,12 +27,12 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -85,7 +87,7 @@ public class Collection implements Serializable, Aliasable {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
-    @JsonIgnoreProperties({ "workflowVersions" })
+    @JsonIgnore
     private Set<Entry> entries = new HashSet<>();
 
     @JsonIgnore
@@ -109,6 +111,9 @@ public class Collection implements Serializable, Aliasable {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    @Transient
+    private List<CollectionEntry> collectionEntries = new ArrayList<>();
 
     @JsonProperty("organizationName")
     @ApiModelProperty(value = "The name of the organization the collection belongs to")
@@ -140,9 +145,9 @@ public class Collection implements Serializable, Aliasable {
         this.description = description;
     }
 
-    public Set<Entry> getEntries() {
-        return entries.stream().filter(entry -> entry.getIsPublished()).sorted(Comparator.comparing(Entry::getId)).collect(Collectors.toCollection(
-                LinkedHashSet::new));
+    @JsonProperty("entries")
+    public List<CollectionEntry> getCollectionEntries() {
+        return collectionEntries.stream().sorted(Comparator.comparing(CollectionEntry::getId)).collect(Collectors.toCollection(LinkedList::new));
     }
 
     public void setEntries(Set<Entry> entries) {
@@ -211,5 +216,9 @@ public class Collection implements Serializable, Aliasable {
 
     public void setOrganizationID(long organizationID) {
         this.organizationID = organizationID;
+    }
+
+    public void setCollectionEntries(List<CollectionEntry> collectionEntries) {
+        this.collectionEntries = collectionEntries;
     }
 }

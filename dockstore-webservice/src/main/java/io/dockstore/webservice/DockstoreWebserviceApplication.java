@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.FileContent;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notification;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -74,6 +75,7 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
@@ -87,6 +89,7 @@ import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.EventResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
+import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
@@ -163,7 +166,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class,
-            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, FileContent.class) {
+            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, FileContent.class, LambdaEvent.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -286,6 +289,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
+        final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
@@ -304,7 +308,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.getAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(toolDAO, configuration);
+        final EntryResource entryResource = new EntryResource(toolDAO, versionDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
@@ -316,10 +320,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(httpClient, hibernate.getSessionFactory(), configuration, workflowResource, entryResource);
 
         environment.jersey().register(dockerRepoResource);
-        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO));
+        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO, versionDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer));
+        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
 
         MetadataResourceHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
@@ -327,6 +331,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory(), httpClient));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));

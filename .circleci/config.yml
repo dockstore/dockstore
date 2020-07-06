@@ -23,7 +23,7 @@ jobs:
       - run: 
           name: Install yq
           command: |
-            wget https://github.com/mikefarah/yq/releases/download/3.1.2/yq_linux_amd64
+            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
             chmod a+x yq_linux_amd64
             sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
@@ -76,6 +76,19 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: ~/junit
+      - run:
+          name: Make jar directory
+          command: mkdir /tmp/artifacts
+      - run:
+          name: Move jars
+          command: cp dockstore-webservice/target/dockstore*[^s].jar /tmp/artifacts
+      - run:
+          name: Move swagger.yaml
+          command: |
+            cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
+            cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
+      - store_artifacts:
+          path: /tmp/artifacts
     branches:
       ignore:
         - gh-pages

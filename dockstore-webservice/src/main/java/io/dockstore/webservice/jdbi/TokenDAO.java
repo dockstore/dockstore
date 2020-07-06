@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -50,46 +51,50 @@ public class TokenDAO extends AbstractDAO<Token> {
     }
 
     public List<Token> findByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findDockstoreByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findDockstoreByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findDockstoreByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findGithubByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findGithubByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findGithubByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findGoogleByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findGoogleByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findGoogleByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findQuayByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findQuayByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findQuayByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findBitbucketByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findBitbucketByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findBitbucketByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findGitlabByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findGitlabByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findGitlabByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findZenodoByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findZenodoByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findZenodoByUserId").setParameter("userId", userId));
     }
 
     public List<Token> findOrcidByUserId(final long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findOrcidByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findOrcidByUserId").setParameter("userId", userId));
     }
 
     public Token findByContent(String content) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findByContent").setParameter("content", content));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findByContent").setParameter("content", content));
     }
 
     public Token findTokenByGitHubUsername(String githubUsername) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findTokenByGitHubUsername").setParameter("username", githubUsername));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findTokenByGitHubUsername").setParameter("username", githubUsername));
+    }
+
+    public Token findTokenByUserNameAndTokenSource(String username, TokenType tokenSource) {
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findTokenByUserNameAndTokenSource").setParameter("username", username).setParameter("tokenSource", tokenSource));
     }
 }

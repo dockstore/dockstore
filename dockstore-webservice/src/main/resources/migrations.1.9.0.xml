@@ -114,12 +114,16 @@
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="workflow" constraintName="fk_workflow_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="service" constraintName="fk_service_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="tool" constraintName="fk_tool_default_tag" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tag"/>
-        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.name</sql>
-        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.name</sql>
-        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.name</sql>
+        <sql>update tool e set actualdefaultversion = t.id from tag t where t.parentid = e.id and e.defaultversion = t.reference</sql>
+        <sql>update tool e set actualdefaultversion = t.id from tag t where t.parentid = e.id and e.defaultversion = t.name</sql>
+        <sql>update workflow e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.reference</sql>
+        <sql>update workflow e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.name</sql>
+        <sql>update service e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.reference</sql>
+        <sql>update service e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.name</sql>
+        <!-- No two entries should have the same actualdefaultversion -->
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="tool" constraintName="unique_default_version_tool" deferrable="false" initiallyDeferred="false"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="workflow" constraintName="unique_default_version_workflow" deferrable="false" initiallyDeferred="false"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="service" constraintName="unique_default_version_service" deferrable="false" initiallyDeferred="false"/>
     </changeSet>
     <changeSet author="gluu (generated)" id="removeOldDefaultVersionColumn">
         <dropColumn columnName="defaultversion" tableName="service"/>
@@ -140,38 +144,34 @@
         <sql dbms="postgresql">UPDATE service SET mode='DOCKSTORE_YML' WHERE mode='SERVICE'</sql>
     </changeSet>
 
-    <changeSet author="dyuen" id="deduplicate_content">
-        <createTable tableName="filecontent">
-            <column name="id" type="VARCHAR(255)">
-                <constraints primaryKey="true" primaryKeyName="filecontent_pkey"/>
+    <changeSet author="aduncan (generated)" id="addLambdaEvents">
+        <createTable tableName="lambdaevent">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="lambdaevent_pkey"/>
             </column>
-            <column name="content" type="TEXT"/>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="message" type="TEXT"/>
+            <column name="reference" type="TEXT"/>
+            <column name="repository" type="TEXT"/>
+            <column defaultValueBoolean="true" name="success" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="githubusername" type="TEXT"/>
+            <column name="userid" type="BIGINT"/>
         </createTable>
-        <addColumn tableName="sourcefile">
-            <column name="sha1" type="varchar(255 BYTE)"/>
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="lambdaevent" constraintName="fkj387wwrofm9u30t4mwiiwa835" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+
+    <changeSet id="splitLambdaEventRepository" author="aduncan">
+        <addColumn tableName="lambdaevent">
+            <column name="organization" type="TEXT"/>
         </addColumn>
-
-        <!-- disable security to not skip frozen files -->
         <sql dbms="postgresql">
-            alter table sourcefile disable row level security;
+            UPDATE lambdaevent SET organization = split_part(repository,'/',1);
+            UPDATE lambdaevent SET repository = split_part(repository,'/',2);
         </sql>
-
-        <!-- copy over unique non-null content from sourcefile -->
-        <sql>with uniquecontent as (select content, min(dbcreatedate) as dbcreatedate, max(dbupdatedate) as dbupdatedate from sourcefile where content is not null group by content) insert into filecontent(id, content, dbcreatedate, dbupdatedate) select encode(digest(content, 'sha1'), 'hex'), content, dbcreatedate, dbupdatedate from uniquecontent</sql>
-        <!-- populate sha1 for main table -->
-        <sql>update sourcefile set sha1 = encode(digest(content, 'sha1'), 'hex')</sql>
-
-        <sql dbms="postgresql">
-            alter table sourcefile enable row level security;
-        </sql>
-        <dropColumn columnName="content" tableName="sourcefile"/>
     </changeSet>
-
-    <changeSet author="dyuen" id="constrain_filecontent">
-        <addForeignKeyConstraint baseColumnNames="sha1" baseTableName="sourcefile" constraintName="filecontentsha1" deferrable="true" initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="filecontent"/>
-    </changeSet>
-
 
 </databaseChangeLog>

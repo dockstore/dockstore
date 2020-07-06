@@ -106,7 +106,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Approve an organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organization.class)
     @Operation(operationId = "approveOrganization", summary = "Approve an organization.", description = "Approve the organization with the given id. Admin/curator only.", security = @SecurityRequirement(name = "bearer"))
-    public Organization approveOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Organization approveOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
@@ -130,7 +130,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(value = "Reject an organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organization.class)
     @Operation(operationId = "rejectOrganization", summary = "Reject an organization.", description = "Reject the organization with the given id. Admin/curator only.", security = @SecurityRequirement(name = "bearer"))
-    public Organization rejectOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER) @Auth User user,
+    public Organization rejectOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
@@ -322,7 +322,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         getOrganizationByIdOptionalAuth(user, id);
         response.addHeader("X-total-count", String.valueOf(eventDAO.countAllEventsForOrganization(id)));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
-        return eventDAO.findEventsForOrganization(id, offset, limit);
+        List<Event> eventsForOrganization = eventDAO.findEventsForOrganization(id, offset, limit);
+        for (Event event : eventsForOrganization) {
+            Hibernate.initialize(event.getInitiatorUser());
+            Hibernate.initialize(event.getCollection());
+        }
+        return eventsForOrganization;
     }
 
     @PUT

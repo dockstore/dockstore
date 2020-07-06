@@ -24,6 +24,7 @@ import java.util.Optional;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
@@ -117,10 +118,10 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testRefreshAndPublish() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        UsersApi usersApi = new UsersApi(client);
 
         // refresh all
-        usersApi.refreshWorkflowsByOrganization((long)1, "DockstoreTestUser2");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "",
+                DescriptorLanguage.CWL.getLowerShortName(), "");
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
@@ -404,7 +405,9 @@ public class GeneralWorkflowIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
 
         // refresh all
-        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
+        workflowsApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getLowerShortName(), "");
+
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi
@@ -619,7 +622,10 @@ public class GeneralWorkflowIT extends BaseIT {
         Assert.assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertEquals("Refresh should not have set it back to the automatic one", "testBoth", workflow.getDefaultVersion());
-
+        // Mimic version on Dockstore no longer present on GitHub
+        testingPostgres.runUpdateStatement("UPDATE workflowversion SET name = 'deletedGitHubBranch', reference ='deletedGitHubBranch' where name='testBoth'");
+        workflow = workflowsApi.refresh(workflow.getId());
+        Assert.assertEquals("the old default was deleted during refresh, it should automatically set the default version again", "master", workflow.getDefaultVersion());
     }
 
     /**
@@ -1061,7 +1067,6 @@ public class GeneralWorkflowIT extends BaseIT {
     public void testTestParameterFile() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        UsersApi usersApi = new UsersApi(client);
 
         // refresh all and individual
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/parameter_test_workflow", "testname", "cwl",
@@ -1141,7 +1146,10 @@ public class GeneralWorkflowIT extends BaseIT {
         // Refresh all workflows
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
-        usersApi.refreshWorkflowsByOrganization((long)1, "dockstore_testuser2");
+
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/parameter_test_workflow", "testname", DescriptorLanguage.CWL.getShortName(),
+                SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Check that user has been updated
         // TODO: bizarrely, the new GitHub Java API library doesn't seem to handle bio

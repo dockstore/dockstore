@@ -366,14 +366,18 @@ public abstract class SourceCodeRepoInterface {
                             return branch.equals(reference);
                         }).findFirst();
                 firstWorkflowVersion.ifPresentOrElse(version -> entry.checkAndSetDefaultVersion(version.getName()), () -> {
-                    Version newestVersion = Collections.max(workflowVersions, Comparator.comparingLong(s -> s.getDate().getTime()));
-                    entry.setActualDefaultVersion(newestVersion);
+                    if (!workflowVersions.isEmpty()) {
+                        Version newestVersion = Collections.max(workflowVersions, Comparator.comparingLong(s -> s.getDate().getTime()));
+                        entry.setActualDefaultVersion(newestVersion);
+                    } else {
+                        entry.setActualDefaultVersion(null);
+                    }
                 });
             }
         }
     }
 
-    private void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
+    public void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
         if (Strings.isNullOrEmpty(filePath)) {

@@ -32,22 +32,22 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
     }
 
     public List<Organization> findApprovedSortedByStar() {
-        return list(namedQuery("io.dockstore.webservice.core.Organization.findApprovedSortedByStar"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findApprovedSortedByStar"));
     }
     public List<Organization> findAllApproved() {
-        return list(namedQuery("io.dockstore.webservice.core.Organization.findAllApproved"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAllApproved"));
     }
 
     public List<Organization> findAllPending() {
-        return list(namedQuery("io.dockstore.webservice.core.Organization.findAllPending"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAllPending"));
     }
 
     public List<Organization> findAllRejected() {
-        return list(namedQuery("io.dockstore.webservice.core.Organization.findAllRejected"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAllRejected"));
     }
 
     public List<Organization> findAll() {
-        return list(namedQuery("io.dockstore.webservice.core.Organization.findAll"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAll"));
     }
 
 
@@ -70,6 +70,6 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
     }
 
     public Organization getByAlias(String alias) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Organization.getByAlias").setParameter("alias", alias));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.getByAlias").setParameter("alias", alias));
     }
 }

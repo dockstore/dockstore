@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.9.0-alpha.9-SNAPSHOT</version>
+        <version>1.10.0-alpha.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
@@ -60,32 +60,37 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.9.0-alpha.9-SNAPSHOT</version>
+            <version>1.10.0-alpha.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.9.0-alpha.9-SNAPSHOT</version>
+            <version>1.10.0-alpha.0-SNAPSHOT</version>
+            <exclusions>
+                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
+                <exclusion>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.9.0-alpha.9-SNAPSHOT</version>
+            <version>1.10.0-alpha.0-SNAPSHOT</version>
+            <exclusions>
+                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
+                <exclusion>
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
-            <version>1.9.0-alpha.9-SNAPSHOT</version>
-        </dependency>
-
-        <!-- testing -->
-        <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>dockstore-common</artifactId>
-            <version>1.9.0-alpha.9-SNAPSHOT</version>
-            <scope>test</scope>
-            <type>test-jar</type>
+            <version>1.10.0-alpha.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -180,6 +185,10 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
         </dependency>
     </dependencies>
 

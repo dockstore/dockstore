@@ -152,7 +152,9 @@ public class CRUDClientIT extends BaseIT {
         first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
-        dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "1");
+        // Default version automatically updated to the latest version (3).
+        dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "3");
+        assertEquals("Default version should have updated to the next newest one", "2", dockstoreTool.getDefaultVersion());
         assertEquals("should only be two revisions", 2, dockstoreTool.getWorkflowVersions().size());
 
         //check that all revisions have editing users
@@ -209,6 +211,7 @@ public class CRUDClientIT extends BaseIT {
     @Test
     public void testWorkflowEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
+        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, CWL.getLowerShortName(), null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
@@ -276,7 +279,6 @@ public class CRUDClientIT extends BaseIT {
         assertTrue(thrownException);
 
         // Publish workflow
-        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
         workflowsApi.publish(dockstoreWorkflow.getId(), pub);
 
@@ -440,6 +442,9 @@ public class CRUDClientIT extends BaseIT {
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
         // Update the default version of the tool
         containersApi.updateToolDefaultVersion(hostedTool.getId(), first.get().getName());
+
+        // test deletion of hosted tool for #3171
+        containersApi.deleteContainer(hostedTool.getId());
     }
 
     /**

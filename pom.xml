@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.9.0-alpha.9-SNAPSHOT</version>
+    <version>1.10.0-alpha.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -31,16 +31,16 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
-        <dropwizard.version>1.3.17</dropwizard.version>
+        <dropwizard.version>2.0.10</dropwizard.version>
         <dockstore-client.version>1.8.0-beta.1</dockstore-client.version>
 
-        <dropwizard-annotations.version>4.0.5</dropwizard-annotations.version>
+        <dropwizard-annotations.version>4.1.9</dropwizard-annotations.version>
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
         <openapi-annotations-version>2.1.1</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
-        <jackson.version>2.10.1</jackson.version>
-        <jackson.major.version>2.10.1</jackson.major.version>
-        <jersey-version>2.25.1</jersey-version>
+        <jackson.version>2.10.4</jackson.version>
+        <jackson.major.version>2.10.4</jackson.major.version>
+        <jersey-version>2.31</jersey-version>
         <junit-version>4.13</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>2.5.25</aws.version>
@@ -49,13 +49,13 @@
         <mockito.version>2.28.2</mockito.version>
         <cwlavro.version>2.0.4.4</cwlavro.version>
         <okhttp.version>3.14.2</okhttp.version>
-        <slf4j.version>1.7.26</slf4j.version>
+        <slf4j.version>1.7.30</slf4j.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
-        <httpcomponents.version>4.5.10</httpcomponents.version>
-        <httpcore.version>4.4.12</httpcore.version>
-        <jetty-servlet.version>9.4.18.v20190429</jetty-servlet.version>
+        <httpcomponents.version>4.5.12</httpcomponents.version>
+        <httpcore.version>4.4.13</httpcore.version>
+        <jetty-servlet.version>9.4.29.v20200521</jetty-servlet.version>
         <netty.version>4.1.33.Final</netty.version>
         <scala.version>2.12.8</scala.version>
         <cromwell.version>41</cromwell.version>
@@ -73,7 +73,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.8.2</tag>
+        <tag>1.9.0</tag>
     </scm>
 
     <repositories>
@@ -283,7 +283,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.10.1</version>
+                <version>2.10.6</version>
             </dependency>
 
             <dependency>
@@ -294,18 +294,18 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.6</version>
+                <version>1.8</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
-                <version>3.3.0.Final</version>
+                <version>3.3.2.Final</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml</groupId>
                 <artifactId>classmate</artifactId>
-                <version>1.3.1</version>
+                <version>1.5.1</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/io.dropwizard/dropwizard-bom -->
@@ -316,6 +316,24 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-dependencies</artifactId>
+                <version>${dropwizard.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${dropwizard-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-healthchecks</artifactId>
+                <version>${dropwizard-annotations.version}</version>
+            </dependency>
+
             <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
             <dependency>
                 <groupId>org.postgresql</groupId>
@@ -324,17 +342,46 @@
             </dependency>
 
 
-            <!-- should not be needed, but dropwizard has a conflicting dependency within their own dependency list -->
             <dependency>
-                <groupId>org.hibernate</groupId>
+                <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.4.3.Final</version>
+                <version>6.1.5.Final</version>
             </dependency>
 
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>1.1.0.Final</version>
+                <groupId>org.slf4j</groupId>
+                <artifactId>log4j-over-slf4j</artifactId>
+                <version>1.7.30</version>
+            </dependency>
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>1.3.5</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>1.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.j2objc</groupId>
+                <artifactId>j2objc-annotations</artifactId>
+                <version>1.3</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>2.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>2.1.6</version>
             </dependency>
 
             <!-- jersey -->
@@ -393,7 +440,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.9</version>
+                <version>3.10</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -408,12 +455,12 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>27.0.1-jre</version>
+                <version>28.2-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.25.0-GA</version>
+                <version>3.27.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -423,7 +470,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.2</version>
+                <version>2.7</version>
             </dependency>
 
             <dependency>
@@ -438,12 +485,6 @@
                 <artifactId>annotations</artifactId>
                 <scope>provided</scope>
                 <version>3.0.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
-                <version>1.3.2</version>
             </dependency>
 
             <!-- mocking dependencies -->
@@ -499,13 +540,13 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.10.1</version>
+                <version>1.10.10</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.10.1</version>
+                <version>1.10.10</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -608,7 +649,7 @@
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
                 <artifactId>mimepull</artifactId>
-                <version>1.9.6</version>
+                <version>1.9.13</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
@@ -629,7 +670,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.24</version>
+                <version>1.26</version>
             </dependency>
 
             <dependency>
@@ -724,11 +765,6 @@
                 <artifactId>commons-compress</artifactId>
                 <version>1.20</version>
             </dependency>
-            <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.0.1</version>
-            </dependency>
 
             <dependency>
                 <groupId>io.dockstore</groupId>
@@ -761,14 +797,9 @@
                 <version>5.0.3</version>
             </dependency>
             <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>1.1.1</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>2.3.2</version>
+                <version>2.3.3</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -834,6 +865,12 @@
                 <version>${netty.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>2.8.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1140,6 +1177,11 @@
                                         <exclude>commons-configuration:commons-configuration</exclude>
                                         <!-- superceded by org.apache.httpcomponents:httpclient -->
                                         <exclude>commons-httpclient:commons-httpclient</exclude>
+                                        <!-- see https://github.com/dropwizard/dropwizard/pull/3069 -->
+                                        <exclude>javax.annotation:javax.annotation-api</exclude>
+                                        <exclude>javax.validation:validation-api</exclude>
+                                        <exclude>javax.activation:activation</exclude>
+                                        <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>

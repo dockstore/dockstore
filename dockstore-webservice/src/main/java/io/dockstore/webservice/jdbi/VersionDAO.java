@@ -16,11 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
 import java.util.SortedSet;
 
 import io.dockstore.webservice.core.FileContent;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
@@ -30,8 +32,7 @@ import org.hibernate.SessionFactory;
 public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
     private final FileContentDAO fileContentDAO;
-
-    VersionDAO(SessionFactory sessionFactory) {
+    public VersionDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
         this.fileContentDAO = new FileContentDAO(sessionFactory);
     }
@@ -55,5 +56,13 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
     public void delete(T version) {
         currentSession().delete(version);
+    }
+
+    public Version<T> findVersionInEntry(Long entryId, Long versionId) {
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Version.findVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
+    }
+
+    public List<VersionVerifiedPlatform> findEntryVersionsWithVerifiedPlatforms(Long entryId) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms").setParameter("entryId", entryId));
     }
 }
