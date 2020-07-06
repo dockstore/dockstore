@@ -38,6 +38,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.BioWorkflow_;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.dto.TrsImage;
 import io.dockstore.webservice.core.dto.TrsTool;
 import io.dockstore.webservice.core.dto.TrsToolVersion;
 import io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType;
@@ -266,26 +267,34 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
         final List<TrsTool> trsTools = getTrsTools(registry, organization, checker, toolname, author, description, limit);
 
-        final Map<Long, List<TrsToolVersion>> versionMap = fetchVersions(trsTools.stream().map(t -> t.getId()).collect(Collectors.toList()));
+        final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(trsTools.stream().map(t -> t.getId()).collect(Collectors.toList()));
 
         trsTools.forEach(tool -> tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList())));
 
         return trsTools;
     }
 
-    private Map<Long, List<TrsToolVersion>> fetchVersions(final List<Long> workflowIds) {
+    private Map<Long, List<TrsToolVersion>> fetchTrsToolVersions(final List<Long> workflowIds) {
         final List<TrsToolVersion> versions = list(namedQuery("io.dockstore.webservice.core.Workflow.getNonHiddenVersions")
                 .setParameterList("ids", workflowIds));
 
+        final List<Long> versionIds = versions.stream().map(v -> v.getId()).collect(Collectors.toList());
         final List<TrsToolVersionDescriptorType> descriptorTypes = list(namedQuery("io.dockstore.webservice.core.Workflow.findDescriptorTypes")
-                .setParameterList("ids", versions.stream().map(v -> v.getId()).collect(Collectors.toList())));
+                .setParameterList("ids", versionIds));
         final Map<Long, List<TrsToolVersionDescriptorType>> versionDescriptorMap = descriptorTypes.stream()
                 .collect(Collectors.groupingBy(TrsToolVersionDescriptorType::getVersionId));
+
+        final List<TrsImage> images = list(namedQuery("io.dockstore.webservice.core.Workflow.getImagesForVersions").setParameterList("ids", versionIds));
+        final Map<Long, List<TrsImage>> versionImageMap = images.stream().collect(Collectors.groupingBy(TrsImage::getVersionId));
 
         versions.forEach(version -> {
             final List<TrsToolVersionDescriptorType> descriptors = versionDescriptorMap.get(version.getId());
             if (descriptors != null) {
                 version.getDescriptorTypes().addAll(descriptors.stream().map(d -> d.getFileType()).collect(Collectors.toList()));
+            }
+            final List<TrsImage> trsImages = versionImageMap.get(version.getId());
+            if (trsImages != null) {
+                version.getImages().addAll(trsImages);
             }
         });
 

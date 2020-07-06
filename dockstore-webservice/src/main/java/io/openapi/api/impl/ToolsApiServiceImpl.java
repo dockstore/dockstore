@@ -269,9 +269,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
         final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
-        final List<TrsTool> allTrsPublished = workflowDAO.findAllTrsPublished(Optional.ofNullable(registry),
-                Optional.ofNullable(organization), Optional.ofNullable(checker), Optional.ofNullable(toolname),
-                Optional.ofNullable(author), Optional.ofNullable(description), actualLimit);
+        final List<TrsTool> allTrsPublished = workflowDAO.findAllTrsPublished(
+                Optional.ofNullable(registry),
+                Optional.ofNullable(organization),
+                Optional.ofNullable(checker),
+                Optional.ofNullable(toolname),
+                Optional.ofNullable(author),
+                Optional.ofNullable(description),
+                actualLimit);
         if (true) {
             return Response.ok(allTrsPublished).build();
         }

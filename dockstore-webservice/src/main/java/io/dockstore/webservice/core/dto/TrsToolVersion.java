@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.List;
 
 import io.dockstore.common.DescriptorLanguage;
-import io.openapi.model.ImageData;
 
 public class TrsToolVersion {
     private final long id;
@@ -15,7 +14,7 @@ public class TrsToolVersion {
     private final String name;
     //    private final String url;
     private final boolean production;
-    private final List<ImageData> images = new ArrayList<>();
+    private final List<TrsImage> images = new ArrayList<>();
     private final List<DescriptorLanguage.FileType> descriptorTypes = new ArrayList<>();
     //    private final Boolean containerFile;
     private final String metaVersion;
@@ -57,7 +56,7 @@ public class TrsToolVersion {
         return id;
     }
 
-    public List<ImageData> getImages() {
+    public List<TrsImage> getImages() {
         return images;
     }
 

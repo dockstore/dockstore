@@ -20,6 +20,7 @@ public abstract class TrsTool {
     private final Date lastUpdated;
     private final List<TrsToolVersion> versions = new ArrayList<>();
 
+    // No way around the number of parameters short of creating additional DB queries
     @SuppressWarnings("checkstyle:ParameterNumber")
     public TrsTool(final long id, final String organization, final String description, SourceControl sourceControl,
             final DescriptorLanguage descriptorType, final String repository, final SourceControl checkerSourceControl, final String checkerOrg,
