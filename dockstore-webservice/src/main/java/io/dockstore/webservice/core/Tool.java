@@ -266,6 +266,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     /**
+     * TODO: Make into actual column, run some migration/script to fill all the rows, and update on refresh.
      * Calculated property for demonstrating search by language, inefficient
      *
      * @return the languages that this tool supports

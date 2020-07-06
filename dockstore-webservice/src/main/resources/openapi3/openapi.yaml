@@ -1382,6 +1382,16 @@ components:
         workingDirectory:
           type: string
       type: object
+    VersionVerifiedPlatform:
+      properties:
+        metadata:
+          type: string
+        source:
+          type: string
+        versionId:
+          format: int64
+          type: integer
+      type: object
     Workflow:
       discriminator:
         propertyName: type
@@ -3555,6 +3565,31 @@ paths:
         - bearer: []
       tags:
         - curation
+  /entries/{entryId}/verifiedPlatforms:
+    get:
+      description: Get the verified platforms for each version of an entry.
+      operationId: getVerifiedPlatforms
+      parameters:
+        - description: id of the entry
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VersionVerifiedPlatform'
+                type: array
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - entries
   /entries/{id}/aliases:
     post:
       description: Add aliases linked to a entry in Dockstore.
@@ -3575,7 +3610,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
