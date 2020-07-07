@@ -568,17 +568,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return services;
     }
 
-    private List<Workflow> getBioworkflows(User user) {
-        return workflowDAO.findMyEntries(user.getId()).stream().filter(BioWorkflow.class::isInstance).collect(Collectors.toList());
-    }
-
-    // TODO: Replace with code similar to the new userWorkflows endpoint once it is optimised
-    private List<Workflow> getStrippedBioworkflows(User user) {
-        final List<Workflow> bioworkflows = getBioworkflows(user);
-        EntryVersionHelper.stripContent(bioworkflows, this.userDAO);
-        return bioworkflows;
-    }
-
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
         final List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
         EntryVersionHelper.stripContent(workflows, this.userDAO);
@@ -818,18 +807,18 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
                 .collect(Collectors.toList());
 
-        scTokens.stream().forEach(token -> {
+        scTokens.forEach(token -> {
             SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
             Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
             Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
 
             organizations.forEach(organization -> {
                 List<Workflow> workflows = workflowDAO.findByOrganization(token.getTokenSource().getSourceControl(), organization);
-                workflows.stream().forEach(workflow -> workflow.getUsers().add(user));
+                workflows.forEach(workflow -> workflow.getUsers().add(user));
             });
         });
 
-        return getStrippedBioworkflows(userDAO.findById(user.getId()));
+        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
     }
 
     @GET
