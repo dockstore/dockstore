@@ -89,7 +89,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
         application
             .run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,"
-                    + "1.6.0,1.7.0,1.8.0,1.9.0");
+                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0");
     }
 
     /**
@@ -115,7 +115,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
 
         List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0");
+            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0");
         runMigration(migrationList, application, dropwizardConfigurationFile);
     }
 
@@ -185,7 +185,7 @@ public final class CommonTestUtilities {
 
         List<String> migrationList = Arrays
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0");
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -233,7 +233,7 @@ public final class CommonTestUtilities {
 
         List<String> migrationList = Arrays
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0");
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -250,7 +250,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         application
             .run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0");
 
     }
 
@@ -266,7 +266,8 @@ public final class CommonTestUtilities {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0");
+                .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0",
+                        "1.8.0", "1.9.0", "1.10.0");
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 
