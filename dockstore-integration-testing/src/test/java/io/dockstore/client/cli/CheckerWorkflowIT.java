@@ -172,20 +172,18 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count9 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished = true", long.class);
         assertEquals("the tool should not be published, there are " + count9, 0, count9);
 
-        // Should not be able to directly publish the checker
         try {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
-            fail("Should not reach this statement.");
-        } catch (ApiException ex) {
-            assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
+            fail("Should not be able to directly publish the checker");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
 
-        // Should not be able to restub the checker
         try {
             workflowApi.restub(refreshedEntry.getCheckerId());
-            fail("Should not reach this statement.");
+            fail("Should not be able to restub the checker");
         } catch (ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
     }
 
