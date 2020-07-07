@@ -281,6 +281,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         // Delete entries for which this user is the only user
         deleteSelfFromEntries(user);
         invalidateTokensForUser(user);
+        deleteSelfFromLambdaEvents(user);
         return userDAO.delete(user);
     }
 
@@ -299,9 +300,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .filter(e -> e.getUsers().size() == 1 && !e.getIsPublished())
                 .forEach(entry -> {
                     EntryDAO entryDAO;
-                    if (entry instanceof Service) {
-                        entryDAO = serviceDAO;
-                    } else if (entry instanceof Workflow) {
+                    if (entry instanceof Workflow) {
                         entryDAO = workflowDAO;
                     } else if (entry instanceof Tool) {
                         entryDAO = toolDAO;
@@ -313,6 +312,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                     eventDAO.deleteEventByEntryID(entry.getId());
                     entryDAO.delete(entry);
                 });
+    }
+
+    // We don't delete the LambdaEvent because it is useful for other users
+    private void deleteSelfFromLambdaEvents(User user) {
+        lambdaEventDAO.findByUser(user).stream()
+                .filter(lambdaEvent -> lambdaEvent.getUser() == user)
+                .forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
     @DELETE

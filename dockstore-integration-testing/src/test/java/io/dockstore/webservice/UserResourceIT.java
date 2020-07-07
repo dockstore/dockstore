@@ -218,6 +218,11 @@ public class UserResourceIT extends BaseIT {
     public void testSelfDestruct() throws ApiException {
         ApiClient client = getAnonymousWebClient();
         UsersApi userApi = new UsersApi(client);
+
+        final String github = SourceControl.GITHUB.toString();
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
         // anon should not exist
         boolean shouldFail = false;
         try {
@@ -237,9 +242,10 @@ public class UserResourceIT extends BaseIT {
 
         User user = userApi.getUser();
         assertNotNull(user);
-        // try to delete with published workflows
+        // try to delete with published workflows & service
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getLowerShortName(), "");
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        workflowsApi.handleGitHubRelease(serviceRepo, USER_2_USERNAME, "refs/tags/1.0", installationId);
 
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
@@ -249,6 +255,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
         adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+        adminWorkflowsApi.getWorkflowByPath(github + "/" + serviceRepo, null, true);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(true));
@@ -277,6 +284,15 @@ public class UserResourceIT extends BaseIT {
             expectedAdminAccessToFail = true;
         }
         assertTrue(expectedAdminAccessToFail);
+
+        // Verify that self-destruct also deleted the service
+        boolean expectedAdminServiceAccessToFail = false;
+        try {
+            adminWorkflowsApi.getWorkflowByPath(github + "/" + serviceRepo, null, true);
+        } catch (ApiException e) {
+            expectedAdminServiceAccessToFail = true;
+        }
+        assertTrue(expectedAdminServiceAccessToFail);
 
         // I shouldn't be able to get info on myself after deletion
         boolean expectedFailToGetInfo = false;
