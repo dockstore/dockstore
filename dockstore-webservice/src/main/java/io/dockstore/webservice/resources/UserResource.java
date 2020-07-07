@@ -813,11 +813,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
 
             organizations.forEach(organization -> {
-                List<Workflow> workflows = workflowDAO.findByOrganization(token.getTokenSource().getSourceControl(), organization);
-                workflows.forEach(workflow -> workflow.getUsers().add(user));
+                List<Workflow> workflowsWithoutuser = workflowDAO.findByOrganizationWithoutUser(token.getTokenSource().getSourceControl(), organization, user);
+                workflowsWithoutuser.forEach(workflow -> workflow.addUser(user));
             });
         });
-
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
     }
 
