@@ -37,6 +37,9 @@ public class FileContentDAO extends AbstractDAO<FileContent> {
     @Override
     protected FileContent persist(FileContent file) throws HibernateException {
         // intercept creation of new content to de-duplicate
+        if (file == null) {
+            return null;
+        }
         FileContent content = findById(file.getId());
         if (content == null) {
             FileContent persist = super.persist(file);

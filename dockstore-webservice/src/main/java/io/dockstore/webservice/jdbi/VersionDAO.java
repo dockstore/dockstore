@@ -45,7 +45,7 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
         //avoid "A different object with the same identifier value was already associated with the session" by removing duplicate file content
         SortedSet<SourceFile> sourceFiles = tag.getSourceFiles();
         for (SourceFile file : sourceFiles) {
-            FileContent content = fileContentDAO.findById(file.getFileContent().getId());
+            FileContent content = file.getFileContent() == null ? null : fileContentDAO.findById(file.getFileContent().getId());
             if (content == null) {
                 content = fileContentDAO.persist(file.getFileContent());
             }

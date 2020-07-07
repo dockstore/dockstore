@@ -77,7 +77,7 @@ public class FileContent implements Comparable<FileContent> {
 
     @Override
     public int hashCode() {
-        return getContent().hashCode();
+        return Objects.hashCode(getContent());
     }
 
     @Override
