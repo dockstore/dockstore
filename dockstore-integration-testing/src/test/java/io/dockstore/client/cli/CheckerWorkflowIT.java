@@ -45,7 +45,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -276,17 +275,6 @@ public class CheckerWorkflowIT extends BaseIT {
                 if (workflowItem.getOrganization().equalsIgnoreCase(stubCheckerWorkflow.getOrganization())) {
                     workflowApi.refresh(workflowItem.getId());
                 }
-            }
-        }
-        // Try to restub parent workflow
-        if (workflow) {
-            Workflow restub = workflowApi.restub(baseEntryId);
-            assertNull("No checker associated with the workflow", restub.getCheckerId());
-            try {
-                workflowApi.getWorkflow(checkerWorkflowBase.getCheckerId(), null);
-                fail("Should not reach this statement");
-            } catch (ApiException e) {
-                assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             }
         }
     }
