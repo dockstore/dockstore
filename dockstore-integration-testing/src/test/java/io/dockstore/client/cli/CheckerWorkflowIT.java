@@ -45,8 +45,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Confidential tests for checker workflows
@@ -174,9 +176,17 @@ public class CheckerWorkflowIT extends BaseIT {
         // Should not be able to directly publish the checker
         try {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
-            Assert.fail("Should not reach this statement.");
+            fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Should not be able to restub the checker
+        try {
+            workflowApi.restub(refreshedEntry.getCheckerId());
+            fail("Should not reach this statement.");
+        } catch (ApiException e) {
+            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -268,6 +278,17 @@ public class CheckerWorkflowIT extends BaseIT {
                 }
             }
         }
+        // Try to restub parent workflow
+        if (workflow) {
+            Workflow restub = workflowApi.restub(baseEntryId);
+            assertNull("No checker associated with the workflow", restub.getCheckerId());
+            try {
+                workflowApi.getWorkflow(checkerWorkflowBase.getCheckerId(), null);
+                fail("Should not reach this statement");
+            } catch (ApiException e) {
+                assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
+            }
+        }
     }
 
     /**
@@ -357,7 +378,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Should not be able to directly publish the checker
         try {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
-            Assert.fail("Should not reach this statement.");
+            fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
         }
