@@ -15,13 +15,16 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.Path;
 
@@ -112,7 +115,13 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @ApiOperation(nickname = "editHostedTool", value = "Non-idempotent operation for creating new revisions of hosted tools.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
-        return super.editHosted(user, entryId, sourceFiles);
+        Tool tool = super.editHosted(user, entryId, sourceFiles);
+        Set<DescriptorLanguage.FileType> set = tool.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
+                Collectors.toSet());
+        List<String> descriptorTypes =  Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
+                .map(lang -> lang.toString().toUpperCase()).distinct().collect(Collectors.toList());
+        tool.setDescriptorType(descriptorTypes);
+        return tool;
     }
 
     @Override

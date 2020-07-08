@@ -6737,7 +6737,6 @@ definitions:
       descriptorType:
         type: "array"
         position: 28
-        readOnly: true
         items:
           type: "string"
       tool_path:
