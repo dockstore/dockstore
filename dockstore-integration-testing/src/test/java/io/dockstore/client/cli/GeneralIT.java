@@ -474,7 +474,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
         openToolApi.insertDescriptorTypes(tool.getId(), "");
         tool = toolApi.getContainer(tool.getId(), null);
-        assertEquals( 2, tool.getDescriptorType().size());
+        assertEquals(2, tool.getDescriptorType().size());
         assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
     }
 
@@ -500,7 +500,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
         assertEquals(0, tool.getDescriptorType().size());
         tool = toolApi.refresh(tool.getId());
-        assertEquals( 2, tool.getDescriptorType().size());
+        assertEquals(2, tool.getDescriptorType().size());
         assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
     }
 
