@@ -219,7 +219,6 @@ public class UserResourceIT extends BaseIT {
         ApiClient client = getAnonymousWebClient();
         UsersApi userApi = new UsersApi(client);
 
-        final String github = SourceControl.GITHUB.toString();
         String serviceRepo = "DockstoreTestUser2/test-service";
         String installationId = "1179416";
 
@@ -255,7 +254,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
         adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
-        adminWorkflowsApi.getWorkflowByPath(github + "/" + serviceRepo, null, true);
+        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(true));
@@ -281,6 +280,7 @@ public class UserResourceIT extends BaseIT {
             adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
 
         } catch (ApiException e) {
+            assertTrue(e.getCode() == 400);
             expectedAdminAccessToFail = true;
         }
         assertTrue(expectedAdminAccessToFail);
@@ -288,8 +288,9 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the service
         boolean expectedAdminServiceAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(github + "/" + serviceRepo, null, true);
+            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
         } catch (ApiException e) {
+            assertTrue(e.getCode() == 400);
             expectedAdminServiceAccessToFail = true;
         }
         assertTrue(expectedAdminServiceAccessToFail);

@@ -316,9 +316,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
     // We don't delete the LambdaEvent because it is useful for other users
     private void deleteSelfFromLambdaEvents(User user) {
-        lambdaEventDAO.findByUser(user).stream()
-                .filter(lambdaEvent -> lambdaEvent.getUser() == user)
-                .forEach(lambdaEvent -> lambdaEvent.setUser(null));
+        lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
     @DELETE
