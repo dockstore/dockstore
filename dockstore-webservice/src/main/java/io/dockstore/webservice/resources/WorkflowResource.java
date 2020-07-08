@@ -233,6 +233,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        if (workflow.isIsChecker()) {
+            throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         checkNotHosted(workflow);
         checkCanWriteWorkflow(user, workflow);
 
