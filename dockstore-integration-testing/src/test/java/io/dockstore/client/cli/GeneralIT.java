@@ -452,28 +452,22 @@ public class GeneralIT extends BaseIT {
 
     }
 
+    // Tests 1.10.0 migration where id=adddescriptortypecolumn
     @Test
-    public void testDescriptorTypeEndpoint() {
+    public void testMigrationForDescriptorType() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.ContainersApi openToolApi = new io.dockstore.openapi.client.api.ContainersApi(client);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
-        openToolApi.insertDescriptorTypes(tool.getId(), "");
-        tool = toolApi.getContainer(tool.getId(), null);
         assertEquals(1, tool.getDescriptorType().size());
         assertEquals("CWL", tool.getDescriptorType().get(0));
 
         tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
-        openToolApi.insertDescriptorTypes(tool.getId(), "");
-        tool = toolApi.getContainer(tool.getId(), null);
         assertEquals(1, tool.getDescriptorType().size());
         assertEquals("WDL", tool.getDescriptorType().get(0));
 
         tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
-        openToolApi.insertDescriptorTypes(tool.getId(), "");
-        tool = toolApi.getContainer(tool.getId(), null);
         assertEquals(2, tool.getDescriptorType().size());
         assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
     }
@@ -486,19 +480,16 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
-        assertEquals(0, tool.getDescriptorType().size());
         tool = toolApi.refresh(tool.getId());
         assertEquals(1, tool.getDescriptorType().size());
         assertEquals("CWL", tool.getDescriptorType().get(0));
 
         tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
-        assertEquals(0, tool.getDescriptorType().size());
         tool = toolApi.refresh(tool.getId());
         assertEquals(1, tool.getDescriptorType().size());
         assertEquals("WDL", tool.getDescriptorType().get(0));
 
         tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
-        assertEquals(0, tool.getDescriptorType().size());
         tool = toolApi.refresh(tool.getId());
         assertEquals(2, tool.getDescriptorType().size());
         assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));

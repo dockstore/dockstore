@@ -2402,7 +2402,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
       security:
         - bearer: []
@@ -2428,7 +2428,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
       security:
         - bearer: []
@@ -2857,35 +2857,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - containers
-  /containers/{containerId}/insertDescriptorType:
-    put:
-      description: Endpoint needed to migrate descriptortype from a just a json property to being stored in the db
-      operationId: insertDescriptorTypes
-      parameters:
-        - description: id of the tool
-          in: path
-          name: containerId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-        description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
           description: default response
       security:
         - bearer: []
@@ -6486,7 +6457,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []

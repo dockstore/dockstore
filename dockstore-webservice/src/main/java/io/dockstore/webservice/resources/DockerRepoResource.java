@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -96,7 +94,6 @@ import io.swagger.model.DescriptorType;
 import io.swagger.quay.client.model.QuayRepo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -239,29 +236,6 @@ public class DockerRepoResource
             LOG.info("WARNING: QUAY token not found!");
         }
     }
-
-
-    @PUT
-    @Path("/{containerId}/insertDescriptorType")
-    @Timed
-    @UnitOfWork
-    @ApiOperation(value = "Endpoint needed to migrate descriptortype from a just a json property to being stored in the db",  hidden = true)
-    @Operation(operationId = "insertDescriptorTypes", description = "Endpoint needed to migrate descriptortype from a just a json property to being stored in the db", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    public Tool insertDescriptorType(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(name = "containerId", description = "id of the tool", required = true, in = ParameterIn.PATH) @PathParam("containerId") Long containerId,
-            @Parameter(name = "body", description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        checkAdmin(user);
-        Tool tool = toolDAO.findById(containerId);
-        checkEntry(tool);
-
-        Set<DescriptorLanguage.FileType> set = tool.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
-                Collectors.toSet());
-        List<String> descriptorTypes =  Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
-                .map(lang -> lang.toString().toUpperCase()).distinct().collect(Collectors.toList());
-        tool.setDescriptorType(descriptorTypes);
-        return tool;
-    }
-
 
     @GET
     @Path("/{containerId}/refresh")

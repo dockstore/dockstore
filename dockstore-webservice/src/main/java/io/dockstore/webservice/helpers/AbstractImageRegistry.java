@@ -324,10 +324,7 @@ public abstract class AbstractImageRegistry {
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
 
-        Set<DescriptorLanguage.FileType> set = updatedTool.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
-        List<String> descriptorTypes =  Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
-                .map(lang -> lang.toString().toUpperCase()).distinct().collect(Collectors.toList());
-
+        List<String> descriptorTypes = updatedTool.calculateDescriptorType();
         updatedTool.setDescriptorType(descriptorTypes);
         logToolRefresh(dashboardPrefix, tool);
 

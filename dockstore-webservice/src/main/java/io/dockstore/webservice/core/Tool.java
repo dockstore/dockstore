@@ -17,11 +17,13 @@
 package io.dockstore.webservice.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -453,5 +455,12 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
+    }
+
+    public List<String> calculateDescriptorType() {
+        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
+                Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
+                .map(lang -> lang.toString().toUpperCase()).distinct().collect(Collectors.toList());
     }
 }

@@ -25,8 +25,10 @@ import java.util.UUID;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -42,6 +44,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -193,7 +196,7 @@ public class LimitedCRUDClientIT {
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
-        List<SourceFile> sourceFiles = generateSourceFiles(CWL.getLowerShortName());
+        List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
@@ -212,14 +215,14 @@ public class LimitedCRUDClientIT {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-                .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
+                .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName().toLowerCase(), "coolNamespace", null);
 
-        List<SourceFile> sourceFiles = generateSourceFiles(CWL.getLowerShortName());
+        List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
         hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
         assertEquals("CWL", hostedTool.getDescriptorType().get(0));
 
-        sourceFiles = generateSourceFiles(WDL.getLowerShortName());
+        sourceFiles = generateSourceFiles(WDL);
         hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
         assertTrue(hostedTool.getDescriptorType().size() == 2);
         assertTrue(hostedTool.getDescriptorType().get(0) != hostedTool.getDescriptorType().get(1));
@@ -240,7 +243,7 @@ public class LimitedCRUDClientIT {
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "coolNamespace", null);
 
-        List<SourceFile> sourceFiles = generateSourceFiles(CWL.getLowerShortName());
+        List<SourceFile> sourceFiles = generateSourceFiles(CWL);
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
         // a few updates with no actual changes shouldn't break anything since they are ignored
@@ -273,18 +276,20 @@ public class LimitedCRUDClientIT {
 
     }
 
-    private List<SourceFile> generateSourceFiles(String lang) throws IOException {
+    private List<SourceFile> generateSourceFiles(DescriptorLanguage descriptorLanguage) throws IOException {
         String resourceFilePath;
         String dockstorePath;
         SourceFile.TypeEnum type;
-        if (lang.equals(CWL.getLowerShortName())) {
+        if (descriptorLanguage == CWL) {
             resourceFilePath = "tar-param.cwl";
             dockstorePath = "/Dockstore.cwl";
             type = SourceFile.TypeEnum.DOCKSTORE_CWL;
-        } else {
+        } else if (descriptorLanguage == WDL) {
             resourceFilePath = "hello.wdl";
             dockstorePath = "/Dockstore.wdl";
             type = SourceFile.TypeEnum.DOCKSTORE_WDL;
+        } else {
+            throw new CustomWebApplicationException("Only wdl and cwl are an option", HttpStatus.SC_BAD_REQUEST);
         }
         SourceFile descriptorFile = new SourceFile();
         descriptorFile
