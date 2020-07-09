@@ -256,12 +256,12 @@ public class CheckerWorkflowIT extends BaseIT {
         List<Workflow> workflows = new ArrayList<>();
         workflows.add(workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                        DescriptorLanguage.WDL.getLowerShortName(), ""));
+                        DescriptorLanguage.WDL.getShortName(), ""));
         workflows.add(workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
-                        DescriptorLanguage.WDL.getLowerShortName(), ""));
+                        DescriptorLanguage.WDL.getShortName(), ""));
         workflows.add(workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), ""));
+                DescriptorLanguage.NEXTFLOW.getShortName(), ""));
         workflows.add(workflowApi
                 .manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json"));
         if (all) {

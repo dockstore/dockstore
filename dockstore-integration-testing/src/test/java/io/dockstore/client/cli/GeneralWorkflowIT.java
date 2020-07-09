@@ -121,7 +121,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh all
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "",
-                DescriptorLanguage.CWL.getLowerShortName(), "");
+                DescriptorLanguage.CWL.getShortName(), "");
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
@@ -406,7 +406,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh all
         workflowsApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
+                DescriptorLanguage.WDL.getShortName(), "");
 
 
         // refresh individual that is valid

@@ -1755,7 +1755,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             } else if (workflow.getDescriptorType() == WDL) {
                 workflowName += WDL_CHECKER;
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getLowerShortName()
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getShortName()
                     + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {
