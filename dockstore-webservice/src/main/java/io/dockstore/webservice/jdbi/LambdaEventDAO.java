@@ -52,6 +52,12 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
         return list(query);
     }
 
+    public List<LambdaEvent> findByUser(User user) {
+        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByUser")
+                .setParameter("user", user);
+        return list(query);
+    }
+
     public List<LambdaEvent> findByUser(User user, String offset, Integer limit) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<LambdaEvent> query = criteriaQuery();
