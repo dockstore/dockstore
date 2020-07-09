@@ -182,7 +182,7 @@ public class CWLHandler implements LanguageHandlerInterface {
             Map<String, ?> fileContentMap = yaml.loadAs(content, Map.class);
             handleMap(repositoryId, workingDirectoryForFile, version, imports, fileContentMap, sourceCodeRepoInterface);
         } catch (YAMLException e) {
-            SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
+            SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml", e);
         }
 
         Map<String, SourceFile> recursiveImports = new HashMap<>();
@@ -220,7 +220,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 LOG.debug(type + " is not comprehensible.");
             }
         } catch (YAMLException | NullPointerException e) {
-            LOG.error("Could not process content from entry as yaml");
+            LOG.error("Could not process content from entry as yaml", e);
         }
         return fileFormats;
     }
@@ -429,7 +429,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     return getJSONTableToolContent(nodeDockerInfo);
                 }
             } catch (JsonParseException ex) {
-                LOG.error("The JSON file provided is invalid.", ex);
+                LOG.warn("The JSON file provided is invalid.", ex);
                 return null;
             }
         } else {
