@@ -132,7 +132,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
             return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         }
     }
@@ -168,7 +168,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                 } catch (IOException e) {
                     // move on if a file is not found
-                    LOG.warn("Could not find " + partialPath + " at " + reference);
+                    LOG.warn("Could not find " + partialPath + " at " + reference, e);
                 }
             }
             fileName = Joiner.on("/").join(folders);
@@ -180,7 +180,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return decodedContentAndMetadata.getRight();
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage());
+            LOG.warn(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         } finally {
             GHRateLimit endRateLimit = getGhRateLimitQuietly();
@@ -222,7 +222,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             try {
                 return Pair.of(fileContent, fileContent.getContent());
             } catch (NullPointerException ex) {
-                LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?");
+                LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?", ex);
                 // seems to be thrown on submodules with the new library
                 return null;
             }
@@ -389,9 +389,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
-            LOG.debug("repo had no releases or tags: " + repositoryId);
+            LOG.debug("repo had no releases or tags: " + repositoryId, e);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -467,7 +467,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     branchDate = epochStart;
                 }
             } catch (IOException e) {
-                LOG.error("unable to retrieve commit date for branch " + refName);
+                LOG.error("unable to retrieve commit date for branch " + refName, e);
             }
             return Triple.of(refName, branchDate, sha);
         } else {
@@ -786,7 +786,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             startRateLimit = github.rateLimit();
         } catch (IOException e) {
-            LOG.error("unable to retrieve rate limit, weird");
+            LOG.error("unable to retrieve rate limit, weird", e);
         }
         return startRateLimit;
     }
@@ -819,7 +819,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Determine the default branch on Github
                 mainBranch = repository.getDefaultBranch();
             } catch (IOException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
                 return null;
             }
         }
@@ -860,7 +860,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
     }
@@ -879,7 +879,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
         return null;

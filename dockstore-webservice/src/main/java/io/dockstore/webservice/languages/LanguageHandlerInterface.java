@@ -457,7 +457,7 @@ public interface LanguageHandlerInterface {
                 URL url = new URL(repoUrl);
                 response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
             } catch (IOException ex) {
-                LOG.error("Unable to get DockerHub response for " + repo);
+                LOG.error("Unable to get DockerHub response for " + repo, ex);
                 response = Optional.empty();
             }
 
