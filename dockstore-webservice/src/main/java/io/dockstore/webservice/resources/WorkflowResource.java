@@ -233,6 +233,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        if (workflow.isIsChecker()) {
+            throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         checkNotHosted(workflow);
         checkCanWriteWorkflow(user, workflow);
 
@@ -1751,7 +1755,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             } else if (workflow.getDescriptorType() == WDL) {
                 workflowName += WDL_CHECKER;
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getLowerShortName()
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getShortName()
                     + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {

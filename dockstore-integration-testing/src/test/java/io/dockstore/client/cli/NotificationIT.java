@@ -22,12 +22,12 @@ public class NotificationIT extends BaseIT {
 
     // set up test apis as it would be for an admin and a regular user
     private final ApiClient webClientAdmin = getAdminWebClient();
-    private CurationApi curationApiAdmin = new CurationApi(webClientAdmin);
+    private final CurationApi curationApiAdmin = new CurationApi(webClientAdmin);
 
     private final ApiClient webClientUser = getWebClient(USER_1_USERNAME, testingPostgres);
-    private CurationApi curationApiUser = new CurationApi(webClientUser);
+    private final CurationApi curationApiUser = new CurationApi(webClientUser);
 
-    private String currentMsg = "ayy";
+    private final String currentMsg = "ayy";
 
     private Notification testNotification() {
         Notification notification = new Notification();
