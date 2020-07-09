@@ -280,7 +280,7 @@ public class UserResourceIT extends BaseIT {
             adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
 
         } catch (ApiException e) {
-            assertTrue(e.getCode() == HttpStatus.SC_BAD_REQUEST);
+            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             expectedAdminAccessToFail = true;
         }
         assertTrue(expectedAdminAccessToFail);
@@ -290,7 +290,7 @@ public class UserResourceIT extends BaseIT {
         try {
             adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
         } catch (ApiException e) {
-            assertTrue(e.getCode() == HttpStatus.SC_BAD_REQUEST);
+            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             expectedAdminServiceAccessToFail = true;
         }
         assertTrue(expectedAdminServiceAccessToFail);
