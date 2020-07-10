@@ -53,7 +53,6 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.slf4j.Logger;
@@ -87,7 +86,6 @@ public class SourceFile implements Comparable<SourceFile> {
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "sha1", referencedColumnName = "id")
     @JsonIgnore
-    @Cascade(org.hibernate.annotations.CascadeType.SAVE_UPDATE)
     private FileContent fileContent;
 
     @Column(nullable = false, columnDefinition = "TEXT")

@@ -47,4 +47,8 @@ public class FileContentDAO extends AbstractDAO<FileContent> {
         }
         return content;
     }
+
+    public String create(FileContent content) {
+        return persist(content).getId();
+    }
 }

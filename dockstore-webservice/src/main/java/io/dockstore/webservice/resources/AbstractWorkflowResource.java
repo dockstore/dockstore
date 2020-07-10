@@ -39,6 +39,7 @@ import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.FileContentDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -86,6 +87,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final String bitbucketClientSecret;
     protected final String bitbucketClientID;
     private final Class<T> entityClass;
+    private final FileContentDAO fileContentDAO;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
@@ -95,6 +97,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
+        this.fileContentDAO = new FileContentDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
@@ -320,6 +323,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     gitHubSourceCodeRepo, user, dockstoreYml));
 
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+            // weird, need to persist file content manually?
+            workflows.forEach(workflow -> workflow.getWorkflowVersions().forEach(version -> version.getSourceFiles().forEach(file -> fileContentDAO.create(file.getFileContent()))));
+
             lambdaEventDAO.create(lambdaEvent);
             return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
