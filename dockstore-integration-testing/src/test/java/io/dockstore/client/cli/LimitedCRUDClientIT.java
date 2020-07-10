@@ -215,12 +215,12 @@ public class LimitedCRUDClientIT {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api
-                .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName().toLowerCase(), "coolNamespace", null);
+                .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.toString(), "coolNamespace", null);
 
         List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
         hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
-        assertEquals("CWL", hostedTool.getDescriptorType().get(0));
+        assertEquals(CWL.toString(), hostedTool.getDescriptorType().get(0));
 
         sourceFiles = generateSourceFiles(WDL);
         hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
@@ -289,7 +289,7 @@ public class LimitedCRUDClientIT {
             dockstorePath = "/Dockstore.wdl";
             type = SourceFile.TypeEnum.DOCKSTORE_WDL;
         } else {
-            throw new CustomWebApplicationException("Only wdl and cwl are an option", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Only WDL and CWL are an option", HttpStatus.SC_BAD_REQUEST);
         }
         SourceFile descriptorFile = new SourceFile();
         descriptorFile

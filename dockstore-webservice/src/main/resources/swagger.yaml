@@ -6783,7 +6783,7 @@ definitions:
         readOnly: true
         uniqueItems: true
         items:
-          $ref: "#/definitions/FileFormat"
+          $ref: "#/definitions/FileFormat"li
       last_modified_date:
         type: "string"
         format: "date-time"
