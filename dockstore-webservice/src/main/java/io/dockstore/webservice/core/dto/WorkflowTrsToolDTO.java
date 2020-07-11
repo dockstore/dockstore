@@ -8,11 +8,11 @@ import io.dockstore.webservice.core.database.WorkflowPath;
 import io.openapi.api.impl.ToolClassesApiServiceImpl;
 import io.openapi.model.ToolClass;
 
-public class WorkflowTrsTool extends TrsTool {
+public class WorkflowTrsToolDTO extends TrsToolDTO {
     private final WorkflowPath workflowPath;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public WorkflowTrsTool(final long id, final String organization, final String description, SourceControl sourceControl,
+    public WorkflowTrsToolDTO(final long id, final String organization, final String description, SourceControl sourceControl,
             final DescriptorLanguage descriptorType, final String repository, final String workflowName, final SourceControl checkerSourceControl,
             String checkOrg, final String checkerRepo, final String checkerWorkflowName, final Date lastUpdated) {
         super(id, organization, description, sourceControl, descriptorType, repository, checkerSourceControl, checkOrg, checkerRepo,
@@ -22,7 +22,7 @@ public class WorkflowTrsTool extends TrsTool {
 
     @Override
     public String getTrsId() {
-        return getTrsPrefix() + '/' + this.workflowPath.getBioWorkflow().getWorkflowPath();
+        return getTrsPrefix() + this.workflowPath.getBioWorkflow().getWorkflowPath();
     }
 
     @Override
@@ -30,7 +30,12 @@ public class WorkflowTrsTool extends TrsTool {
         return ToolClassesApiServiceImpl.getWorkflowClass();
     }
 
+    @Override
+    public String getWorkflowName() {
+        return this.workflowPath.getBioWorkflow().getWorkflowName();
+    }
+
     private String getTrsPrefix() {
-        return "#workflow";
+        return WORKFLOW_PREFIX;
     }
 }

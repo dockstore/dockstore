@@ -38,11 +38,11 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.BioWorkflow_;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.dto.TrsImage;
-import io.dockstore.webservice.core.dto.TrsTool;
+import io.dockstore.webservice.core.dto.TrsImageDTO;
+import io.dockstore.webservice.core.dto.TrsToolDTO;
 import io.dockstore.webservice.core.dto.TrsToolVersion;
 import io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType;
-import io.dockstore.webservice.core.dto.WorkflowTrsTool;
+import io.dockstore.webservice.core.dto.WorkflowTrsToolDTO;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -261,17 +261,18 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     @Override
-    public List<TrsTool> findAllTrsPublished(final Optional<String> registry, final Optional<String> organization,
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public List<TrsToolDTO> findAllTrsPublished(final Optional<String> registry, final Optional<String> organization,
             final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author,
-            final Optional<String> description, final int limit) {
+            final Optional<String> description, final Optional<String> offset, final int limit) {
 
-        final List<TrsTool> trsTools = getTrsTools(registry, organization, checker, toolname, author, description, limit);
+        final List<TrsToolDTO> trsToolDTOS = getTrsTools(registry, organization, checker, toolname, author, description, limit);
 
-        final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(trsTools.stream().map(t -> t.getId()).collect(Collectors.toList()));
+        final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(trsToolDTOS.stream().map(t -> t.getId()).collect(Collectors.toList()));
 
-        trsTools.forEach(tool -> tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList())));
+        trsToolDTOS.forEach(tool -> tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList())));
 
-        return trsTools;
+        return trsToolDTOS;
     }
 
     private Map<Long, List<TrsToolVersion>> fetchTrsToolVersions(final List<Long> workflowIds) {
@@ -284,30 +285,30 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         final Map<Long, List<TrsToolVersionDescriptorType>> versionDescriptorMap = descriptorTypes.stream()
                 .collect(Collectors.groupingBy(TrsToolVersionDescriptorType::getVersionId));
 
-        final List<TrsImage> images = list(namedQuery("io.dockstore.webservice.core.Workflow.getImagesForVersions").setParameterList("ids", versionIds));
-        final Map<Long, List<TrsImage>> versionImageMap = images.stream().collect(Collectors.groupingBy(TrsImage::getVersionId));
+        final List<TrsImageDTO> images = list(namedQuery("io.dockstore.webservice.core.Workflow.getImagesForVersions").setParameterList("ids", versionIds));
+        final Map<Long, List<TrsImageDTO>> versionImageMap = images.stream().collect(Collectors.groupingBy(TrsImageDTO::getVersionId));
 
         versions.forEach(version -> {
             final List<TrsToolVersionDescriptorType> descriptors = versionDescriptorMap.get(version.getId());
             if (descriptors != null) {
                 version.getDescriptorTypes().addAll(descriptors.stream().map(d -> d.getFileType()).collect(Collectors.toList()));
             }
-            final List<TrsImage> trsImages = versionImageMap.get(version.getId());
-            if (trsImages != null) {
-                version.getImages().addAll(trsImages);
+            final List<TrsImageDTO> trsImageDTOs = versionImageMap.get(version.getId());
+            if (trsImageDTOs != null) {
+                version.getImages().addAll(trsImageDTOs);
             }
         });
 
         return versions.stream().collect(Collectors.groupingBy(TrsToolVersion::getEntryId));
     }
 
-    private List<TrsTool> getTrsTools(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
+    private List<TrsToolDTO> getTrsTools(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
             final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<TrsTool> query = cb.createQuery(TrsTool.class);
+        final CriteriaQuery<TrsToolDTO> query = cb.createQuery(TrsToolDTO.class);
         final Root<BioWorkflow> root = query.from(BioWorkflow.class);
         final Join<BioWorkflow, BioWorkflow> join = root.join(BioWorkflow_.checkerWorkflow, JoinType.LEFT);
-        query.select(cb.construct(WorkflowTrsTool.class, root.get(BioWorkflow_.id),
+        query.select(cb.construct(WorkflowTrsToolDTO.class, root.get(BioWorkflow_.id),
                 root.get(BioWorkflow_.organization),
                 root.get(BioWorkflow_.description),
                 root.get(BioWorkflow_.sourceControl),
@@ -328,16 +329,23 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             predicate = cb.and(predicate, cb.isTrue(root.get(BioWorkflow_.isChecker)));
         }
         query.where(predicate);
-        final Query<TrsTool> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
-        final List<TrsTool> tools = toolQuery.getResultList();
+        final Query<TrsToolDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
+        final List<TrsToolDTO> tools = toolQuery.getResultList();
         return filterByRegistry(registry, tools, limit);
     }
 
-    // Filter is on SourceControl().toString(), which returns a value defined
-    // in Java, different from what is stored in the DB. So yeah, don't think we
-    // can do this in SQL. Fortunately, these objects should now be pretty light, and
-    // I assume this filter is rarely used, so typically may not be a major impact.
-    private List<TrsTool> filterByRegistry(final Optional<String> registry, final List<TrsTool> tools, final int limit) {
+
+    /**
+     * Filter is on SourceControl().toString(), which returns a value defined
+     * in Java, different from what is stored in the DB. So yeah, don't think we
+     * can do this in SQL. Fortunately, these objects should now be pretty light, and
+     * I assume this filter is rarely used, so typically may not be a major impact.
+     * @param registry
+     * @param tools
+     * @param limit
+     * @return
+     */
+    private List<TrsToolDTO> filterByRegistry(final Optional<String> registry, final List<TrsToolDTO> tools, final int limit) {
         return registry.map(s -> tools.stream()
                 .filter(tool -> tool.getSourceControl().toString().contains(s))
                 .limit(limit)

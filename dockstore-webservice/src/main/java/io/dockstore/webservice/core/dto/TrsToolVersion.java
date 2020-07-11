@@ -14,7 +14,7 @@ public class TrsToolVersion {
     private final String name;
     //    private final String url;
     private final boolean production;
-    private final List<TrsImage> images = new ArrayList<>();
+    private final List<TrsImageDTO> images = new ArrayList<>();
     private final List<DescriptorLanguage.FileType> descriptorTypes = new ArrayList<>();
     //    private final Boolean containerFile;
     private final String metaVersion;
@@ -56,7 +56,7 @@ public class TrsToolVersion {
         return id;
     }
 
-    public List<TrsImage> getImages() {
+    public List<TrsImageDTO> getImages() {
         return images;
     }
 

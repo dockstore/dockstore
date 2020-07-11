@@ -58,7 +58,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.core.dto.TrsTool;
+import io.dockstore.webservice.core.dto.TrsToolDTO;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -82,8 +82,6 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
@@ -268,97 +266,100 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
                 .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
-        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
-        final List<TrsTool> allTrsPublished = workflowDAO.findAllTrsPublished(
-                Optional.ofNullable(registry),
-                Optional.ofNullable(organization),
-                Optional.ofNullable(checker),
-                Optional.ofNullable(toolname),
-                Optional.ofNullable(author),
-                Optional.ofNullable(description),
-                actualLimit);
-        if (true) {
-            return Response.ok(allTrsPublished).build();
-        }
         if (trsResponses.isPresent()) {
             return trsResponses.get().build();
         }
 
         final List<Entry<?, ?>> all = new ArrayList<>();
 
-        // short circuit id and alias filters, these are a bit weird because they have a max of one result
-        if (id != null) {
-            ParsedRegistryID parsedID = new ParsedRegistryID(id);
-            Entry<?, ?> entry = getEntry(parsedID, user);
-            all.add(entry);
-        } else if (alias != null) {
-            all.add(toolDAO.getGenericEntryByAlias(alias));
-        } else {
-            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
-                all.addAll(toolDAO.findAllPublished());
-            }
-            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
-                all.addAll(workflowDAO.findAllPublished());
-            }
-            all.sort(Comparator.comparing(Entry::getGitUrl));
-        }
+        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
+        final List<TrsToolDTO> allTrsPublished = workflowDAO.findAllTrsPublished(
+                Optional.ofNullable(registry),
+                Optional.ofNullable(organization),
+                Optional.ofNullable(checker),
+                Optional.ofNullable(toolname),
+                Optional.ofNullable(author),
+                Optional.ofNullable(description),
+                Optional.ofNullable(offset),
+                actualLimit);
 
-        List<io.openapi.model.Tool> results = new ArrayList<>();
-        for (Entry<?, ?> c : all) {
-            // filters just for tools
-            if (c instanceof Tool) {
-                Tool tool = (Tool)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
-                    continue;
-                }
-                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
-                    continue;
-                }
-                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
-                    continue;
-                }
-                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
-                    continue;
-                }
-                if (checker != null && checker) {
-                    // tools are never checker workflows
-                    continue;
-                }
-            }
-            // filters just for tools
-            if (c instanceof Workflow) {
-                Workflow workflow = (Workflow)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
-                    continue;
-                }
-                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
-                    continue;
-                }
-                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
-                    continue;
-                }
-                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
-                    continue;
-                }
-                if (checker != null && workflow.isIsChecker() != checker) {
-                    continue;
-                }
-            }
-            // common filters between tools and workflows
-            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
-                continue;
-            }
-            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
-                continue;
-            }
-            // if passing, for each container that matches the criteria, convert to standardised format and return
-            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
-            if (tool != null) {
-                results.add(tool);
-            }
-        }
+
+        // short circuit id and alias filters, these are a bit weird because they have a max of one result
+        //        if (id != null) {
+        //            ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        //            Entry<?, ?> entry = getEntry(parsedID, user);
+        //            all.add(entry);
+        //        } else if (alias != null) {
+        //            all.add(toolDAO.getGenericEntryByAlias(alias));
+        //        } else {
+        //            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+        //                all.addAll(toolDAO.findAllPublished());
+        //            }
+        //            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+        //                all.addAll(workflowDAO.findAllPublished());
+        //            }
+        //            all.sort(Comparator.comparing(Entry::getGitUrl));
+        //        }
+
+
+
+        List<io.openapi.model.Tool> results = allTrsPublished.stream()
+                .map(trsDto -> ToolsImplCommon.convertDTOToTool(trsDto, config)).collect(Collectors.toList());
+        //        for (Entry<?, ?> c : all) {
+        //            // filters just for tools
+        //            if (c instanceof Tool) {
+        //                Tool tool = (Tool)c;
+        //                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
+        //                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
+        //                    continue;
+        //                }
+        //                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
+        //                    continue;
+        //                }
+        //                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
+        //                    continue;
+        //                }
+        //                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
+        //                    continue;
+        //                }
+        //                if (checker != null && checker) {
+        //                    // tools are never checker workflows
+        //                    continue;
+        //                }
+        //            }
+        //            // filters just for tools
+        //            if (c instanceof Workflow) {
+        //                Workflow workflow = (Workflow)c;
+        //                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
+        //                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
+        //                    continue;
+        //                }
+        //                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
+        //                    continue;
+        //                }
+        //                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
+        //                    continue;
+        //                }
+        //                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
+        //                    continue;
+        //                }
+        //                if (checker != null && workflow.isIsChecker() != checker) {
+        //                    continue;
+        //                }
+        //            }
+        //            // common filters between tools and workflows
+        //            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
+        //                continue;
+        //            }
+        //            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
+        //                continue;
+        //            }
+        //            // if passing, for each container that matches the criteria, convert to standardised format and return
+        //            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
+        //            if (tool != null) {
+        //                results.add(tool);
+        //            }
+        //        }
 
 
         List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
@@ -405,7 +406,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } catch (URISyntaxException | MalformedURLException e) {
             throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
-//        trsListener.loadTRSResponse(hashcode, responseBuilder);
+        trsListener.loadTRSResponse(hashcode, responseBuilder);
         return responseBuilder.build();
     }
 

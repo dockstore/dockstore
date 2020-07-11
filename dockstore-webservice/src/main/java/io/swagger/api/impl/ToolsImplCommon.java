@@ -22,11 +22,14 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
@@ -43,6 +46,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.dto.TrsToolDTO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
@@ -85,6 +89,75 @@ public final class ToolsImplCommon {
         toolDescriptor.setUrl(url);
         toolDescriptor.setOriginalFile(sourceFile);
         return toolDescriptor;
+    }
+
+    public static Tool convertDTOToTool(TrsToolDTO trsToolDTO, DockstoreWebserviceConfiguration config) {
+        final Tool tool = new Tool();
+        tool.setId(trsToolDTO.getTrsId());
+        tool.setUrl(getUrlFromId(config, tool.getId()));
+        tool.setMetaVersion(trsToolDTO.getMetaVersion());
+        tool.setToolclass(trsToolDTO.getToolclass());
+        tool.setCheckerUrl(getUrlFromId(config, trsToolDTO.getCheckerWorkflowPath()));
+        tool.setHasChecker(trsToolDTO.hasChecker());
+        tool.setName(constructName(Arrays.asList(trsToolDTO.getRepository(), trsToolDTO.getWorkflowName())));
+        tool.setName(trsToolDTO.getOrganization());
+        // TODO: Fetch aliases
+        //        tool.setAliases(trsToolDTO.geta);
+        tool.setVersions(trsToolDTO.getVersions().stream()
+                // TODO: Figure out hidden (may need to parameterize, Tag logic, see shouldHideToolVersion
+                .filter(v -> v.getName() != null)
+                .map(versionDTO -> {
+            final ToolVersion toolVersion = new ToolVersion();
+            toolVersion.setAuthor(MoreObjects.firstNonNull(versionDTO.getAuthor(), Lists.newArrayList()));
+            toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Collections.emptyList()));
+            toolVersion.setSigned(false);
+            // TODO: Figure this out
+            //            final String author = ObjectUtils.firstNonNull(versionDTO.getAuthor(), trsToolDTO.getAuthor());
+            //            if (author != null) {
+            //                toolVersion.getAuthor().add(author);
+            //            }
+            //            toolVersion.setImages();
+            toolVersion.setIsProduction(versionDTO.isProduction());
+            //            if (toolVersion.isIsProduction()) {
+            //            }
+            toolVersion.setId(tool.getId() + ':' + versionDTO.getName());
+            final List<DescriptorLanguage.FileType> descriptorTypes = versionDTO.getDescriptorTypes();
+            toolVersion.setContainerfile(descriptorTypes.stream().anyMatch(dt -> dt == DescriptorLanguage.FileType.DOCKERFILE));
+            toolVersion.setDescriptorType(
+                    versionDTO.getDescriptorTypes().stream()
+                    .filter(dt -> dt != DescriptorLanguage.FileType.DOCKERFILE)
+                    .map(dt -> fileTypeToDescriptorType(dt))
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList()));
+            return toolVersion;
+        }).collect(Collectors.toList()));
+        return tool;
+    }
+
+    private static DescriptorType fileTypeToDescriptorType(DescriptorLanguage.FileType fileType) {
+        switch (fileType) {
+        case DOCKSTORE_CWL:
+            return DescriptorType.CWL;
+        case DOCKSTORE_WDL:
+            return DescriptorType.WDL;
+        case DOCKSTORE_GXFORMAT2:
+            return DescriptorType.GXFORMAT2;
+        // DOCKSTORE-2428 - demo how to add new workflow language
+        //                case DOCKSTORE_SWL:
+        //                    toolVersion.addDescriptorTypeItem(DescriptorType.SWL);
+        //                    break;
+        // TODO not sure how to treat service languages
+        case DOCKSTORE_SERVICE_TEST_JSON:
+        case DOCKSTORE_SERVICE_YML:
+            return DescriptorType.SERVICE;
+        case NEXTFLOW:
+        case NEXTFLOW_CONFIG:
+            return DescriptorType.NFL;
+        case DOCKERFILE:
+        default:
+            return null;
+        }
     }
 
     public static Tool convertEntryToTool(Entry<?, ?> container, DockstoreWebserviceConfiguration config) {

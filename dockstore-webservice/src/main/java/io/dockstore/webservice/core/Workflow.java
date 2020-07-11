@@ -79,7 +79,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getNonHiddenVersions", query = "SELECT new io.dockstore.webservice.core.dto.TrsToolVersion(wv.id, w.id, vm.author, vm.verified, wv.name, wv.frozen, wv.lastModified) from Workflow w join w.workflowVersions wv left join wv.versionMetadata vm where w.id in :ids and vm.hidden = FALSE"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findDescriptorTypes", query = "SELECT distinct new io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType(wv.id, sf.type) from WorkflowVersion wv join wv.sourceFiles sf where wv.id in :ids"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getImagesForVersions", query = "SELECT new io.dockstore.webservice.core.dto.TrsImage(wv.id, i.imageRegistry, i.imageID, i.repository) from WorkflowVersion wv join wv.images i where wv.id in :ids")
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getImagesForVersions", query = "SELECT new io.dockstore.webservice.core.dto.TrsImageDTO(i.id, wv.id, i.imageRegistry, i.imageID, i.repository, i.checksums) from WorkflowVersion wv join wv.images i where wv.id in :ids")
 
 })
 
