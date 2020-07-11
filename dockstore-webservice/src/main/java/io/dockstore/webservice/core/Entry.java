@@ -81,8 +81,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName) from Collection col join col.entries as entry join col.organization as organization where entry.id = :entryId"),
         @NamedQuery(name = "Entry.getCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName) from Service w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
-        @NamedQuery(name = "Entry.getCollectionTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'tool', w.registry, w.namespace, w.name, w.toolname) from Tool w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true")
-        // TODO: Create DTO here
+        @NamedQuery(name = "Entry.getCollectionTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'tool', w.registry, w.namespace, w.name, w.toolname) from Tool w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -129,7 +128,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @OrderBy("id")
     private SortedSet<User> users;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
