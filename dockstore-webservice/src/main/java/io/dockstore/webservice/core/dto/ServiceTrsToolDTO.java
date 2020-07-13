@@ -20,7 +20,7 @@ public class ServiceTrsToolDTO extends WorkflowTrsToolDTO {
     }
 
     @Override
-    public String getWorkflowName() {
+    protected String getTrsPrefix() {
         return SERVICE_PREFIX;
     }
 }

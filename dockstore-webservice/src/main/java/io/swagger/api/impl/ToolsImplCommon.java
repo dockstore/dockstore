@@ -46,6 +46,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.dto.AliasesDTO;
 import io.dockstore.webservice.core.dto.TrsImageDTO;
 import io.dockstore.webservice.core.dto.TrsToolDTO;
 import io.dockstore.webservice.core.dto.TrsToolVersion;
@@ -104,11 +105,9 @@ public final class ToolsImplCommon {
         tool.setName(constructName(Arrays.asList(trsToolDTO.getRepository(), trsToolDTO.getWorkflowName())));
         tool.setOrganization(MoreObjects.firstNonNull(trsToolDTO.getOrganization(), ""));
         tool.setDescription(MoreObjects.firstNonNull(trsToolDTO.getDescription(), ""));
-        // TODO: Fetch aliases
-        //        tool.setAliases(trsToolDTO.geta);
+        tool.setAliases(trsToolDTO.getAliases().stream().map(AliasesDTO::getAlias).collect(Collectors.toList()));
         tool.setVersions(trsToolDTO.getVersions().stream()
-                // TODO: Figure out hidden (may need to parameterize, Tag logic, see shouldHideToolVersion
-                .filter(v -> v.getName() != null)
+                .filter(v -> v.getName() != null && !v.isHidden())
                 .map(versionDTO -> convertVersionDTO(tool.getId(), versionDTO))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));

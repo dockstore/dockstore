@@ -49,6 +49,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.Workflow_;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.dto.AliasesDTO;
 import io.dockstore.webservice.core.dto.ServiceTrsToolDTO;
 import io.dockstore.webservice.core.dto.TrsImageDTO;
 import io.dockstore.webservice.core.dto.TrsToolDTO;
@@ -218,15 +219,26 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
         final List<TrsToolDTO> trsToolDTOS = fetchTrsWorkflowsAndServices(registry, organization, checker, toolname, author, description, limit);
 
-        final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(trsToolDTOS.stream().map(t -> t.getId()).collect(Collectors.toList()));
+        final List<Long> entryIds = trsToolDTOS.stream().map(t -> t.getId()).collect(Collectors.toList());
 
-        trsToolDTOS.forEach(tool -> tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList())));
+        final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(entryIds);
+        final Map<Long, List<AliasesDTO>> aliasesMap = fetchEntryAliases(entryIds);
+
+        trsToolDTOS.forEach(tool -> {
+            tool.getAliases().addAll(aliasesMap.getOrDefault(tool.getId(), Collections.emptyList()));
+            tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList()));
+        });
 
         return trsToolDTOS;
     }
 
+    private Map<Long, List<AliasesDTO>> fetchEntryAliases(final List<Long> entryIds) {
+        final List<AliasesDTO> aliases = list(namedQuery("io.dockstore.webservice.core.Entry.getAliases").setParameterList("ids", entryIds));
+        return aliases.stream().collect(Collectors.groupingBy(AliasesDTO::getEntryId));
+    }
+
     private Map<Long, List<TrsToolVersion>> fetchTrsToolVersions(final List<Long> workflowIds) {
-        final List<TrsToolVersion> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getNonHiddenVersions")
+        final List<TrsToolVersion> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getVersions")
                 .setParameterList("ids", workflowIds));
 
         final List<Long> versionIds = versions.stream().map(v -> v.getId()).collect(Collectors.toList());

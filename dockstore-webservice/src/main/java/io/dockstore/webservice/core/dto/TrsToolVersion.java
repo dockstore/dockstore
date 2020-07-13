@@ -22,9 +22,11 @@ public class TrsToolVersion {
     private final List<String> verifiedSource = new ArrayList<>();
     private final boolean signed = false; // We don't support this feature yet
     private final List<String> includedApps = new ArrayList<>();
+    private final boolean hidden;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public TrsToolVersion(final long id, final long entryId, final String author, final Boolean verified, final String name, final boolean production,
-            final Date date) {
+            final Date date, final boolean hidden) {
         this.entryId = entryId;
         this.name = name;
         this.production = production;
@@ -34,6 +36,7 @@ public class TrsToolVersion {
         }
         this.verified = verified != null && verified.booleanValue();
         this.metaVersion = String.valueOf(date != null ? date : new Date(0));
+        this.hidden = hidden;
     }
 
     public long getEntryId() {
@@ -82,6 +85,10 @@ public class TrsToolVersion {
 
     public boolean isVerified() {
         return verified;
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 }
 

@@ -274,7 +274,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
         boolean newWay = true;
         List<io.openapi.model.Tool> results = newWay ?
-                toolsViaDtos(registry, organization, toolname, description, author, checker, offset, actualLimit)
+                toolsViaDTOs(registry, organization, toolname, description, author, checker, offset, actualLimit)
                 : getToolsOldWay(id, alias, toolClass, registry, organization, name, toolname, description, author, checker, user);
 
         List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
@@ -325,6 +325,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return responseBuilder.build();
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private List<io.openapi.model.Tool> getToolsOldWay(final String id, final String alias, final String toolClass, final String registry,
             final String organization, final String name, final String toolname, final String description, final String author,
             final Boolean checker, final Optional<User> user) {
@@ -413,7 +414,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private List<io.openapi.model.Tool> toolsViaDtos(String registry, String organization, String toolname,
+    private List<io.openapi.model.Tool> toolsViaDTOs(String registry, String organization, String toolname,
             String description, String author, Boolean checker, String offset, Integer actualLimit) {
         final List<TrsToolDTO> allTrsPublished = workflowDAO.findAllTrsPublished(
                 Optional.ofNullable(registry),

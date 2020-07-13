@@ -22,6 +22,7 @@ public abstract class TrsToolDTO {
     private final WorkflowPath checkerWorkflow;
     private final Date lastUpdated;
     private final List<TrsToolVersion> versions = new ArrayList<>();
+    private final List<AliasesDTO> aliases = new ArrayList<>();
 
     // No way around the number of parameters short of creating additional DB queries
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -88,5 +89,9 @@ public abstract class TrsToolDTO {
 
     public List<TrsToolVersion> getVersions() {
         return versions;
+    }
+
+    public List<AliasesDTO> getAliases() {
+        return aliases;
     }
 }

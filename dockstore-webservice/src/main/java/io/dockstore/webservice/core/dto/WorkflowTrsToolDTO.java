@@ -35,7 +35,7 @@ public class WorkflowTrsToolDTO extends TrsToolDTO {
         return this.workflowPath.getBioWorkflow().getWorkflowName();
     }
 
-    private String getTrsPrefix() {
+    protected String getTrsPrefix() {
         return WORKFLOW_PREFIX;
     }
 }
