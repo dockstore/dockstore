@@ -143,7 +143,7 @@ public class Tool extends Entry<Tool, Tag> {
 
     @Column(nullable = false, columnDefinition = "varchar default ''")
     @Convert(converter = DescriptorTypeConverter.class)
-    @ApiModelProperty(position = 28)
+    @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
     private List<String> descriptorType = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")

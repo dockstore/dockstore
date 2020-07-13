@@ -6737,6 +6737,7 @@ definitions:
       descriptorType:
         type: "array"
         position: 28
+        readOnly: true
         items:
           type: "string"
       tool_path:
@@ -6783,7 +6784,7 @@ definitions:
         readOnly: true
         uniqueItems: true
         items:
-          $ref: "#/definitions/FileFormat"li
+          $ref: "#/definitions/FileFormat"
       last_modified_date:
         type: "string"
         format: "date-time"
