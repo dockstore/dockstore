@@ -25,8 +25,10 @@ import java.util.UUID;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -42,6 +44,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -57,6 +60,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -192,7 +196,7 @@ public class LimitedCRUDClientIT {
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
 
-        List<SourceFile> sourceFiles = generateSourceFiles();
+        List<SourceFile> sourceFiles = generateSourceFiles(CWL);
 
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
@@ -204,6 +208,24 @@ public class LimitedCRUDClientIT {
 
         thrown.expect(ApiException.class);
         api.editHostedTool(hostedTool.getId(), sourceFiles);
+    }
+
+    @Test
+    public void testGettingDescriptorType() throws IOException {
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME, testingPostgres);
+        HostedApi api = new HostedApi(webClient);
+        DockstoreTool hostedTool = api
+                .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.toString(), "coolNamespace", null);
+
+        List<SourceFile> sourceFiles = generateSourceFiles(CWL);
+
+        hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
+        assertEquals(CWL.toString(), hostedTool.getDescriptorType().get(0));
+
+        sourceFiles = generateSourceFiles(WDL);
+        hostedTool = api.editHostedTool(hostedTool.getId(), sourceFiles);
+        assertTrue(hostedTool.getDescriptorType().size() == 2);
+        assertTrue(hostedTool.getDescriptorType().get(0) != hostedTool.getDescriptorType().get(1));
     }
 
     @Test
@@ -221,7 +243,7 @@ public class LimitedCRUDClientIT {
         DockstoreTool hostedTool = api
             .createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
 
-        List<SourceFile> sourceFiles = generateSourceFiles();
+        List<SourceFile> sourceFiles = generateSourceFiles(CWL);
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
         // a few updates with no actual changes shouldn't break anything since they are ignored
@@ -254,13 +276,27 @@ public class LimitedCRUDClientIT {
 
     }
 
-    private List<SourceFile> generateSourceFiles() throws IOException {
+    private List<SourceFile> generateSourceFiles(DescriptorLanguage descriptorLanguage) throws IOException {
+        String resourceFilePath;
+        String dockstorePath;
+        SourceFile.TypeEnum type;
+        if (descriptorLanguage == CWL) {
+            resourceFilePath = "tar-param.cwl";
+            dockstorePath = "/Dockstore.cwl";
+            type = SourceFile.TypeEnum.DOCKSTORE_CWL;
+        } else if (descriptorLanguage == WDL) {
+            resourceFilePath = "hello.wdl";
+            dockstorePath = "/Dockstore.wdl";
+            type = SourceFile.TypeEnum.DOCKSTORE_WDL;
+        } else {
+            throw new CustomWebApplicationException("Only WDL and CWL are an option", HttpStatus.SC_BAD_REQUEST);
+        }
         SourceFile descriptorFile = new SourceFile();
         descriptorFile
-            .setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
-        descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        descriptorFile.setPath("/Dockstore.cwl");
-        descriptorFile.setAbsolutePath("/Dockstore.cwl");
+            .setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath(resourceFilePath)), StandardCharsets.UTF_8));
+        descriptorFile.setType(type);
+        descriptorFile.setPath(dockstorePath);
+        descriptorFile.setAbsolutePath(dockstorePath);
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
