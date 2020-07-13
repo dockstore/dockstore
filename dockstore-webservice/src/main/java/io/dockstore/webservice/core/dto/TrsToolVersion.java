@@ -1,9 +1,12 @@
 package io.dockstore.webservice.core.dto;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 
 public class TrsToolVersion {
@@ -23,10 +26,11 @@ public class TrsToolVersion {
     private final boolean signed = false; // We don't support this feature yet
     private final List<String> includedApps = new ArrayList<>();
     private final boolean hidden;
+    private static final Gson GSON = new Gson();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public TrsToolVersion(final long id, final long entryId, final String author, final Boolean verified, final String name, final boolean production,
-            final Date date, final boolean hidden) {
+            final Date date, final boolean hidden, final String verifiedSource) {
         this.entryId = entryId;
         this.name = name;
         this.production = production;
@@ -35,6 +39,10 @@ public class TrsToolVersion {
         this.verified = verified != null && verified.booleanValue();
         this.metaVersion = String.valueOf(date != null ? date : new Date(0));
         this.hidden = hidden;
+        if (verifiedSource != null) {
+            // TODO: Duplicating logic from Version.getVerifiedSources
+            this.verifiedSource.addAll(Arrays.asList(GSON.fromJson(Strings.nullToEmpty(verifiedSource), String[].class)));
+        }
     }
 
     public long getEntryId() {

@@ -133,14 +133,13 @@ public final class ToolsImplCommon {
                 .map(trsImageDTO -> convertImageDTO(trsImageDTO)).collect(Collectors.toList()));
 
         toolVersion.setIsProduction(versionDTO.isProduction());
-        //            if (toolVersion.isIsProduction()) {
-        //            }
         toolVersion.setId(toolId + ':' + versionDTO.getName());
         toolVersion.setName(versionDTO.getName());
         toolVersion.setVerified(versionDTO.isVerified());
         toolVersion.setContainerfile(descriptorTypes.stream().anyMatch(dt -> dt == DescriptorLanguage.FileType.DOCKERFILE));
         toolVersion.setMetaVersion(versionDTO.getMetaVersion());
         toolVersion.setVerified(versionDTO.isVerified());
+        toolVersion.setVerifiedSource(versionDTO.getVerifiedSource());
         try {
             toolVersion.setUrl(toolUrl + "/versions/" + URLEncoder.encode(toolVersion.getName(), StandardCharsets.UTF_8.displayName()));
         } catch (UnsupportedEncodingException e) {
@@ -161,7 +160,7 @@ public final class ToolsImplCommon {
         final ImageData imageData = new ImageData();
         imageData.setImageType(ImageType.DOCKER);
         imageData.setRegistryHost(trsImageDTO.getRegistryHost().getDockerPath());
-        imageData.setImageName(trsImageDTO.getImageName());
+        imageData.setImageName(constructName(Arrays.asList(trsImageDTO.getRepository(), trsImageDTO.getTag())));
         //TODO: hook up proper size
         imageData.setSize(0);
         //TODO: hook up proper date
