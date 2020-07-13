@@ -38,6 +38,7 @@ import io.swagger.client.model.Collection;
 import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
+import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
@@ -483,6 +484,33 @@ public class UserResourceIT extends BaseIT {
         collection.setDescription("this is the description");
 
         return collection;
+    }
+
+    @Test
+    public void testUpdateUserMetadataFromGithub() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(client);
+        Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");
+
+        assertEquals("", userProfile.getName());
+        assertNull(userProfile.getEmail());
+        assertNull(userProfile.getAvatarURL());
+        assertNull(userProfile.getBio());
+        assertNull(userProfile.getLocation());
+        assertNull(userProfile.getCompany());
+        assertEquals("DockstoreTestUser2", userProfile.getUsername());
+
+        final User user = usersApi.updateLoggedInUserMetadata("github.com");
+        userProfile = usersApi.getUser().getUserProfiles().get("github.com");
+
+        System.out.println(usersApi.getUser().getUserProfiles().get("github.com"));
+        assertNull(userProfile.getName());
+        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
+        assertEquals("https://avatars1.githubusercontent.com/u/17859829?v=4", userProfile.getAvatarURL());
+        assertEquals("", userProfile.getBio());
+        assertEquals("Toronto", userProfile.getLocation());
+        assertNull(userProfile.getCompany());
+        assertEquals("DockstoreTestUser2", userProfile.getUsername());
     }
 
 }
