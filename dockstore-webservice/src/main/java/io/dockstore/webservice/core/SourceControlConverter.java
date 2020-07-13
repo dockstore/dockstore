@@ -44,7 +44,10 @@ public class SourceControlConverter implements AttributeConverter<SourceControl,
         if (first.isPresent()) {
             return first.get();
         } else {
-            LOG.error("could not convert token type: " + dbData);
+            // It can frequenty be null when fetching using DTOs; gets too noisy
+            if (dbData != null) {
+                LOG.error("could not convert token type: " + dbData);
+            }
             return null;
         }
     }

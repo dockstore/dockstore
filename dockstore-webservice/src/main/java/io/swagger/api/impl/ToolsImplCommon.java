@@ -122,7 +122,8 @@ public final class ToolsImplCommon {
         }
         final ToolVersion toolVersion = new ToolVersion();
         toolVersion.setAuthor(MoreObjects.firstNonNull(versionDTO.getAuthor(), Lists.newArrayList()));
-        toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Collections.emptyList()));
+        // TODO: We never set this from our side
+        toolVersion.setIncludedApps(Collections.emptyList());
         toolVersion.setSigned(false);
         toolVersion.setName(versionDTO.getName());
         // TODO: Figure this out
