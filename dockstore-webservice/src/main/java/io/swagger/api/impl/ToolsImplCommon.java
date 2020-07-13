@@ -46,7 +46,9 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.dto.TrsImageDTO;
 import io.dockstore.webservice.core.dto.TrsToolDTO;
+import io.dockstore.webservice.core.dto.TrsToolVersion;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
@@ -97,42 +99,73 @@ public final class ToolsImplCommon {
         tool.setUrl(getUrlFromId(config, tool.getId()));
         tool.setMetaVersion(trsToolDTO.getMetaVersion());
         tool.setToolclass(trsToolDTO.getToolclass());
-        tool.setCheckerUrl(getUrlFromId(config, trsToolDTO.getCheckerWorkflowPath()));
+        tool.setCheckerUrl(MoreObjects.firstNonNull(getUrlFromId(config, trsToolDTO.getCheckerWorkflowPath()), ""));
         tool.setHasChecker(trsToolDTO.hasChecker());
         tool.setName(constructName(Arrays.asList(trsToolDTO.getRepository(), trsToolDTO.getWorkflowName())));
-        tool.setName(trsToolDTO.getOrganization());
+        tool.setOrganization(MoreObjects.firstNonNull(trsToolDTO.getOrganization(), ""));
+        tool.setDescription(MoreObjects.firstNonNull(trsToolDTO.getDescription(), ""));
         // TODO: Fetch aliases
         //        tool.setAliases(trsToolDTO.geta);
         tool.setVersions(trsToolDTO.getVersions().stream()
                 // TODO: Figure out hidden (may need to parameterize, Tag logic, see shouldHideToolVersion
                 .filter(v -> v.getName() != null)
-                .map(versionDTO -> {
-            final ToolVersion toolVersion = new ToolVersion();
-            toolVersion.setAuthor(MoreObjects.firstNonNull(versionDTO.getAuthor(), Lists.newArrayList()));
-            toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Collections.emptyList()));
-            toolVersion.setSigned(false);
-            // TODO: Figure this out
-            //            final String author = ObjectUtils.firstNonNull(versionDTO.getAuthor(), trsToolDTO.getAuthor());
-            //            if (author != null) {
-            //                toolVersion.getAuthor().add(author);
-            //            }
-            //            toolVersion.setImages();
-            toolVersion.setIsProduction(versionDTO.isProduction());
-            //            if (toolVersion.isIsProduction()) {
-            //            }
-            toolVersion.setId(tool.getId() + ':' + versionDTO.getName());
-            final List<DescriptorLanguage.FileType> descriptorTypes = versionDTO.getDescriptorTypes();
-            toolVersion.setContainerfile(descriptorTypes.stream().anyMatch(dt -> dt == DescriptorLanguage.FileType.DOCKERFILE));
-            toolVersion.setDescriptorType(
-                    versionDTO.getDescriptorTypes().stream()
-                    .filter(dt -> dt != DescriptorLanguage.FileType.DOCKERFILE)
-                    .map(dt -> fileTypeToDescriptorType(dt))
-                    .filter(Objects::nonNull)
-                    .distinct()
-                    .collect(Collectors.toList()));
-            return toolVersion;
-        }).collect(Collectors.toList()));
+                .map(versionDTO -> convertVersionDTO(tool.getId(), versionDTO))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()));
         return tool;
+    }
+
+    private static ToolVersion convertVersionDTO(final String toolId, final TrsToolVersion versionDTO) {
+        final List<DescriptorLanguage.FileType> descriptorTypes = versionDTO.getDescriptorTypes();
+        if (descriptorTypes.isEmpty()) {
+            return null;
+        }
+        final ToolVersion toolVersion = new ToolVersion();
+        toolVersion.setAuthor(MoreObjects.firstNonNull(versionDTO.getAuthor(), Lists.newArrayList()));
+        toolVersion.setIncludedApps(MoreObjects.firstNonNull(toolVersion.getIncludedApps(), Collections.emptyList()));
+        toolVersion.setSigned(false);
+        toolVersion.setName(versionDTO.getName());
+        // TODO: Figure this out
+        //            final String author = ObjectUtils.firstNonNull(versionDTO.getAuthor(), trsToolDTO.getAuthor());
+        //            if (author != null) {
+        //                toolVersion.getAuthor().add(author);
+        //            }
+        toolVersion.setImages(versionDTO.getImages().stream()
+                .map(trsImageDTO -> convertImageDTO(trsImageDTO)).collect(Collectors.toList()));
+
+        toolVersion.setIsProduction(versionDTO.isProduction());
+        //            if (toolVersion.isIsProduction()) {
+        //            }
+        toolVersion.setId(toolId + ':' + versionDTO.getName());
+        toolVersion.setName(versionDTO.getName());
+        toolVersion.setVerified(versionDTO.isVerified());
+        toolVersion.setContainerfile(descriptorTypes.stream().anyMatch(dt -> dt == DescriptorLanguage.FileType.DOCKERFILE));
+        toolVersion.setDescriptorType(
+                versionDTO.getDescriptorTypes().stream()
+                        .filter(dt -> dt != DescriptorLanguage.FileType.DOCKERFILE)
+                        .map(dt -> fileTypeToDescriptorType(dt))
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .collect(Collectors.toList()));
+        return toolVersion;
+    }
+
+    private static ImageData convertImageDTO(final TrsImageDTO trsImageDTO) {
+        final ImageData imageData = new ImageData();
+        imageData.setImageType(ImageType.DOCKER);
+        imageData.setRegistryHost(trsImageDTO.getRegistryHost().getDockerPath());
+        imageData.setImageName(trsImageDTO.getImageName());
+        //TODO: hook up proper size
+        imageData.setSize(0);
+        //TODO: hook up proper date
+        imageData.setUpdated(new Date().toString());
+        imageData.setChecksum(trsImageDTO.getChecksums().stream().map(checksum -> {
+            final Checksum trsChecksum = new Checksum();
+            trsChecksum.setType(DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
+            trsChecksum.setChecksum(checksum.getChecksum());
+            return trsChecksum;
+        }).collect(Collectors.toList()));
+        return imageData;
     }
 
     private static DescriptorType fileTypeToDescriptorType(DescriptorLanguage.FileType fileType) {

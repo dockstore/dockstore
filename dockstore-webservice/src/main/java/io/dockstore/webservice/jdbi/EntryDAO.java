@@ -20,19 +20,26 @@ import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.BioWorkflow_;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
@@ -40,7 +47,11 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.dto.TrsImageDTO;
 import io.dockstore.webservice.core.dto.TrsToolDTO;
+import io.dockstore.webservice.core.dto.TrsToolVersion;
+import io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType;
+import io.dockstore.webservice.core.dto.WorkflowTrsToolDTO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -193,16 +204,111 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }
 
+    public long countAllHosted(long userid) {
+        return ((BigInteger)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult()).longValueExact();
+    }
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     public List<TrsToolDTO> findAllTrsPublished(final Optional<String> registry, final Optional<String> organization,
             final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author,
             final Optional<String> description, final Optional<String> offset, final int limit) {
-        return null;
+
+        final List<TrsToolDTO> trsToolDTOS = getTrsTools(registry, organization, checker, toolname, author, description, limit);
+
+        final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(trsToolDTOS.stream().map(t -> t.getId()).collect(Collectors.toList()));
+
+        trsToolDTOS.forEach(tool -> tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList())));
+
+        return trsToolDTOS;
     }
 
-    public long countAllHosted(long userid) {
-        return ((BigInteger)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult()).longValueExact();
+    private Map<Long, List<TrsToolVersion>> fetchTrsToolVersions(final List<Long> workflowIds) {
+        final List<TrsToolVersion> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getNonHiddenVersions")
+                .setParameterList("ids", workflowIds));
+
+        final List<Long> versionIds = versions.stream().map(v -> v.getId()).collect(Collectors.toList());
+        final List<TrsToolVersionDescriptorType> descriptorTypes = list(namedQuery("io.dockstore.webservice.core.Entry.findDescriptorTypes")
+                .setParameterList("ids", versionIds));
+        final Map<Long, List<TrsToolVersionDescriptorType>> versionDescriptorMap = descriptorTypes.stream()
+                .collect(Collectors.groupingBy(TrsToolVersionDescriptorType::getVersionId));
+
+        final List<TrsImageDTO> images = list(namedQuery("io.dockstore.webservice.core.Entry.getImagesForVersions").setParameterList("ids", versionIds));
+        final Map<Long, List<TrsImageDTO>> versionImageMap = images.stream().collect(Collectors.groupingBy(TrsImageDTO::getVersionId));
+
+        versions.forEach(version -> {
+            final List<TrsToolVersionDescriptorType> descriptors = versionDescriptorMap.get(version.getId());
+            if (descriptors != null) {
+                version.getDescriptorTypes().addAll(descriptors.stream().map(d -> d.getFileType()).collect(Collectors.toList()));
+            }
+            final List<TrsImageDTO> trsImageDTOs = versionImageMap.get(version.getId());
+            if (trsImageDTOs != null) {
+                version.getImages().addAll(trsImageDTOs);
+            }
+        });
+
+        return versions.stream().collect(Collectors.groupingBy(TrsToolVersion::getEntryId));
     }
+
+    private List<TrsToolDTO> getTrsTools(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
+            final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<TrsToolDTO> query = cb.createQuery(TrsToolDTO.class);
+        final Root<BioWorkflow> root = query.from(BioWorkflow.class);
+        final Join<BioWorkflow, BioWorkflow> join = root.join(BioWorkflow_.checkerWorkflow, JoinType.LEFT);
+        query.select(cb.construct(WorkflowTrsToolDTO.class, root.get(BioWorkflow_.id),
+                root.get(BioWorkflow_.organization),
+                root.get(BioWorkflow_.description),
+                root.get(BioWorkflow_.sourceControl),
+                root.get(BioWorkflow_.descriptorType),
+                root.get(BioWorkflow_.repository),
+                root.get(BioWorkflow_.workflowName),
+                join.get(BioWorkflow_.sourceControl),
+                join.get(BioWorkflow_.organization),
+                join.get(BioWorkflow_.repository),
+                join.get(BioWorkflow_.workflowName),
+                root.get(BioWorkflow_.lastUpdated)));
+        Predicate predicate = cb.isTrue(root.get(BioWorkflow_.isPublished));
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.organization), organization);
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.workflowName), toolname);
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.author), author);
+        predicate = andLike(cb, predicate, root.get(BioWorkflow_.description), description);
+        if (checker.isPresent()) {
+            predicate = cb.and(predicate, cb.isTrue(root.get(BioWorkflow_.isChecker)));
+        }
+        query.where(predicate);
+        final Query<TrsToolDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
+        final List<TrsToolDTO> tools = toolQuery.getResultList();
+        return filterByRegistry(registry, tools, limit);
+    }
+
+
+    /**
+     * Filter is on SourceControl().toString(), which returns a value defined
+     * in Java, different from what is stored in the DB. So yeah, don't think we
+     * can do this in SQL. Fortunately, these objects should now be pretty light, and
+     * I assume this filter is rarely used, so typically may not be a major impact.
+     * @param registry
+     * @param tools
+     * @param limit
+     * @return
+     */
+    private List<TrsToolDTO> filterByRegistry(final Optional<String> registry, final List<TrsToolDTO> tools, final int limit) {
+        return registry.map(s -> tools.stream()
+                .filter(tool -> tool.getSourceControl().toString().contains(s))
+                .limit(limit)
+                .collect(Collectors.toList()))
+                .orElse(tools);
+    }
+
+    private Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
+        return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
+                .orElse(existingPredicate);
+    }
+
+    private String wildcardLike(String value) {
+        return '%' + value + '%';
+    }
+
 
     public long countAllPublished(Optional<String> filter) {
         if (filter.isEmpty()) {

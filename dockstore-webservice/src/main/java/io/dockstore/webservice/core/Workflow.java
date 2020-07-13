@@ -76,11 +76,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getNonHiddenVersions", query = "SELECT new io.dockstore.webservice.core.dto.TrsToolVersion(wv.id, w.id, vm.author, vm.verified, wv.name, wv.frozen, wv.lastModified) from Workflow w join w.workflowVersions wv left join wv.versionMetadata vm where w.id in :ids and vm.hidden = FALSE"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findDescriptorTypes", query = "SELECT distinct new io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType(wv.id, sf.type) from WorkflowVersion wv join wv.sourceFiles sf where wv.id in :ids"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getImagesForVersions", query = "SELECT new io.dockstore.webservice.core.dto.TrsImageDTO(i.id, wv.id, i.imageRegistry, i.imageID, i.repository, i.checksums) from WorkflowVersion wv join wv.images i where wv.id in :ids")
-
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 
 @Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")

@@ -82,6 +82,8 @@ import org.slf4j.LoggerFactory;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
@@ -263,16 +265,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         ContainerRequestContext value, Optional<User> user) {
 
         final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(registry).append(organization).append(name)
-                .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
-                .append(user.orElseGet(User::new).getId()).build();
+            .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
+            .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
         if (trsResponses.isPresent()) {
             return trsResponses.get().build();
         }
-
         final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
-        List<io.openapi.model.Tool> results = toolsViaDtos(registry, organization, toolname, description, author, checker, offset,
-                actualLimit);
+        boolean newWay = true;
+        List<io.openapi.model.Tool> results = newWay ?
+                toolsViaDtos(registry, organization, toolname, description, author, checker, offset, actualLimit)
+                : getToolsOldWay(id, alias, toolClass, registry, organization, name, toolname, description, author, checker, user);
 
         List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
         int offsetInteger = 0;
@@ -290,9 +293,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
             responseBuilder.header("self_link",
-                    new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                            ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
-                            value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
+                new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
+                    value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
             // construct links to other pages
             List<String> filters = new ArrayList<>();
             handleParameter(id, "id", filters);
@@ -306,13 +309,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                        ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
-                                + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
+                        + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
-                            + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
+                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
@@ -320,6 +323,87 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         trsListener.loadTRSResponse(hashcode, responseBuilder);
         return responseBuilder.build();
+    }
+
+    private List<io.openapi.model.Tool> getToolsOldWay(final String id, final String alias, final String toolClass, final String registry,
+            final String organization, final String name, final String toolname, final String description, final String author,
+            final Boolean checker, final Optional<User> user) {
+        final List<Entry<?, ?>> all = new ArrayList<>();
+
+        // short circuit id and alias filters, these are a bit weird because they have a max of one result
+        if (id != null) {
+            ParsedRegistryID parsedID = new ParsedRegistryID(id);
+            Entry<?, ?> entry = getEntry(parsedID, user);
+            all.add(entry);
+        } else if (alias != null) {
+            all.add(toolDAO.getGenericEntryByAlias(alias));
+        } else {
+            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+                all.addAll(toolDAO.findAllPublished());
+            }
+            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+                all.addAll(workflowDAO.findAllPublished());
+            }
+            all.sort(Comparator.comparing(Entry::getGitUrl));
+        }
+
+        List<io.openapi.model.Tool> results = new ArrayList<>();
+        for (Entry<?, ?> c : all) {
+            // filters just for tools
+            if (c instanceof Tool) {
+                Tool tool = (Tool)c;
+                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
+                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
+                    continue;
+                }
+                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
+                    continue;
+                }
+                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
+                    continue;
+                }
+                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
+                    continue;
+                }
+                if (checker != null && checker) {
+                    // tools are never checker workflows
+                    continue;
+                }
+            }
+            // filters just for tools
+            if (c instanceof Workflow) {
+                Workflow workflow = (Workflow)c;
+                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
+                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
+                    continue;
+                }
+                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
+                    continue;
+                }
+                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
+                    continue;
+                }
+                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
+                    continue;
+                }
+                if (checker != null && workflow.isIsChecker() != checker) {
+                    continue;
+                }
+            }
+            // common filters between tools and workflows
+            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
+                continue;
+            }
+            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
+                continue;
+            }
+            // if passing, for each container that matches the criteria, convert to standardised format and return
+            io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
+            if (tool != null) {
+                results.add(tool);
+            }
+        }
+        return results;
     }
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {
