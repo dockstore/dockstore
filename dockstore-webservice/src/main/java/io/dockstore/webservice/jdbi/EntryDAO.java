@@ -43,10 +43,13 @@ import io.dockstore.webservice.core.BioWorkflow_;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Service_;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import io.dockstore.webservice.core.dto.ServiceTrsToolDTO;
 import io.dockstore.webservice.core.dto.TrsImageDTO;
 import io.dockstore.webservice.core.dto.TrsToolDTO;
 import io.dockstore.webservice.core.dto.TrsToolVersion;
@@ -251,6 +254,14 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     private List<TrsToolDTO> getTrsTools(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
             final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
+        final List<TrsToolDTO> trsWorkflows = fetchWorkflows(registry, organization, checker, toolname, author, description,
+                limit);
+        trsWorkflows.addAll(getServices(registry, organization, checker, toolname, author, description, limit));
+        return trsWorkflows;
+    }
+    
+    private List<TrsToolDTO> fetchWorkflows(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
+            final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final CriteriaQuery<TrsToolDTO> query = cb.createQuery(TrsToolDTO.class);
         final Root<BioWorkflow> root = query.from(BioWorkflow.class);
@@ -275,6 +286,30 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         if (checker.isPresent()) {
             predicate = cb.and(predicate, cb.isTrue(root.get(BioWorkflow_.isChecker)));
         }
+        query.where(predicate);
+        final Query<TrsToolDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
+        final List<TrsToolDTO> tools = toolQuery.getResultList();
+        return filterByRegistry(registry, tools, limit);
+    }
+    
+    private List<TrsToolDTO> getServices(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
+            final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<TrsToolDTO> query = cb.createQuery(TrsToolDTO.class);
+        final Root<Service> root = query.from(Service.class);
+        query.select(cb.construct(ServiceTrsToolDTO.class, root.get(Service_.id),
+                root.get(Service_.organization),
+                root.get(Service_.description),
+                root.get(Service_.sourceControl),
+                root.get(Service_.descriptorType),
+                root.get(Service_.repository),
+                root.get(Service_.workflowName),
+                root.get(Service_.lastUpdated)));
+        Predicate predicate = cb.isTrue(root.get(Service_.isPublished));
+        predicate = andLike(cb, predicate, root.get(Service_.organization), organization);
+        predicate = andLike(cb, predicate, root.get(Service_.workflowName), toolname);
+        predicate = andLike(cb, predicate, root.get(Service_.author), author);
+        predicate = andLike(cb, predicate, root.get(Service_.description), description);
         query.where(predicate);
         final Query<TrsToolDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
         final List<TrsToolDTO> tools = toolQuery.getResultList();
