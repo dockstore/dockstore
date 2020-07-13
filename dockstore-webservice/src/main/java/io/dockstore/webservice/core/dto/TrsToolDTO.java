@@ -23,11 +23,12 @@ public abstract class TrsToolDTO {
     private final Date lastUpdated;
     private final List<TrsToolVersion> versions = new ArrayList<>();
     private final List<AliasesDTO> aliases = new ArrayList<>();
+    private final String author;
 
     // No way around the number of parameters short of creating additional DB queries
     @SuppressWarnings("checkstyle:ParameterNumber")
     public TrsToolDTO(final long id, final String organization, final String description, SourceControl sourceControl,
-            final DescriptorLanguage descriptorType, final String repository, final SourceControl checkerSourceControl, final String checkerOrg,
+            final DescriptorLanguage descriptorType, final String repository, final String author, final SourceControl checkerSourceControl, final String checkerOrg,
             final String checkerRepo, final String checkerWorkflowName, final Date lastUpdated) {
         this.id = id;
         this.organization = organization;
@@ -35,6 +36,7 @@ public abstract class TrsToolDTO {
         this.sourceControl = sourceControl;
         this.descriptorType = descriptorType;
         this.repository = repository;
+        this.author = author;
         if (checkerSourceControl == null) {
             this.checkerWorkflow = null;
         } else {
@@ -93,5 +95,9 @@ public abstract class TrsToolDTO {
 
     public List<AliasesDTO> getAliases() {
         return aliases;
+    }
+
+    public String getAuthor() {
+        return author;
     }
 }

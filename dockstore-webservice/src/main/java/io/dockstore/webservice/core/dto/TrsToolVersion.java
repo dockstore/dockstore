@@ -10,7 +10,7 @@ public class TrsToolVersion {
     private final long id;
     private final long entryId;
 
-    private final List<String> author = new ArrayList<>();
+    private final String author;
     private final String name;
     //    private final String url;
     private final boolean production;
@@ -31,9 +31,7 @@ public class TrsToolVersion {
         this.name = name;
         this.production = production;
         this.id = id;
-        if (author != null) {
-            this.getAuthor().add(author);
-        }
+        this.author = author;
         this.verified = verified != null && verified.booleanValue();
         this.metaVersion = String.valueOf(date != null ? date : new Date(0));
         this.hidden = hidden;
@@ -43,7 +41,7 @@ public class TrsToolVersion {
         return entryId;
     }
 
-    public List<String> getAuthor() {
+    public String getAuthor() {
         return author;
     }
 

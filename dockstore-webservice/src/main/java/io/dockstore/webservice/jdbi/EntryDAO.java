@@ -286,6 +286,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 root.get(BioWorkflow_.descriptorType),
                 root.get(BioWorkflow_.repository),
                 root.get(BioWorkflow_.workflowName),
+                root.get(BioWorkflow_.author),
                 join.get(BioWorkflow_.sourceControl),
                 join.get(BioWorkflow_.organization),
                 join.get(BioWorkflow_.repository),
@@ -314,6 +315,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 root.get(Workflow_.descriptorType),
                 root.get(Workflow_.repository),
                 root.get(Workflow_.workflowName),
+                root.get(Workflow_.author),
                 root.get(Workflow_.lastUpdated)));
         Predicate predicate = makePredicate(organization, toolname, author, description, cb, root);
         query.where(predicate);

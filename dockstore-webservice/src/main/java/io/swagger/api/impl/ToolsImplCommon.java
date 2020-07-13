@@ -108,28 +108,27 @@ public final class ToolsImplCommon {
         tool.setAliases(trsToolDTO.getAliases().stream().map(AliasesDTO::getAlias).collect(Collectors.toList()));
         tool.setVersions(trsToolDTO.getVersions().stream()
                 .filter(v -> v.getName() != null && !v.isHidden())
-                .map(versionDTO -> convertVersionDTO(tool.getId(), versionDTO))
+                .map(versionDTO -> convertVersionDTO(versionDTO, trsToolDTO.getAuthor(), tool.getId(), tool.getUrl()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
         return tool;
     }
 
-    private static ToolVersion convertVersionDTO(final String toolId, final TrsToolVersion versionDTO) {
+    private static ToolVersion convertVersionDTO(final TrsToolVersion versionDTO, final String toolAuthor, String toolId, String toolUrl) {
         final List<DescriptorLanguage.FileType> descriptorTypes = versionDTO.getDescriptorTypes();
         if (descriptorTypes.isEmpty()) {
             return null;
         }
         final ToolVersion toolVersion = new ToolVersion();
-        toolVersion.setAuthor(MoreObjects.firstNonNull(versionDTO.getAuthor(), Lists.newArrayList()));
         // TODO: We never set this from our side
         toolVersion.setIncludedApps(Collections.emptyList());
         toolVersion.setSigned(false);
         toolVersion.setName(versionDTO.getName());
-        // TODO: Figure this out
-        //            final String author = ObjectUtils.firstNonNull(versionDTO.getAuthor(), trsToolDTO.getAuthor());
-        //            if (author != null) {
-        //                toolVersion.getAuthor().add(author);
-        //            }
+        toolVersion.setAuthor(Lists.newArrayList());
+        final String author = ObjectUtils.firstNonNull(versionDTO.getAuthor(), toolAuthor);
+        if (author != null) {
+            toolVersion.getAuthor().add(author);
+        }
         toolVersion.setImages(versionDTO.getImages().stream()
                 .map(trsImageDTO -> convertImageDTO(trsImageDTO)).collect(Collectors.toList()));
 
@@ -140,6 +139,14 @@ public final class ToolsImplCommon {
         toolVersion.setName(versionDTO.getName());
         toolVersion.setVerified(versionDTO.isVerified());
         toolVersion.setContainerfile(descriptorTypes.stream().anyMatch(dt -> dt == DescriptorLanguage.FileType.DOCKERFILE));
+        toolVersion.setMetaVersion(versionDTO.getMetaVersion());
+        toolVersion.setVerified(versionDTO.isVerified());
+        try {
+            toolVersion.setUrl(toolUrl + "/versions/" + URLEncoder.encode(toolVersion.getName(), StandardCharsets.UTF_8.displayName()));
+        } catch (UnsupportedEncodingException e) {
+            LOG.error("Error creating version url", e);
+            return null;
+        }
         toolVersion.setDescriptorType(
                 versionDTO.getDescriptorTypes().stream()
                         .filter(dt -> dt != DescriptorLanguage.FileType.DOCKERFILE)

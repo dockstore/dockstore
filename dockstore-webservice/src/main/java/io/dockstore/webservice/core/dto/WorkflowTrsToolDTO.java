@@ -13,9 +13,9 @@ public class WorkflowTrsToolDTO extends TrsToolDTO {
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public WorkflowTrsToolDTO(final long id, final String organization, final String description, SourceControl sourceControl,
-            final DescriptorLanguage descriptorType, final String repository, final String workflowName, final SourceControl checkerSourceControl,
+            final DescriptorLanguage descriptorType, final String repository, final String workflowName, final String author, final SourceControl checkerSourceControl,
             String checkOrg, final String checkerRepo, final String checkerWorkflowName, final Date lastUpdated) {
-        super(id, organization, description, sourceControl, descriptorType, repository, checkerSourceControl, checkOrg, checkerRepo,
+        super(id, organization, description, sourceControl, descriptorType, repository, author, checkerSourceControl, checkOrg, checkerRepo,
                 checkerWorkflowName, lastUpdated);
         this.workflowPath = new WorkflowPath(sourceControl, organization, repository, workflowName);
     }
