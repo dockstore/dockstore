@@ -49,12 +49,12 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.Workflow_;
 import io.dockstore.webservice.core.database.EntryLite;
-import io.dockstore.webservice.core.dto.AliasesDTO;
+import io.dockstore.webservice.core.dto.AliasDTO;
 import io.dockstore.webservice.core.dto.EntryDTO;
+import io.dockstore.webservice.core.dto.FileTypeDTO;
 import io.dockstore.webservice.core.dto.ImageDTO;
 import io.dockstore.webservice.core.dto.ServiceDTO;
 import io.dockstore.webservice.core.dto.ToolVersionDTO;
-import io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType;
 import io.dockstore.webservice.core.dto.WorkflowDTO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
@@ -230,7 +230,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final List<Long> entryIds = entryDTOS.stream().map(t -> t.getId()).collect(Collectors.toList());
 
         final Map<Long, List<ToolVersionDTO>> versionMap = fetchTrsToolVersions(entryIds);
-        final Map<Long, List<AliasesDTO>> aliasesMap = fetchEntryAliases(entryIds);
+        final Map<Long, List<AliasDTO>> aliasesMap = fetchEntryAliases(entryIds);
 
         entryDTOS.forEach(tool -> {
             tool.getAliases().addAll(aliasesMap.getOrDefault(tool.getId(), Collections.emptyList()));
@@ -244,9 +244,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return Collections.emptyList();
     }
 
-    private Map<Long, List<AliasesDTO>> fetchEntryAliases(final List<Long> entryIds) {
-        final List<AliasesDTO> aliases = list(namedQuery("io.dockstore.webservice.core.Entry.getAliases").setParameterList("ids", entryIds));
-        return aliases.stream().collect(Collectors.groupingBy(AliasesDTO::getEntryId));
+    private Map<Long, List<AliasDTO>> fetchEntryAliases(final List<Long> entryIds) {
+        final List<AliasDTO> aliases = list(namedQuery("io.dockstore.webservice.core.Entry.getAliases").setParameterList("ids", entryIds));
+        return aliases.stream().collect(Collectors.groupingBy(AliasDTO::getEntryId));
     }
 
     private Map<Long, List<ToolVersionDTO>> fetchTrsToolVersions(final List<Long> workflowIds) {
@@ -254,16 +254,16 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 .setParameterList("ids", workflowIds));
 
         final List<Long> versionIds = versions.stream().map(v -> v.getId()).collect(Collectors.toList());
-        final List<TrsToolVersionDescriptorType> descriptorTypes = list(namedQuery("io.dockstore.webservice.core.Entry.findDescriptorTypes")
+        final List<FileTypeDTO> descriptorTypes = list(namedQuery("io.dockstore.webservice.core.Entry.findDescriptorTypes")
                 .setParameterList("ids", versionIds));
-        final Map<Long, List<TrsToolVersionDescriptorType>> versionDescriptorMap = descriptorTypes.stream()
-                .collect(Collectors.groupingBy(TrsToolVersionDescriptorType::getVersionId));
+        final Map<Long, List<FileTypeDTO>> versionDescriptorMap = descriptorTypes.stream()
+                .collect(Collectors.groupingBy(FileTypeDTO::getVersionId));
 
         final List<ImageDTO> images = list(namedQuery("io.dockstore.webservice.core.Entry.getImagesForVersions").setParameterList("ids", versionIds));
         final Map<Long, List<ImageDTO>> versionImageMap = images.stream().collect(Collectors.groupingBy(ImageDTO::getVersionId));
 
         versions.forEach(version -> {
-            final List<TrsToolVersionDescriptorType> descriptors = versionDescriptorMap.get(version.getId());
+            final List<FileTypeDTO> descriptors = versionDescriptorMap.get(version.getId());
             if (descriptors != null) {
                 version.getDescriptorTypes().addAll(descriptors.stream().map(d -> d.getFileType()).collect(Collectors.toList()));
             }

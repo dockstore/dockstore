@@ -1,10 +1,10 @@
 package io.dockstore.webservice.core.dto;
 
-public class TrsChecksum {
+public class ChecksumDTO {
     private final String type;
     private final String checksum;
 
-    public TrsChecksum(final String type, final String checksum) {
+    public ChecksumDTO(final String type, final String checksum) {
         this.type = type;
         this.checksum = checksum;
     }

@@ -46,7 +46,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.core.dto.AliasesDTO;
+import io.dockstore.webservice.core.dto.AliasDTO;
 import io.dockstore.webservice.core.dto.EntryDTO;
 import io.dockstore.webservice.core.dto.ImageDTO;
 import io.dockstore.webservice.core.dto.ToolVersionDTO;
@@ -105,7 +105,7 @@ public final class ToolsImplCommon {
         tool.setName(constructName(Arrays.asList(entryDTO.getRepository(), entryDTO.getWorkflowName())));
         tool.setOrganization(MoreObjects.firstNonNull(entryDTO.getOrganization(), ""));
         tool.setDescription(MoreObjects.firstNonNull(entryDTO.getDescription(), ""));
-        tool.setAliases(entryDTO.getAliases().stream().map(AliasesDTO::getAlias).collect(Collectors.toList()));
+        tool.setAliases(entryDTO.getAliases().stream().map(AliasDTO::getAlias).collect(Collectors.toList()));
         tool.setVersions(entryDTO.getVersions().stream()
                 .filter(v -> v.getName() != null && !v.isHidden())
                 .map(versionDTO -> convertVersionDTO(versionDTO, entryDTO.getAuthor(), tool.getId(), tool.getUrl()))

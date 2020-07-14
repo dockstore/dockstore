@@ -1,10 +1,10 @@
 package io.dockstore.webservice.core.dto;
 
-public class AliasesDTO {
+public class AliasDTO {
     private final long entryId;
     private final String alias;
 
-    public AliasesDTO(final long entryId, final String alias) {
+    public AliasDTO(final long entryId, final String alias) {
         this.entryId = entryId;
         this.alias = alias;
     }

@@ -83,9 +83,9 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName) from Service w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getCollectionTools", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'tool', w.registry, w.namespace, w.name, w.toolname) from Tool w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.id and w.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.getVersions", query = "SELECT new io.dockstore.webservice.core.dto.ToolVersionDTO(wv.id, w.id, vm.author, vm.verified, wv.name, wv.frozen, wv.lastModified, vm.hidden, vm.verifiedSource) from Workflow w join w.workflowVersions wv left join wv.versionMetadata vm where w.id in :ids"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findDescriptorTypes", query = "SELECT distinct new io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType(wv.id, sf.type) from WorkflowVersion wv join wv.sourceFiles sf where wv.id in :ids"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findDescriptorTypes", query = "SELECT distinct new io.dockstore.webservice.core.dto.FileTypeDTO(wv.id, sf.type) from WorkflowVersion wv join wv.sourceFiles sf where wv.id in :ids"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.getImagesForVersions", query = "SELECT new io.dockstore.webservice.core.dto.ImageDTO(i.id, wv.id, i.imageRegistry, i.imageID, i.repository, i.tag, i.checksums) from WorkflowVersion wv join wv.images i where wv.id in :ids"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Entry.getAliases", query = "select new io.dockstore.webservice.core.dto.AliasesDTO(e.id, KEY(a)) from Entry e join e.aliases a where e.id in :ids")
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.getAliases", query = "select new io.dockstore.webservice.core.dto.AliasDTO(e.id, KEY(a)) from Entry e join e.aliases a where e.id in :ids")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({

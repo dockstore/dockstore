@@ -22,7 +22,7 @@ public abstract class EntryDTO {
     private final WorkflowPath checkerWorkflow;
     private final Date lastUpdated;
     private final List<ToolVersionDTO> versions = new ArrayList<>();
-    private final List<AliasesDTO> aliases = new ArrayList<>();
+    private final List<AliasDTO> aliases = new ArrayList<>();
     private final String author;
 
     // No way around the number of parameters short of creating additional DB queries
@@ -93,7 +93,7 @@ public abstract class EntryDTO {
         return versions;
     }
 
-    public List<AliasesDTO> getAliases() {
+    public List<AliasDTO> getAliases() {
         return aliases;
     }
 

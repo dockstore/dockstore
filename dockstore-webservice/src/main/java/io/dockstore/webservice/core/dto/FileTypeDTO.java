@@ -2,12 +2,12 @@ package io.dockstore.webservice.core.dto;
 
 import io.dockstore.common.DescriptorLanguage;
 
-public class TrsToolVersionDescriptorType {
+public class FileTypeDTO {
 
     private final long versionId;
     private final DescriptorLanguage.FileType fileType;
 
-    public TrsToolVersionDescriptorType(final long versionId, final DescriptorLanguage.FileType fileType) {
+    public FileTypeDTO(final long versionId, final DescriptorLanguage.FileType fileType) {
         this.versionId = versionId;
         this.fileType = fileType;
     }
