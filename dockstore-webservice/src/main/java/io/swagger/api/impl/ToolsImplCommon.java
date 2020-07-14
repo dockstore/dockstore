@@ -47,8 +47,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.dto.AliasesDTO;
+import io.dockstore.webservice.core.dto.EntryDTO;
 import io.dockstore.webservice.core.dto.TrsImageDTO;
-import io.dockstore.webservice.core.dto.TrsToolDTO;
 import io.dockstore.webservice.core.dto.TrsToolVersion;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
@@ -94,21 +94,21 @@ public final class ToolsImplCommon {
         return toolDescriptor;
     }
 
-    public static Tool convertDTOToTool(TrsToolDTO trsToolDTO, DockstoreWebserviceConfiguration config) {
+    public static Tool convertDTOToTool(EntryDTO entryDTO, DockstoreWebserviceConfiguration config) {
         final Tool tool = new Tool();
-        tool.setId(trsToolDTO.getTrsId());
+        tool.setId(entryDTO.getTrsId());
         tool.setUrl(getUrlFromId(config, tool.getId()));
-        tool.setMetaVersion(trsToolDTO.getMetaVersion());
-        tool.setToolclass(trsToolDTO.getToolclass());
-        tool.setCheckerUrl(MoreObjects.firstNonNull(getUrlFromId(config, trsToolDTO.getCheckerWorkflowPath()), ""));
-        tool.setHasChecker(trsToolDTO.hasChecker());
-        tool.setName(constructName(Arrays.asList(trsToolDTO.getRepository(), trsToolDTO.getWorkflowName())));
-        tool.setOrganization(MoreObjects.firstNonNull(trsToolDTO.getOrganization(), ""));
-        tool.setDescription(MoreObjects.firstNonNull(trsToolDTO.getDescription(), ""));
-        tool.setAliases(trsToolDTO.getAliases().stream().map(AliasesDTO::getAlias).collect(Collectors.toList()));
-        tool.setVersions(trsToolDTO.getVersions().stream()
+        tool.setMetaVersion(entryDTO.getMetaVersion());
+        tool.setToolclass(entryDTO.getToolclass());
+        tool.setCheckerUrl(MoreObjects.firstNonNull(getUrlFromId(config, entryDTO.getCheckerWorkflowPath()), ""));
+        tool.setHasChecker(entryDTO.hasChecker());
+        tool.setName(constructName(Arrays.asList(entryDTO.getRepository(), entryDTO.getWorkflowName())));
+        tool.setOrganization(MoreObjects.firstNonNull(entryDTO.getOrganization(), ""));
+        tool.setDescription(MoreObjects.firstNonNull(entryDTO.getDescription(), ""));
+        tool.setAliases(entryDTO.getAliases().stream().map(AliasesDTO::getAlias).collect(Collectors.toList()));
+        tool.setVersions(entryDTO.getVersions().stream()
                 .filter(v -> v.getName() != null && !v.isHidden())
-                .map(versionDTO -> convertVersionDTO(versionDTO, trsToolDTO.getAuthor(), tool.getId(), tool.getUrl()))
+                .map(versionDTO -> convertVersionDTO(versionDTO, entryDTO.getAuthor(), tool.getId(), tool.getUrl()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
         return tool;

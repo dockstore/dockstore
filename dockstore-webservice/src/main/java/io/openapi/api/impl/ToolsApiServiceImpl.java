@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.core.dto.TrsToolDTO;
+import io.dockstore.webservice.core.dto.EntryDTO;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -83,6 +84,7 @@ import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
@@ -272,9 +274,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return trsResponses.get().build();
         }
         final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
-        boolean newWay = false;
-        List<io.openapi.model.Tool> results = false ?
-                toolsViaDTOs(registry, organization, toolname, description, author, checker, offset, actualLimit)
+        boolean newWay = true;
+        List<io.openapi.model.Tool> results = newWay ?
+                toolsViaDTOs(registry, toolClass, organization, toolname, description, author, checker, offset, actualLimit)
                 : getToolsOldWay(id, alias, toolClass, registry, organization, name, toolname, description, author, checker, user);
 
         List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
@@ -414,10 +416,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private List<io.openapi.model.Tool> toolsViaDTOs(String registry, String organization, String toolname,
-            String description, String author, Boolean checker, String offset, Integer actualLimit) {
-        final List<TrsToolDTO> allTrsPublished = workflowDAO.findAllTrsPublished(
+    private List<io.openapi.model.Tool> toolsViaDTOs(String registry, final String toolClass, String organization, String toolname, String description, String author, Boolean checker, String offset, Integer actualLimit) {
+        boolean fetchServices = toolClass == null || toolClass.equalsIgnoreCase(SERVICE);
+        boolean fetchWorkflows = toolClass == null || toolClass.equalsIgnoreCase(WORKFLOW);
+        boolean fetchTools = toolClass == null || toolClass.equalsIgnoreCase(COMMAND_LINE_TOOL);
+        if (!fetchServices && !fetchTools && !fetchWorkflows) {
+            return Collections.emptyList();
+        }
+        final List<EntryDTO> allTrsPublished = workflowDAO.findAllTrsPublished(
                 Optional.ofNullable(registry),
+                fetchWorkflows,
+                fetchTools,
+                fetchServices,
                 Optional.ofNullable(organization),
                 Optional.ofNullable(checker),
                 Optional.ofNullable(toolname),

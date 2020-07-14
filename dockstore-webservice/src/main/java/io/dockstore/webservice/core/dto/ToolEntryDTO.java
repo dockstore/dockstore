@@ -4,10 +4,10 @@ import io.dockstore.webservice.core.database.ToolPath;
 import io.openapi.api.impl.ToolClassesApiServiceImpl;
 import io.openapi.model.ToolClass;
 
-public class ToolTrsToolDTO extends TrsToolDTO {
+public class ToolEntryDTO extends EntryDTO {
     private final ToolPath toolPath;
 
-    public ToolTrsToolDTO(final long id, final String registry, final String namespace, final String name, final String toolName) {
+    public ToolEntryDTO(final long id, final String registry, final String namespace, final String name, final String toolName) {
         super(id, null, null, null, null, null, null, null, null, null, null, null);
         this.toolPath = new ToolPath(registry, namespace, name, toolName);
     }

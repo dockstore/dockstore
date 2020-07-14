@@ -50,12 +50,12 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.Workflow_;
 import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.dto.AliasesDTO;
-import io.dockstore.webservice.core.dto.ServiceTrsToolDTO;
+import io.dockstore.webservice.core.dto.EntryDTO;
+import io.dockstore.webservice.core.dto.ServiceEntryDTO;
 import io.dockstore.webservice.core.dto.TrsImageDTO;
-import io.dockstore.webservice.core.dto.TrsToolDTO;
 import io.dockstore.webservice.core.dto.TrsToolVersion;
 import io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType;
-import io.dockstore.webservice.core.dto.WorkflowTrsToolDTO;
+import io.dockstore.webservice.core.dto.WorkflowEntryDTO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -213,23 +213,35 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public List<TrsToolDTO> findAllTrsPublished(final Optional<String> registry, final Optional<String> organization,
-            final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author,
-            final Optional<String> description, final Optional<String> offset, final int limit) {
+    public List<EntryDTO> findAllTrsPublished(final Optional<String> registry, final boolean fetchWorkflows, final boolean fetchTools, final boolean fetchServices, final Optional<String> organization,
+            final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final Optional<String> offset, final int limit) {
 
-        final List<TrsToolDTO> trsToolDTOS = fetchTrsWorkflowsAndServices(registry, organization, checker, toolname, author, description, limit);
+        final List<EntryDTO> entryDTOS = new ArrayList<>();
+        if (fetchWorkflows) {
+            entryDTOS.addAll(fetchWorkflows(registry, organization, checker, toolname, author, description, limit));
+        }
+        if (fetchTools) {
+            entryDTOS.addAll(fetchTools(registry, organization, checker, toolname, author, description, limit));
+        }
+        if (fetchServices) {
+            entryDTOS.addAll(fetchServices(registry, organization, checker, toolname, author, description, limit));
+        }
 
-        final List<Long> entryIds = trsToolDTOS.stream().map(t -> t.getId()).collect(Collectors.toList());
+        final List<Long> entryIds = entryDTOS.stream().map(t -> t.getId()).collect(Collectors.toList());
 
         final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(entryIds);
         final Map<Long, List<AliasesDTO>> aliasesMap = fetchEntryAliases(entryIds);
 
-        trsToolDTOS.forEach(tool -> {
+        entryDTOS.forEach(tool -> {
             tool.getAliases().addAll(aliasesMap.getOrDefault(tool.getId(), Collections.emptyList()));
             tool.getVersions().addAll(versionMap.getOrDefault(tool.getId(), Collections.emptyList()));
         });
 
-        return trsToolDTOS;
+        return entryDTOS;
+    }
+
+    private List<EntryDTO> fetchTools(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
+        return Collections.emptyList();
     }
 
     private Map<Long, List<AliasesDTO>> fetchEntryAliases(final List<Long> entryIds) {
@@ -264,21 +276,13 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return versions.stream().collect(Collectors.groupingBy(TrsToolVersion::getEntryId));
     }
 
-    private List<TrsToolDTO> fetchTrsWorkflowsAndServices(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
-            final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
-        final List<TrsToolDTO> trsWorkflows = fetchWorkflows(registry, organization, checker, toolname, author, description,
-                limit);
-        trsWorkflows.addAll(fetchServices(registry, organization, checker, toolname, author, description, limit));
-        return trsWorkflows;
-    }
-    
-    private List<TrsToolDTO> fetchWorkflows(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
+    private List<EntryDTO> fetchWorkflows(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
             final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<TrsToolDTO> query = cb.createQuery(TrsToolDTO.class);
+        final CriteriaQuery<EntryDTO> query = cb.createQuery(EntryDTO.class);
         final Root<BioWorkflow> root = query.from(BioWorkflow.class);
         final Join<BioWorkflow, BioWorkflow> join = root.join(BioWorkflow_.checkerWorkflow, JoinType.LEFT);
-        query.select(cb.construct(WorkflowTrsToolDTO.class, 
+        query.select(cb.construct(WorkflowEntryDTO.class,
                 root.get(BioWorkflow_.id),
                 root.get(BioWorkflow_.organization),
                 root.get(BioWorkflow_.description),
@@ -297,17 +301,17 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             predicate = cb.and(predicate, cb.isTrue(root.get(BioWorkflow_.isChecker)));
         }
         query.where(predicate);
-        final Query<TrsToolDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
-        final List<TrsToolDTO> tools = toolQuery.getResultList();
+        final Query<EntryDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
+        final List<EntryDTO> tools = toolQuery.getResultList();
         return filterByRegistry(registry, tools, limit);
     }
     
-    private List<TrsToolDTO> fetchServices(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
+    private List<EntryDTO> fetchServices(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
             final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<TrsToolDTO> query = cb.createQuery(TrsToolDTO.class);
+        final CriteriaQuery<EntryDTO> query = cb.createQuery(EntryDTO.class);
         final Root<Service> root = query.from(Service.class);
-        query.select(cb.construct(ServiceTrsToolDTO.class, 
+        query.select(cb.construct(ServiceEntryDTO.class,
                 root.get(Workflow_.id),
                 root.get(Workflow_.organization),
                 root.get(Workflow_.description),
@@ -319,8 +323,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 root.get(Workflow_.lastUpdated)));
         Predicate predicate = makePredicate(organization, toolname, author, description, cb, root);
         query.where(predicate);
-        final Query<TrsToolDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
-        final List<TrsToolDTO> tools = toolQuery.getResultList();
+        final Query<EntryDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
+        final List<EntryDTO> tools = toolQuery.getResultList();
         return filterByRegistry(registry, tools, limit);
     }
 
@@ -344,7 +348,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
      * @param limit
      * @return
      */
-    private List<TrsToolDTO> filterByRegistry(final Optional<String> registry, final List<TrsToolDTO> tools, final int limit) {
+    private List<EntryDTO> filterByRegistry(final Optional<String> registry, final List<EntryDTO> tools, final int limit) {
         return registry.map(s -> tools.stream()
                 .filter(tool -> tool.getSourceControl().toString().contains(s))
                 .limit(limit)

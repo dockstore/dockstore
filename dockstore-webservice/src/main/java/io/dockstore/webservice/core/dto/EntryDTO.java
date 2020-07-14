@@ -9,7 +9,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.database.WorkflowPath;
 import io.openapi.model.ToolClass;
 
-public abstract class TrsToolDTO {
+public abstract class EntryDTO {
 
     protected static final String WORKFLOW_PREFIX = "#workflow/";
     protected static final String SERVICE_PREFIX = "#service/";
@@ -27,7 +27,7 @@ public abstract class TrsToolDTO {
 
     // No way around the number of parameters short of creating additional DB queries
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public TrsToolDTO(final long id, final String organization, final String description, SourceControl sourceControl,
+    public EntryDTO(final long id, final String organization, final String description, SourceControl sourceControl,
             final DescriptorLanguage descriptorType, final String repository, final String author, final SourceControl checkerSourceControl, final String checkerOrg,
             final String checkerRepo, final String checkerWorkflowName, final Date lastUpdated) {
         this.id = id;
