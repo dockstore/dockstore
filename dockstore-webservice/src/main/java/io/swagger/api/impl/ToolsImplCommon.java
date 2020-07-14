@@ -48,8 +48,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.dto.AliasesDTO;
 import io.dockstore.webservice.core.dto.EntryDTO;
-import io.dockstore.webservice.core.dto.TrsImageDTO;
-import io.dockstore.webservice.core.dto.TrsToolVersion;
+import io.dockstore.webservice.core.dto.ImageDTO;
+import io.dockstore.webservice.core.dto.ToolVersionDTO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
@@ -114,7 +114,7 @@ public final class ToolsImplCommon {
         return tool;
     }
 
-    private static ToolVersion convertVersionDTO(final TrsToolVersion versionDTO, final String toolAuthor, String toolId, String toolUrl) {
+    private static ToolVersion convertVersionDTO(final ToolVersionDTO versionDTO, final String toolAuthor, String toolId, String toolUrl) {
         final List<DescriptorLanguage.FileType> descriptorTypes = versionDTO.getDescriptorTypes();
         if (descriptorTypes.isEmpty()) {
             return null;
@@ -130,7 +130,7 @@ public final class ToolsImplCommon {
             toolVersion.getAuthor().add(author);
         }
         toolVersion.setImages(versionDTO.getImages().stream()
-                .map(trsImageDTO -> convertImageDTO(trsImageDTO)).collect(Collectors.toList()));
+                .map(imageDTO -> convertImageDTO(imageDTO)).collect(Collectors.toList()));
 
         toolVersion.setIsProduction(versionDTO.isProduction());
         toolVersion.setId(toolId + ':' + versionDTO.getName());
@@ -156,16 +156,16 @@ public final class ToolsImplCommon {
         return toolVersion;
     }
 
-    private static ImageData convertImageDTO(final TrsImageDTO trsImageDTO) {
+    private static ImageData convertImageDTO(final ImageDTO imageDTO) {
         final ImageData imageData = new ImageData();
         imageData.setImageType(ImageType.DOCKER);
-        imageData.setRegistryHost(trsImageDTO.getRegistryHost().getDockerPath());
-        imageData.setImageName(constructName(Arrays.asList(trsImageDTO.getRepository(), trsImageDTO.getTag())));
+        imageData.setRegistryHost(imageDTO.getRegistryHost().getDockerPath());
+        imageData.setImageName(constructName(Arrays.asList(imageDTO.getRepository(), imageDTO.getTag())));
         //TODO: hook up proper size
         imageData.setSize(0);
         //TODO: hook up proper date
         imageData.setUpdated(new Date().toString());
-        imageData.setChecksum(trsImageDTO.getChecksums().stream().map(checksum -> {
+        imageData.setChecksum(imageDTO.getChecksums().stream().map(checksum -> {
             final Checksum trsChecksum = new Checksum();
             trsChecksum.setType(DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
             trsChecksum.setChecksum(checksum.getChecksum());

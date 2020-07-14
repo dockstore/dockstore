@@ -7,9 +7,9 @@ import io.dockstore.common.SourceControl;
 import io.openapi.api.impl.ToolClassesApiServiceImpl;
 import io.openapi.model.ToolClass;
 
-public class ServiceEntryDTO extends WorkflowEntryDTO {
+public class ServiceDTO extends WorkflowDTO {
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public ServiceEntryDTO(final long id, final String organization, final String description, SourceControl sourceControl,
+    public ServiceDTO(final long id, final String organization, final String description, SourceControl sourceControl,
             final DescriptorLanguage descriptorType, final String repository, final String workflowName, final String author, final Date lastUpdated) {
         super(id, organization, description, sourceControl, descriptorType, repository, workflowName, author, null, null, null, null, lastUpdated);
     }

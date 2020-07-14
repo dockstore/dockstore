@@ -21,7 +21,7 @@ public abstract class EntryDTO {
     private final String repository; // toolPath for tools, workflowPath for workflow
     private final WorkflowPath checkerWorkflow;
     private final Date lastUpdated;
-    private final List<TrsToolVersion> versions = new ArrayList<>();
+    private final List<ToolVersionDTO> versions = new ArrayList<>();
     private final List<AliasesDTO> aliases = new ArrayList<>();
     private final String author;
 
@@ -89,7 +89,7 @@ public abstract class EntryDTO {
 
     public abstract String getWorkflowName();
 
-    public List<TrsToolVersion> getVersions() {
+    public List<ToolVersionDTO> getVersions() {
         return versions;
     }
 

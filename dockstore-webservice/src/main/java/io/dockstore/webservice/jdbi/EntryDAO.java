@@ -51,11 +51,11 @@ import io.dockstore.webservice.core.Workflow_;
 import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.dto.AliasesDTO;
 import io.dockstore.webservice.core.dto.EntryDTO;
-import io.dockstore.webservice.core.dto.ServiceEntryDTO;
-import io.dockstore.webservice.core.dto.TrsImageDTO;
-import io.dockstore.webservice.core.dto.TrsToolVersion;
+import io.dockstore.webservice.core.dto.ImageDTO;
+import io.dockstore.webservice.core.dto.ServiceDTO;
+import io.dockstore.webservice.core.dto.ToolVersionDTO;
 import io.dockstore.webservice.core.dto.TrsToolVersionDescriptorType;
-import io.dockstore.webservice.core.dto.WorkflowEntryDTO;
+import io.dockstore.webservice.core.dto.WorkflowDTO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -229,7 +229,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
         final List<Long> entryIds = entryDTOS.stream().map(t -> t.getId()).collect(Collectors.toList());
 
-        final Map<Long, List<TrsToolVersion>> versionMap = fetchTrsToolVersions(entryIds);
+        final Map<Long, List<ToolVersionDTO>> versionMap = fetchTrsToolVersions(entryIds);
         final Map<Long, List<AliasesDTO>> aliasesMap = fetchEntryAliases(entryIds);
 
         entryDTOS.forEach(tool -> {
@@ -249,8 +249,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return aliases.stream().collect(Collectors.groupingBy(AliasesDTO::getEntryId));
     }
 
-    private Map<Long, List<TrsToolVersion>> fetchTrsToolVersions(final List<Long> workflowIds) {
-        final List<TrsToolVersion> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getVersions")
+    private Map<Long, List<ToolVersionDTO>> fetchTrsToolVersions(final List<Long> workflowIds) {
+        final List<ToolVersionDTO> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getVersions")
                 .setParameterList("ids", workflowIds));
 
         final List<Long> versionIds = versions.stream().map(v -> v.getId()).collect(Collectors.toList());
@@ -259,21 +259,21 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final Map<Long, List<TrsToolVersionDescriptorType>> versionDescriptorMap = descriptorTypes.stream()
                 .collect(Collectors.groupingBy(TrsToolVersionDescriptorType::getVersionId));
 
-        final List<TrsImageDTO> images = list(namedQuery("io.dockstore.webservice.core.Entry.getImagesForVersions").setParameterList("ids", versionIds));
-        final Map<Long, List<TrsImageDTO>> versionImageMap = images.stream().collect(Collectors.groupingBy(TrsImageDTO::getVersionId));
+        final List<ImageDTO> images = list(namedQuery("io.dockstore.webservice.core.Entry.getImagesForVersions").setParameterList("ids", versionIds));
+        final Map<Long, List<ImageDTO>> versionImageMap = images.stream().collect(Collectors.groupingBy(ImageDTO::getVersionId));
 
         versions.forEach(version -> {
             final List<TrsToolVersionDescriptorType> descriptors = versionDescriptorMap.get(version.getId());
             if (descriptors != null) {
                 version.getDescriptorTypes().addAll(descriptors.stream().map(d -> d.getFileType()).collect(Collectors.toList()));
             }
-            final List<TrsImageDTO> trsImageDTOs = versionImageMap.get(version.getId());
-            if (trsImageDTOs != null) {
-                version.getImages().addAll(trsImageDTOs);
+            final List<ImageDTO> imageDTOS = versionImageMap.get(version.getId());
+            if (imageDTOS != null) {
+                version.getImages().addAll(imageDTOS);
             }
         });
 
-        return versions.stream().collect(Collectors.groupingBy(TrsToolVersion::getEntryId));
+        return versions.stream().collect(Collectors.groupingBy(ToolVersionDTO::getEntryId));
     }
 
     private List<EntryDTO> fetchWorkflows(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
@@ -282,7 +282,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final CriteriaQuery<EntryDTO> query = cb.createQuery(EntryDTO.class);
         final Root<BioWorkflow> root = query.from(BioWorkflow.class);
         final Join<BioWorkflow, BioWorkflow> join = root.join(BioWorkflow_.checkerWorkflow, JoinType.LEFT);
-        query.select(cb.construct(WorkflowEntryDTO.class,
+        query.select(cb.construct(WorkflowDTO.class,
                 root.get(BioWorkflow_.id),
                 root.get(BioWorkflow_.organization),
                 root.get(BioWorkflow_.description),
@@ -311,7 +311,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final CriteriaQuery<EntryDTO> query = cb.createQuery(EntryDTO.class);
         final Root<Service> root = query.from(Service.class);
-        query.select(cb.construct(ServiceEntryDTO.class,
+        query.select(cb.construct(ServiceDTO.class,
                 root.get(Workflow_.id),
                 root.get(Workflow_.organization),
                 root.get(Workflow_.description),

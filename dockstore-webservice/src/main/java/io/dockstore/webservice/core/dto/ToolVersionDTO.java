@@ -9,7 +9,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 
-public class TrsToolVersion {
+public class ToolVersionDTO {
     private final long id;
     private final long entryId;
 
@@ -17,7 +17,7 @@ public class TrsToolVersion {
     private final String name;
     //    private final String url;
     private final boolean production;
-    private final List<TrsImageDTO> images = new ArrayList<>();
+    private final List<ImageDTO> images = new ArrayList<>();
     private final List<DescriptorLanguage.FileType> descriptorTypes = new ArrayList<>();
     //    private final Boolean containerFile;
     private final String metaVersion;
@@ -29,7 +29,7 @@ public class TrsToolVersion {
     private static final Gson GSON = new Gson();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public TrsToolVersion(final long id, final long entryId, final String author, final Boolean verified, final String name, final boolean production,
+    public ToolVersionDTO(final long id, final long entryId, final String author, final Boolean verified, final String name, final boolean production,
             final Date date, final boolean hidden, final String verifiedSource) {
         this.entryId = entryId;
         this.name = name;
@@ -65,7 +65,7 @@ public class TrsToolVersion {
         return id;
     }
 
-    public List<TrsImageDTO> getImages() {
+    public List<ImageDTO> getImages() {
         return images;
     }
 

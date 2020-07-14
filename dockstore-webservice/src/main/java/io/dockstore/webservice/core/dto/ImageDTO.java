@@ -5,7 +5,7 @@ import java.util.List;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Checksum;
 
-public class TrsImageDTO {
+public class ImageDTO {
     private final long id;
     private final long versionId;
     private final Registry registryHost;
@@ -14,7 +14,7 @@ public class TrsImageDTO {
     private final String tag;
     private final List<Checksum> checksums;
 
-    public TrsImageDTO(final long id, final long versionId, final Registry imageData, final String imageName, final String repository,
+    public ImageDTO(final long id, final long versionId, final Registry imageData, final String imageName, final String repository,
             final String tag, List<Checksum> checksums) {
         this.id = id;
         this.versionId = versionId;
