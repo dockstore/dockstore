@@ -43,8 +43,10 @@ import io.dockstore.webservice.core.BioWorkflow_;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Entry_;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Tool_;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.Workflow_;
@@ -54,6 +56,7 @@ import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.FileTypeDTO;
 import io.dockstore.webservice.core.database.ImageDTO;
 import io.dockstore.webservice.core.database.ServiceDTO;
+import io.dockstore.webservice.core.database.ToolDTO;
 import io.dockstore.webservice.core.database.ToolVersionDTO;
 import io.dockstore.webservice.core.database.WorkflowDTO;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -240,10 +243,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return entryDTOS;
     }
 
-    private List<EntryDTO> fetchTools(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
-        return Collections.emptyList();
-    }
-
     private Map<Long, List<AliasDTO>> fetchEntryAliases(final List<Long> entryIds) {
         final List<AliasDTO> aliases = list(namedQuery("io.dockstore.webservice.core.Entry.getAliases").setParameterList("ids", entryIds));
         return aliases.stream().collect(Collectors.groupingBy(AliasDTO::getEntryId));
@@ -305,7 +304,31 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final List<EntryDTO> tools = toolQuery.getResultList();
         return filterByRegistry(registry, tools, limit);
     }
-    
+
+    private List<EntryDTO> fetchTools(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker, final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<ToolDTO> query = cb.createQuery(ToolDTO.class);
+        final Root<Tool> root = query.from(Tool.class);
+        final Join<Tool, BioWorkflow> join = root.join(BioWorkflow_.checkerWorkflow, JoinType.LEFT);
+        query.select(cb.construct(ToolDTO.class,
+                root.get(Tool_.id),
+                root.get(Tool_.registry),
+                root.get(Tool_.namespace),
+                root.get(Tool_.name),
+                root.get(Tool_.toolname),
+                join.get(BioWorkflow_.sourceControl),
+                join.get(BioWorkflow_.organization),
+                join.get(BioWorkflow_.repository),
+                join.get(BioWorkflow_.workflowName)
+                ));
+        Predicate predicate = cb.isTrue(root.get(Entry_.isPublished));
+        query.where(predicate);
+        final Query<ToolDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
+        final List<ToolDTO> tools = toolQuery.getResultList();
+        return tools.stream().filter(EntryDTO.class::isInstance).collect(Collectors.toList());
+    }
+
+
     private List<EntryDTO> fetchServices(final Optional<String> registry, final Optional<String> organization, final Optional<Boolean> checker,
             final Optional<String> toolname, final Optional<String> author, final Optional<String> description, final int limit) {
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
@@ -325,7 +348,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         query.where(predicate);
         final Query<EntryDTO> toolQuery = currentSession().createQuery(query).setMaxResults(registry.isPresent() ? Integer.MAX_VALUE : limit);
         final List<EntryDTO> tools = toolQuery.getResultList();
-        return filterByRegistry(registry, tools, limit);
+        return filterByRegistry(registry, tools, limit)
+                .stream().filter(EntryDTO.class::isInstance)
+                .collect(Collectors.toList());
     }
 
     private Predicate makePredicate(final Optional<String> organization, final Optional<String> toolname, final Optional<String> author,
