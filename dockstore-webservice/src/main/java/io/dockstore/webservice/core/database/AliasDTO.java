@@ -1,4 +1,4 @@
-package io.dockstore.webservice.core.dto;
+package io.dockstore.webservice.core.database;
 
 public class AliasDTO {
     private final long entryId;

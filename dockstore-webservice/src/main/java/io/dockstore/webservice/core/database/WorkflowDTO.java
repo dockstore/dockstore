@@ -1,10 +1,9 @@
-package io.dockstore.webservice.core.dto;
+package io.dockstore.webservice.core.database;
 
 import java.util.Date;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.core.database.WorkflowPath;
 import io.openapi.api.impl.ToolClassesApiServiceImpl;
 import io.openapi.model.ToolClass;
 

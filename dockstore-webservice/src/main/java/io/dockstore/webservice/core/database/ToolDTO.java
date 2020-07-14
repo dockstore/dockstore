@@ -1,6 +1,5 @@
-package io.dockstore.webservice.core.dto;
+package io.dockstore.webservice.core.database;
 
-import io.dockstore.webservice.core.database.ToolPath;
 import io.openapi.api.impl.ToolClassesApiServiceImpl;
 import io.openapi.model.ToolClass;
 

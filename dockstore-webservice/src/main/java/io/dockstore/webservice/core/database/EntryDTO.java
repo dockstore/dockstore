@@ -1,4 +1,4 @@
-package io.dockstore.webservice.core.dto;
+package io.dockstore.webservice.core.database;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -6,7 +6,6 @@ import java.util.List;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.core.database.WorkflowPath;
 import io.openapi.model.ToolClass;
 
 public abstract class EntryDTO {
