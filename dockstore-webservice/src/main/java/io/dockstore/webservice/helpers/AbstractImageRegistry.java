@@ -260,8 +260,6 @@ public abstract class AbstractImageRegistry {
         Tool tool = toolDAO.findById(toolId);
         List<Tool> apiTools = new ArrayList<>();
 
-        logToolRefresh(dashboardPrefix, tool);
-
         // Find a tool with the given tool's path and is not manual
         // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
         Tool duplicatePath = null;
@@ -325,6 +323,10 @@ public abstract class AbstractImageRegistry {
 
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
+
+        List<String> descriptorTypes = updatedTool.calculateDescriptorType();
+        updatedTool.setDescriptorType(descriptorTypes);
+        logToolRefresh(dashboardPrefix, tool);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
         sourceCodeRepoInterface.setDefaultBranchIfNotSet(updatedTool, repositoryId);
