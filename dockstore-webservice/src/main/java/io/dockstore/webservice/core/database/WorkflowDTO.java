@@ -1,5 +1,6 @@
 package io.dockstore.webservice.core.database;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import io.dockstore.common.DescriptorLanguage;
@@ -25,6 +26,11 @@ public class WorkflowDTO extends EntryDTO {
     }
 
     @Override
+    public boolean requiresDescriptorType() {
+        return true;
+    }
+
+    @Override
     public ToolClass getToolclass() {
         return ToolClassesApiServiceImpl.getWorkflowClass();
     }
@@ -32,6 +38,11 @@ public class WorkflowDTO extends EntryDTO {
     @Override
     public String getWorkflowName() {
         return this.workflowPath.getBioWorkflow().getWorkflowName();
+    }
+
+    @Override
+    public String getName() {
+        return constructName(Arrays.asList(getRepository(), getWorkflowName()));
     }
 
     protected String getTrsPrefix() {

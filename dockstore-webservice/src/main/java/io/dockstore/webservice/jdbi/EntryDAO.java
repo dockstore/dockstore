@@ -312,6 +312,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         final Join<Tool, BioWorkflow> join = root.join(BioWorkflow_.checkerWorkflow, JoinType.LEFT);
         query.select(cb.construct(ToolDTO.class,
                 root.get(Tool_.id),
+                root.get(Tool_.description),
                 root.get(Tool_.registry),
                 root.get(Tool_.namespace),
                 root.get(Tool_.name),

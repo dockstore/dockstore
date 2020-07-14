@@ -3,7 +3,9 @@ package io.dockstore.webservice.core.database;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.StringJoiner;
 
+import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.openapi.model.ToolClass;
@@ -83,10 +85,13 @@ public abstract class EntryDTO {
         return lastUpdated != null ? lastUpdated.toString() : new Date(0).toString();
     }
     public abstract String getTrsId();
+    public abstract boolean requiresDescriptorType();
 
     public abstract ToolClass getToolclass();
 
     public abstract String getWorkflowName();
+
+    public abstract String getName();
 
     public List<ToolVersionDTO> getVersions() {
         return versions;
@@ -99,4 +104,16 @@ public abstract class EntryDTO {
     public String getAuthor() {
         return author;
     }
+
+    protected String constructName(List<String> strings) {
+        // The name is composed of the repository name and then the optional workflowname split with a '/'
+        StringJoiner joiner = new StringJoiner("/");
+        for (String string : strings) {
+            if (!Strings.isNullOrEmpty(string)) {
+                joiner.add(string);
+            }
+        }
+        return joiner.toString();
+    }
+
 }

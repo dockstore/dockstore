@@ -102,21 +102,21 @@ public final class ToolsImplCommon {
         tool.setToolclass(entryDTO.getToolclass());
         tool.setCheckerUrl(MoreObjects.firstNonNull(getUrlFromId(config, entryDTO.getCheckerWorkflowPath()), ""));
         tool.setHasChecker(entryDTO.hasChecker());
-        tool.setName(constructName(Arrays.asList(entryDTO.getRepository(), entryDTO.getWorkflowName())));
+        tool.setName(entryDTO.getName());
         tool.setOrganization(MoreObjects.firstNonNull(entryDTO.getOrganization(), ""));
         tool.setDescription(MoreObjects.firstNonNull(entryDTO.getDescription(), ""));
         tool.setAliases(entryDTO.getAliases().stream().map(AliasDTO::getAlias).collect(Collectors.toList()));
         tool.setVersions(entryDTO.getVersions().stream()
                 .filter(v -> v.getName() != null && !v.isHidden())
-                .map(versionDTO -> convertVersionDTO(versionDTO, entryDTO.getAuthor(), tool.getId(), tool.getUrl()))
+                .map(versionDTO -> convertVersionDTO(versionDTO, entryDTO, tool.getId(), tool.getUrl()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
         return tool;
     }
 
-    private static ToolVersion convertVersionDTO(final ToolVersionDTO versionDTO, final String toolAuthor, String toolId, String toolUrl) {
+    private static ToolVersion convertVersionDTO(final ToolVersionDTO versionDTO, final EntryDTO entryDTO, String toolId, String toolUrl) {
         final List<DescriptorLanguage.FileType> descriptorTypes = versionDTO.getDescriptorTypes();
-        if (descriptorTypes.isEmpty()) {
+        if (descriptorTypes.isEmpty() && entryDTO.requiresDescriptorType()) {
             return null;
         }
         final ToolVersion toolVersion = new ToolVersion();
@@ -125,7 +125,7 @@ public final class ToolsImplCommon {
         toolVersion.setSigned(false);
         toolVersion.setName(versionDTO.getName());
         toolVersion.setAuthor(Lists.newArrayList());
-        final String author = ObjectUtils.firstNonNull(versionDTO.getAuthor(), toolAuthor);
+        final String author = ObjectUtils.firstNonNull(versionDTO.getAuthor(), entryDTO.getAuthor());
         if (author != null) {
             toolVersion.getAuthor().add(author);
         }
