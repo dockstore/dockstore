@@ -886,7 +886,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return null;
     }
 
-    public String getEmail(GHMyself myself) throws IOException {
+    private String getEmail(GHMyself myself) throws IOException {
         for (GHEmail email: myself.getEmails2()) {
             if (email.isPrimary()) {
                 return email.getEmail();
