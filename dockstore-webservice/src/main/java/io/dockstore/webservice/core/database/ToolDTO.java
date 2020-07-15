@@ -42,4 +42,8 @@ public class ToolDTO extends EntryDTO {
     public String getName() {
         return constructName(Arrays.asList(toolPath.getTool().getName(), toolPath.getTool().getToolname()));
     }
+
+    public String getRegistry() {
+        return toolPath.getTool().getRegistry();
+    }
 }

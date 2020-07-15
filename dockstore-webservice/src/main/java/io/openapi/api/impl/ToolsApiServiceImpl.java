@@ -275,7 +275,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
         boolean newWay = true;
-        List<io.openapi.model.Tool> results = newWay ?
+        List<io.openapi.model.Tool> results = newWay
+                ?
                 toolsViaDTOs(registry, toolClass, organization, toolname, description, author, checker, offset, actualLimit)
                 : getToolsOldWay(id, alias, toolClass, registry, organization, name, toolname, description, author, checker, user);
 

@@ -244,21 +244,21 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     private Map<Long, List<AliasDTO>> fetchEntryAliases(final List<Long> entryIds) {
-        final List<AliasDTO> aliases = list(namedQuery("io.dockstore.webservice.core.Entry.getAliases").setParameterList("ids", entryIds));
+        final List<AliasDTO> aliases = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.getAliases").setParameterList("ids", entryIds));
         return aliases.stream().collect(Collectors.groupingBy(AliasDTO::getEntryId));
     }
 
     private Map<Long, List<ToolVersionDTO>> fetchTrsToolVersions(final List<Long> workflowIds) {
-        final List<ToolVersionDTO> versions = list(namedQuery("io.dockstore.webservice.core.Entry.getVersions")
+        final List<ToolVersionDTO> versions = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.getVersions")
                 .setParameterList("ids", workflowIds));
 
         final List<Long> versionIds = versions.stream().map(v -> v.getId()).collect(Collectors.toList());
-        final List<FileTypeDTO> descriptorTypes = list(namedQuery("io.dockstore.webservice.core.Entry.findDescriptorTypes")
+        final List<FileTypeDTO> descriptorTypes = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findDescriptorTypes")
                 .setParameterList("ids", versionIds));
         final Map<Long, List<FileTypeDTO>> versionDescriptorMap = descriptorTypes.stream()
                 .collect(Collectors.groupingBy(FileTypeDTO::getVersionId));
 
-        final List<ImageDTO> images = list(namedQuery("io.dockstore.webservice.core.Entry.getImagesForVersions").setParameterList("ids", versionIds));
+        final List<ImageDTO> images = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.getImagesForVersions").setParameterList("ids", versionIds));
         final Map<Long, List<ImageDTO>> versionImageMap = images.stream().collect(Collectors.groupingBy(ImageDTO::getVersionId));
 
         versions.forEach(version -> {

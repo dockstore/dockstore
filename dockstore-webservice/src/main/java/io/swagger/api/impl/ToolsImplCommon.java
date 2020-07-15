@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -49,6 +50,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.core.database.AliasDTO;
 import io.dockstore.webservice.core.database.EntryDTO;
 import io.dockstore.webservice.core.database.ImageDTO;
+import io.dockstore.webservice.core.database.ToolDTO;
 import io.dockstore.webservice.core.database.ToolVersionDTO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
@@ -129,8 +131,11 @@ public final class ToolsImplCommon {
         if (author != null) {
             toolVersion.getAuthor().add(author);
         }
+        final Optional<String> registry = Optional.ofNullable(entryDTO instanceof ToolDTO
+                ? ((ToolDTO)entryDTO).getRegistry()
+                : null);
         toolVersion.setImages(versionDTO.getImages().stream()
-                .map(imageDTO -> convertImageDTO(imageDTO)).collect(Collectors.toList()));
+                .map(imageDTO -> convertImageDTO(imageDTO, registry)).collect(Collectors.toList()));
 
         toolVersion.setIsProduction(versionDTO.isProduction());
         toolVersion.setId(toolId + ':' + versionDTO.getName());
@@ -156,10 +161,10 @@ public final class ToolsImplCommon {
         return toolVersion;
     }
 
-    private static ImageData convertImageDTO(final ImageDTO imageDTO) {
+    private static ImageData convertImageDTO(final ImageDTO imageDTO, final Optional<String> toolRegistry) {
         final ImageData imageData = new ImageData();
         imageData.setImageType(ImageType.DOCKER);
-        imageData.setRegistryHost(imageDTO.getRegistryHost().getDockerPath());
+        imageData.setRegistryHost(toolRegistry.orElseGet(() -> imageDTO.getRegistryHost().getDockerPath()));
         imageData.setImageName(constructName(Arrays.asList(imageDTO.getRepository(), imageDTO.getTag())));
         //TODO: hook up proper size
         imageData.setSize(0);
