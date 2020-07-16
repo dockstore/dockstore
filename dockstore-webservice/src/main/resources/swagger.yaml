@@ -6531,11 +6531,11 @@ definitions:
         type: "string"
         readOnly: true
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6622,8 +6622,8 @@ definitions:
           \ (new version created). Workflows-> For remote: When refresh is hit, last\
           \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 10
         description: "Implementation specific timestamp for last updated on webservice.\
           \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
@@ -6767,11 +6767,11 @@ definitions:
         additionalProperties:
           $ref: "#/definitions/Alias"
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6858,8 +6858,8 @@ definitions:
           \ (new version created). Workflows-> For remote: When refresh is hit, last\
           \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 10
         description: "Implementation specific timestamp for last updated on webservice.\
           \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
@@ -7174,8 +7174,8 @@ definitions:
         minLength: 0
         maxLength: 280
       expiration:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 2
         description: "Timestamp at which the notification is expired"
       type:
@@ -7560,8 +7560,8 @@ definitions:
           \ create a revision"
         $ref: "#/definitions/User"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 11
       input_file_formats:
         type: "array"
@@ -8196,8 +8196,8 @@ definitions:
           \ create a revision"
         $ref: "#/definitions/User"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 11
       input_file_formats:
         type: "array"
@@ -8296,11 +8296,11 @@ definitions:
         additionalProperties:
           $ref: "#/definitions/Alias"
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       has_checker:
         type: "boolean"
         readOnly: true
@@ -8386,8 +8386,8 @@ definitions:
           \ (new version created). Workflows-> For remote: When refresh is hit, last\
           \ time GitHub repo was changed. Hosted: Last time a new version was made."
       lastUpdated:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 10
         description: "Implementation specific timestamp for last updated on webservice.\
           \ Tools-> For automated builds: last time tool/namespace was refreshed Dockstore,\
@@ -8563,8 +8563,8 @@ definitions:
           \ create a revision"
         $ref: "#/definitions/User"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 11
       input_file_formats:
         type: "array"
