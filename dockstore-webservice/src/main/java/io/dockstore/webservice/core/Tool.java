@@ -50,6 +50,7 @@ import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
@@ -151,6 +152,7 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonAlias({ "tags", "workflowVersions"})
     @OrderBy("id")
     @Cascade(CascadeType.DETACH)
+    @BatchSize(size = 25)
     private final SortedSet<Tag> workflowVersions;
 
     @JsonIgnore

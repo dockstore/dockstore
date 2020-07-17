@@ -63,6 +63,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -120,12 +121,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -133,6 +136,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<User> starredUsers;
 
     @Column
@@ -170,6 +174,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
+    @BatchSize(size = 25)
     private Map<String, Alias> aliases = new HashMap<>();
 
     // database timestamps
