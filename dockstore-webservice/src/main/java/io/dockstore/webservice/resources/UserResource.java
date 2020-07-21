@@ -755,6 +755,43 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return dbuser;
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({"admin", "curator"})
+    @Path("/user/{userId}/addCuratorsOrAdmins")
+    @Operation(operationId = "addUserPrivileges", description = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
+    public void setUserOperator(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
+                                @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userID,
+                                @ApiParam(value = "Privilege Option", required = true, allowableValues = "Admin, Curator") @QueryParam("Input 'Admin' or 'Curator'") String selection) {
+        User user = userDAO.findById(userID);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+
+        switch (selection) {
+            case "Admin":
+                if (!authUser.getIsAdmin()) {
+                    throw new CustomWebApplicationException("Forbidden: You do not have access to set administrator rights", HttpStatus.SC_FORBIDDEN);
+                } else if (user.getIsAdmin()) {
+                    throw new CustomWebApplicationException("The user already has admin privileges", HttpStatus.SC_BAD_REQUEST);
+                } else {
+                    user.setIsAdmin(true);
+                    break;
+                }
+            case "Curator":
+                if (user.isCurator()) {
+                    throw new CustomWebApplicationException("The user already has curator privileges", HttpStatus.SC_BAD_REQUEST);
+                } else {
+                    user.setIsCurator(true);
+                    break;
+                }
+            default:
+                throw new CustomWebApplicationException("You must specify either 'Admin' or 'Curator'", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
