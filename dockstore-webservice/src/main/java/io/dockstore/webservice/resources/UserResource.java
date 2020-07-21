@@ -764,7 +764,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
     public void setUserOperator(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                 @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userID,
-                                @ApiParam(value = "Privilege Option", required = true, allowableValues = "Admin, Curator") @QueryParam("Input 'Admin' or 'Curator'") String selection) {
+                                @Parameter(name = "User Privilege", required = true, description = "Input 'Admin' or 'Curator'") @QueryParam("userPrivilegeOption") String selection) {
         User user = userDAO.findById(userID);
         if (user == null) {
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
