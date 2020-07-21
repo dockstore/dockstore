@@ -771,24 +771,24 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         switch (selection) {
-            case "Admin":
-                if (!authUser.getIsAdmin()) {
-                    throw new CustomWebApplicationException("Forbidden: You do not have access to set administrator rights", HttpStatus.SC_FORBIDDEN);
-                } else if (user.getIsAdmin()) {
-                    throw new CustomWebApplicationException("The user already has admin privileges", HttpStatus.SC_BAD_REQUEST);
-                } else {
-                    user.setIsAdmin(true);
-                    break;
-                }
-            case "Curator":
-                if (user.isCurator()) {
-                    throw new CustomWebApplicationException("The user already has curator privileges", HttpStatus.SC_BAD_REQUEST);
-                } else {
-                    user.setIsCurator(true);
-                    break;
-                }
-            default:
-                throw new CustomWebApplicationException("You must specify either 'Admin' or 'Curator'", HttpStatus.SC_BAD_REQUEST);
+        case "Admin":
+            if (!authUser.getIsAdmin()) {
+                throw new CustomWebApplicationException("Forbidden: You do not have access to set administrator rights", HttpStatus.SC_FORBIDDEN);
+            } else if (user.getIsAdmin()) {
+                throw new CustomWebApplicationException("The user already has admin privileges", HttpStatus.SC_BAD_REQUEST);
+            } else {
+                user.setIsAdmin(true);
+                break;
+            }
+        case "Curator":
+            if (user.isCurator()) {
+                throw new CustomWebApplicationException("The user already has curator privileges", HttpStatus.SC_BAD_REQUEST);
+            } else {
+                user.setIsCurator(true);
+                break;
+            }
+        default:
+            throw new CustomWebApplicationException("You must specify either 'Admin' or 'Curator'", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
