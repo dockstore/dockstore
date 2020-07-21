@@ -50,6 +50,7 @@ import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notification;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -165,7 +166,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class,
-            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class) {
+            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
+            ParsedInformation.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();

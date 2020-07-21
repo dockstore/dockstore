@@ -15,10 +15,14 @@
  */
 package io.dockstore.webservice.core;
 
+import java.util.Set;
+
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapsId;
@@ -75,6 +79,10 @@ public class VersionMetadata {
     @OneToOne
     @JoinColumn(name = "id")
     protected Version parent;
+
+    // Explicit LAZY, just in case
+    @ElementCollection(fetch = FetchType.LAZY, targetClass = ParsedInformation.class)
+    protected Set<ParsedInformation> parsedInformationSet;
 
     @Id
     @Column(name = "id")
