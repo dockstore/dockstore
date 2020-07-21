@@ -141,6 +141,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
+    // Warning: this is eagerly loaded
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent")
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
