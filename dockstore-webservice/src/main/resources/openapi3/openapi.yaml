@@ -2392,7 +2392,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
       security:
         - bearer: []
@@ -3575,7 +3575,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -3708,6 +3708,11 @@ paths:
         - description: Filter tools by the name of the subclass (#/definitions/ToolClass)
           in: query
           name: toolClass
+          schema:
+            type: string
+        - description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
+          in: query
+          name: descriptorType
           schema:
             type: string
         - description: The image registry that contains the image.
@@ -6422,7 +6427,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []

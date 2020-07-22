@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -22,16 +23,28 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import io.dockstore.client.cli.BaseIT;
+import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.Constants;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.NonConfidentialTest;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.common.Utilities;
+import io.dockstore.common.WorkflowTest;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.swagger.client.ApiClient;
 import io.swagger.client.api.MetadataApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DescriptorLanguageBean;
+import io.swagger.client.model.Workflow;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -49,6 +62,8 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This test does not require confidential data.
@@ -57,16 +72,16 @@ import static io.dockstore.common.CommonTestUtilities.getWebClient;
  * @author dyuen
  * @since 1.9.0
  */
-@Category(NonConfidentialTest.class)
+@Category({ ConfidentialTest.class, WorkflowTest.class })
 public class GalaxyPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
-    public static final String GALAXY_PLUGIN_VERSION = "0.0.2";
+    public static final String GALAXY_PLUGIN_VERSION = "0.0.4";
     public static final String GALAXY_PLUGIN_FILENAME = "dockstore-galaxy-interface-" + GALAXY_PLUGIN_VERSION + ".jar";
     public static final String GALAXY_PLUGIN_LOCATION =
         "https://artifacts.oicr.on.ca/artifactory/collab-release/com/github/galaxyproject/dockstore-galaxy-interface/dockstore-galaxy-interface/"
             + GALAXY_PLUGIN_VERSION + "/" + GALAXY_PLUGIN_FILENAME;
 
-    private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.PUBLIC_CONFIG_PATH;
+    private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
 
     static {
         try {
@@ -102,7 +117,7 @@ public class GalaxyPluginIT {
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, DROPWIZARD_CONFIGURATION_FILE_PATH);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }
@@ -114,7 +129,7 @@ public class GalaxyPluginIT {
 
     @Before
     public void setup() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false, DROPWIZARD_CONFIGURATION_FILE_PATH);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
     @Test
@@ -122,16 +137,48 @@ public class GalaxyPluginIT {
         MetadataApi metadataApi = new MetadataApi(getWebClient(false, "n/a", testingPostgres));
         final List<DescriptorLanguageBean> descriptorLanguages = metadataApi.getDescriptorLanguages();
         // should have default languages plus galaxy via plugin
-        Assert.assertTrue(
+        assertTrue(
             descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.CWL.getFriendlyName())));
-        Assert.assertTrue(
+        assertTrue(
             descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.WDL.getFriendlyName())));
-        Assert.assertTrue(
+        assertTrue(
             descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.NEXTFLOW.getFriendlyName())));
-        Assert.assertTrue(
+        assertTrue(
             descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.GXFORMAT2.getFriendlyName())));
         // should not be present
         Assert.assertFalse(
             descriptorLanguages.stream().anyMatch(lang -> lang.getFriendlyName().equals(DescriptorLanguage.SWL.getFriendlyName())));
+    }
+
+    @Test
+    public void testFilterByDescriptorType() {
+        final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        Workflow wdlWorkflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl-valid", "/Dockstore.wdl", "",
+                        DescriptorLanguage.WDL.getShortName(), "");
+        Workflow galaxyWorkflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/galaxy-workflow-dockstore-example-1", "/Dockstore.gxwf.yml",
+                        "", DescriptorLanguage.GXFORMAT2.getShortName(), "");
+        workflowApi.refresh(wdlWorkflow.getId());
+        workflowApi.refresh(galaxyWorkflow.getId());
+        workflowApi.publish(wdlWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(galaxyWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
+
+        io.dockstore.openapi.client.ApiClient newWebClient = new io.dockstore.openapi.client.ApiClient();
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        newWebClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(newWebClient);
+        final List<Tool> allStuffGalaxy = ga4Ghv20Api
+                .toolsGet(null, null, null, "galaxy", null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        final List<Tool> allStuffWdl = ga4Ghv20Api
+                .toolsGet(null, null, null, DescriptorLanguage.WDL.getShortName(), null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        final List<Tool> allStuffCWL = ga4Ghv20Api
+                .toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        assertEquals(1, allStuffGalaxy.size());
+        assertEquals(1, allStuffWdl.size());
+        assertTrue(allStuffCWL.isEmpty());
     }
 }

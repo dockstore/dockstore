@@ -259,11 +259,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
-    public Response toolsGet(String id, String alias, String toolClass, String registry, String organization, String name, String toolname,
+    public Response toolsGet(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
 
-        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(registry).append(organization).append(name)
+        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(descriptorType).append(registry).append(organization).append(name)
             .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
             .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
@@ -291,6 +291,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
+
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if ("galaxy".equalsIgnoreCase(descriptorType)) {
+            descriptorType = DescriptorLanguage.GXFORMAT2.getShortName();
+        }
+
         for (Entry<?, ?> c : all) {
             // filters just for tools
             if (c instanceof Tool) {
@@ -306,6 +312,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     continue;
                 }
                 if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
+                    continue;
+                }
+                if (descriptorType != null && !tool.getDescriptorType().contains(descriptorType)) {
                     continue;
                 }
                 if (checker != null && checker) {
@@ -330,6 +339,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     continue;
                 }
                 if (checker != null && workflow.isIsChecker() != checker) {
+                    continue;
+                }
+                if (descriptorType != null && !workflow.getDescriptorType().toString().equals(descriptorType)) {
                     continue;
                 }
             }
