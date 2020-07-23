@@ -511,6 +511,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.setAuthor(newVersionMetadata.author);
         this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
+        this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
 
     public void setParent(Entry<?, ?> parent) {

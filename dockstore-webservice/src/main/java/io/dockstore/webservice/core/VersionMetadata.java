@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.core;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -82,7 +83,7 @@ public class VersionMetadata {
 
     // Explicit LAZY, just in case
     @ElementCollection(fetch = FetchType.LAZY, targetClass = ParsedInformation.class)
-    protected Set<ParsedInformation> parsedInformationSet;
+    protected Set<ParsedInformation> parsedInformationSet = new HashSet<>();
 
     @Id
     @Column(name = "id")
@@ -94,5 +95,13 @@ public class VersionMetadata {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public Set<ParsedInformation> getParsedInformationSet() {
+        return parsedInformationSet;
+    }
+
+    public void setParsedInformationSet(Set<ParsedInformation> parsedInformationSet) {
+        this.parsedInformationSet = parsedInformationSet;
     }
 }

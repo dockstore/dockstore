@@ -13,7 +13,31 @@ import io.dockstore.common.DescriptorLanguage;
 @Embeddable
 public class ParsedInformation {
     @Enumerated(EnumType.STRING)
-    DescriptorLanguage descriptorLanguage;
-    private boolean hasHTTPImports;
-    private boolean hasLocalImports;
+    private DescriptorLanguage descriptorLanguage;
+    private boolean hasHTTPImports = false;
+    private boolean hasLocalImports = false;
+
+    public DescriptorLanguage getDescriptorLanguage() {
+        return descriptorLanguage;
+    }
+
+    public void setDescriptorLanguage(DescriptorLanguage descriptorLanguage) {
+        this.descriptorLanguage = descriptorLanguage;
+    }
+
+    public boolean isHasHTTPImports() {
+        return hasHTTPImports;
+    }
+
+    public void setHasHTTPImports(boolean hasHTTPImports) {
+        this.hasHTTPImports = hasHTTPImports;
+    }
+
+    public boolean isHasLocalImports() {
+        return hasLocalImports;
+    }
+
+    public void setHasLocalImports(boolean hasLocalImports) {
+        this.hasLocalImports = hasLocalImports;
+    }
 }

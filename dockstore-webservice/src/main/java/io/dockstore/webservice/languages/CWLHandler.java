@@ -43,6 +43,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.FileFormat;
+import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -175,7 +176,6 @@ public class CWLHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
-
         Map<String, SourceFile> imports = new HashMap<>();
         Yaml yaml = new Yaml();
         try {
@@ -464,6 +464,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     private void handleMap(String repositoryId, String parentFilePath, Version version, Map<String, SourceFile> imports, Map<String, ?> fileContentMap,
         SourceCodeRepoInterface sourceCodeRepoInterface) {
         Set<String> importKeywords = Sets.newHashSet("$import", "$include", "$mixin", "import", "include", "mixin");
+        ParsedInformation parsedInformation = getParsedInformation(version, DescriptorLanguage.CWL);
         for (Map.Entry<String, ?> e : fileContentMap.entrySet()) {
             final Object mapValue = e.getValue();
             String absoluteImportPath;
@@ -471,6 +472,7 @@ public class CWLHandler implements LanguageHandlerInterface {
             if (importKeywords.contains(e.getKey().toLowerCase())) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
+                    setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
                     absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
                     handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 }
@@ -480,6 +482,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl
                 if (mapValue instanceof String) {
+                    setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
                     absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
                     handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 } else if (mapValue instanceof Map) {
@@ -489,6 +492,19 @@ public class CWLHandler implements LanguageHandlerInterface {
             } else {
                 handleMapValue(repositoryId, parentFilePath, version, imports, mapValue, sourceCodeRepoInterface);
             }
+        }
+    }
+
+    /**
+     * Sets the type of imports in ParsedInformation based on the import string
+     * @param parsedInformation     A version's version metadata's
+     * @param mapValue              Import string (should be either a local import or an HTTP(s) import
+     */
+    private void setImportsBasedOnMapValue(ParsedInformation parsedInformation, String mapValue) {
+        if (mapValue.startsWith("http")) {
+            parsedInformation.setHasHTTPImports(true);
+        } else {
+            parsedInformation.setHasLocalImports(true);
         }
     }
 
