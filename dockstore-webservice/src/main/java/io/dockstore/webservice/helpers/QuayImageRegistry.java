@@ -210,7 +210,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             List<QuayRepo> repositories = repositoryApi.listRepos(null, null, null, null, null, null, namespace).getRepositories();
             return repositories.stream().map(QuayRepo::getName).collect(Collectors.toList());
         } catch (ApiException e) {
-            LOG.error("Could not retrieve repositories for: " + namespace);
+            LOG.error("Could not retrieve repositories for: " + namespace, e);
             return new ArrayList<>();
         }
     }
@@ -336,7 +336,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 }
             }
         } catch (ApiException e) {
-            LOG.error(quayToken.getUsername() + ": could not process builds to determine build information");
+            LOG.error(quayToken.getUsername() + ": could not process builds to determine build information", e);
         }
     }
 
@@ -375,7 +375,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
             }
         } catch (ApiException e) {
-            LOG.error(quayToken.getUsername() + ": could not process builds");
+            LOG.error(quayToken.getUsername() + ": could not process builds", e);
         }
     }
 
@@ -424,7 +424,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 }
             }
         } catch (ApiException e) {
-            LOG.error(quayToken.getUsername() + ": could not process builds to determine mode");
+            LOG.error(quayToken.getUsername() + ": could not process builds to determine mode", e);
         }
         return false;
     }

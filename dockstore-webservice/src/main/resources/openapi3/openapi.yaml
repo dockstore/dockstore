@@ -1382,6 +1382,16 @@ components:
         workingDirectory:
           type: string
       type: object
+    VersionVerifiedPlatform:
+      properties:
+        metadata:
+          type: string
+        source:
+          type: string
+        versionId:
+          format: int64
+          type: integer
+      type: object
     Workflow:
       discriminator:
         propertyName: type
@@ -1651,7 +1661,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.0-beta.1-SNAPSHOT
+  version: 1.10.0-alpha.0-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -2392,7 +2402,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
       security:
         - bearer: []
@@ -3555,6 +3565,31 @@ paths:
         - bearer: []
       tags:
         - curation
+  /entries/{entryId}/verifiedPlatforms:
+    get:
+      description: Get the verified platforms for each version of an entry.
+      operationId: getVerifiedPlatforms
+      parameters:
+        - description: id of the entry
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VersionVerifiedPlatform'
+                type: array
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - entries
   /entries/{id}/aliases:
     post:
       description: Add aliases linked to a entry in Dockstore.

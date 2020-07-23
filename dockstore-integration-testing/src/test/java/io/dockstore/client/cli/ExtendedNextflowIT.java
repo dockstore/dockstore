@@ -66,7 +66,7 @@ public class ExtendedNextflowIT extends BaseIT {
         User user = usersApi.getUser();
 
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+                DescriptorLanguage.NEXTFLOW.getShortName(), "");
         assertNotSame("", workflow.getWorkflowName());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
@@ -102,7 +102,7 @@ public class ExtendedNextflowIT extends BaseIT {
         User user = usersApi.getUser();
         // get workflow stubs
         Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "/foo.json");
+                DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
@@ -171,7 +171,7 @@ public class ExtendedNextflowIT extends BaseIT {
 
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/kallisto-nf", "/nextflow.config", "",
-                        DescriptorLanguage.NEXTFLOW.getLowerShortName(), "/foo.json");
+                        DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow

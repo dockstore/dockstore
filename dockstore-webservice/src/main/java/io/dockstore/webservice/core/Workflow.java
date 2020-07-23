@@ -46,6 +46,7 @@ import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
@@ -128,11 +129,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
+    @BatchSize(size = 25)
     private final SortedSet<WorkflowVersion> workflowVersions;
 
     @JsonIgnore
     @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id")
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
     private WorkflowVersion actualDefaultVersion;
 
     protected Workflow() {
@@ -336,7 +338,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
         @Override
         public String convertToDatabaseColumn(DescriptorLanguage attribute) {
-            return attribute.getLowerShortName();
+            return attribute.getShortName().toLowerCase();
         }
 
         @Override

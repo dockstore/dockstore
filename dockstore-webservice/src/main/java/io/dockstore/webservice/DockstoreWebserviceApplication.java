@@ -215,7 +215,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 // https://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/cache/DiskLruCache.java#L82 looks promising
                 cacheDir = Files.createDirectories(Paths.get("/tmp/dockstore-web-cache")).toFile();
             } catch (IOException e) {
-                LOG.error("Could no create or re-use web cache");
+                LOG.error("Could no create or re-use web cache", e);
                 throw new RuntimeException(e);
             }
             cache = new Cache(cacheDir, cacheSize);
@@ -230,7 +230,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             if (factoryException.getMessage().contains("factory already defined")) {
                 LOG.debug("OkHttpClient already registered, skipping");
             } else {
-                LOG.error("Could no create web cache, factory exception");
+                LOG.error("Could no create web cache, factory exception", factoryException);
                 throw new RuntimeException(factoryException);
             }
         }
@@ -307,7 +307,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.getAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(toolDAO, configuration);
+        final EntryResource entryResource = new EntryResource(toolDAO, versionDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);

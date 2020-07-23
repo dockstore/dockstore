@@ -38,6 +38,7 @@ import io.swagger.client.model.Collection;
 import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
+import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
@@ -93,11 +94,11 @@ public class UserResourceIT extends BaseIT {
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
+                DescriptorLanguage.WDL.getShortName(), "");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
+                DescriptorLanguage.WDL.getShortName(), "");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+                DescriptorLanguage.NEXTFLOW.getShortName(), "");
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.addUserToDockstoreWorkflows(userApi.getUser().getId(), "");
 
@@ -218,6 +219,10 @@ public class UserResourceIT extends BaseIT {
     public void testSelfDestruct() throws ApiException {
         ApiClient client = getAnonymousWebClient();
         UsersApi userApi = new UsersApi(client);
+
+        String serviceRepo = "DockstoreTestUser2/test-service";
+        String installationId = "1179416";
+
         // anon should not exist
         boolean shouldFail = false;
         try {
@@ -237,9 +242,11 @@ public class UserResourceIT extends BaseIT {
 
         User user = userApi.getUser();
         assertNotNull(user);
-        // try to delete with published workflows
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getLowerShortName(), "");
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+
+        // try to delete with published workflows & service
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
+        workflowsApi.handleGitHubRelease(serviceRepo, USER_2_USERNAME, "refs/tags/1.0", installationId);
 
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
@@ -249,6 +256,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
         adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(true));
@@ -274,9 +282,20 @@ public class UserResourceIT extends BaseIT {
             adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
 
         } catch (ApiException e) {
+            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             expectedAdminAccessToFail = true;
         }
         assertTrue(expectedAdminAccessToFail);
+
+        // Verify that self-destruct also deleted the service
+        boolean expectedAdminServiceAccessToFail = false;
+        try {
+            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
+        } catch (ApiException e) {
+            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
+            expectedAdminServiceAccessToFail = true;
+        }
+        assertTrue(expectedAdminServiceAccessToFail);
 
         // I shouldn't be able to get info on myself after deletion
         boolean expectedFailToGetInfo = false;
@@ -462,6 +481,33 @@ public class UserResourceIT extends BaseIT {
         collection.setDescription("this is the description");
 
         return collection;
+    }
+
+    @Test
+    public void testUpdateUserMetadataFromGithub() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(client);
+        Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");
+
+        assertEquals("", userProfile.getName());
+        assertNull(userProfile.getEmail());
+        assertNull(userProfile.getAvatarURL());
+        assertNull(userProfile.getBio());
+        assertNull(userProfile.getLocation());
+        assertNull(userProfile.getCompany());
+        assertEquals("DockstoreTestUser2", userProfile.getUsername());
+
+        final User user = usersApi.updateLoggedInUserMetadata("github.com");
+        userProfile = usersApi.getUser().getUserProfiles().get("github.com");
+
+        System.out.println(usersApi.getUser().getUserProfiles().get("github.com"));
+        assertNull(userProfile.getName());
+        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
+        assertEquals("https://avatars1.githubusercontent.com/u/17859829?v=4", userProfile.getAvatarURL());
+        assertEquals("", userProfile.getBio());
+        assertEquals("Toronto", userProfile.getLocation());
+        assertNull(userProfile.getCompany());
+        assertEquals("DockstoreTestUser2", userProfile.getUsername());
     }
 
 }

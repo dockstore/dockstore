@@ -20,15 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.cache.CacheBuilderSpec;
+import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
-import org.hibernate.validator.constraints.NotEmpty;
 
 public class DockstoreWebserviceConfiguration extends Configuration {
 
@@ -130,7 +130,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String gitHubAppPrivateKeyFile;
 
     @NotNull
-    private CacheBuilderSpec authenticationCachePolicy;
+    private CaffeineSpec authenticationCachePolicy;
 
     private String languagePluginLocation;
 
@@ -308,11 +308,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.bitbucketClientSecret = bitbucketClientSecret;
     }
 
-    public CacheBuilderSpec getAuthenticationCachePolicy() {
+    public CaffeineSpec getAuthenticationCachePolicy() {
         return authenticationCachePolicy;
     }
 
-    public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
+    public void setAuthenticationCachePolicy(CaffeineSpec authenticationCachePolicy) {
         this.authenticationCachePolicy = authenticationCachePolicy;
     }
 

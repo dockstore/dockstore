@@ -1,6 +1,5 @@
 package io.dockstore.client.cli;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -23,17 +22,17 @@ public class NotificationIT extends BaseIT {
 
     // set up test apis as it would be for an admin and a regular user
     private final ApiClient webClientAdmin = getAdminWebClient();
-    private CurationApi curationApiAdmin = new CurationApi(webClientAdmin);
+    private final CurationApi curationApiAdmin = new CurationApi(webClientAdmin);
 
     private final ApiClient webClientUser = getWebClient(USER_1_USERNAME, testingPostgres);
-    private CurationApi curationApiUser = new CurationApi(webClientUser);
+    private final CurationApi curationApiUser = new CurationApi(webClientUser);
 
-    private String currentMsg = "ayy";
+    private final String currentMsg = "ayy";
 
     private Notification testNotification() {
         Notification notification = new Notification();
         notification.setMessage("holla");
-        notification.setExpiration(new Timestamp(100000));  // a past timestamp
+        notification.setExpiration(100000L);  // a past timestamp
         notification.setPriority(Notification.PriorityEnum.CRITICAL);
         return notification;
     }
@@ -41,7 +40,7 @@ public class NotificationIT extends BaseIT {
     private Notification anotherTestNotification() {
         Notification notification = new Notification();
         notification.setMessage(currentMsg);
-        notification.setExpiration(new Timestamp(System.currentTimeMillis() + 100000));  // a future timestamp
+        notification.setExpiration(System.currentTimeMillis() + 100000L);  // a future timestamp
         notification.setPriority(Notification.PriorityEnum.CRITICAL);
         return notification;
     }

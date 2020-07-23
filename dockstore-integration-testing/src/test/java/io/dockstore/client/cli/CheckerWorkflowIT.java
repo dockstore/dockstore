@@ -47,6 +47,7 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Confidential tests for checker workflows
@@ -171,12 +172,18 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count9 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished = true", long.class);
         assertEquals("the tool should not be published, there are " + count9, 0, count9);
 
-        // Should not be able to directly publish the checker
         try {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
-            Assert.fail("Should not reach this statement.");
-        } catch (ApiException ex) {
-            assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
+            fail("Should not be able to directly publish the checker");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+
+        try {
+            workflowApi.restub(refreshedEntry.getCheckerId());
+            fail("Should not be able to restub the checker");
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
     }
 
@@ -249,12 +256,12 @@ public class CheckerWorkflowIT extends BaseIT {
         List<Workflow> workflows = new ArrayList<>();
         workflows.add(workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                        DescriptorLanguage.WDL.getLowerShortName(), ""));
+                        DescriptorLanguage.WDL.getShortName(), ""));
         workflows.add(workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-2", "/dockstore.wdl", "",
-                        DescriptorLanguage.WDL.getLowerShortName(), ""));
+                        DescriptorLanguage.WDL.getShortName(), ""));
         workflows.add(workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), ""));
+                DescriptorLanguage.NEXTFLOW.getShortName(), ""));
         workflows.add(workflowApi
                 .manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json"));
         if (all) {
@@ -357,7 +364,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Should not be able to directly publish the checker
         try {
             workflowApi.publish(refreshedEntry.getCheckerId(), publishRequest);
-            Assert.fail("Should not reach this statement.");
+            fail("Should not reach this statement.");
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_BAD_REQUEST);
         }

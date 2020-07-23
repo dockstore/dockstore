@@ -57,6 +57,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -72,7 +73,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 // Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
+        @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
+                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata) FROM Version version "
+                        + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
+                        + "version.parent.id = :entryId"
+        )
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -117,11 +123,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private ReferenceType referenceType = ReferenceType.UNSET;
 
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
+    // TODO: @JsonIgnore this field to catch more places in UI that use it.
+    // TODO: Change to FetchType.LAZY
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
     @OrderBy("path")
+    @BatchSize(size = 25)
     private final SortedSet<SourceFile> sourceFiles;
 
     @Column
@@ -145,36 +154,40 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // database timestamps
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
-    @ApiModelProperty(position = 10)
+    @ApiModelProperty(position = 10, dataType = "long")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
-    @ApiModelProperty(position = 11)
+    @ApiModelProperty(position = 11, dataType = "long")
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
     @OrderBy("type")
+    @BatchSize(size = 25)
     private final SortedSet<Validation> validations;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
     @ApiModelProperty(value = "The images that belong to this version", position = 15)
+    @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
 
     public Version() {

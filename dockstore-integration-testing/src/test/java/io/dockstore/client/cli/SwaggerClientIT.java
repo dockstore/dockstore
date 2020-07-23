@@ -782,10 +782,10 @@ public class SwaggerClientIT extends BaseIT {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "dockstore.org", null);
     }
 
     @Test

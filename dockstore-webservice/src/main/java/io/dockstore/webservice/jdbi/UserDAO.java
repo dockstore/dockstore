@@ -48,7 +48,7 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
     }
 
     public List<User> findAll() {
-        return list(namedQuery("io.dockstore.webservice.core.User.findAll"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findAll"));
     }
 
     /**
