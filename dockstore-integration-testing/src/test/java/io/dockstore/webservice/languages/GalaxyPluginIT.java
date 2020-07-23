@@ -28,7 +28,6 @@ import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
@@ -54,7 +53,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
@@ -71,7 +69,6 @@ import static org.junit.Assert.assertTrue;
  * @author dyuen
  * @since 1.9.0
  */
-@Category(NonConfidentialTest.class)
 public class GalaxyPluginIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT;
     public static final String GALAXY_PLUGIN_VERSION = "0.0.4";
