@@ -13,7 +13,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.dockstore.webservice;
 
 import java.util.List;
@@ -38,6 +37,7 @@ import io.swagger.client.model.Collection;
 import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
+import io.swagger.client.model.PrivilegeRequest;
 import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
@@ -510,4 +510,41 @@ public class UserResourceIT extends BaseIT {
         assertEquals("DockstoreTestUser2", userProfile.getUsername());
     }
 
+    @Test
+    public void testSetUserPrivilege() {
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+
+        PrivilegeRequest privilegeRequest = new PrivilegeRequest();
+        UsersApi adminApi = new UsersApi(adminWebClient);
+        UsersApi userApi = new UsersApi(userWebClient);
+        User admin = adminApi.getUser();
+        User user = userApi.getUser();
+
+        privilegeRequest.setAdmin(false);
+        adminApi.setUserPrivilege(user.getId(), privilegeRequest);
+        assertFalse(userApi.getUser().isIsAdmin());
+        assertFalse(userApi.getUser().isCurator());
+
+        privilegeRequest.setCurator(true);
+        adminApi.setUserPrivilege(user.getId(), privilegeRequest);
+        assertTrue(userApi.getUser().isCurator());
+
+        try {
+            userApi.setUserPrivilege(admin.getId(), privilegeRequest);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
+        }
+
+        privilegeRequest.setAdmin(true);
+        adminApi.setUserPrivilege(user.getId(), privilegeRequest);
+        assertTrue(userApi.getUser().isIsAdmin());
+
+        privilegeRequest.setAdmin(false);
+        try {
+            adminApi.setUserPrivilege(admin.getId(), privilegeRequest);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
+        }
+    }
 }
