@@ -532,6 +532,7 @@ public class UserResourceIT extends BaseIT {
 
         try {
             userApi.setUserPrivilege(admin.getId(), privilegeRequest);
+            assertFalse("Should have triggered an exception", false);
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
@@ -543,6 +544,7 @@ public class UserResourceIT extends BaseIT {
         privilegeRequest.setAdmin(false);
         try {
             adminApi.setUserPrivilege(admin.getId(), privilegeRequest);
+            assertFalse("Should have triggered an exception", false);
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
