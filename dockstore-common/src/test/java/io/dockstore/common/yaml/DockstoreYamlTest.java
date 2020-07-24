@@ -37,6 +37,7 @@ public class DockstoreYamlTest {
     private static final String DOCKSTORE10_YAML = FixtureHelpers.fixture("fixtures/dockstore10.yml");
     private static final String DOCKSTORE11_YAML = FixtureHelpers.fixture("fixtures/dockstore11.yml");
     private static final String DOCKSTORE12_YAML = FixtureHelpers.fixture("fixtures/dockstore12.yml");
+    private static final String DOCKSTORE_GALAXY_YAML = FixtureHelpers.fixture("fixtures/dockstoreGalaxy.yml");
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -180,6 +181,21 @@ public class DockstoreYamlTest {
         assertEquals(3, workflows.size());
         assertEquals(1, workflows.stream().filter(w -> "CWL".equals(w.getSubclass())).count());
         assertEquals(1, workflows.stream().filter(w -> "cwl".equals(w.getSubclass())).count());
+    }
+
+    /**
+     * Subclass in .dockstore.yml for Galaxy was `GXFORMAT2`; should be `GALAXY`.
+     * Fixture has 2 of each, with different cases; make sure they all appear as `GXFORMAT2`, which our
+     * other code relies on.
+     *
+     * https://github.com/dockstore/dockstore/issues/3686
+     *
+     * @throws DockstoreYamlHelper.DockstoreYamlException
+     */
+    @Test
+    public void testGalaxySubclass() throws DockstoreYamlHelper.DockstoreYamlException {
+        final List<YamlWorkflow> workflows = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE_GALAXY_YAML).getWorkflows();
+        assertEquals(4, workflows.stream().filter(w -> w.getSubclass().equalsIgnoreCase("gxformat2")).count());
     }
 
 }
