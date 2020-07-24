@@ -71,6 +71,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.FileFormat;
 import io.swagger.client.model.FileWrapper;
+import io.swagger.client.model.ParsedInformation;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -203,6 +204,73 @@ public class WorkflowIT extends BaseIT {
         }
         assertEquals(workflow.isIsPublished(), toPublish);
         return workflow;
+    }
+
+    // Tests 4 things:
+    // WDL workflow with local imports
+    // WDL workflow with HTTP imports
+    // CWL workflow with local imports
+    // CWL workflow with HTTP imports
+    // WDL workflow with HTTP imports and local imports and nested
+    @Test
+    public void testLanguageParsingInformation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow wdl = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.wdl", "WDL",
+                        DescriptorLanguage.WDL.toString(), "/test.json");
+        Long id = wdl.getId();
+        workflowApi.refresh(id);
+        Workflow workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithLocalImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
+        ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertFalse(parsedInformation.isHasHTTPImports());
+        WorkflowVersion workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertFalse(parsedInformationHTTP.isHasLocalImports());
+        Assert.assertTrue(parsedInformationHTTP.isHasHTTPImports());
+        Workflow cwlWorkflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "CWL",
+                        DescriptorLanguage.CWL.toString(), "/test.json");
+        Long cwlId = cwlWorkflow.getId();
+        workflowApi.refresh(cwlId);
+        workflow = workflowApi.getWorkflow(cwlId, null);
+        workflowWithLocalImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
+        parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertFalse(parsedInformation.isHasHTTPImports());
+        workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertFalse(parsedInformationHTTP.isHasLocalImports());
+        Assert.assertTrue(parsedInformationHTTP.isHasHTTPImports());
+
+        Workflow wdlChecker = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/checker-workflow-wrapping-workflow.wdl", "WDLChecker",
+                        DescriptorLanguage.WDL.toString(), "/test.json");
+        id = wdlChecker.getId();
+        workflowApi.refresh(id);
+        workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithBothImports = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertTrue(parsedInformation.isHasHTTPImports());
+        Workflow cwlChecker = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/checker-workflow-wrapping-workflow.cwl", "CWLChecker",
+                        DescriptorLanguage.CWL.toString(), "/test.json");
+        id = cwlChecker.getId();
+        workflowApi.refresh(id);
+        workflow = workflowApi.getWorkflow(id, null);
+        workflowWithBothImports = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertTrue(parsedInformation.isHasHTTPImports());
     }
 
     @Test
