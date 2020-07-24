@@ -3,6 +3,7 @@ package io.dockstore.webservice.core;
 import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.validation.constraints.NotNull;
 
 import io.dockstore.common.DescriptorLanguage;
 
@@ -12,6 +13,7 @@ import io.dockstore.common.DescriptorLanguage;
  */
 @Embeddable
 public class ParsedInformation {
+    @NotNull
     @Enumerated(EnumType.STRING)
     private DescriptorLanguage descriptorLanguage;
     private boolean hasHTTPImports = false;

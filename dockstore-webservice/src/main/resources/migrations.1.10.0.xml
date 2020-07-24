@@ -45,18 +45,18 @@
             SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_WDL', 'WDL');
         </sql>
     </changeSet>
-    <changeSet author="gluu (generated)" id="addParsedInformation">
+    <changeSet author="gluu (generated)" id="1595619674649-12">
         <createTable tableName="versionmetadata_parsedinformationset">
             <column name="versionmetadata_id" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="versionmetadata_parsedinformationset_pkey"/>
             </column>
-            <column name="descriptorlanguage" type="VARCHAR(255)"/>
+            <column name="descriptorlanguage" type="VARCHAR(255)">
+            </column>
             <column name="hashttpimports" type="BOOLEAN">
-                <constraints primaryKey="true" primaryKeyName="versionmetadata_parsedinformationset_pkey"/>
             </column>
             <column name="haslocalimports" type="BOOLEAN">
-                <constraints primaryKey="true" primaryKeyName="versionmetadata_parsedinformationset_pkey"/>
             </column>
         </createTable>
+        <addPrimaryKey columnNames="versionmetadata_id, hashttpimports, haslocalimports" constraintName="versionmetadata_parsedinformationset_pkey" tableName="versionmetadata_parsedinformationset"/>
+        <addForeignKeyConstraint baseColumnNames="versionmetadata_id" baseTableName="versionmetadata_parsedinformationset" constraintName="fkkwhehs7lsx289egbnxfo8cqml" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
     </changeSet>
 </databaseChangeLog>
