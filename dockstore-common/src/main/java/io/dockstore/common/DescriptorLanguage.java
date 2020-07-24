@@ -158,6 +158,10 @@ public enum DescriptorLanguage {
     }
 
     public static Optional<FileType> getFileType(String descriptorType) {
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if (StringUtils.containsIgnoreCase(descriptorType, "galaxy")) {
+            return Optional.of(GXFORMAT2.fileType);
+        }
         // this is tricky, since it is used by GA4GH, those APIs can use string of the form PLAIN_CWL
         // which is why we use StringUtils.containsIgnoreCase
         return Arrays.stream(DescriptorLanguage.values())
