@@ -305,7 +305,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
-        final PermissionsInterface authorizer = PermissionsFactory.getAuthorizer(tokenDAO, configuration);
+        final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
         final EntryResource entryResource = new EntryResource(toolDAO, versionDAO, configuration);
         environment.jersey().register(entryResource);
