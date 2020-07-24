@@ -141,8 +141,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
-    // Warning: this is eagerly loaded
-    @JsonIgnore
+    // Warning: this is eagerly loaded because of two reasons:
+    // the 4 @ApiModelProperty that uses version metadata
+    // This OneToOne
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent")
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
@@ -387,6 +388,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionMetadata.doiStatus;
     }
 
+    // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
         return this.getVersionMetadata().author;

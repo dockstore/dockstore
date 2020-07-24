@@ -81,7 +81,7 @@ public class VersionMetadata {
     @JoinColumn(name = "id")
     protected Version parent;
 
-    // Explicit LAZY, just in case
+    // Explicit LAZY, just in case.  Currently used by nothing on the frontend or CLI.
     @ElementCollection(fetch = FetchType.LAZY, targetClass = ParsedInformation.class)
     protected Set<ParsedInformation> parsedInformationSet = new HashSet<>();
 
