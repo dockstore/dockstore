@@ -3342,26 +3342,6 @@ paths:
         - bearer: []
       tags:
         - containers
-  /containers/{containerId}/unstar:
-    delete:
-      description: Unstar a tool.
-      operationId: unstarEntry
-      parameters:
-        - in: path
-          name: containerId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - containers
   /containers/{containerId}/updateTagPaths:
     put:
       description: Change the tool paths.
@@ -3610,7 +3590,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -5161,28 +5141,6 @@ paths:
       summary: Return list of users who starred the given approved organization.
       tags:
         - organizations
-  /organizations/{organizationId}/unstar:
-    delete:
-      description: Unstar an organization.
-      operationId: unstarOrganization
-      parameters:
-        - description: Organization ID.
-          in: path
-          name: organizationId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      summary: Unstar an organization.
-      tags:
-        - organizations
   /organizations/{organizationId}/user:
     delete:
       description: Remove a user from an organization.
@@ -6483,7 +6441,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -7678,26 +7636,6 @@ paths:
             application/json:
               schema:
                 type: string
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - workflows
-  /workflows/{workflowId}/unstar:
-    delete:
-      description: Unstar a workflow.
-      operationId: unstarEntry_1
-      parameters:
-        - in: path
-          name: workflowId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
           description: default response
       security:
         - bearer: []
