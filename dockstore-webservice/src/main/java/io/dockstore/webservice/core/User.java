@@ -327,10 +327,6 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.isAdmin = isAdmin;
     }
 
-    public void setIsCurator(boolean isCurator) {
-        this.curator = isCurator;
-    }
-
     public Set<Entry> getEntries() {
         return entries;
     }

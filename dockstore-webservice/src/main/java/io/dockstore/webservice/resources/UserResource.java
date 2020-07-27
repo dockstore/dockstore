@@ -771,13 +771,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
         }
 
+        if (authUser.getId() == user.getId()) {
+            throw new CustomWebApplicationException("You cannot modify your own privileges", HttpStatus.SC_FORBIDDEN);
+        }
+
         if (privilegeRequest.isAdmin() != user.getIsAdmin() && !authUser.getIsAdmin()) {
-            throw new CustomWebApplicationException("You do not have privileges to set/remove administrative rights", HttpStatus.SC_FORBIDDEN);
-        } else if (privilegeRequest.isAdmin() != user.getIsAdmin() && authUser == user) {
-            throw new CustomWebApplicationException("You cannot remove your own administrative rights", HttpStatus.SC_FORBIDDEN);
+            throw new CustomWebApplicationException("You do not have privileges to modify administrative rights", HttpStatus.SC_FORBIDDEN);
         } else if (privilegeRequest.isAdmin() != user.getIsAdmin() || privilegeRequest.isCurator() != user.isCurator()) {
             user.setIsAdmin(privilegeRequest.isAdmin());
-            user.setIsCurator((privilegeRequest.isCurator()));
+            user.setCurator(privilegeRequest.isCurator());
             tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
         }
         return user;
