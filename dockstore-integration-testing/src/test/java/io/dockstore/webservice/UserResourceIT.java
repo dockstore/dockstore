@@ -528,11 +528,12 @@ public class UserResourceIT extends BaseIT {
 
         privilegeRequest.setCurator(true);
         adminApi.setUserPrivilege(user.getId(), privilegeRequest);
+        assertFalse(userApi.getUser().isIsAdmin());
         assertTrue(userApi.getUser().isCurator());
 
         try {
             userApi.setUserPrivilege(admin.getId(), privilegeRequest);
-            assertFalse("Should have triggered an exception", false);
+            fail("Curator should not be able to set admin permissions");
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
@@ -544,7 +545,7 @@ public class UserResourceIT extends BaseIT {
         privilegeRequest.setAdmin(false);
         try {
             adminApi.setUserPrivilege(admin.getId(), privilegeRequest);
-            assertFalse("Should have triggered an exception", false);
+            fail("User should not be able to set their own permissions");
         } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
