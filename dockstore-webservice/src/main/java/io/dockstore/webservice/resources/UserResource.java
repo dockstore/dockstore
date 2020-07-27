@@ -781,8 +781,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (privilegeRequest.isAdmin() != user.getIsAdmin() && !authUser.getIsAdmin()) {
             throw new CustomWebApplicationException("You do not have privileges to modify administrative rights", HttpStatus.SC_FORBIDDEN);
         }
+
         //Else if the request's settings is different from the privileges of the user that is being modified: update the privileges with the request
-        else if (privilegeRequest.isAdmin() != user.getIsAdmin() || privilegeRequest.isCurator() != user.isCurator()) {
+        if (privilegeRequest.isAdmin() != user.getIsAdmin() || privilegeRequest.isCurator() != user.isCurator()) {
             user.setIsAdmin(privilegeRequest.isAdmin());
             user.setCurator(privilegeRequest.isCurator());
             tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
