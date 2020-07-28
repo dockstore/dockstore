@@ -474,7 +474,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
         if (dockerRegistry == null) {
-            throw new CustomWebApplicationException("a repository is now required", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("A repository is required", HttpStatus.SC_BAD_REQUEST);
         }
         dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
 
