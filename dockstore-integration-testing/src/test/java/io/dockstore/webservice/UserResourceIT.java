@@ -535,7 +535,7 @@ public class UserResourceIT extends BaseIT {
         try {
             userApi.setUserPrivileges(privilegeRequest, admin.getId());
             fail("Curator should not be able to set admin permissions");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
 
@@ -547,7 +547,7 @@ public class UserResourceIT extends BaseIT {
         try {
             adminApi.setUserPrivileges(privilegeRequest, admin.getId());
             fail("User should not be able to set their own permissions");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
 
@@ -556,7 +556,7 @@ public class UserResourceIT extends BaseIT {
         try {
             userApi.setUserPrivileges(privilegeRequest, admin.getId());
             fail("User with no curator or admin rights should not be able to access the API call");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
     }
