@@ -555,7 +555,7 @@ public class UserResourceIT extends BaseIT {
         try {
             userApi.setUserPrivilege(admin.getId(), privilegeRequest);
             fail("User with no curator or admin rights should not be able to access the API call");
-        } catch (ApiException ex){
+        } catch (ApiException ex) {
             assertEquals(ex.getCode(), HttpStatus.SC_FORBIDDEN);
         }
     }
