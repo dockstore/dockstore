@@ -104,6 +104,7 @@ public class VersionMetadata {
     }
 
     public void setParsedInformationSet(Set<ParsedInformation> parsedInformationSet) {
-        this.parsedInformationSet = parsedInformationSet;
+        this.parsedInformationSet.clear();
+        this.parsedInformationSet.addAll(parsedInformationSet);
     }
 }
