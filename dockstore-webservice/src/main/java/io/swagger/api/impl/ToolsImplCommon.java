@@ -191,7 +191,7 @@ public final class ToolsImplCommon {
                     toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
                     break;
                 case DOCKSTORE_GXFORMAT2:
-                    toolVersion.addDescriptorTypeItem(DescriptorType.GXFORMAT2);
+                    toolVersion.addDescriptorTypeItem(DescriptorType.GALAXY);
                     break;
                 // DOCKSTORE-2428 - demo how to add new workflow language
                 //                case DOCKSTORE_SWL:

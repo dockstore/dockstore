@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes.  This exposes the hashcode for specific image versions to verify that the container version pulled is actually the version that was indexed by the registry.
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -1158,7 +1158,7 @@ components:
               - WDL
               - NFL
               - SERVICE
-              - GXFORMAT2
+              - GALAXY
             type: string
           type: array
         id:
@@ -3379,26 +3379,6 @@ paths:
         - bearer: []
       tags:
         - containers
-  /containers/{containerId}/unstar:
-    delete:
-      description: Unstar a tool.
-      operationId: unstarEntry
-      parameters:
-        - in: path
-          name: containerId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - containers
   /containers/{containerId}/updateTagPaths:
     put:
       description: Change the tool paths.
@@ -3647,7 +3627,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -4639,7 +4619,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
       security:
         - bearer: []
@@ -5196,28 +5176,6 @@ paths:
                 uniqueItems: true
           description: default response
       summary: Return list of users who starred the given approved organization.
-      tags:
-        - organizations
-  /organizations/{organizationId}/unstar:
-    delete:
-      description: Unstar an organization.
-      operationId: unstarOrganization
-      parameters:
-        - description: Organization ID.
-          in: path
-          name: organizationId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      summary: Unstar an organization.
       tags:
         - organizations
   /organizations/{organizationId}/user:
@@ -6520,7 +6478,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -7715,26 +7673,6 @@ paths:
             application/json:
               schema:
                 type: string
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - workflows
-  /workflows/{workflowId}/unstar:
-    delete:
-      description: Unstar a workflow.
-      operationId: unstarEntry_1
-      parameters:
-        - in: path
-          name: workflowId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
           description: default response
       security:
         - bearer: []

@@ -1618,20 +1618,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/unstar")
-    @Operation(operationId = "unstarEntry", description = "Unstar a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @Deprecated(since = "1.8.0")
-    public void unstarEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-    }
-
     @GET
     @Path("/{workflowId}/starredUsers")
     @Timed
