@@ -1,9 +1,10 @@
 package io.dockstore.webservice.core;
 
-import javax.persistence.Embeddable;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.validation.constraints.NotNull;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 
 import io.dockstore.common.DescriptorLanguage;
 
@@ -11,9 +12,12 @@ import io.dockstore.common.DescriptorLanguage;
  * Putting DescriptorLanguage here instead of using a map with DescriptorLanguage because there may be cases where the language is
  * irrelevant. For example, workflows only have one language.
  */
-@Embeddable
+@Entity
 public class ParsedInformation {
-    @NotNull
+    @Id
+    @GeneratedValue
+    private Long id;
+
     @Enumerated(EnumType.STRING)
     private DescriptorLanguage descriptorLanguage;
     private boolean hasHTTPImports = false;

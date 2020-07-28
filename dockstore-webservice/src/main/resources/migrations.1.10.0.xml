@@ -45,18 +45,21 @@
             SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_WDL', 'WDL');
         </sql>
     </changeSet>
-    <changeSet author="gluu (generated)" id="1595619674649-12">
-        <createTable tableName="versionmetadata_parsedinformationset">
-            <column name="versionmetadata_id" type="BIGINT">
+    <changeSet author="gluu (generated)" id="parsed_information">
+        <createSequence sequenceName="hibernate_sequence"/>
+        <createTable tableName="parsedinformation">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="parsedinformation_pkey"/>
             </column>
-            <column name="descriptorlanguage" type="VARCHAR(255)">
-            </column>
+            <column name="descriptorlanguage" type="VARCHAR(255)"/>
             <column name="hashttpimports" type="BOOLEAN">
+                <constraints nullable="false"/>
             </column>
             <column name="haslocalimports" type="BOOLEAN">
+                <constraints nullable="false"/>
             </column>
+            <column name="parsed_information_id" type="BIGINT"/>
         </createTable>
-        <addPrimaryKey columnNames="versionmetadata_id, hashttpimports, haslocalimports" constraintName="versionmetadata_parsedinformationset_pkey" tableName="versionmetadata_parsedinformationset"/>
-        <addForeignKeyConstraint baseColumnNames="versionmetadata_id" baseTableName="versionmetadata_parsedinformationset" constraintName="fkkwhehs7lsx289egbnxfo8cqml" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
+        <addForeignKeyConstraint baseColumnNames="parsed_information_id" baseTableName="parsedinformation" constraintName="fkejasvvt9o5yhhw36vuancsn8b" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
     </changeSet>
 </databaseChangeLog>
