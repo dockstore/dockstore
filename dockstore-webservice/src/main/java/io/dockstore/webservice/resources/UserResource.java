@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -42,7 +43,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
@@ -764,10 +764,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/user/{userId}/privileges")
     @Consumes("application/json")
     @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User setUserPrivilege(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-                                 @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userID,
-                                 @ApiParam(value = "Set privilege for a user", required = true) PrivilegeRequest privilegeRequest) {
+    @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
+    public User setUserPrivilege(@Parameter(hidden = true, name = "user")@Auth User authUser,
+                                 @Parameter(name = "User ID", required = true) @PathParam("userId") Long userID,
+                                 @Parameter(name = "Set privilege for a user", required = true) PrivilegeRequest privilegeRequest) {
         User user = userDAO.findById(userID);
         if (user == null) {
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
