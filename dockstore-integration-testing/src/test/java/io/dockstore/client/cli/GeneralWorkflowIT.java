@@ -907,7 +907,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId());
 
         final long count7 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
+            "select count(*) from workflow where actualdefaultversion = 952 and author is null and email is null and description is null",
             long.class);
         assertEquals("The given workflow should now have contact info and description", 0, count7);
 
