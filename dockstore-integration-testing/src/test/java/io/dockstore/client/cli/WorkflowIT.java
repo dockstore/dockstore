@@ -206,12 +206,13 @@ public class WorkflowIT extends BaseIT {
         return workflow;
     }
 
-    // Tests 4 things:
+    // Tests 6 things:
     // WDL workflow with local imports
     // WDL workflow with HTTP imports
     // CWL workflow with local imports
     // CWL workflow with HTTP imports
     // WDL workflow with HTTP imports and local imports and nested
+    // CWL workflow with HTTP imports and local imports and nested
     @Test
     public void testLanguageParsingInformation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);

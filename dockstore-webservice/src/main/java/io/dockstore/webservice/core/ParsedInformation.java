@@ -9,6 +9,8 @@ import javax.persistence.Id;
 import io.dockstore.common.DescriptorLanguage;
 
 /**
+ * This is for information gained after parsing the workflow with a language parser (WDLHandler, CWLHandler, etc)
+ *
  * Putting DescriptorLanguage here instead of using a map with DescriptorLanguage because there may be cases where the language is
  * irrelevant. For example, workflows only have one language.
  */
