@@ -42,6 +42,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
@@ -761,6 +762,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork
     @RolesAllowed({"admin", "curator"})
     @Path("/user/{userId}/privileges")
+    @Consumes("application/json")
     @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User setUserPrivilege(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
