@@ -240,9 +240,9 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Override
     public int compareTo(@NotNull Tag that) {
-        return ComparisonChain.start().compare(this.name, that.name, Ordering.natural().nullsFirst())
-            .compare(this.reference, reference, Ordering.natural().nullsFirst())
-            .compare(this.lastBuilt, that.lastBuilt, Ordering.natural().nullsFirst()).result();
+        return ComparisonChain.start().compare(this.name, that.getName(), Ordering.natural().nullsFirst())
+            .compare(this.reference, that.getReference(), Ordering.natural().nullsFirst())
+            .compare(this.lastBuilt, that.getLastBuilt(), Ordering.natural().nullsFirst()).result();
     }
 
     @Override
