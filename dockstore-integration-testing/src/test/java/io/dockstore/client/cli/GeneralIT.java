@@ -434,8 +434,6 @@ public class GeneralIT extends BaseIT {
 
         workflow = workflowApi.refresh(workflow.getId());
         SourceFile sourceFile = workflow.getWorkflowVersions().get(0).getSourceFiles().get(0);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        workflowApi.publish(workflow.getId(), publishRequest);
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
@@ -446,7 +444,6 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         sourceFile = tool.getWorkflowVersions().get(0).getSourceFiles().get(0);
-        toolApi.publish(tool.getId(), publishRequest);
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
@@ -454,6 +451,24 @@ public class GeneralIT extends BaseIT {
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
+        // check that verified platforms can't be viewed by another user if entry isn't published
+        boolean throwsError = false;
+        io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi user1EntriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
+        try {
+            versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            fail("Should not be able to verified platforms if not published and doesn't belong to user.");
+        }
+
+        // verified platforms can be viewed by others once published
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(workflow.getId(), publishRequest);
+        versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
+        Assert.assertEquals(1, versionsVerified.size());
     }
 
     @Test
@@ -461,6 +476,7 @@ public class GeneralIT extends BaseIT {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
         Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, "wdl", null, null);
@@ -512,6 +528,25 @@ public class GeneralIT extends BaseIT {
         SortedSet set = new TreeSet(fileTypes);
         assertEquals(set.size(), fileTypes.size());
 
+        // check that file types can't be viewed by another user if entry isn't published
+        boolean throwsError = false;
+        io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi user1entriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
+        try {
+            fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            fail("Should not be able to grab a versions file types if not published and doesn't belong to user.");
+        }
+
+        // file types can be viewed by others once published
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(workflow.getId(), publishRequest);
+        fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(2, fileTypes.size());
+        assertFalse(fileTypes.get(0) == fileTypes.get(1));
     }
 
     // Tests 1.10.0 migration where id=adddescriptortypecolumn

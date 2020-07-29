@@ -1988,6 +1988,25 @@ public class WorkflowIT extends BaseIT {
         if (!throwsError) {
             fail("Should not be able to grab sourcefile for a version not belonging to a workflow");
         }
+
+        // check that sourcefiles can't be viewed by another user if entry isn't published
+        final io.dockstore.openapi.client.ApiClient user1OpenAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi user1WorkflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(user1OpenAPIWebClient);
+        throwsError = false;
+        try {
+            sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
+        }
+
+        // sourcefiles can be viewed by others once published
+        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
     }
 
     /**

@@ -1451,7 +1451,6 @@ public class BasicIT extends BaseIT {
         // Sourcefiles for tags
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", null);
         Tag tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst().get();
-        tool = toolApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
 
         List<SourceFile> sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
         Assert.assertNotNull(sourceFiles);
@@ -1492,6 +1491,25 @@ public class BasicIT extends BaseIT {
         if (!throwsError) {
             Assert.fail("Should not be able to grab sourcefile for a version not belonging to a tool");
         }
+
+        // check that sourcefiles can't be viewed by another user if they aren't published
+        throwsError = false;
+        final io.dockstore.openapi.client.ApiClient user2OpenAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.ContainertagsApi user2toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(user2OpenAPIWebClient);
+        try {
+            sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            throwsError = true;
+        }
+        if (!throwsError) {
+            Assert.fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
+        }
+
+        // sourcefiles can be viewed by others once published
+        tool = toolApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+        sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
     }
 
 }
