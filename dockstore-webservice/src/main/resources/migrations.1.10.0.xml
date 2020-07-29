@@ -45,7 +45,4 @@
             SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_WDL', 'WDL');
         </sql>
     </changeSet>
-    <changeSet author="natalieperez (generated)" id="addNotNullConstraintToTypeColumn">
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="type" tableName="sourcefile"/>
-    </changeSet>
 </databaseChangeLog>

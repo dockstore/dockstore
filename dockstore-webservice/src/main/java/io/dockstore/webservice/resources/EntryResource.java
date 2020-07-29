@@ -181,10 +181,8 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
         }
 
-        SortedSet<DescriptorLanguage.FileType> fileTypes = new TreeSet<>();
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
-        fileTypes = sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
-        return fileTypes;
+        return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
     }
 
     @POST

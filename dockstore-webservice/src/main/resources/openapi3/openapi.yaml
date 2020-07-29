@@ -779,6 +779,7 @@ components:
     SourceFile:
       properties:
         absolutePath:
+          description: Absolute path of sourcefile in git repo
           type: string
         checksums:
           items:
@@ -792,8 +793,10 @@ components:
           format: int64
           type: integer
         path:
+          description: Path to sourcefile relative to its parent
           type: string
         type:
+          description: Enumerates the type of file
           enum:
             - DOCKSTORE_CWL
             - DOCKSTORE_WDL
@@ -1715,7 +1718,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -3650,7 +3653,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -4642,7 +4645,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
       security:
         - bearer: []
@@ -6475,7 +6478,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []

@@ -49,6 +49,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -77,7 +78,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
-    @NotNull
+    @Schema(description = "Enumerates the type of file", required = true)
     private DescriptorLanguage.FileType type;
 
     @Column(columnDefinition = "TEXT")
@@ -86,12 +87,12 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
-    @NotNull
+    @Schema(description = "Path to sourcefile relative to its parent", required = true)
     private String path;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
-    @NotNull
+    @Schema(description = "Absolute path of sourcefile in git repo", required = true)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")
