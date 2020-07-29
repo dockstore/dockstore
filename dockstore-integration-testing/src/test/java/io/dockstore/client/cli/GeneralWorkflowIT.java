@@ -38,7 +38,6 @@ import io.swagger.client.model.WorkflowVersion;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -850,7 +849,6 @@ public class GeneralWorkflowIT extends BaseIT {
      * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
      */
     @Test
-    @Ignore("DOCK-3315")
     public void testGitlab() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -909,7 +907,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId());
 
         final long count7 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
+            "select count(*) from workflow where actualdefaultversion = 952 and author is null and email is null and description is null",
             long.class);
         assertEquals("The given workflow should now have contact info and description", 0, count7);
 
@@ -992,7 +990,6 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests manually publishing a gitlab workflow
      */
     @Test
-    @Ignore("DOCK-3315")
     public void testManualPublishGitlab() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
