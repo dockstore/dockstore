@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes.  This exposes the hashcode for specific image versions to verify that the container version pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -816,6 +816,10 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/VerificationInformation'
           type: object
+      required:
+        - absolutePath
+        - path
+        - type
       type: object
     StarRequest:
       properties:
@@ -1386,8 +1390,14 @@ components:
       properties:
         metadata:
           type: string
+        path:
+          type: string
+        platformVersion:
+          type: string
         source:
           type: string
+        verified:
+          type: boolean
         versionId:
           format: int64
           type: integer
@@ -2402,7 +2412,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -2428,7 +2438,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -3570,6 +3580,56 @@ paths:
         - bearer: []
       tags:
         - entries
+  /entries/{entryId}/versions/{versionId}/fileTypes:
+    get:
+      description: Retrieve the file types of a version's sourcefile
+      operationId: getVersionsFileTypes
+      parameters:
+        - description: Entry to retrieve the version from
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Version to retrieve the sourcefile types from
+          in: path
+          name: versionId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  enum:
+                    - DOCKSTORE_CWL
+                    - DOCKSTORE_WDL
+                    - DOCKERFILE
+                    - CWL_TEST_JSON
+                    - WDL_TEST_JSON
+                    - NEXTFLOW
+                    - NEXTFLOW_CONFIG
+                    - NEXTFLOW_TEST_PARAMS
+                    - DOCKSTORE_YML
+                    - DOCKSTORE_SERVICE_YML
+                    - DOCKSTORE_SERVICE_TEST_JSON
+                    - DOCKSTORE_SERVICE_OTHER
+                    - DOCKSTORE_GXFORMAT2
+                    - GXFORMAT2_TEST_FILE
+                    - DOCKSTORE_SWL
+                    - SWL_TEST_JSON
+                  type: string
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - entries
   /entries/{id}/aliases:
     post:
       description: Add aliases linked to a entry in Dockstore.
@@ -3590,7 +3650,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -4454,7 +4514,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
         - bearer: []
@@ -4582,7 +4642,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -6415,7 +6475,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -6441,7 +6501,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []

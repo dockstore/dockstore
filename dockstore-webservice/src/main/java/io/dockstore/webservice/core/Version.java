@@ -75,7 +75,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
         @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
-                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata) FROM Version version "
+                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path ,verifiedbysource.verified) FROM Version version "
                         + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                         + "version.parent.id = :entryId"
         )

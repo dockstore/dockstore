@@ -77,6 +77,7 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
+    @NotNull
     private DescriptorLanguage.FileType type;
 
     @Column(columnDefinition = "TEXT")
@@ -85,10 +86,12 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
+    @NotNull
     private String path;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
+    @NotNull
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")

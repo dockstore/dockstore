@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.ws.rs.core.Response;
 
@@ -41,6 +43,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
+import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
@@ -49,6 +52,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -435,7 +439,7 @@ public class GeneralIT extends BaseIT {
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
-        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata, platformversion) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho', '1.0')");
         versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
@@ -449,6 +453,64 @@ public class GeneralIT extends BaseIT {
         testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(1, versionsVerified.size());
+
+    }
+
+    @Test
+    public void testGettingVersionsFileTypes() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final HostedApi hostedApi = new HostedApi(webClient);
+        io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
+
+        Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, "wdl", null, null);
+        SourceFile sourceFile = new SourceFile();
+        sourceFile.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
+        sourceFile.setContent("workflow potato {\n}");
+        sourceFile.setPath("/Dockstore.wdl");
+        sourceFile.setAbsolutePath("/Dockstore.wdl");
+
+        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
+        List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(1, fileTypes.size());
+        assertEquals(SourceFile.TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
+
+        SourceFile testFile = new SourceFile();
+        testFile.setType(SourceFile.TypeEnum.WDL_TEST_JSON);
+        testFile.setContent("{}");
+        testFile.setPath("/test.wdl.json");
+        testFile.setAbsolutePath("/test.wdl.json");
+
+        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile, testFile));
+        workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
+        fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(2, fileTypes.size());
+        assertFalse(fileTypes.get(0) == fileTypes.get(1));
+
+        DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), "CWL", "namespace", null);
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        SourceFile cwl = new SourceFile();
+        cwl.setContent("class: CommandLineTool\ncwlVersion: v1.0");
+        cwl.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        cwl.setPath("/Dockstore.cwl");
+        cwl.setAbsolutePath("/Dockstore.cwl");
+        SourceFile testcwl = new SourceFile();
+        testcwl.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        testcwl.setContent("{}");
+        testcwl.setPath("/test.cwl.json");
+        testcwl.setAbsolutePath("/test.cwl.json");
+        tool = hostedApi.editHostedTool(tool.getId(), Lists.newArrayList(sourceFile, testFile, cwl, testcwl, dockerfile));
+
+        fileTypes = entriesApi.getVersionsFileTypes(tool.getId(), tool.getWorkflowVersions().get(0).getId());
+        assertEquals(5, fileTypes.size());
+        // ensure no duplicates
+        SortedSet set = new TreeSet(fileTypes);
+        assertEquals(set.size(), fileTypes.size());
 
     }
 
