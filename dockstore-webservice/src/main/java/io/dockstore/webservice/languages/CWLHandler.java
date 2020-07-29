@@ -54,6 +54,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -500,8 +501,10 @@ public class CWLHandler implements LanguageHandlerInterface {
      * @param parsedInformation     A version's version metadata's
      * @param mapValue              Import string (should be either a local import or an HTTP(s) import
      */
-    private void setImportsBasedOnMapValue(ParsedInformation parsedInformation, String mapValue) {
-        if (mapValue.startsWith("http")) {
+    public static void setImportsBasedOnMapValue(ParsedInformation parsedInformation, String mapValue) {
+        String[] schemes = {"http", "https"};
+        UrlValidator urlValidator = new UrlValidator(schemes);
+        if (urlValidator.isValid(mapValue)) {
             parsedInformation.setHasHTTPImports(true);
         } else {
             parsedInformation.setHasLocalImports(true);
