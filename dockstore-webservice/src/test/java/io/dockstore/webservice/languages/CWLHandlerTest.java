@@ -63,5 +63,9 @@ public class CWLHandlerTest {
         CWLHandler.setImportsBasedOnMapValue(parsedInformation4, "potato.cwl");
         Assert.assertFalse(parsedInformation4.isHasHTTPImports());
         Assert.assertTrue(parsedInformation4.isHasLocalImports());
+        ParsedInformation parsedInformation5 = new ParsedInformation();
+        CWLHandler.setImportsBasedOnMapValue(parsedInformation5, "httppotato.cwl");
+        Assert.assertFalse(parsedInformation5.isHasHTTPImports());
+        Assert.assertTrue(parsedInformation5.isHasLocalImports());
     }
 }
