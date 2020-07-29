@@ -45,21 +45,4 @@
             SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_WDL', 'WDL');
         </sql>
     </changeSet>
-    <changeSet author="gluu (generated)" id="parsed_information">
-        <createSequence sequenceName="hibernate_sequence"/>
-        <createTable tableName="parsedinformation">
-            <column name="id" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="parsedinformation_pkey"/>
-            </column>
-            <column name="descriptorlanguage" type="VARCHAR(255)"/>
-            <column name="hashttpimports" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
-            <column name="haslocalimports" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
-            <column name="parsed_information_id" type="BIGINT"/>
-        </createTable>
-        <addForeignKeyConstraint baseColumnNames="parsed_information_id" baseTableName="parsedinformation" constraintName="version_metadata_parsed_information_fk_contraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
-    </changeSet>
 </databaseChangeLog>

@@ -18,16 +18,14 @@ package io.dockstore.webservice.core;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapsId;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -83,8 +81,7 @@ public class VersionMetadata {
     protected Version parent;
 
     // Explicit LAZY, just in case.  Currently used by nothing on the frontend or CLI.
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "parsed_information_id")
+    @Embedded
     protected Set<ParsedInformation> parsedInformationSet = new HashSet<>();
 
     @Id
