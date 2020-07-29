@@ -5,7 +5,7 @@ import io.swagger.annotations.ApiModel;
 
 /**
  * This is an object to encapsulate the privilege request. Used for requests in
- * /users/user/{userid}/privileges
+ * /users/{userid}/privileges
  */
 @ApiModel("PrivilegeRequest")
 public class PrivilegeRequest {
