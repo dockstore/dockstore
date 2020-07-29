@@ -553,6 +553,8 @@ public class UserResourceIT extends BaseIT {
 
         privilegeRequest.setCurator(false);
         adminApi.setUserPrivileges(privilegeRequest, user.getId());
+        assertFalse(userApi.getUser().isIsAdmin());
+        assertFalse(userApi.getUser().isCurator());
         try {
             userApi.setUserPrivileges(privilegeRequest, admin.getId());
             fail("User with no curator or admin rights should not be able to access the API call");

@@ -773,18 +773,18 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
         }
 
-        //This ensures that the user cannot modify their own privileges.
+        // This ensures that the user cannot modify their own privileges.
         if (authUser.getId() == user.getId()) {
             throw new CustomWebApplicationException("You cannot modify your own privileges", HttpStatus.SC_FORBIDDEN);
         }
 
-        //If the request's admin setting is different than the admin status of the user that is being modified, and the auth user is not an admin: Throw an error.
-        //This ensures that a curator cannot modify the admin status of any user.
+        // If the request's admin setting is different than the admin status of the user that is being modified, and the auth user is not an admin: Throw an error.
+        // This ensures that a curator cannot modify the admin status of any user.
         if (privilegeRequest.isAdmin() != user.getIsAdmin() && !authUser.getIsAdmin()) {
             throw new CustomWebApplicationException("You do not have privileges to modify administrative rights", HttpStatus.SC_FORBIDDEN);
         }
 
-        //Else if the request's settings is different from the privileges of the user that is being modified: update the privileges with the request
+        // Else if the request's settings is different from the privileges of the user that is being modified: update the privileges with the request
         if (privilegeRequest.isAdmin() != user.getIsAdmin() || privilegeRequest.isCurator() != user.isCurator()) {
             user.setIsAdmin(privilegeRequest.isAdmin());
             user.setCurator(privilegeRequest.isCurator());
