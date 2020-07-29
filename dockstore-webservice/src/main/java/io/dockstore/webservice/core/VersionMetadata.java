@@ -15,11 +15,12 @@
  */
 package io.dockstore.webservice.core;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -81,8 +82,12 @@ public class VersionMetadata {
     protected Version parent;
 
     // Explicit LAZY, just in case.  Currently used by nothing on the frontend or CLI.
-    @Embedded
-    protected Set<ParsedInformation> parsedInformationSet = new HashSet<>();
+    @ElementCollection
+    @CollectionTable(
+            name = "PARSED_INFORMATION",
+            joinColumns = @JoinColumn(name = "VERSION_METADATA_ID")
+    )
+    protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
 
     @Id
     @Column(name = "id")
@@ -96,11 +101,11 @@ public class VersionMetadata {
         this.id = id;
     }
 
-    public Set<ParsedInformation> getParsedInformationSet() {
+    public List<ParsedInformation> getParsedInformationSet() {
         return parsedInformationSet;
     }
 
-    public void setParsedInformationSet(Set<ParsedInformation> parsedInformationSet) {
+    public void setParsedInformationSet(List<ParsedInformation> parsedInformationSet) {
         this.parsedInformationSet.clear();
         this.parsedInformationSet.addAll(parsedInformationSet);
     }
