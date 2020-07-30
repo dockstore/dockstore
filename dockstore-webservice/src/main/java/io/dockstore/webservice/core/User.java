@@ -233,7 +233,11 @@ public class User implements Principal, Comparable<User>, Serializable {
      * @param tokenDAO The TokenDAO to access the user's tokens
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
-        updateUserMetadata(tokenDAO, null);
+        updateUserMetadata(tokenDAO, null, true);
+    }
+
+    public void updateUserMetadata(final TokenDAO tokenDAO, boolean throwException) {
+        updateUserMetadata(tokenDAO, null, throwException);
     }
 
     /**
@@ -243,22 +247,22 @@ public class User implements Principal, Comparable<User>, Serializable {
      * @param tokenDAO The TokenDAO to access the user's tokens
      * @param source   The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
      */
-    public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source) {
+    public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source, boolean throwException) {
         if (source == null) {
-            if (!updateGoogleMetadata(tokenDAO) && !updateGithubMetadata(tokenDAO)) {
+            if (!updateGoogleMetadata(tokenDAO) && !updateGithubMetadata(tokenDAO) && throwException) {
                 throw new CustomWebApplicationException(
                         "No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
             }
         } else {
             switch (source) {
             case GOOGLE_COM:
-                if (!updateGoogleMetadata(tokenDAO)) {
+                if (!updateGoogleMetadata(tokenDAO) && throwException) {
                     throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.",
                             HttpStatus.SC_FORBIDDEN);
                 }
                 break;
             case GITHUB_COM:
-                if (!updateGithubMetadata(tokenDAO)) {
+                if (!updateGithubMetadata(tokenDAO) && throwException) {
                     throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.",
                             HttpStatus.SC_FORBIDDEN);
                 }
