@@ -152,9 +152,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
 
-        if (!entry.getIsPublished()) {
-            checkUser(user.get(), entry);
-        }
+        checkEntryPermissions(user, entry);
 
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
@@ -165,16 +163,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @UnitOfWork(readOnly = true)
     @Path("/{entryId}/versions/{versionId}/fileTypes")
     @ApiOperation(value = "Retrieve the file types of a version's sourcefiles",  hidden = true)
-    @Operation(operationId = "getVersionsFileTypes", description = "Retrieve the file types of a version's sourcefile", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getVersionsFileTypes", description = "Retrieve the unique file types of a version's sourcefile", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<DescriptorLanguage.FileType> getVersionsFileTypes(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
             @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
 
-        if (!entry.getIsPublished()) {
-            checkUser(user.get(), entry);
-        }
+        checkEntryPermissions(user, entry);
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
@@ -183,6 +179,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
         return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    public void checkEntryPermissions(@Auth @Parameter(hidden = true, name = "user") final Optional<User> user,
+            final Entry<? extends Entry, ? extends Version> entry) {
+        if (!entry.getIsPublished()) {
+            if (user.isEmpty()) {
+                throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_UNAUTHORIZED);
+            }
+            checkUser(user.get(), entry);
+        }
     }
 
     @POST
