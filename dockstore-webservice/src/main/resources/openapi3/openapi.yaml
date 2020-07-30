@@ -4461,7 +4461,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -5888,34 +5888,6 @@ paths:
         - bearer: []
       tags:
         - users
-  /users/user/{userId}/privileges:
-    put:
-      description: Updates the provided userID to admin or curator status, ADMIN or CURATOR only
-      operationId: setUserPrivileges
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PrivilegeRequest'
-        required: true
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
   /users/username/{username}:
     get:
       description: Get a user by username.
@@ -6093,6 +6065,34 @@ paths:
                 items:
                   $ref: '#/components/schemas/Tool'
                 type: array
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
+  /users/{userId}/privileges:
+    put:
+      description: Updates the provided userID to admin or curator status, ADMIN or CURATOR only
+      operationId: setUserPrivileges
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivilegeRequest'
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
           description: default response
       security:
         - bearer: []
