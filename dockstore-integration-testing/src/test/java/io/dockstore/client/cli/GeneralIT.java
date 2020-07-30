@@ -75,6 +75,8 @@ import static org.junit.Assert.fail;
  */
 @Category({ ConfidentialTest.class, ToolTest.class })
 public class GeneralIT extends BaseIT {
+    public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
+
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
 
     @Rule
@@ -791,7 +793,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool c = getContainer();
         c.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
         c.setNamespace("dockstoretestuser2");
-        c.setName("dockstore-tool-imports");
+        c.setName(DOCKSTORE_TOOL_IMPORTS);
         c.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         c = containersApi.registerManual(c);
 
@@ -799,7 +801,7 @@ public class GeneralIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
 
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         int size = containersApi.getContainer(c.getId(), null).getWorkflowVersions().size();
@@ -815,7 +817,7 @@ public class GeneralIT extends BaseIT {
 
         // so should overall refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(c.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
@@ -823,7 +825,7 @@ public class GeneralIT extends BaseIT {
 
         // so should organizational refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
-        usersApi.refreshToolsByOrganization(userid, container.getNamespace(), null);
+        usersApi.refreshToolsByOrganization(userid, container.getNamespace(), DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(c.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
@@ -839,7 +841,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool tool = getContainer();
         tool.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
         tool.setNamespace("dockstoretestuser2");
-        tool.setName("dockstore-tool-imports");
+        tool.setName(DOCKSTORE_TOOL_IMPORTS);
         tool.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         tool = containersApi.registerManual(tool);
 
@@ -847,7 +849,7 @@ public class GeneralIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
 
         // Check that the image information has been grabbed on refresh.
         List<Tag> tags = containersApi.getContainer(tool.getId(), null).getWorkflowVersions();
@@ -865,7 +867,7 @@ public class GeneralIT extends BaseIT {
         testingPostgres.runUpdateStatement("update image set image_id = 'dummyid'");
         assertEquals("dummyid",
             containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
         final long count2 = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         assertEquals(imageID, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
         assertEquals(imageID2, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(1).getImages().get(0).getImageID());
