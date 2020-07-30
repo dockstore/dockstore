@@ -452,16 +452,13 @@ public class GeneralIT extends BaseIT {
         Assert.assertEquals(1, versionsVerified.size());
 
         // check that verified platforms can't be viewed by another user if entry isn't published
-        boolean throwsError = false;
         io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.EntriesApi user1EntriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
         try {
             versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            throwsError = true;
-        }
-        if (!throwsError) {
             fail("Should not be able to verified platforms if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("This entry is not published.", ex.getMessage());
         }
 
         // verified platforms can be viewed by others once published
@@ -479,7 +476,7 @@ public class GeneralIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
-        Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, "wdl", null, null);
+        Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, DescriptorLanguage.WDL.toString(), null, null);
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
         sourceFile.setContent("workflow potato {\n}");
@@ -504,7 +501,7 @@ public class GeneralIT extends BaseIT {
         assertEquals(2, fileTypes.size());
         assertFalse(fileTypes.get(0) == fileTypes.get(1));
 
-        DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), "CWL", "namespace", null);
+        DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setPath("/Dockerfile");
@@ -529,16 +526,13 @@ public class GeneralIT extends BaseIT {
         assertEquals(set.size(), fileTypes.size());
 
         // check that file types can't be viewed by another user if entry isn't published
-        boolean throwsError = false;
         io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.EntriesApi user1entriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
         try {
             fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            throwsError = true;
-        }
-        if (!throwsError) {
             fail("Should not be able to grab a versions file types if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("This entry is not published.", ex.getMessage());
         }
 
         // file types can be viewed by others once published

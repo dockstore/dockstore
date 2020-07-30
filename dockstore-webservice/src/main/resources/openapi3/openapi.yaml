@@ -1718,7 +1718,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -3585,7 +3585,7 @@ paths:
         - entries
   /entries/{entryId}/versions/{versionId}/fileTypes:
     get:
-      description: Retrieve the file types of a version's sourcefile
+      description: Retrieve the unique file types of a version's sourcefile
       operationId: getVersionsFileTypes
       parameters:
         - description: Entry to retrieve the version from
@@ -3653,7 +3653,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -4517,7 +4517,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []

@@ -1482,27 +1482,23 @@ public class BasicIT extends BaseIT {
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         Tag tool2tag = tool2.getWorkflowVersions().get(0);
-        boolean throwsError = false;
+
         try {
             sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tool2tag.getId(), null);
+            Assert.fail("Shouldn't be able to get a tag's sourcefiles if it doesn't belong to the tool.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            throwsError = true;
-        }
-        if (!throwsError) {
-            Assert.fail("Should not be able to grab sourcefile for a version not belonging to a tool");
+            Assert.assertEquals("Version " + tool2tag.getId() + " does not exist for this entry", ex.getMessage());
         }
 
+
         // check that sourcefiles can't be viewed by another user if they aren't published
-        throwsError = false;
         final io.dockstore.openapi.client.ApiClient user2OpenAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.ContainertagsApi user2toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(user2OpenAPIWebClient);
         try {
             sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
-        } catch (io.dockstore.openapi.client.ApiException e) {
-            throwsError = true;
-        }
-        if (!throwsError) {
             Assert.fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            Assert.assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
 
         // sourcefiles can be viewed by others once published

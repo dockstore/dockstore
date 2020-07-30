@@ -184,7 +184,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public void checkEntryPermissions(final Optional<User> user, final Entry<? extends Entry, ? extends Version> entry) {
         if (!entry.getIsPublished()) {
             if (user.isEmpty()) {
-                throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_UNAUTHORIZED);
+                throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_NOT_FOUND);
             }
             checkUser(user.get(), entry);
         }
