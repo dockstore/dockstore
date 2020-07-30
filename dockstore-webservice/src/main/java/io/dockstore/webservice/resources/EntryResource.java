@@ -181,8 +181,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
     }
 
-    public void checkEntryPermissions(@Auth @Parameter(hidden = true, name = "user") final Optional<User> user,
-            final Entry<? extends Entry, ? extends Version> entry) {
+    public void checkEntryPermissions(final Optional<User> user, final Entry<? extends Entry, ? extends Version> entry) {
         if (!entry.getIsPublished()) {
             if (user.isEmpty()) {
                 throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_UNAUTHORIZED);
