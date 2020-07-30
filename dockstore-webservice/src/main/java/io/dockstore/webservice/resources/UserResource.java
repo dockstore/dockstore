@@ -450,6 +450,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return repositories;
     }
 
+    /**
+     *
+     * @param authUser
+     * @param userId
+     * @param organization
+     * @param dockerRegistry not really a registry the way we use it now (ex: quay.io), rename in 1.10 this is actually a repository
+     * @return
+     */
     @GET
     @Timed
     @UnitOfWork
@@ -459,17 +467,17 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = "Docker registry") @QueryParam("dockerRegistry") String dockerRegistry) {
+            @ApiParam(value = "Docker registry", required = true) @QueryParam("dockerRegistry") String dockerRegistry) {
 
         checkUser(authUser, userId);
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
-        if (dockerRegistry != null) {
-            dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
-        } else {
-            dockerRepoResource.refreshToolsForUser(userId, organization);
+        if (dockerRegistry == null) {
+            throw new CustomWebApplicationException("A repository is required", HttpStatus.SC_BAD_REQUEST);
         }
+        dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
+
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());

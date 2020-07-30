@@ -155,8 +155,7 @@ public class BasicIT extends BaseIT {
 
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
-        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
+        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", "quayandbitbucket");
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
@@ -166,8 +165,7 @@ public class BasicIT extends BaseIT {
 
         // refresh
         try {
-            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
-            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", "quayandbitbucket");
             fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
@@ -175,6 +173,18 @@ public class BasicIT extends BaseIT {
             // should not delete tools
             final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
             Assert.assertEquals("there should be no change in count of tools", secondToolCount, thirdToolCount);
+        }
+    }
+
+    @Test
+    public void testDisallowedOrgRefresh() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(client);
+        try {
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+            fail("Refresh by organization should fail");
+        } catch (ApiException e) {
+            assertTrue("Should see error message", e.getMessage().contains("Missing the required parameter"));
         }
     }
 
