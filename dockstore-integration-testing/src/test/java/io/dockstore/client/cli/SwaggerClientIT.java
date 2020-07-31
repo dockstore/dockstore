@@ -320,6 +320,10 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(1, tools.size());
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(0, tools.size());
+        tools = toolApi.toolsGet(null, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
+        assertEquals(1, tools.size());
+        tools = toolApi.toolsGet(null, null, null, null, null, "Foo", null, null, null);
+        assertEquals(0, tools.size());
     }
 
     @Test
