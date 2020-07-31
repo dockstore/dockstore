@@ -684,6 +684,26 @@ components:
           format: int64
           type: integer
       type: object
+    ParsedInformation:
+      properties:
+        descriptorLanguage:
+          enum:
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+            - cwl
+            - wdl
+          type: string
+        hasHTTPImports:
+          type: boolean
+        hasLocalImports:
+          type: boolean
+      required:
+        - descriptorLanguage
+      type: object
     Permission:
       properties:
         email:
@@ -929,6 +949,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         wdl_path:
           type: string
         workingDirectory:
@@ -1386,8 +1408,21 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workingDirectory:
           type: string
+      type: object
+    VersionMetadata:
+      properties:
+        id:
+          format: int64
+          type: integer
+        parsedInformationSet:
+          items:
+            $ref: '#/components/schemas/ParsedInformation'
+          type: array
+          uniqueItems: true
       type: object
     VersionVerifiedPlatform:
       properties:
@@ -1434,8 +1469,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -1641,6 +1676,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workflow_path:
           type: string
         workingDirectory:

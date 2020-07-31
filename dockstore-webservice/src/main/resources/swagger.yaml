@@ -7269,6 +7269,26 @@ definitions:
       userId:
         type: "integer"
         format: "int64"
+  ParsedInformation:
+    type: "object"
+    required:
+    - "descriptorLanguage"
+    properties:
+      descriptorLanguage:
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
+        - "OLD_CWL"
+        - "OLD_WDL"
+      hasHTTPImports:
+        type: "boolean"
+      hasLocalImports:
+        type: "boolean"
   Permission:
     type: "object"
     properties:
@@ -7442,6 +7462,8 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      versionMetadata:
+        $ref: "#/definitions/VersionMetadata"
       reference:
         type: "string"
         position: 1
@@ -8076,6 +8098,8 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      versionMetadata:
+        $ref: "#/definitions/VersionMetadata"
       workingDirectory:
         type: "string"
       reference:
@@ -8210,6 +8234,17 @@ definitions:
         type: "string"
         position: 24
     description: "Base class for versions of entries in the Dockstore"
+  VersionMetadata:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      parsedInformationSet:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/ParsedInformation"
   Workflow:
     type: "object"
     required:
@@ -8443,6 +8478,8 @@ definitions:
         readOnly: true
       legacyVersion:
         type: "boolean"
+      versionMetadata:
+        $ref: "#/definitions/VersionMetadata"
       workingDirectory:
         type: "string"
       reference:

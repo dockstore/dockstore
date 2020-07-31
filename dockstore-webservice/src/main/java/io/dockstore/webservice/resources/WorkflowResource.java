@@ -521,6 +521,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Hibernate.initialize(workflow.getUsers());
         initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        // This should be removed once we have a workflows/{workflowId}/version/{versionId} endpoint
+        workflow.getWorkflowVersions().forEach(version -> Hibernate.initialize(version.getVersionMetadata().getParsedInformationSet()));
         return workflow;
     }
 

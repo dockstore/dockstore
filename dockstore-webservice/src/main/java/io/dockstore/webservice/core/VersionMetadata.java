@@ -15,7 +15,12 @@
  */
 package io.dockstore.webservice.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -76,6 +81,14 @@ public class VersionMetadata {
     @JoinColumn(name = "id")
     protected Version parent;
 
+    // Explicit LAZY, just in case.  Currently used by nothing on the frontend or CLI.
+    @ElementCollection
+    @CollectionTable(
+            name = "PARSED_INFORMATION",
+            joinColumns = @JoinColumn(name = "VERSION_METADATA_ID")
+    )
+    protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
+
     @Id
     @Column(name = "id")
     private long id;
@@ -86,5 +99,14 @@ public class VersionMetadata {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public List<ParsedInformation> getParsedInformationSet() {
+        return parsedInformationSet;
+    }
+
+    public void setParsedInformationSet(List<ParsedInformation> parsedInformationSet) {
+        this.parsedInformationSet.clear();
+        this.parsedInformationSet.addAll(parsedInformationSet);
     }
 }
