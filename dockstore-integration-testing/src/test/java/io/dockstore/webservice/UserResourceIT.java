@@ -13,7 +13,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.dockstore.webservice;
 
 import java.util.List;
@@ -26,6 +25,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -510,4 +510,56 @@ public class UserResourceIT extends BaseIT {
         assertEquals("DockstoreTestUser2", userProfile.getUsername());
     }
 
+    @Test
+    public void testSetUserPrivilege() {
+        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+
+        io.dockstore.openapi.client.model.PrivilegeRequest privilegeRequest = new PrivilegeRequest();
+        io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
+        io.dockstore.openapi.client.model.User admin = adminApi.getUser();
+        io.dockstore.openapi.client.model.User user = userApi.getUser();
+
+        privilegeRequest.setAdmin(false);
+        adminApi.setUserPrivileges(privilegeRequest, user.getId());
+        adminApi.setUserPrivileges(privilegeRequest, user.getId());
+        assertFalse(userApi.getUser().isIsAdmin());
+        assertFalse(userApi.getUser().isCurator());
+
+        privilegeRequest.setCurator(true);
+        adminApi.setUserPrivileges(privilegeRequest, user.getId());
+        assertFalse(userApi.getUser().isIsAdmin());
+        assertTrue(userApi.getUser().isCurator());
+
+        try {
+            userApi.setUserPrivileges(privilegeRequest, admin.getId());
+            fail("Curator should not be able to set admin permissions");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+        }
+
+        privilegeRequest.setAdmin(true);
+        adminApi.setUserPrivileges(privilegeRequest, user.getId());
+        assertTrue(userApi.getUser().isIsAdmin());
+
+        privilegeRequest.setAdmin(false);
+        try {
+            adminApi.setUserPrivileges(privilegeRequest, admin.getId());
+            fail("User should not be able to set their own permissions");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+        }
+
+        privilegeRequest.setCurator(false);
+        adminApi.setUserPrivileges(privilegeRequest, user.getId());
+        assertFalse(userApi.getUser().isIsAdmin());
+        assertFalse(userApi.getUser().isCurator());
+        try {
+            userApi.setUserPrivileges(privilegeRequest, admin.getId());
+            fail("User with no curator or admin rights should not be able to access the API call");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+        }
+    }
 }

@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes.  This exposes the hashcode for specific image versions to verify that the container version pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -714,6 +714,13 @@ components:
             - WRITER
             - READER
           type: string
+      type: object
+    PrivilegeRequest:
+      properties:
+        admin:
+          type: boolean
+        curator:
+          type: boolean
       type: object
     Profile:
       properties:
@@ -1742,7 +1749,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -3627,7 +3634,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -4491,7 +4498,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
         - bearer: []
@@ -6100,6 +6107,34 @@ paths:
         - bearer: []
       tags:
         - users
+  /users/{userId}/privileges:
+    put:
+      description: Updates the provided userID to admin or curator status, ADMIN or CURATOR only
+      operationId: setUserPrivileges
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivilegeRequest'
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
   /users/{userId}/services:
     get:
       description: List all services owned by the authenticated user.
@@ -6452,7 +6487,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -6478,7 +6513,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []
