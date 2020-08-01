@@ -67,7 +67,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
 
         // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+        Workflow refresh = workflowApi.refresh(githubWorkflow.getId(), true);
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
         Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
