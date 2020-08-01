@@ -308,11 +308,15 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         version.setName(ref.getName());
                         version.setReference(ref.getName());
                         OffsetDateTime date = ref.getTarget().getDate();
-                        version.setLastModified(Date.from(date.toInstant()));
+                        Date lastModifiedDate = Date.from(date.toInstant());
+                        version.setLastModified(lastModifiedDate);
                         String commitId = getCommitID(repositoryId, version);
 
                         if (toRefreshVersion(ref.getName(), commitId, existingDefaults, hardRefresh)) {
+                            LOG.info(gitUsername + ": Looking at reference: " + ref.getName());
                             version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+
+                            version.setLastModified(lastModifiedDate);
                             String calculatedPath = version.getWorkflowPath();
                             // Now grab source files
                             DescriptorLanguage.FileType identifiedType = workflow.getFileType();

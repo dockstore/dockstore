@@ -163,6 +163,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId, boolean hardRefresh) {
         if (toRefreshVersion(branchName, commitId, existingDefaults, hardRefresh)) {
+            LOG.info(gitUsername + ": Looking at reference: " + branchName);
             // Initialize workflow version
             WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
             String calculatedPath = version.getWorkflowPath();
