@@ -173,4 +173,14 @@
             UPDATE lambdaevent SET repository = split_part(repository,'/',2);
         </sql>
     </changeSet>
+
+    <changeSet author="aduncan" id="addSyncedColumnToWorkflowVersion">
+        <addColumn tableName="workflowversion">
+            <column name="synced" type="BOOLEAN"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET synced = true;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

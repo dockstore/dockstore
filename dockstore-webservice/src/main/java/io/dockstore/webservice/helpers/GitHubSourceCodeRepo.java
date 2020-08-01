@@ -84,6 +84,7 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -369,7 +370,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -398,9 +399,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
             if (ref != null) {
-                WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
-                    repository, null, versionName);
-                if (version != null) {
+                if (toRefreshVersion(ref.getLeft(), ref.getRight(), existingDefaults, hardRefresh)) {
+                    WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
+                            repository, null, versionName);
+                    if (version != null) {
+                        workflow.addWorkflowVersion(version);
+                    }
+                } else {
+                    // Version didn't change, but we don't want to delete
+                    // Add a stub version with commit ID set to an ignore value
+                    LOG.info(gitUsername + ": Skipping reference: " + ref.toString());
+                    WorkflowVersion version = new WorkflowVersion();
+                    version.setName(ref.getLeft());
+                    version.setReference(ref.getLeft());
+                    version.setLastModified(ref.getMiddle());
+                    version.setCommitID(SKIP_COMMIT_ID);
                     workflow.addWorkflowVersion(version);
                 }
             }

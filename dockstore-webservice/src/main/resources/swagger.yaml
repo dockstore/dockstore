@@ -5844,6 +5844,12 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "hardRefresh"
+        in: "query"
+        description: "refresh all versions"
+        required: false
+        type: "boolean"
+        default: true
       responses:
         200:
           description: "successful operation"
@@ -5872,6 +5878,12 @@ paths:
         description: "version"
         required: true
         type: "string"
+      - name: "hardRefresh"
+        in: "query"
+        description: "refresh all versions"
+        required: false
+        type: "boolean"
+        default: true
       responses:
         200:
           description: "successful operation"
@@ -8661,6 +8673,11 @@ definitions:
         - "SWARM"
         - "KUBERNETES"
         - "HELM"
+      synced:
+        type: "boolean"
+        position: 105
+        description: "Whether or not the version has been refreshed since its last\
+          \ edit on Dockstore."
     description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"

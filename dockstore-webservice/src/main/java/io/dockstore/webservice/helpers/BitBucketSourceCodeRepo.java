@@ -57,6 +57,8 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+
 /**
  * @author dyuen
  */
@@ -292,7 +294,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             PaginatedRefs paginatedRefs = refsApi
@@ -302,22 +304,38 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 paginatedRefs.getValues().forEach(ref -> {
                     String branchName = ref.getName();
                     if (versionName.isEmpty() || Objects.equals(branchName, versionName.get())) {
+                        WorkflowVersion version = new WorkflowVersion();
+                        version.setName(ref.getName());
+                        version.setReference(ref.getName());
                         OffsetDateTime date = ref.getTarget().getDate();
-                        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
                         version.setLastModified(Date.from(date.toInstant()));
-                        String calculatedPath = version.getWorkflowPath();
-                        // Now grab source files
-                        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
-                        // TODO: No exceptions are caught here in the event of a failed call
-                        SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                        String commitId = getCommitID(repositoryId, version);
 
-                        // Use default test parameter file if either new version or existing version that hasn't been edited
-                        createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
-                        workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                        if (toRefreshVersion(ref.getName(), commitId, existingDefaults, hardRefresh)) {
+                            version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+                            String calculatedPath = version.getWorkflowPath();
+                            // Now grab source files
+                            DescriptorLanguage.FileType identifiedType = workflow.getFileType();
+                            // TODO: No exceptions are caught here in the event of a failed call
+                            SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                        version.setCommitID(getCommitID(repositoryId, version));
+                            // Use default test parameter file if either new version or existing version that hasn't been edited
+                            createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
+                            workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
 
-                        version = versionValidation(version, workflow, calculatedPath);
+                            version.setCommitID(getCommitID(repositoryId, version));
+
+                            version = versionValidation(version, workflow, calculatedPath);
+                            if (version != null) {
+                                workflow.addWorkflowVersion(version);
+                            }
+                        } else {
+                            // Version didn't change, but we don't want to delete
+                            // Add a stub version with commit ID set to an ignore value
+                            LOG.info(gitUsername + ": Skipping reference: " + ref.getName());
+                            version.setCommitID(SKIP_COMMIT_ID);
+                            workflow.addWorkflowVersion(version);
+                        }
                     }
                 });
 

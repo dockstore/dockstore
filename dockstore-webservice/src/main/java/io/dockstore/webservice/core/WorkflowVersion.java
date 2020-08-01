@@ -77,6 +77,10 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
     private boolean isLegacyVersion = true;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
+    private boolean synced = true;
+
     /**
      * In theory, this should be in a ServiceVersion.
      * In practice, our use of generics caused this to mess up bigtype, so we'll prototype with this for now.
@@ -124,6 +128,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         super.setReference(workflowVersion.getReference());
         workflowPath = workflowVersion.getWorkflowPath();
         lastModified = workflowVersion.getLastModified();
+        synced = workflowVersion.isSynced();
     }
 
     public void clone(WorkflowVersion tag) {
@@ -223,6 +228,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setToolTableJson(final String toolTableJson) {
         this.toolTableJson = toolTableJson;
+    }
+
+    public boolean isSynced() {
+        return synced;
+    }
+
+    public void setSynced(boolean synced) {
+        this.synced = synced;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "

@@ -348,7 +348,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     logFullWorkflowRefresh(workflow);
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty());
+                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty(), true);
 
                     // Take ownership of these workflows
                     workflow.getUsers().add(user);
@@ -359,7 +359,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty());
+                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty(), true);
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
@@ -409,8 +409,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        return refreshWorkflow(user, workflowId, Optional.empty());
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "refresh all versions", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
+        return refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
     }
 
     @GET
@@ -422,13 +423,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refreshVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "version", required = true) @PathParam("version") String version) {
+            @ApiParam(value = "version", required = true) @PathParam("version") String version,
+            @ApiParam(value = "refresh all versions", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
         if (version == null || version.isBlank()) {
             String msg = "Version is a required field for this endpoint.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        return refreshWorkflow(user, workflowId, Optional.of(version));
+        return refreshWorkflow(user, workflowId, Optional.of(version), hardRefresh);
     }
 
     /**
@@ -437,9 +439,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param user User who made call
      * @param workflowId ID of workflow
      * @param version Name of the workflow version
+     * @param hardRefresh refresh all versions, even if no changes
      * @return Updated workflow
      */
-    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version) {
+    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version, boolean hardRefresh) {
         Workflow existingWorkflow = workflowDAO.findById(workflowId);
         checkEntry(existingWorkflow);
         checkUser(user, existingWorkflow);
@@ -476,7 +479,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create a new workflow based on the current state of the Git repository
         final Workflow newWorkflow = sourceCodeRepo
-                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version);
+                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version, hardRefresh);
         existingWorkflow.getUsers().add(user);
 
         // Use new workflow to update existing workflow
@@ -486,9 +489,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Refresh checker workflow
         if (!existingWorkflow.isIsChecker() && existingWorkflow.getCheckerWorkflow() != null) {
             if (version.isEmpty()) {
-                refresh(user, existingWorkflow.getCheckerWorkflow().getId());
+                refresh(user, existingWorkflow.getCheckerWorkflow().getId(), hardRefresh);
             } else {
-                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get());
+                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get(), hardRefresh);
             }
         }
         existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
@@ -559,6 +562,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         updateInfo(wf, workflow);
+        wf.getWorkflowVersions().stream().forEach(workflowVersion -> workflowVersion.setSynced(false));
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
@@ -743,6 +747,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+                version.setSynced(false);
             }
         }
         PublicStateManager.getInstance().handleIndexUpdate(wf, StateManagerMode.UPDATE);
@@ -1254,6 +1259,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
         checkNotFrozen(workflowVersion);
+        workflowVersion.setSynced(false);
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
@@ -1292,6 +1298,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         WorkflowVersion workflowVersion = potentialWorkflowVersion.get();
         checkNotFrozen(workflowVersion);
+        workflowVersion.setSynced(false);
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
@@ -1388,6 +1395,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
                 // remove existing copy and add the new one
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+
+                existingTag.setSynced(false);
 
                 // If path changed then update dirty bit to true
                 if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
