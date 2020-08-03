@@ -684,6 +684,26 @@ components:
           format: int64
           type: integer
       type: object
+    ParsedInformation:
+      properties:
+        descriptorLanguage:
+          enum:
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+            - cwl
+            - wdl
+          type: string
+        hasHTTPImports:
+          type: boolean
+        hasLocalImports:
+          type: boolean
+      required:
+        - descriptorLanguage
+      type: object
     Permission:
       properties:
         email:
@@ -694,6 +714,13 @@ components:
             - WRITER
             - READER
           type: string
+      type: object
+    PrivilegeRequest:
+      properties:
+        admin:
+          type: boolean
+        curator:
+          type: boolean
       type: object
     Profile:
       properties:
@@ -929,6 +956,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         wdl_path:
           type: string
         workingDirectory:
@@ -1386,8 +1415,21 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workingDirectory:
           type: string
+      type: object
+    VersionMetadata:
+      properties:
+        id:
+          format: int64
+          type: integer
+        parsedInformationSet:
+          items:
+            $ref: '#/components/schemas/ParsedInformation'
+          type: array
+          uniqueItems: true
       type: object
     VersionVerifiedPlatform:
       properties:
@@ -1440,8 +1482,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -1647,6 +1689,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workflow_path:
           type: string
         workingDirectory:
@@ -1718,7 +1762,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -3653,7 +3697,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -4517,7 +4561,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
         - bearer: []
@@ -6126,6 +6170,34 @@ paths:
         - bearer: []
       tags:
         - users
+  /users/{userId}/privileges:
+    put:
+      description: Updates the provided userID to admin or curator status, ADMIN or CURATOR only
+      operationId: setUserPrivileges
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivilegeRequest'
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
   /users/{userId}/services:
     get:
       description: List all services owned by the authenticated user.
@@ -6504,7 +6576,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []

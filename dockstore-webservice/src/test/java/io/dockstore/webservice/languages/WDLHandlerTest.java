@@ -114,8 +114,9 @@ public class WDLHandlerTest {
     public void testRepeatedFilename() throws IOException {
         final String content = getGatkSvMainDescriptorContent();
         final WDLHandler wdlHandler = new WDLHandler();
+        Version emptyVersion = new WorkflowVersion();
         final Map<String, SourceFile> map = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+                .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
         // There are 9 Structs.wdl files, in gatk-sv-clinical, but the one in gncv is not imported
         final long structsWdlCount = map.keySet().stream().filter(key -> key.contains("Structs.wdl")).count();
         Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
@@ -128,9 +129,10 @@ public class WDLHandlerTest {
     @Test
     public void testGetToolsForComplexWorkflow() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
+        Version emptyVersion = new WorkflowVersion();
         final String content = getGatkSvMainDescriptorContent();
         final Map<String, SourceFile> sourceFileMap = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+                .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
 
         // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
         // up; just have it return null
