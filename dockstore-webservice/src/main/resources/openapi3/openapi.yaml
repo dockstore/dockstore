@@ -694,15 +694,13 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         hasHTTPImports:
           type: boolean
         hasLocalImports:
           type: boolean
-      required:
-        - descriptorLanguage
       type: object
     Permission:
       properties:
@@ -1422,7 +1420,6 @@ components:
           items:
             $ref: '#/components/schemas/ParsedInformation'
           type: array
-          uniqueItems: true
       type: object
     VersionVerifiedPlatform:
       properties:
@@ -1469,8 +1466,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         descriptorTypeSubclass:
           enum:
@@ -1749,7 +1746,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -3634,7 +3631,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -4498,7 +4495,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -6487,7 +6484,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []
@@ -6513,7 +6510,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
