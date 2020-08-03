@@ -244,8 +244,9 @@ public class User implements Principal, Comparable<User>, Serializable {
      * Updates the given user's profile with metadata depending on the source
      * If no source is specified try updating both
      *
-     * @param tokenDAO The TokenDAO to access the user's tokens
-     * @param source   The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
+     * @param tokenDAO          The TokenDAO to access the user's tokens
+     * @param source            The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
+     * @param throwException    The option to throw an error and stop the API call from processing if tokens are not valid
      */
     public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source, boolean throwException) {
         try {
