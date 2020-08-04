@@ -60,4 +60,7 @@
         </createTable>
         <addForeignKeyConstraint baseColumnNames="version_metadata_id" baseTableName="parsed_information" constraintName="version_metadata_parsed_information_fk_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
     </changeSet>
+    <changeSet id="removeOrphanVersionMetadata" author="gluu">
+        <sql dbms="postgresql">delete from version_metadata vm where vm.id not in (select wv.id from workflowversion wv union select t.id from tag t);</sql>
+    </changeSet>
 </databaseChangeLog>
