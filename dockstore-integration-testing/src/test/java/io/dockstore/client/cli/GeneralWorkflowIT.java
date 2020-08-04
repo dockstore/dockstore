@@ -100,7 +100,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
 
         // Refresh
-        workflow = workflowsApi.refresh(workflow.getId(), true);
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
 
         // Publish
