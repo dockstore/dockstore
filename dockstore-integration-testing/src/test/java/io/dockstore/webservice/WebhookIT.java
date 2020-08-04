@@ -129,11 +129,11 @@ public class WebhookIT extends BaseIT {
         }
 
         // Should be able to refresh a legacy version
-        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", true);
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", false);
 
         // Should not be able to refresh a GitHub App version
         try {
-            workflowApi.refreshVersion(workflow.getId(), "0.1", true);
+            workflowApi.refreshVersion(workflow.getId(), "0.1", false);
             fail("Should not be able to refresh");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
@@ -141,7 +141,7 @@ public class WebhookIT extends BaseIT {
 
         // Refresh a version that doesn't already exist
         try {
-            workflowApi.refreshVersion(workflow.getId(), "dne", true);
+            workflowApi.refreshVersion(workflow.getId(), "dne", false);
             fail("Should not be able to refresh");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
@@ -155,7 +155,7 @@ public class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET commitid = NULL where name = '0.2'");
 
         // Refresh before frozen should populate the commit id
-        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", true);
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", false);
         WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> Objects.equals(wv.getName(), "0.2")).findFirst().get();
         assertNotNull(workflowVersion.getCommitID());
 
@@ -170,7 +170,7 @@ public class WebhookIT extends BaseIT {
         assertTrue(workflowVersion.isFrozen());
 
         // Ensure refresh does not touch frozen legacy version
-        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", true);
+        workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", false);
         assertNotNull(workflow);
         workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> Objects.equals(wv.getName(), "0.2")).findFirst().get();
         assertNull(workflowVersion.getCommitID());

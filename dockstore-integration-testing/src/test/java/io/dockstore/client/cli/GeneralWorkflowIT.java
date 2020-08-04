@@ -251,7 +251,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertTrue("Should have testCWL version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "testCWL")));
 
         try {
-            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", true);
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
             fail("Should not be able to refresh a version that does not exist");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
@@ -520,18 +520,18 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.restub(workflow.getId());
 
         // Refresh a single version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", true);
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
         assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
         assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
         assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
 
         // Refresh another version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import", true);
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import", false);
         assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
         assertTrue("Should have cwl_import version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")));
 
         try {
-            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", true);
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
             fail("Should not be able to refresh a version that does not exist");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
@@ -1019,18 +1019,18 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.restub(workflow.getId());
 
         // Refresh a single version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", true);
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
         assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
         assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
         assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
 
         // Refresh another version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "test", true);
+        workflow = workflowsApi.refreshVersion(workflow.getId(), "test", false);
         assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
         assertTrue("Should have test version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "test")));
 
         try {
-            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", true);
+            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
             fail("Should not be able to refresh a version that does not exist");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
