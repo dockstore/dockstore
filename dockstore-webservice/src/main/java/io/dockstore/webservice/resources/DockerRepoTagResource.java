@@ -125,6 +125,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
 
         for (Tag tag : tags) {
             if (mapOfExistingTags.containsKey(tag.getId())) {
+                if (tool.getActualDefaultVersion() != null && tool.getActualDefaultVersion().getId() == tag.getId() && tag.isHidden()) {
+                    throw new CustomWebApplicationException("You cannot hide the default version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 // remove existing copy and add the new one
                 Tag existingTag = mapOfExistingTags.get(tag.getId());
 
