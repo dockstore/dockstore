@@ -70,7 +70,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Column
     @JsonProperty("last_modified")
-    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102)
+    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102, dataType = "long")
     private Date lastModified;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
