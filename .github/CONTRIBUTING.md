@@ -12,7 +12,7 @@
 
 * Ensure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable.
 
-* Before submitting, please read ensure that your code passes the style guide and tests. See the GitHub status checks on your PR for more details. 
+* Before submitting, please read ensure that your code passes the style guide and tests. See the GitHub status checks on your PR for more details. Note that until we resolve [this](https://github.com/dockstore/dockstore/issues/3541) issue, a large number of integration tests will fail.
 
 #### **Do you intend to add a new feature or change an existing one?**
 
