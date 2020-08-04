@@ -613,7 +613,7 @@ public class UserResourceIT extends BaseIT {
         io.dockstore.openapi.client.model.User admin = adminApi.getUser();
         io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
 
-        // Delete all of the tokens for every user
+        // Delete all of the tokens (except for Dockstore tokens) for every user
         testingPostgres.runUpdateStatement("DELETE FROM token WHERE tokensource <> 'dockstore'");
 
         assertNull(userProfile.getEmail());
