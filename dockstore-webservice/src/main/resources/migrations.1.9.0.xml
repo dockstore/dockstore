@@ -176,11 +176,9 @@
 
     <changeSet author="aduncan" id="addSyncedColumnToWorkflowVersion">
         <addColumn tableName="workflowversion">
-            <column name="synced" type="BOOLEAN"/>
+            <column name="synced" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
-        <sql dbms="postgresql">
-            UPDATE workflowversion SET synced = true;
-        </sql>
     </changeSet>
-
 </databaseChangeLog>
