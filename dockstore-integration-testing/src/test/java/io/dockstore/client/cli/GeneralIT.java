@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,6 +42,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
+import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
@@ -507,6 +509,78 @@ public class GeneralIT extends BaseIT {
             });
         });
     }
+
+    @Test
+    public void testHiddenAndDefaultTags() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+
+        List<Tag> tags = tool.getWorkflowVersions();
+        Tag tag = tags.get(0);
+        tag.setHidden(true);
+        toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
+
+        try {
+            tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+
+        // Set the default version to a non-hidden version
+        tag.setHidden(false);
+        toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
+        tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+
+        // Should not be able to hide a default version
+        tag.setHidden(true);
+        try {
+            toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
+            fail("Should not be able to hide a default version");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        // Test the same for hosted tools
+        DockstoreTool hostedTool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        SourceFile cwl = new SourceFile();
+        cwl.setContent("class: CommandLineTool\ncwlVersion: v1.0");
+        cwl.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        cwl.setPath("/Dockstore.cwl");
+        cwl.setAbsolutePath("/Dockstore.cwl");
+        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+
+        Tag hostedTag = hostedTool.getWorkflowVersions().get(0);
+        hostedTag.setHidden(true);
+        try {
+            toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
+            fail("Shouldn't be able to hide the default version.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        cwl.setContent("class: CommandLineTool\n\ncwlVersion: v1.0");
+        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+        hostedTag = hostedTool.getWorkflowVersions().stream().filter(v -> v.getName().equals("1")).findFirst().get();
+        hostedTag.setHidden(true);
+        toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
+
+        try {
+            toolApi.updateToolDefaultVersion(hostedTool.getId(), hostedTag.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+    }
+
 
     /**
      * Tests hiding and unhiding different versions of a container (quick registered)
