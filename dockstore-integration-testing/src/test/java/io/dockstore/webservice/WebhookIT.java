@@ -109,7 +109,7 @@ public class WebhookIT extends BaseIT {
                 DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
         
         // Refresh should work
-        workflow = workflowApi.refresh(workflow.getId(), true);
+        workflow = workflowApi.refresh(workflow.getId(), false);
         assertEquals("Workflow should be FULL mode", Workflow.ModeEnum.FULL, workflow.getMode());
         assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion));
 
@@ -122,7 +122,7 @@ public class WebhookIT extends BaseIT {
 
         // Refresh should now no longer work
         try {
-            workflowApi.refresh(workflow.getId(), true);
+            workflowApi.refresh(workflow.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
@@ -320,7 +320,7 @@ public class WebhookIT extends BaseIT {
 
         // Refresh
         try {
-            client.refresh(workflow.getId(), true);
+            client.refresh(workflow.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());

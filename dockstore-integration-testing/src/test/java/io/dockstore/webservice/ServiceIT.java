@@ -225,7 +225,7 @@ public class ServiceIT extends BaseIT {
 
         // Should not be able to refresh service
         try {
-            client.refresh(services.get(0).getId(), true);
+            client.refresh(services.get(0).getId(), false);
             fail("Should not be able refresh a service");
         } catch (ApiException ex) {
             assertEquals("Should fail since you cannot refresh services.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
@@ -368,7 +368,7 @@ public class ServiceIT extends BaseIT {
         assertEquals("Should only have one service", 1, services.size());
         io.swagger.client.model.Workflow service = services.get(0);
         try {
-            client.refresh(service.getId(), true);
+            client.refresh(service.getId(), false);
             fail("Should fail on refresh and not reach this point");
         } catch (ApiException ex) {
             assertEquals("Should not be able to refresh a dockstore.yml service.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
