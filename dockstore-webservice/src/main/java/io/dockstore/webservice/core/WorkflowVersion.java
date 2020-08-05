@@ -79,7 +79,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
-    private boolean synced = true;
+    private boolean synced = false;
 
     /**
      * In theory, this should be in a ServiceVersion.
