@@ -12,12 +12,12 @@
 
 * Ensure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable.
 
-* Before submitting, please read ensure that your code passes the style guide and tests. Style is checked via Maven Stylecheck and Enforcer while tests are run with Maven surefire and failsafe. 
+* Before submitting, please read ensure that your code passes the style guide and tests. See the GitHub status checks on your PR for more details. Note that until we resolve [this](https://github.com/dockstore/dockstore/issues/3541) issue, a large number of integration tests will fail.
 
 #### **Do you intend to add a new feature or change an existing one?**
 
-* Suggest your change in the [gitter forum](https://gitter.im/dockstore/dockstore) and start writing code.
+* Suggest your change as a [github issue](https://github.com/dockstore/dockstore/issues) either by creating a new issue or commenting on an existing one and start writing code. The relevant repositories are nested under our [organization](https://github.com/dockstore) including the webservice (dockstore), the user interface (dockstore-ui2), the command-line interface (dockstore-cli), and many more. 
 
 #### **Do you want to contribute to the Dockstore documentation?**
 
-* Most of our documentation is associated with the UI. https://github.com/dockstore/dockstore-ui/tree/develop/app/docs
+* Most of our documentation is generated from [dockstore-documentation](https://github.com/dockstore/dockstore-documentation).
