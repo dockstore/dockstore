@@ -77,7 +77,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
     private boolean isLegacyVersion = true;
 
-    @Column(nullable = false, columnDefinition = "boolean default true")
+    @Column(nullable = false, columnDefinition = "boolean default false")
     @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
     private boolean synced = false;
 
