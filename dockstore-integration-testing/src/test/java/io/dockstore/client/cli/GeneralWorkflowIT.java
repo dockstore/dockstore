@@ -260,9 +260,9 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Update workflow
         Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
-            .filter(version -> Objects.equals(version.getName(), "master")).findFirst();
+            .filter(version -> Objects.equals(version.getName(), "testCWL")).findFirst();
         if (workflowVersion.isEmpty()) {
-            fail("Master version should exist");
+            fail("testCWL version should exist");
         }
 
         List<WorkflowVersion> workflowVersions = new ArrayList<>();
@@ -273,7 +273,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'master' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
+            "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'testCWL' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
             long.class);
         assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
     }

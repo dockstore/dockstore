@@ -365,6 +365,10 @@ public abstract class SourceCodeRepoInterface {
                             String reference = workflowVersion.getReference();
                             return branch.equals(reference);
                         }).findFirst();
+                // if the main branch is set to hidden, get the latest, non hidden version instead
+                if (firstWorkflowVersion.isPresent() && firstWorkflowVersion.get().isHidden()) {
+                    firstWorkflowVersion = workflowVersions.stream().filter(version -> !version.isHidden()).max(Comparator.comparing(Version::getDate));
+                }
                 firstWorkflowVersion.ifPresentOrElse(version -> entry.checkAndSetDefaultVersion(version.getName()), () -> {
                     if (!workflowVersions.isEmpty()) {
                         Version newestVersion = Collections.max(workflowVersions, Comparator.comparingLong(s -> s.getDate().getTime()));

@@ -233,38 +233,49 @@ public class User implements Principal, Comparable<User>, Serializable {
      * @param tokenDAO The TokenDAO to access the user's tokens
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
-        updateUserMetadata(tokenDAO, null);
+        updateUserMetadata(tokenDAO, null, true);
+    }
+
+    public void updateUserMetadata(final TokenDAO tokenDAO, boolean throwException) {
+        updateUserMetadata(tokenDAO, null, throwException);
     }
 
     /**
      * Updates the given user's profile with metadata depending on the source
      * If no source is specified try updating both
      *
-     * @param tokenDAO The TokenDAO to access the user's tokens
-     * @param source   The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
+     * @param tokenDAO          The TokenDAO to access the user's tokens
+     * @param source            The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
+     * @param throwException    The option to throw an error and stop the API call from processing if tokens are not valid
      */
-    public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source) {
-        if (source == null) {
-            if (!updateGoogleMetadata(tokenDAO) && !updateGithubMetadata(tokenDAO)) {
-                throw new CustomWebApplicationException(
-                        "No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
+    public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source, boolean throwException) {
+        try {
+            if (source == null) {
+                if (!updateGoogleMetadata(tokenDAO) && !updateGithubMetadata(tokenDAO)) {
+                    throw new CustomWebApplicationException(
+                            "No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
+                }
+            } else {
+                switch (source) {
+                case GOOGLE_COM:
+                    if (!updateGoogleMetadata(tokenDAO)) {
+                        throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.",
+                                HttpStatus.SC_FORBIDDEN);
+                    }
+                    break;
+                case GITHUB_COM:
+                    if (!updateGithubMetadata(tokenDAO)) {
+                        throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.",
+                                HttpStatus.SC_FORBIDDEN);
+                    }
+                    break;
+                default:
+                    throw new CustomWebApplicationException("Unrecognized token type: " + source, HttpStatus.SC_BAD_REQUEST);
+                }
             }
-        } else {
-            switch (source) {
-            case GOOGLE_COM:
-                if (!updateGoogleMetadata(tokenDAO)) {
-                    throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.",
-                            HttpStatus.SC_FORBIDDEN);
-                }
-                break;
-            case GITHUB_COM:
-                if (!updateGithubMetadata(tokenDAO)) {
-                    throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.",
-                            HttpStatus.SC_FORBIDDEN);
-                }
-                break;
-            default:
-                throw new CustomWebApplicationException("Unrecognized token type: " + source, HttpStatus.SC_BAD_REQUEST);
+        } catch (Exception ex) { // Catch any exceptions thrown by this method or any nested methods and throw that exception only if the option is toggled
+            if (throwException) {
+                throw ex;
             }
         }
     }

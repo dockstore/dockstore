@@ -1392,6 +1392,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         for (WorkflowVersion version : workflowVersions) {
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
+                if (w.getActualDefaultVersion() != null && w.getActualDefaultVersion().getId() == version.getId() && version.isHidden()) {
+                    throw new CustomWebApplicationException("You cannot hide the default version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 // remove existing copy and add the new one
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
 
