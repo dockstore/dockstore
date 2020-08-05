@@ -225,7 +225,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("there should be 4 versions, there are " + count4, 4, count4);
 
         // attempt to publish it
-        workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
 
         final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
@@ -794,7 +794,8 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("there should be 1 full workflows, there are " + count3, 1, count3);
 
         // Change path for each version so that it is invalid
-        testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.cwl', dirtybit=true");
+        workflow.setWorkflowPath("thisisnotarealpath.cwl");
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Workflow has no valid versions so you cannot publish
@@ -819,7 +820,8 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
         // Set paths to invalid
-        testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.wdl', dirtybit=true");
+        workflow.setWorkflowPath("thisisnotarealpath.wdl");
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Check that versions are invalid

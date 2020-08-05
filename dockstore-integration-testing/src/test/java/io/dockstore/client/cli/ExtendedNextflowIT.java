@@ -123,7 +123,7 @@ public class ExtendedNextflowIT extends BaseIT {
         testingPostgres.runUpdateStatement("update version_metadata set email='bad_potato'");
         testingPostgres.runUpdateStatement("update version_metadata set author='bad_potato'");
         testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
-        final Workflow refreshedBitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId(), false);
+        final Workflow refreshedBitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId(), true);
         byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, null, false);
         // This tests if it can fix outdated metadata
         testWorkflowVersionMetadata(refreshedBitbucketWorkflow);
