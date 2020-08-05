@@ -99,6 +99,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1071,6 +1072,72 @@ public class WorkflowIT extends BaseIT {
         verifyTRSImageConversion(versions, "1.0", 3);
     }
 
+    @Test
+    public void testHiddenAndDefaultVersions() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
+
+        workflow = workflowsApi.refresh(workflow.getId());
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        WorkflowVersion version = workflowVersions.get(0);
+        version.setHidden(true);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+
+        try {
+            workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+
+        // Set the default version to a non-hidden version
+        version.setHidden(false);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+        workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+
+        // Should not be able to hide a default version
+        version.setHidden(true);
+        try {
+            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+            fail("Should not be able to hide a default version");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        // Test same for hosted workflows
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
+        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+
+        WorkflowVersion hostedVersion = hostedWorkflow.getWorkflowVersions().get(0);
+        hostedVersion.setHidden(true);
+        try {
+            workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
+            fail("Shouldn't be able to hide the default version.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        file.setContent("cwlVersion: v1.0\n\n" + "class: Workflow");
+        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        hostedVersion = hostedWorkflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("1")).findFirst().get();
+        hostedVersion.setHidden(true);
+        workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
+
+        try {
+            workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), hostedVersion.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+    }
+
     /**
     * Tests the a checksum is calculated for workflow sourcefiles on refresh or snapshot. Also checks that trs endpoints convert correctly.
     * */
@@ -1081,7 +1148,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", "wdl", "/test.json");
+        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
 
         workflow = workflowsApi.refresh(workflow.getId());
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
@@ -1099,7 +1166,7 @@ public class WorkflowIT extends BaseIT {
         assertTrue(testedWDL);
 
         // Test grabbing checksum on snapshot
-        Workflow workflow2 = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", "cwl", SourceControl.GITHUB, "/hello_world.cwl", true);
+        Workflow workflow2 = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorLanguage.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
         WorkflowVersion snapshotVersion = workflow2.getWorkflowVersions().stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
         assertNotNull(snapshotVersion.getSourceFiles());
         snapshotVersion.setFrozen(true);
@@ -1110,7 +1177,7 @@ public class WorkflowIT extends BaseIT {
         workflowsApi.refresh(workflow2.getId());
 
         // Test TRS conversion
-        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/github.com/dockstore-testing/hello_world", "1.0.1");
+        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet(DescriptorLanguage.CWL.toString(), "#workflow/github.com/dockstore-testing/hello_world", "1.0.1");
         verifyTRSSourcefileConversion(fileWrapper);
 
     }

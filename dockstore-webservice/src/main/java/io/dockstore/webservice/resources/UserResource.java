@@ -730,7 +730,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
-            u.updateUserMetadata(tokenDAO);
+            u.updateUserMetadata(tokenDAO, false);
         }
 
         return userDAO.findAll();
@@ -753,7 +753,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
         }
-        dbuser.updateUserMetadata(tokenDAO, source);
+        dbuser.updateUserMetadata(tokenDAO, source, true);
         return dbuser;
     }
 
