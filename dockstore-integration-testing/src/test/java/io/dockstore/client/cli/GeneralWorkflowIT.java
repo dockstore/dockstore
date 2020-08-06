@@ -734,10 +734,10 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testWDL");
 
         // Assert default version is updated and no author or email is found
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where actualdefaultversion = '953'", long.class);
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where actualdefaultversion = '954'", long.class);
         assertEquals("there should be 1 matching workflow, there is " + count, 1, count);
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '953' and author is null and email is null",
+            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '954' and author is null and email is null",
                 long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count2);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
@@ -750,10 +750,10 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Assert default version is updated and author and email are set
         final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '951'", long.class);
+            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '953'", long.class);
         assertEquals("there should be 1 matching workflow, there is " + count3, 1, count3);
         final long count4 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where actualdefaultversion = '951' and author = 'testAuthor' and email = 'testEmail'",
+            "select count(*) from workflow where actualdefaultversion = '953' and author = 'testAuthor' and email = 'testEmail'",
             long.class);
         assertEquals("The given workflow should have contact info", 1, count4);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
