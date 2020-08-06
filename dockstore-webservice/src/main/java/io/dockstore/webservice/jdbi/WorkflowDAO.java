@@ -33,7 +33,9 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.http.HttpStatus;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
@@ -228,6 +230,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         q.where(cb.or(predicates.toArray(new Predicate[]{})));
 
         return list(q);
+    }
+
+    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(Long workflowId, int size) {
+        Session session = currentSession();
+        Query query = session.createQuery("from Version v WHERE v.parent.id = :id");
+        query.setParameter("id", workflowId);
+        query.setFirstResult(0);
+        query.setMaxResults(size);
+        List<WorkflowVersion> workflowVersionIds = query.getResultList();
+        return workflowVersionIds;
     }
 
     public List<Workflow> findByGitUrl(String giturl) {

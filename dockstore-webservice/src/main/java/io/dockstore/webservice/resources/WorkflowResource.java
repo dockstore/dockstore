@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -500,6 +501,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return existingWorkflow;
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -512,11 +514,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkCanRead(user, workflow);
-
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        sessionFactory.getCurrentSession().detach(workflow);
+        List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflowId, 10);
+        workflow.setWorkflowVersionsOverride(new TreeSet<>(ids));
+        initializeAdditionalFields(include, workflow);
+        ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
         return workflow;
     }
 
