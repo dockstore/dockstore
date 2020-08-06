@@ -5846,7 +5846,7 @@ paths:
         format: "int64"
       - name: "hardRefresh"
         in: "query"
-        description: "refresh all versions"
+        description: "completely refresh all versions, even if they have not changed"
         required: false
         type: "boolean"
         default: true
@@ -5880,7 +5880,7 @@ paths:
         type: "string"
       - name: "hardRefresh"
         in: "query"
-        description: "refresh all versions"
+        description: "completely refresh version, even if it has not changed"
         required: false
         type: "boolean"
         default: true

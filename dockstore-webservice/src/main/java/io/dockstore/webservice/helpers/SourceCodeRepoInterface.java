@@ -218,14 +218,12 @@ public abstract class SourceCodeRepoInterface {
      * * commitId is different
      * * synced == false
      *
-     * @param versionName
      * @param commitId
-     * @param existingDefaults
+     * @param existingVersion
      * @param hardRefresh
      * @return
      */
-    protected boolean toRefreshVersion(String versionName, String commitId, Map<String, WorkflowVersion> existingDefaults, boolean hardRefresh) {
-        WorkflowVersion existingVersion = existingDefaults.get(versionName);
+    protected boolean toRefreshVersion(String commitId, WorkflowVersion existingVersion, boolean hardRefresh) {
         return hardRefresh || existingVersion == null || existingVersion.getCommitID() == null || !Objects.equals(existingVersion.getCommitID(), commitId) || !existingVersion.isSynced();
     }
 

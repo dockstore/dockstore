@@ -410,7 +410,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "refresh all versions", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
+        @ApiParam(value = "completely refresh all versions, even if they have not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
         return refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
     }
 
@@ -424,7 +424,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow refreshVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "version", required = true) @PathParam("version") String version,
-            @ApiParam(value = "refresh all versions", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
+            @ApiParam(value = "completely refresh version, even if it has not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
         if (version == null || version.isBlank()) {
             String msg = "Version is a required field for this endpoint.";
             LOG.error(msg);

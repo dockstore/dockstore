@@ -1751,7 +1751,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
       - bearer: []
@@ -4568,7 +4568,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
       - bearer: []

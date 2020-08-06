@@ -146,7 +146,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Add workflow
         workflowsApi.manualRegister(sourceControl.name(), workflowPath, correctDescriptorPath, "",
-                DescriptorLanguage.CWL.getLowerShortName(), "");
+                DescriptorLanguage.CWL.getShortName(), "");
 
         // Smart refresh individual that is valid (should add versions that doesn't exist)
         Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, "", false);
@@ -174,7 +174,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Updating the workflow should make the version not synced, a refresh should refresh all versions
         workflow.setWorkflowPath(incorrectDescriptorPath);
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflow.getWorkflowVersions().forEach(workflowVersion -> assertTrue(!workflowVersion.isSynced()));
+        workflow.getWorkflowVersions().forEach(workflowVersion -> assertFalse(workflowVersion.isSynced()));
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // All versions should be synced and updated

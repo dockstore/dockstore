@@ -162,8 +162,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @SuppressWarnings("checkstyle:parameternumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId, boolean hardRefresh) {
-        if (toRefreshVersion(branchName, commitId, existingDefaults, hardRefresh)) {
-            LOG.info(gitUsername + ": Looking at reference: " + branchName);
+        if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+            LOG.info(gitUsername + ": Looking at GitLab reference: " + branchName);
             // Initialize workflow version
             WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
             String calculatedPath = version.getWorkflowPath();
@@ -186,8 +186,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             }
         } else {
             // Version didn't change, but we don't want to delete
-            // Add a stub version with commit ID set to an ignore value
-            LOG.info(gitUsername + ": Skipping reference: " + branchName);
+            // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+            LOG.info(gitUsername + ": Skipping GitLab reference: " + branchName);
             WorkflowVersion version = new WorkflowVersion();
             version.setName(branchName);
             version.setReference(branchName);

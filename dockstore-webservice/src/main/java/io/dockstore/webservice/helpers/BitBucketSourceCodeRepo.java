@@ -302,18 +302,18 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             // this pagination structure is repetitive and should be refactored
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
-                    String branchName = ref.getName();
+                    final String branchName = ref.getName();
                     if (versionName.isEmpty() || Objects.equals(branchName, versionName.get())) {
                         WorkflowVersion version = new WorkflowVersion();
-                        version.setName(ref.getName());
-                        version.setReference(ref.getName());
-                        OffsetDateTime date = ref.getTarget().getDate();
-                        Date lastModifiedDate = Date.from(date.toInstant());
+                        version.setName(branchName);
+                        version.setReference(branchName);
+                        final OffsetDateTime date = ref.getTarget().getDate();
+                        final Date lastModifiedDate = Date.from(date.toInstant());
                         version.setLastModified(lastModifiedDate);
-                        String commitId = getCommitID(repositoryId, version);
+                        final String commitId = getCommitID(repositoryId, version);
 
-                        if (toRefreshVersion(ref.getName(), commitId, existingDefaults, hardRefresh)) {
-                            LOG.info(gitUsername + ": Looking at reference: " + ref.getName());
+                        if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+                            LOG.info(gitUsername + ": Looking at Bitbucket reference: " + branchName);
                             version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
 
                             version.setLastModified(lastModifiedDate);
@@ -335,8 +335,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                             }
                         } else {
                             // Version didn't change, but we don't want to delete
-                            // Add a stub version with commit ID set to an ignore value
-                            LOG.info(gitUsername + ": Skipping reference: " + ref.getName());
+                            // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+                            LOG.info(gitUsername + ": Skipping Bitbucket reference: " + branchName);
                             version.setCommitID(SKIP_COMMIT_ID);
                             workflow.addWorkflowVersion(version);
                         }

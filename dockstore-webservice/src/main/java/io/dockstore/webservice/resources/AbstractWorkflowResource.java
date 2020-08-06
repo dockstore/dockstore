@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -167,16 +168,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
+        // Remove versions that do not need to be updated
+        Set<WorkflowVersion> filteredVersions = newWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID())).collect(
+                Collectors.toSet());
+
         // Then copy over content that changed
-        for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
-            // skip frozen versions
+        for (WorkflowVersion version : filteredVersions) {
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
 
-            // Skip these since they have not changed
-            if (Objects.equals(SKIP_COMMIT_ID, version.getCommitID())) {
-                continue;
-            }
-
+            // skip frozen versions
             if (existingVersionMap.containsKey(version.getName())) {
                 if (workflowVersionFromDB.isFrozen()) {
                     continue;
