@@ -221,7 +221,7 @@ public final class CommonTestUtilities {
      * @param configPath
      * @throws Exception
      */
-    private static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
         boolean isNewApplication) throws Exception {
         Application<DockstoreWebserviceConfiguration> application;
         if (isNewApplication) {

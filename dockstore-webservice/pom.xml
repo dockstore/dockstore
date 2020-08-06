@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.9.1-SNAPSHOT</version>
+        <version>1.9.2-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -53,32 +53,32 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -562,7 +562,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.9.1-SNAPSHOT</version>
+            <version>1.9.2-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -1124,7 +1124,7 @@
                 <configuration>
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0_gxformat2/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0_galaxy_1/openapi/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
                         <dateLibrary>legacy</dateLibrary>
