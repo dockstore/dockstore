@@ -169,7 +169,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         // Remove versions that do not need to be updated
-        Set<WorkflowVersion> filteredVersions = newWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID())).collect(
+        Set<WorkflowVersion> filteredVersions = newWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> !Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID())).collect(
                 Collectors.toSet());
 
         // Then copy over content that changed
