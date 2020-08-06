@@ -31,6 +31,7 @@ import javax.persistence.criteria.Root;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -242,6 +243,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     public List<Workflow> findByOrganization(SourceControl sourceControl, String organization) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
                 .setParameter("organization", organization)
+                .setParameter("sourceControl", sourceControl));
+    }
+
+    public List<Workflow> findByOrganizationWithoutUser(SourceControl sourceControl, String organization, User user) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
+                .setParameter("organization", organization)
+                .setParameter("user", user)
                 .setParameter("sourceControl", sourceControl));
     }
 

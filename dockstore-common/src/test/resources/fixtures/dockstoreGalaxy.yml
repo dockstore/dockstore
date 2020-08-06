@@ -1,0 +1,14 @@
+version: 1.2
+workflows:
+  -  name: foobar
+     subclass: gxformat2
+     primaryDescriptorPath: /Dockstore2.ga
+  -  name: foobar2
+     subclass: galaxy
+     primaryDescriptorPath: /Dockstore.ga
+  -  name: foobar3
+     subclass: GXFORMAT2
+     primaryDescriptorPath: /Dockstore.ga
+  -  name: foobar4
+     subclass: GALAXY
+     primaryDescriptorPath: /Dockstore.ga
