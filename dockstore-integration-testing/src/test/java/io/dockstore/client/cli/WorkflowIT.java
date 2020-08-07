@@ -84,6 +84,7 @@ import io.swagger.model.DescriptorType;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -566,6 +567,9 @@ public class WorkflowIT extends BaseIT {
         } finally {
             FileUtils.deleteQuietly(tempFile);
         }
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        sessionFactory.getCurrentSession().close();
     }
 
     /**
