@@ -7,6 +7,7 @@ import java.util.Set;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -409,6 +410,31 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
+    @DELETE
+    @Path("/{organizationId}/deleteNonApprovedOrg")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Deletes an organization that has been rejected", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = void.class, hidden = true)
+    @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete rejected organization", description = "Delete rejected organization")
+    public void deleteRejectedOrPendingOrganization(
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
+        Organization organization = organizationDAO.findById(organizationId);
+
+        if (organization.getStatus() == Organization.ApplicationState.APPROVED) {
+            throw new CustomWebApplicationException("Cannot delete organization that has not been rejected", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        organization.getUsers().clear();
+        organization.getStarredUsers().clear();
+        organization.getAliases().clear();
+        organization.getCollections().clear();
+
+        eventDAO.deleteEventByOrganizationID(organizationId);
+        organizationDAO.update(organization);
+        organizationDAO.delete(organization);
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -444,6 +470,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @ApiOperation(value = "Create an organization.", notes = "Organization requires approval by an admin before being made public.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     @Operation(operationId = "createOrganization", summary = "Create an organization.", description = "Create an organization. Organization requires approval by an admin before being made public.", security = @SecurityRequirement(name = "bearer"))

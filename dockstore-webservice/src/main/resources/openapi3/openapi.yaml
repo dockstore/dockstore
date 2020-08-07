@@ -694,8 +694,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         hasHTTPImports:
           type: boolean
@@ -1479,8 +1479,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         descriptorTypeSubclass:
           enum:
@@ -3694,7 +3694,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -4472,7 +4472,7 @@ paths:
       operationId: createOrganization
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Organization'
         description: Organization to register.
@@ -4691,7 +4691,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -4993,6 +4993,26 @@ paths:
       security:
         - bearer: []
       summary: Add an entry to a collection.
+      tags:
+        - organizations
+  /organizations/{organizationId}/deleteNonApprovedOrg:
+    delete:
+      description: Delete rejected organization
+      operationId: deleteRejectedOrPendingOrganization
+      parameters:
+        - description: Organization ID.
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      summary: Delete rejected organization
       tags:
         - organizations
   /organizations/{organizationId}/description:
@@ -6578,7 +6598,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
