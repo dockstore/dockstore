@@ -53,6 +53,7 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.slf4j.Logger;
@@ -119,6 +120,7 @@ public class SourceFile implements Comparable<SourceFile> {
         "id", "source" }))
     @MapKeyColumn(name = "source", columnDefinition = "text")
     @ApiModelProperty(value = "maps from platform to whether an entry successfully ran on it using this test json")
+    @BatchSize(size = 25)
     private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
 
     public Map<String, VerificationInformation> getVerifiedBySource() {

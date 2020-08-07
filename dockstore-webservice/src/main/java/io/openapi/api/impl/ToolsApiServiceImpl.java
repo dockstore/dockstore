@@ -259,11 +259,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
-    public Response toolsGet(String id, String alias, String toolClass, String registry, String organization, String name, String toolname,
+    public Response toolsGet(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
 
-        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(registry).append(organization).append(name)
+        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(descriptorType).append(registry).append(organization).append(name)
             .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
             .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
@@ -291,21 +291,30 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
+
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if ("galaxy".equalsIgnoreCase(descriptorType)) {
+            descriptorType = DescriptorLanguage.GXFORMAT2.getShortName();
+        }
+
         for (Entry<?, ?> c : all) {
             // filters just for tools
             if (c instanceof Tool) {
                 Tool tool = (Tool)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
+                if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
                     continue;
                 }
-                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
+                if (organization != null && (tool.getNamespace() == null || !tool.getNamespace().contains(organization))) {
                     continue;
                 }
-                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
+                if (name != null && (tool.getName() == null || !tool.getName().contains(name))) {
                     continue;
                 }
-                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
+                if (toolname != null && (tool.getToolname() == null || !tool.getToolname().contains(toolname))) {
+                    continue;
+                }
+                if (descriptorType != null && !tool.getDescriptorType().contains(descriptorType)) {
                     continue;
                 }
                 if (checker != null && checker) {
@@ -313,31 +322,34 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     continue;
                 }
             }
-            // filters just for tools
+            // filters just for workflows
             if (c instanceof Workflow) {
                 Workflow workflow = (Workflow)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
+                if (registry != null && (workflow.getSourceControl() == null || !workflow.getSourceControl().toString().contains(registry))) {
                     continue;
                 }
-                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
+                if (organization != null && (workflow.getOrganization() == null || !workflow.getOrganization().contains(organization))) {
                     continue;
                 }
-                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
+                if (name != null && (workflow.getRepository() == null || !workflow.getRepository().contains(name))) {
                     continue;
                 }
-                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
+                if (toolname != null && (workflow.getWorkflowName() == null || !workflow.getWorkflowName().contains(toolname))) {
                     continue;
                 }
                 if (checker != null && workflow.isIsChecker() != checker) {
                     continue;
                 }
+                if (descriptorType != null && !workflow.getDescriptorType().toString().equals(descriptorType)) {
+                    continue;
+                }
             }
             // common filters between tools and workflows
-            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
+            if (description != null && (c.getDescription() == null || !c.getDescription().contains(description))) {
                 continue;
             }
-            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
+            if (author != null && (c.getAuthor() == null || !c.getAuthor().contains(author))) {
                 continue;
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return

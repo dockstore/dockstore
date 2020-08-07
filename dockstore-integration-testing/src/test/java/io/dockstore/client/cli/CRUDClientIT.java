@@ -222,7 +222,7 @@ public class CRUDClientIT extends BaseIT {
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
-        assertTrue("a workflow lacks a date", first.get().getLastModified() != null && first.get().getLastModified().getTime() != 0);
+        assertTrue("a workflow lacks a date", first.get().getLastModified() != null && first.get().getLastModified() != 0);
 
         SourceFile file2 = new SourceFile();
         file2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("arguments.cwl")), StandardCharsets.UTF_8));

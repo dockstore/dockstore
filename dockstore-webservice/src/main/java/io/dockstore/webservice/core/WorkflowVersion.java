@@ -70,7 +70,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Column
     @JsonProperty("last_modified")
-    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102)
+    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102, dataType = "long")
     private Date lastModified;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
@@ -163,7 +163,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, reference);
+        return Objects.hash(this.getName(), this.getReference());
     }
 
     @Override
@@ -174,7 +174,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("name", name).add("reference", reference).toString();
+        return MoreObjects.toStringHelper(this).add("id", id).add("name", this.getName()).add("reference", this.getReference()).toString();
     }
 
     public Service.SubClass getSubClass() {

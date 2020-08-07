@@ -17,9 +17,51 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
-                   context="1.9.0">
+                   context="1.10.0">
     <changeSet author="dyuen" id="notification_seq">
         <addAutoIncrement tableName="notification" columnName="id" startWith="100"/>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="adddescriptortypecolumn">
+        <addColumn tableName="tool">
+            <column defaultValue="" name="descriptortype" type="varchar">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            WITH upd as (SELECT tool.id as id, array_to_string(ARRAY_AGG(DISTINCT sourcefile.type), ',') as _descriptortypes
+            FROM tool, sourcefile, tag, version_sourcefile
+            WHERE tool.id = tag.parentid
+            AND tag.id = version_sourcefile.versionid
+            AND version_sourcefile.sourcefileid = sourcefile.id
+            AND (sourcefile.type = 'DOCKSTORE_CWL' OR sourcefile.type = 'DOCKSTORE_WDL')
+            GROUP BY tool.id)
+            UPDATE tool
+            set descriptortype = upd._descriptortypes
+            FROM upd
+            WHERE tool.id = upd.id;
+            UPDATE tool
+            SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_CWL', 'CWL');
+            UPDATE tool
+            SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_WDL', 'WDL');
+        </sql>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="add_parsed_information">
+        <createTable tableName="parsed_information">
+            <column name="version_metadata_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descriptorlanguage" type="VARCHAR(255)"/>
+            <column name="hashttpimports" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="haslocalimports" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="version_metadata_id" baseTableName="parsed_information" constraintName="version_metadata_parsed_information_fk_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
+    </changeSet>
+    <changeSet id="removeOrphanVersionMetadata" author="gluu">
+        <sql dbms="postgresql">delete from version_metadata vm where vm.id not in (select wv.id from workflowversion wv union select t.id from tag t);</sql>
     </changeSet>
 
     <changeSet author="dyuen" id="deduplicate_content">

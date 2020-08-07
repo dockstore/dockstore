@@ -6,6 +6,7 @@ import java.util.Set;
 
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.FileFormat;
+import io.dockstore.webservice.core.ParsedInformation;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -42,5 +43,29 @@ public class CWLHandlerTest {
         Assert.assertEquals("Should be Amazon", Registry.AMAZON_ECR, cwlHandler.determineImageRegistry("137112412989.dkr.ecr.us-east-1.amazonaws.com/amazonlinux:latest").get());
         Assert.assertTrue("Should be empty, Google not supported yet", cwlHandler.determineImageRegistry("gcr.io/project-id/image:tag").isEmpty());
         Assert.assertEquals("Should be Quay", Registry.QUAY_IO, cwlHandler.determineImageRegistry("quay.io/ucsc_cgl/verifybamid:1.30.0").get());
+    }
+
+    @Test
+    public void testURLHandler() {
+        ParsedInformation parsedInformation = new ParsedInformation();
+        CWLHandler.setImportsBasedOnMapValue(parsedInformation, "https://potato.com");
+        Assert.assertTrue(parsedInformation.isHasHTTPImports());
+        Assert.assertFalse(parsedInformation.isHasLocalImports());
+        ParsedInformation parsedInformation2 = new ParsedInformation();
+        CWLHandler.setImportsBasedOnMapValue(parsedInformation2, "http://potato.com");
+        Assert.assertTrue(parsedInformation2.isHasHTTPImports());
+        Assert.assertFalse(parsedInformation2.isHasLocalImports());
+        ParsedInformation parsedInformation3 = new ParsedInformation();
+        CWLHandler.setImportsBasedOnMapValue(parsedInformation3, "ftp://potato.com");
+        Assert.assertFalse(parsedInformation3.isHasHTTPImports());
+        Assert.assertTrue(parsedInformation3.isHasLocalImports());
+        ParsedInformation parsedInformation4 = new ParsedInformation();
+        CWLHandler.setImportsBasedOnMapValue(parsedInformation4, "potato.cwl");
+        Assert.assertFalse(parsedInformation4.isHasHTTPImports());
+        Assert.assertTrue(parsedInformation4.isHasLocalImports());
+        ParsedInformation parsedInformation5 = new ParsedInformation();
+        CWLHandler.setImportsBasedOnMapValue(parsedInformation5, "httppotato.cwl");
+        Assert.assertFalse(parsedInformation5.isHasHTTPImports());
+        Assert.assertTrue(parsedInformation5.isHasLocalImports());
     }
 }

@@ -57,6 +57,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -96,11 +97,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1)
-    protected String reference;
+    private String reference;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
-    protected String name;
+    private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parentid", nullable = false)
@@ -129,6 +130,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
     @OrderBy("path")
+    @BatchSize(size = 25)
     private final SortedSet<SourceFile> sourceFiles;
 
     @Column
@@ -139,8 +141,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
-    @JsonIgnore
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent")
+    // Warning: this is eagerly loaded because of two reasons:
+    // the 4 @ApiModelProperty that uses version metadata
+    // This OneToOne
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private VersionMetadata versionMetadata = new VersionMetadata();
@@ -152,36 +156,40 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // database timestamps
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
-    @ApiModelProperty(position = 10)
+    @ApiModelProperty(position = 10, dataType = "long")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
-    @ApiModelProperty(position = 11)
+    @ApiModelProperty(position = 11, dataType = "long")
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
     @OrderBy("type")
+    @BatchSize(size = 25)
     private final SortedSet<Validation> validations;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
     @ApiModelProperty(value = "The images that belong to this version", position = 15)
+    @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
 
     public Version() {
@@ -380,6 +388,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionMetadata.doiStatus;
     }
 
+    // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
         return this.getVersionMetadata().author;
@@ -504,6 +513,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.setAuthor(newVersionMetadata.author);
         this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
+        this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
 
     public void setParent(Entry<?, ?> parent) {

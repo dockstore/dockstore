@@ -1,6 +1,8 @@
-package io.dockstore.common;
+package io.dockstore.webservice.core;
 
 import java.util.Date;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Class used to display organizations on the Dockstore homepage
@@ -10,6 +12,7 @@ import java.util.Date;
 public class OrganizationUpdateTime {
     private String name;
     private String displayName;
+    @ApiModelProperty(dataType = "long")
     private Date lastUpdateDate;
 
     public OrganizationUpdateTime(String name, String displayName, Date lastUpdateDate) {

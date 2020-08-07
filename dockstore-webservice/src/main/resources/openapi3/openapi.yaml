@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes.  This exposes the hashcode for specific image versions to verify that the container version pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -684,6 +684,24 @@ components:
           format: int64
           type: integer
       type: object
+    ParsedInformation:
+      properties:
+        descriptorLanguage:
+          enum:
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+            
+            
+          type: string
+        hasHTTPImports:
+          type: boolean
+        hasLocalImports:
+          type: boolean
+      type: object
     Permission:
       properties:
         email:
@@ -694,6 +712,13 @@ components:
             - WRITER
             - READER
           type: string
+      type: object
+    PrivilegeRequest:
+      properties:
+        admin:
+          type: boolean
+        curator:
+          type: boolean
       type: object
     Profile:
       properties:
@@ -922,6 +947,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         wdl_path:
           type: string
         workingDirectory:
@@ -1136,7 +1163,7 @@ components:
               - WDL
               - NFL
               - SERVICE
-              - GXFORMAT2
+              - GALAXY
             type: string
           type: array
         id:
@@ -1379,8 +1406,20 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workingDirectory:
           type: string
+      type: object
+    VersionMetadata:
+      properties:
+        id:
+          format: int64
+          type: integer
+        parsedInformationSet:
+          items:
+            $ref: '#/components/schemas/ParsedInformation'
+          type: array
       type: object
     VersionVerifiedPlatform:
       properties:
@@ -1634,6 +1673,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workflow_path:
           type: string
         workingDirectory:
@@ -2402,7 +2443,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
       security:
         - bearer: []
@@ -2428,7 +2469,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -3342,26 +3383,6 @@ paths:
         - bearer: []
       tags:
         - containers
-  /containers/{containerId}/unstar:
-    delete:
-      description: Unstar a tool.
-      operationId: unstarEntry
-      parameters:
-        - in: path
-          name: containerId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - containers
   /containers/{containerId}/updateTagPaths:
     put:
       description: Change the tool paths.
@@ -3610,7 +3631,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -3743,6 +3764,11 @@ paths:
         - description: Filter tools by the name of the subclass (#/definitions/ToolClass)
           in: query
           name: toolClass
+          schema:
+            type: string
+        - description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
+          in: query
+          name: descriptorType
           schema:
             type: string
         - description: The image registry that contains the image.
@@ -5161,28 +5187,6 @@ paths:
       summary: Return list of users who starred the given approved organization.
       tags:
         - organizations
-  /organizations/{organizationId}/unstar:
-    delete:
-      description: Unstar an organization.
-      operationId: unstarOrganization
-      parameters:
-        - description: Organization ID.
-          in: path
-          name: organizationId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      summary: Unstar an organization.
-      tags:
-        - organizations
   /organizations/{organizationId}/user:
     delete:
       description: Remove a user from an organization.
@@ -6100,6 +6104,34 @@ paths:
                 items:
                   $ref: '#/components/schemas/Tool'
                 type: array
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
+  /users/{userId}/privileges:
+    put:
+      description: Updates the provided userID to admin or curator status, ADMIN or CURATOR only
+      operationId: setUserPrivileges
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivilegeRequest'
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
           description: default response
       security:
         - bearer: []
@@ -7678,26 +7710,6 @@ paths:
             application/json:
               schema:
                 type: string
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - workflows
-  /workflows/{workflowId}/unstar:
-    delete:
-      description: Unstar a workflow.
-      operationId: unstarEntry_1
-      parameters:
-        - in: path
-          name: workflowId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
           description: default response
       security:
         - bearer: []

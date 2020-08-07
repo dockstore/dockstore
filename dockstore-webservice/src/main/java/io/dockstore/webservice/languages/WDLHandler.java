@@ -43,6 +43,7 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.DescriptionSource;
+import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -347,6 +348,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
             SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String currentFilePath) {
         DescriptorLanguage.FileType fileType = DescriptorLanguage.FileType.DOCKSTORE_WDL;
+        ParsedInformation parsedInformation = getParsedInformation(version, DescriptorLanguage.WDL);
 
         // Use matcher to get imports
         String[] lines = StringUtils.split(content, '\n');
@@ -358,7 +360,10 @@ public class WDLHandler implements LanguageHandlerInterface {
             while (m.find()) {
                 String match = m.group(1);
                 if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
+                    parsedInformation.setHasLocalImports(true);
                     currentFileImports.add(match.replaceFirst("file://", "")); // remove file:// from path
+                } else {
+                    parsedInformation.setHasHTTPImports(true);
                 }
             }
         }
@@ -380,7 +385,6 @@ public class WDLHandler implements LanguageHandlerInterface {
                 imports.put(absoluteImportPath, importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
             }
-
         }
         return imports;
     }

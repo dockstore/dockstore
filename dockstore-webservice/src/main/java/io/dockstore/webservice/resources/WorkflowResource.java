@@ -395,6 +395,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Hibernate.initialize(workflow.getUsers());
         initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        // This should be removed once we have a workflows/{workflowId}/version/{versionId} endpoint
+        workflow.getWorkflowVersions().forEach(version -> Hibernate.initialize(version.getVersionMetadata().getParsedInformationSet()));
         return workflow;
     }
 
@@ -1264,6 +1266,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         for (WorkflowVersion version : workflowVersions) {
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
+                if (w.getActualDefaultVersion() != null && w.getActualDefaultVersion().getId() == version.getId() && version.isHidden()) {
+                    throw new CustomWebApplicationException("You cannot hide the default version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 // remove existing copy and add the new one
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
 
@@ -1487,20 +1492,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         } else {
             unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
         }
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-    }
-
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/unstar")
-    @Operation(operationId = "unstarEntry", description = "Unstar a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @Deprecated(since = "1.8.0")
-    public void unstarEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 

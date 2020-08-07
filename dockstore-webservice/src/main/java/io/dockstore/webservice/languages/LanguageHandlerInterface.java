@@ -41,6 +41,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -169,6 +170,19 @@ public interface LanguageHandlerInterface {
 
     default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         return DAGHelper.cleanDAG(getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao));
+    }
+
+    default ParsedInformation getParsedInformation(Version version, DescriptorLanguage descriptorLanguage) {
+        Optional<ParsedInformation> foundParsedInformation = version.getVersionMetadata().getParsedInformationSet().stream()
+                .filter(parsedInformation -> parsedInformation.getDescriptorLanguage() == descriptorLanguage).findFirst();
+        if (foundParsedInformation.isPresent()) {
+            return foundParsedInformation.get();
+        } else {
+            ParsedInformation parsedInformation = new ParsedInformation();
+            parsedInformation.setDescriptorLanguage(descriptorLanguage);
+            version.getVersionMetadata().getParsedInformationSet().add(parsedInformation);
+            return parsedInformation;
+        }
     }
 
     /**

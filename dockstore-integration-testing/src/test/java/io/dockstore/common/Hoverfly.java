@@ -73,6 +73,7 @@ public final class Hoverfly {
     private static final String GITHUB_COMMIT = fixture(("fixtures/GitHubCommit.json"));
     private static final String GITHUB_CONTENTS = fixture("fixtures/GitHubContents.json");
     private static final String GITHUB_DOCKSTORE_YML_CONTENT = fixture("fixtures/GitHubFileContent.json");
+    private static final String GITHUB_EMAIL = fixture("fixtures/GitHubEmail.json");
     private static final String EMPTY_JSON_ARRAY = "[]";
 
     /**
@@ -181,7 +182,9 @@ public final class Hoverfly {
 
             .get("/rate_limit").willReturn(success(GITHUB_RATE_LIMIT, MediaType.APPLICATION_JSON))
 
-            .get("/user/orgs").willReturn(success(GITHUB_ORGANIZATIONS, MediaType.APPLICATION_JSON)));
+            .get("/user/orgs").willReturn(success(GITHUB_ORGANIZATIONS, MediaType.APPLICATION_JSON))
+
+            .get("/user/emails").willReturn(success(GITHUB_EMAIL, MediaType.APPLICATION_JSON)));
     private Hoverfly() {
         // utility class
     }

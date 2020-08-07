@@ -61,8 +61,11 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -120,12 +123,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -133,6 +138,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @OrderBy("id")
+    @BatchSize(size = 25)
     private SortedSet<User> starredUsers;
 
     @Column
@@ -153,7 +159,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice. "
             + "Tools-> For automated builds: last time tool/namespace was refreshed Dockstore, tool info (like changing dockerfile path) updated, or default version selected. For hosted tools: when you created the tool. "
-            + "Workflows-> For remote: When refresh all is hit for first time. Hosted: Seems to be time created.", position = 10)
+            + "Workflows-> For remote: When refresh all is hit for first time. Hosted: Seems to be time created.", position = 10, dataType = "long")
     private Date lastUpdated;
 
     @Column
@@ -170,15 +176,18 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
+    @BatchSize(size = 25)
     private Map<String, Alias> aliases = new HashMap<>();
 
     // database timestamps
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
     private Timestamp dbUpdateDate;
 
     @Column
@@ -375,6 +384,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonProperty("last_modified_date")
+    @ApiModelProperty(dataType = "long")
     public Date getLastModifiedDate() {
         return lastModified;
     }
@@ -498,6 +508,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
         for (T version : this.getWorkflowVersions()) {
             if (Objects.equals(newDefaultVersion, version.getName())) {
+                if (version.isHidden()) {
+                    throw new CustomWebApplicationException("You can not set the default version to a hidden version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 this.setActualDefaultVersion(version);
                 this.syncMetadataWithDefault();
                 return true;

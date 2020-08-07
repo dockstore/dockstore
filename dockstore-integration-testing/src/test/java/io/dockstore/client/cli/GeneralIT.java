@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,6 +42,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
+import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
@@ -75,6 +77,8 @@ import static org.junit.Assert.fail;
  */
 @Category({ ConfidentialTest.class, ToolTest.class })
 public class GeneralIT extends BaseIT {
+    public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
+
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
 
     @Rule
@@ -452,6 +456,49 @@ public class GeneralIT extends BaseIT {
 
     }
 
+    // Tests 1.10.0 migration where id=adddescriptortypecolumn
+    @Test
+    public void testMigrationForDescriptorType() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        assertEquals(1, tool.getDescriptorType().size());
+        assertEquals("CWL", tool.getDescriptorType().get(0));
+
+        tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
+        assertEquals(1, tool.getDescriptorType().size());
+        assertEquals("WDL", tool.getDescriptorType().get(0));
+
+        tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
+        assertEquals(2, tool.getDescriptorType().size());
+        assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
+    }
+
+    @Test
+    public void testRefreshingGetsDescriptorType() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.ContainersApi openToolApi = new io.dockstore.openapi.client.api.ContainersApi(client);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        tool = toolApi.refresh(tool.getId());
+        assertEquals(1, tool.getDescriptorType().size());
+        assertEquals("CWL", tool.getDescriptorType().get(0));
+
+        tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithubwdl", null);
+        tool = toolApi.refresh(tool.getId());
+        assertEquals(1, tool.getDescriptorType().size());
+        assertEquals("WDL", tool.getDescriptorType().get(0));
+
+        tool = toolApi.getContainerByToolPath("quay.io/dockstore2/testrepo2", null);
+        tool = toolApi.refresh(tool.getId());
+        assertEquals(2, tool.getDescriptorType().size());
+        assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
+    }
+
     public void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {
         assertTrue(fileWrappers.size() > 0);
         fileWrappers.stream().forEach(fileWrapper -> {
@@ -462,6 +509,78 @@ public class GeneralIT extends BaseIT {
             });
         });
     }
+
+    @Test
+    public void testHiddenAndDefaultTags() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+
+        List<Tag> tags = tool.getWorkflowVersions();
+        Tag tag = tags.get(0);
+        tag.setHidden(true);
+        toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
+
+        try {
+            tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+
+        // Set the default version to a non-hidden version
+        tag.setHidden(false);
+        toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
+        tool = toolApi.updateToolDefaultVersion(tool.getId(), tag.getName());
+
+        // Should not be able to hide a default version
+        tag.setHidden(true);
+        try {
+            toolTagsApi.updateTags(tool.getId(), Collections.singletonList(tag));
+            fail("Should not be able to hide a default version");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        // Test the same for hosted tools
+        DockstoreTool hostedTool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        SourceFile cwl = new SourceFile();
+        cwl.setContent("class: CommandLineTool\ncwlVersion: v1.0");
+        cwl.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        cwl.setPath("/Dockstore.cwl");
+        cwl.setAbsolutePath("/Dockstore.cwl");
+        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+
+        Tag hostedTag = hostedTool.getWorkflowVersions().get(0);
+        hostedTag.setHidden(true);
+        try {
+            toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
+            fail("Shouldn't be able to hide the default version.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        cwl.setContent("class: CommandLineTool\n\ncwlVersion: v1.0");
+        hostedTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(cwl, dockerfile));
+        hostedTag = hostedTool.getWorkflowVersions().stream().filter(v -> v.getName().equals("1")).findFirst().get();
+        hostedTag.setHidden(true);
+        toolTagsApi.updateTags(hostedTool.getId(), Collections.singletonList(hostedTag));
+
+        try {
+            toolApi.updateToolDefaultVersion(hostedTool.getId(), hostedTag.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+    }
+
 
     /**
      * Tests hiding and unhiding different versions of a container (quick registered)
@@ -748,7 +867,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool c = getContainer();
         c.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
         c.setNamespace("dockstoretestuser2");
-        c.setName("dockstore-tool-imports");
+        c.setName(DOCKSTORE_TOOL_IMPORTS);
         c.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         c = containersApi.registerManual(c);
 
@@ -756,7 +875,7 @@ public class GeneralIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
 
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         int size = containersApi.getContainer(c.getId(), null).getWorkflowVersions().size();
@@ -772,7 +891,7 @@ public class GeneralIT extends BaseIT {
 
         // so should overall refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(c.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
@@ -780,7 +899,7 @@ public class GeneralIT extends BaseIT {
 
         // so should organizational refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
-        usersApi.refreshToolsByOrganization(userid, container.getNamespace(), null);
+        usersApi.refreshToolsByOrganization(userid, container.getNamespace(), DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(c.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
@@ -796,7 +915,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool tool = getContainer();
         tool.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
         tool.setNamespace("dockstoretestuser2");
-        tool.setName("dockstore-tool-imports");
+        tool.setName(DOCKSTORE_TOOL_IMPORTS);
         tool.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         tool = containersApi.registerManual(tool);
 
@@ -804,7 +923,7 @@ public class GeneralIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
 
         // Check that the image information has been grabbed on refresh.
         List<Tag> tags = containersApi.getContainer(tool.getId(), null).getWorkflowVersions();
@@ -822,7 +941,7 @@ public class GeneralIT extends BaseIT {
         testingPostgres.runUpdateStatement("update image set image_id = 'dummyid'");
         assertEquals("dummyid",
             containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
-        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", null);
+        usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
         final long count2 = testingPostgres.runSelectStatement("select count(*) from image", long.class);
         assertEquals(imageID, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().get(0).getImageID());
         assertEquals(imageID2, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(1).getImages().get(0).getImageID());

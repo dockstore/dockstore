@@ -106,10 +106,12 @@ public class Token implements Comparable<Token> {
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
     private Timestamp dbUpdateDate;
 
     public Token() {

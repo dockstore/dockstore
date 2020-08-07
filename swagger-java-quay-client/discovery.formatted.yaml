@@ -383,7 +383,7 @@ definitions:
           type: string
       pull_robot:
         description: TBD
-        type: string
+        $ref: "#/definitions/PullRobot"
       trigger:
         description: TBD
         type: object

@@ -67,6 +67,7 @@ import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHEmail;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRateLimit;
@@ -885,6 +886,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return null;
     }
 
+    private String getEmail(GHMyself myself) throws IOException {
+        for (GHEmail email: myself.getEmails2()) {
+            if (email.isPrimary()) {
+                return email.getEmail();
+            }
+        }
+        return null;
+    }
+
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
@@ -895,7 +905,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHMyself myself = github.getMyself();
             User.Profile profile = new User.Profile();
             profile.name = myself.getName();
-            profile.email = myself.getEmail();
+            profile.email = getEmail(myself);
             profile.avatarURL = myself.getAvatarUrl();
             profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
             profile.location = myself.getLocation();

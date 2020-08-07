@@ -48,7 +48,7 @@ public class Notification {
     private String message;
 
     @Column
-    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2)
+    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2, dataType = "long")
     private Timestamp expiration;
 
     @Column
@@ -64,12 +64,12 @@ public class Notification {
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
-    @ApiModelProperty(value = "Timestamp at which the notification was created", position = 5)
+    @ApiModelProperty(value = "Timestamp at which the notification was created", position = 5, dataType = "long")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
-    @ApiModelProperty(value = "Timestamp at which the notification was last updated", position = 6)
+    @ApiModelProperty(value = "Timestamp at which the notification was last updated", position = 6, dataType = "long")
     private Timestamp dbUpdateDate;
 
     public Notification() { }  // blank constructor called by POST request

@@ -329,12 +329,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             lambdaEventDAO.create(lambdaEvent);
             return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
-            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
+            String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
             sessionFactory.getCurrentSession().clear();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
-            lambdaEvent.setMessage(ex.getMessage());
+            lambdaEvent.setMessage(errorMessage);
             lambdaEventDAO.create(lambdaEvent);
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
