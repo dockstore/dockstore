@@ -47,8 +47,6 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
-import io.dockstore.common.EntryUpdateTime;
-import io.dockstore.common.OrganizationUpdateTime;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
@@ -59,9 +57,11 @@ import io.dockstore.webservice.api.PrivilegeRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Token;
@@ -584,17 +584,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return services;
     }
 
-    private List<Workflow> getBioworkflows(User user) {
-        return workflowDAO.findMyEntries(user.getId()).stream().filter(BioWorkflow.class::isInstance).collect(Collectors.toList());
-    }
-
-    // TODO: Replace with code similar to the new userWorkflows endpoint once it is optimised
-    private List<Workflow> getStrippedBioworkflows(User user) {
-        final List<Workflow> bioworkflows = getBioworkflows(user);
-        EntryVersionHelper.stripContent(bioworkflows, this.userDAO);
-        return bioworkflows;
-    }
-
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
         final List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
         EntryVersionHelper.stripContent(workflows, this.userDAO);
@@ -834,18 +823,17 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
                 .collect(Collectors.toList());
 
-        scTokens.stream().forEach(token -> {
+        scTokens.forEach(token -> {
             SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
             Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
             Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
 
             organizations.forEach(organization -> {
-                List<Workflow> workflows = workflowDAO.findByOrganization(token.getTokenSource().getSourceControl(), organization);
-                workflows.stream().forEach(workflow -> workflow.getUsers().add(user));
+                List<Workflow> workflowsWithoutuser = workflowDAO.findByOrganizationWithoutUser(token.getTokenSource().getSourceControl(), organization, user);
+                workflowsWithoutuser.forEach(workflow -> workflow.addUser(user));
             });
         });
-
-        return getStrippedBioworkflows(userDAO.findById(user.getId()));
+        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
     }
 
     @PUT

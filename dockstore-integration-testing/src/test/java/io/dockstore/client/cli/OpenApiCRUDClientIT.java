@@ -95,9 +95,12 @@ public class OpenApiCRUDClientIT extends BaseIT {
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         webClient.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(webClient);
-        final List<Tool> allStuff = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
-        final List<Tool> workflows = ga4Ghv20Api.toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
-        final List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        final List<Tool> allStuff = ga4Ghv20Api
+                .toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        final List<Tool> workflows = ga4Ghv20Api
+                .toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
+        final List<Tool> tools = ga4Ghv20Api
+                .toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, null, null, Integer.MAX_VALUE);
         Assert.assertFalse(workflows.isEmpty());
         Assert.assertFalse(tools.isEmpty());
         Assert.assertEquals(workflows.size() + tools.size(), allStuff.size());

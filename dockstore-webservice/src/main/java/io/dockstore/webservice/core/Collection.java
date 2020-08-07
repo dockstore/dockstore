@@ -106,10 +106,12 @@ public class Collection implements Serializable, Aliasable {
 
     @Column(updatable = false)
     @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
     private Timestamp dbUpdateDate;
 
     @Transient
