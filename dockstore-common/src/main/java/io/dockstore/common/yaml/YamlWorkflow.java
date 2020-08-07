@@ -20,10 +20,20 @@ import java.util.List;
 
 import javax.validation.constraints.NotNull;
 
+import io.dockstore.common.DescriptorLanguage;
+
 /**
  * A workflow as described in a .dockstore.yml
  */
 public class YamlWorkflow {
+
+    /**
+     * Subclass was originally GXFORMAT2, should have been GALAXY.
+     * Allow GALAXY, but continue to support GXFORMAT2, and keep it
+     * as GXFORMAT2 in the object for other classes already relying on that
+     */
+    private static final String NEW_GALAXY_SUBCLASS = "GALAXY";
+
     private String name;
     @NotNull
     private String subclass;
@@ -31,6 +41,7 @@ public class YamlWorkflow {
     private String primaryDescriptorPath;
 
     private List<String> testParameterFiles = new ArrayList<>();
+
 
     public String getName() {
         return name;
@@ -41,6 +52,9 @@ public class YamlWorkflow {
     }
 
     public String getSubclass() {
+        if (NEW_GALAXY_SUBCLASS.equalsIgnoreCase(subclass)) {
+            return DescriptorLanguage.GXFORMAT2.getShortName();
+        }
         return subclass;
     }
 

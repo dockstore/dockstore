@@ -61,8 +61,10 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -382,6 +384,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     @JsonProperty("last_modified_date")
+    @ApiModelProperty(dataType = "long")
     public Date getLastModifiedDate() {
         return lastModified;
     }
@@ -505,6 +508,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
         for (T version : this.getWorkflowVersions()) {
             if (Objects.equals(newDefaultVersion, version.getName())) {
+                if (version.isHidden()) {
+                    throw new CustomWebApplicationException("You can not set the default version to a hidden version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 this.setActualDefaultVersion(version);
                 this.syncMetadataWithDefault();
                 return true;

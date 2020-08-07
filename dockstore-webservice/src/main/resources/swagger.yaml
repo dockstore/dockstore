@@ -6282,11 +6282,11 @@ definitions:
         additionalProperties:
           $ref: "#/definitions/Alias"
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       entries:
         type: "array"
         items:
@@ -6330,8 +6330,8 @@ definitions:
     type: "object"
     properties:
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       entryPath:
         type: "string"
       entryType:
@@ -6484,8 +6484,8 @@ definitions:
         items:
           $ref: "#/definitions/FileFormat"
       last_modified_date:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         readOnly: true
       output_file_formats:
         type: "array"
@@ -6650,8 +6650,8 @@ definitions:
         description: "This is a specific docker provider like quay.io or dockerhub\
           \ or n/a?, required: GA4GH"
       lastBuild:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 25
         description: "Implementation specific timestamp for last built. For automated\
           \ builds: When refresh is hit, the last time the tool was built gets stored\
@@ -6720,8 +6720,8 @@ definitions:
         items:
           $ref: "#/definitions/FileFormat"
       last_modified_date:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         readOnly: true
       output_file_formats:
         type: "array"
@@ -6827,8 +6827,8 @@ definitions:
         - "WORKFLOW"
         - "SERVICE"
       lastUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       path:
         type: "string"
       prettyPath:
@@ -6849,11 +6849,11 @@ definitions:
     - "type"
     properties:
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       id:
         type: "integer"
         format: "int64"
@@ -7013,8 +7013,8 @@ definitions:
     - "type"
     properties:
       eventDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         readOnly: true
       id:
         type: "integer"
@@ -7128,13 +7128,13 @@ definitions:
         - "MEDIUM"
         - "CRITICAL"
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 5
         description: "Timestamp at which the notification was created"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 6
         description: "Timestamp at which the notification was last updated"
   Organization:
@@ -7150,11 +7150,11 @@ definitions:
         additionalProperties:
           $ref: "#/definitions/Alias"
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       id:
         type: "integer"
         format: "int64"
@@ -7229,8 +7229,8 @@ definitions:
       displayName:
         type: "string"
       lastUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       name:
         type: "string"
   OrganizationUser:
@@ -7243,11 +7243,11 @@ definitions:
         type: "boolean"
         description: "Has the user accepted their membership."
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
       id:
         $ref: "#/definitions/OrganizationUserId"
       organization:
@@ -7271,8 +7271,6 @@ definitions:
         format: "int64"
   ParsedInformation:
     type: "object"
-    required:
-    - "descriptorLanguage"
     properties:
       descriptorLanguage:
         type: "string"
@@ -7599,8 +7597,8 @@ definitions:
         type: "string"
         position: 24
       last_built:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 101
         description: "For automated tools: The last time the container backing this\
           \ tool version was built. For hosted: N/A"
@@ -7634,12 +7632,12 @@ definitions:
     type: "object"
     properties:
       dbCreateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         readOnly: true
       dbUpdateDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         readOnly: true
       id:
         type: "integer"
@@ -7992,10 +7990,6 @@ definitions:
         enum:
         - "NONE"
         - "PRIVACY_POLICY_VERSION_2_5"
-      tosacceptanceDate:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       tosversion:
         type: "string"
         enum:
@@ -8031,9 +8025,15 @@ definitions:
         type: "boolean"
         position: 12
         description: "Indicates whether this user has accepted their username"
+      tosacceptanceDate:
+        type: "integer"
+        format: "int64"
+        position: 15
+        description: "Time TOS was accepted"
+        readOnly: true
       privacyPolicyVersionAcceptanceDate:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 16
         description: "Time privacy policy was accepted"
     description: "End users for the dockstore"
@@ -8242,7 +8242,6 @@ definitions:
         format: "int64"
       parsedInformationSet:
         type: "array"
-        uniqueItems: true
         items:
           $ref: "#/definitions/ParsedInformation"
   Workflow:
@@ -8286,8 +8285,8 @@ definitions:
       isChecker:
         type: "boolean"
       last_modified_date:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         readOnly: true
       output_file_formats:
         type: "array"
@@ -8618,8 +8617,8 @@ definitions:
         position: 101
         description: "Path for the workflow"
       last_modified:
-        type: "string"
-        format: "date-time"
+        type: "integer"
+        format: "int64"
         position: 102
         description: "Remote: Last time version on GitHub repo was changed. Hosted:\
           \ time version created."
