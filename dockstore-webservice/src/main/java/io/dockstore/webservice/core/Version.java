@@ -144,7 +144,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // Warning: this is eagerly loaded because of two reasons:
     // the 4 @ApiModelProperty that uses version metadata
     // This OneToOne
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent")
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private VersionMetadata versionMetadata = new VersionMetadata();
