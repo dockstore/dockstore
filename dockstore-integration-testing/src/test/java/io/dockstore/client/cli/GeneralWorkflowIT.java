@@ -734,10 +734,12 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testWDL");
 
         // Assert default version is updated and no author or email is found
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where actualdefaultversion = '954'", long.class);
-        assertEquals("there should be 1 matching workflow, there is " + count, 1, count);
+        long defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where id = '951'", long.class);
+        String defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
+        assertEquals("the default version should be for the testWDL branch, but is for the branch " + defaultVersionName, "testWDL", defaultVersionName);
+
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '954' and author is null and email is null",
+            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author is null and email is null",
                 long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count2);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
@@ -749,13 +751,14 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Assert default version is updated and author and email are set
-        final long count3 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where actualdefaultversion = '953'", long.class);
-        assertEquals("there should be 1 matching workflow, there is " + count3, 1, count3);
-        final long count4 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where actualdefaultversion = '953' and author = 'testAuthor' and email = 'testEmail'",
+        defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where id = '951'", long.class);
+        defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
+        assertEquals("the default version should be for the testBoth branch, but is for the branch " + defaultVersionName, "testBoth", defaultVersionName);
+
+        final long count3 = testingPostgres.runSelectStatement(
+            "select count(*) from workflow where actualdefaultversion = '" + defaultVersionNumber + "' and author = 'testAuthor' and email = 'testEmail'",
             long.class);
-        assertEquals("The given workflow should have contact info", 1, count4);
+        assertEquals("The given workflow should have contact info", 1, count3);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
         Assert.assertEquals("testBoth", workflow.getDefaultVersion());
         Assert.assertEquals("testAuthor", workflow.getAuthor());
