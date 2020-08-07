@@ -501,7 +501,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return existingWorkflow;
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -936,7 +935,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         setWorkflowVersionSubset(workflow, include);
         return workflow;
     }
-
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include) {
         sessionFactory.getCurrentSession().detach(workflow);
         Long workflowVersionsCount = this.workflowDAO.getWorkflowVersionsCount(workflow.getId());
