@@ -517,11 +517,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         Hibernate.initialize(workflow.getAliases());
-        sessionFactory.getCurrentSession().detach(workflow);
-        List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflowId, 10);
-        workflow.setWorkflowVersionsOverride(new TreeSet<>(ids));
-        initializeAdditionalFields(include, workflow);
-        ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
+        setWorkflowVersionSubset(workflow, include);
         return workflow;
     }
 
@@ -936,10 +932,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
-
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        setWorkflowVersionSubset(workflow, include);
         return workflow;
+    }
+
+    private void setWorkflowVersionSubset(Workflow workflow, String include) {
+        sessionFactory.getCurrentSession().detach(workflow);
+        Long workflowVersionsCount = this.workflowDAO.getWorkflowVersionsCount(workflow.getId());
+        LOG.info(String.valueOf(workflowVersionsCount));
+        List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 150, 0);
+        workflow.setWorkflowVersionsOverride(new TreeSet<>(ids));
+        initializeAdditionalFields(include, workflow);
+        ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
     }
 
     /**
@@ -1131,8 +1136,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        setWorkflowVersionSubset(workflow, include);
         filterContainersForHiddenTags(workflow);
 
         // evil hack for backwards compatibility with 1.6.0 CLI, sorry

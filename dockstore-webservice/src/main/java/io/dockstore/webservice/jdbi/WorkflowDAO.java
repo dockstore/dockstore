@@ -232,14 +232,21 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return list(q);
     }
 
-    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(Long workflowId, int size) {
+    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(Long workflowId, int size, int firstResult) {
         Session session = currentSession();
-        Query query = session.createQuery("from Version v WHERE v.parent.id = :id");
+        Query query = session.createQuery("FROM Version v WHERE v.parent.id = :id ORDER by dbUpdateDate DESC");
         query.setParameter("id", workflowId);
-        query.setFirstResult(0);
+        query.setFirstResult(firstResult);
         query.setMaxResults(size);
         List<WorkflowVersion> workflowVersionIds = query.getResultList();
         return workflowVersionIds;
+    }
+
+    public Long getWorkflowVersionsCount(Long workflowId) {
+        Session session = currentSession();
+        Query query = session.createQuery("select count(v) from Version v WHERE v.parent.id = :id");
+        query.setParameter("id", workflowId);
+        return (Long)query.getSingleResult();
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
