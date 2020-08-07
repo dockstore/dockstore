@@ -353,6 +353,7 @@ public abstract class SourceCodeRepoInterface {
             Workflow workflow = (Workflow)entry;
             workflow.getWorkflowVersions().forEach(workflowVersion -> {
                 String filePath = workflowVersion.getWorkflowPath();
+                // Don't update metadata for versions that have not changed
                 if (!Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID())) {
                     updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
                 }

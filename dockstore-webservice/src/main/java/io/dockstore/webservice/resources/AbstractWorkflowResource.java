@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -168,36 +167,34 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
-        // Remove versions that do not need to be updated
-        Set<WorkflowVersion> filteredVersions = newWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> !Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID())).collect(
-                Collectors.toSet());
+        // Then copy over content that changed (ignore versions that have not changed)
+        newWorkflow.getWorkflowVersions().stream()
+                .filter(workflowVersion -> !Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID()))
+                .forEach(version -> {
+                    WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
 
-        // Then copy over content that changed
-        for (WorkflowVersion version : filteredVersions) {
-            WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
+                    // skip frozen versions
+                    if (existingVersionMap.containsKey(version.getName())) {
+                        if (workflowVersionFromDB.isFrozen()) {
+                            return;
+                        }
+                        workflowVersionFromDB.update(version);
+                    } else {
+                        // attach real workflow
+                        workflow.addWorkflowVersion(version);
 
-            // skip frozen versions
-            if (existingVersionMap.containsKey(version.getName())) {
-                if (workflowVersionFromDB.isFrozen()) {
-                    continue;
-                }
-                workflowVersionFromDB.update(version);
-            } else {
-                // attach real workflow
-                workflow.addWorkflowVersion(version);
+                        final long workflowVersionId = workflowVersionDAO.create(version);
+                        workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
+                        this.eventDAO.createAddTagToEntryEvent(user, workflow, workflowVersionFromDB);
+                        workflow.getWorkflowVersions().add(workflowVersionFromDB);
+                        existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
+                    }
+                    workflowVersionFromDB.setToolTableJson(null);
+                    workflowVersionFromDB.setDagJson(null);
 
-                final long workflowVersionId = workflowVersionDAO.create(version);
-                workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
-                this.eventDAO.createAddTagToEntryEvent(user, workflow, workflowVersionFromDB);
-                workflow.getWorkflowVersions().add(workflowVersionFromDB);
-                existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
-            }
-            workflowVersionFromDB.setToolTableJson(null);
-            workflowVersionFromDB.setDagJson(null);
-
-            // Update sourcefiles
-            updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
-        }
+                    // Update sourcefiles
+                    updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
+                });
     }
 
     /**
