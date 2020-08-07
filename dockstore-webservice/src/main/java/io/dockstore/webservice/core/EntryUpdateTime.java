@@ -1,7 +1,10 @@
-package io.dockstore.common;
+package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
 import java.util.Date;
+
+import io.dockstore.common.EntryType;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Class used to display entries on the Dockstore homepage
@@ -12,6 +15,7 @@ public class EntryUpdateTime {
     private String path;
     private String prettyPath;
     private EntryType entryType;
+    @ApiModelProperty(dataType = "long")
     private Date lastUpdateDate;
 
     public EntryUpdateTime(String path, String prettyPath, EntryType entryType, Timestamp lastUpdateDate) {

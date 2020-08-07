@@ -86,6 +86,7 @@ public class LambdaEvent {
     private Timestamp dbUpdateDate;
 
     @JsonProperty("eventDate")
+    @ApiModelProperty(dataType = "long")
     public Timestamp getDbCreateDate() {
         return dbCreateDate;
     }
