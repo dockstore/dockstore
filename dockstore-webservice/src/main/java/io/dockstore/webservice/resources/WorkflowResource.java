@@ -940,6 +940,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         sessionFactory.getCurrentSession().detach(workflow);
         Long workflowVersionsCount = this.workflowDAO.getWorkflowVersionsCount(workflow.getId());
         LOG.info(String.valueOf(workflowVersionsCount));
+        // Almost all observed workflows have under 150 version, this number should be lowered once the frontend actually supports pagination
         List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 150, 0);
         workflow.setWorkflowVersionsOverride(new TreeSet<>(ids));
         initializeAdditionalFields(include, workflow);
