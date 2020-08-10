@@ -65,6 +65,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -163,6 +164,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Time privacy policy was accepted", position = 16, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Date privacyPolicyVersionAcceptanceDate;
 
     @Column
@@ -491,12 +493,15 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.privacyPolicyVersion = privacyPolicyVersion;
     }
 
+    // tosVersionAcceptanceDate is split into two properties in the resulting OpenAPI.
     @JsonProperty
     @ApiModelProperty(value = "Time TOS was accepted", position = 15, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     public Date getTOSAcceptanceDate() {
         return this.tosVersionAcceptanceDate;
     }
 
+    @Schema(type = "integer", format = "int64")
     public void setTOSVersionAcceptanceDate(Date date) {
         this.tosVersionAcceptanceDate = date;
     }

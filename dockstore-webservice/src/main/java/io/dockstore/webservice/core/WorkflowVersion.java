@@ -39,6 +39,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -71,6 +72,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Column
     @JsonProperty("last_modified")
     @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Date lastModified;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
