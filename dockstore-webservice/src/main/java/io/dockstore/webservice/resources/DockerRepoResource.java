@@ -265,7 +265,7 @@ public class DockerRepoResource
 
         // Refresh checker workflow
         if (refreshedTool.getCheckerWorkflow() != null) {
-            workflowResource.refresh(user, refreshedTool.getCheckerWorkflow().getId());
+            workflowResource.refresh(user, refreshedTool.getCheckerWorkflow().getId(), true);
         }
         refreshedTool.getWorkflowVersions().forEach(Version::updateVerified);
         PublicStateManager.getInstance().handleIndexUpdate(refreshedTool, StateManagerMode.UPDATE);
