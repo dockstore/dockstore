@@ -242,6 +242,14 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return workflowVersionIds;
     }
 
+    public WorkflowVersion getWorkflowVersionByWorkflowIdAndVersionName(Long workflowId, String name) {
+        Session session = currentSession();
+        Query query = session.createQuery("FROM Version v WHERE v.parent.id = :id And v.name = :name");
+        query.setParameter("id", workflowId);
+        query.setParameter("name", name);
+        return (WorkflowVersion)query.getSingleResult();
+    }
+
     public Long getWorkflowVersionsCount(Long workflowId) {
         Session session = currentSession();
         Query query = session.createQuery("select count(v) from Version v WHERE v.parent.id = :id");

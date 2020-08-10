@@ -516,7 +516,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         Hibernate.initialize(workflow.getAliases());
-        setWorkflowVersionSubset(workflow, include);
+        setWorkflowVersionSubset(workflow, include, null);
         return workflow;
     }
 
@@ -932,17 +932,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         checkCanRead(user, workflow);
         Hibernate.initialize(workflow.getAliases());
-        setWorkflowVersionSubset(workflow, include);
+        setWorkflowVersionSubset(workflow, include, null);
         return workflow;
     }
     @SuppressWarnings("checkstyle:MagicNumber")
-    private void setWorkflowVersionSubset(Workflow workflow, String include) {
+    private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
         sessionFactory.getCurrentSession().detach(workflow);
         Long workflowVersionsCount = this.workflowDAO.getWorkflowVersionsCount(workflow.getId());
         LOG.info(String.valueOf(workflowVersionsCount));
-        // Almost all observed workflows have under 150 version, this number should be lowered once the frontend actually supports pagination
-        List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 150, 0);
-        workflow.setWorkflowVersionsOverride(new TreeSet<>(ids));
+
+        // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
+        List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 200, 0);
+        SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
+        if (versionName != null && !workflowVersions.stream().anyMatch(version -> version.getName().equals(versionName))) {
+            WorkflowVersion workflowVersion = this.workflowDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionName);
+            workflowVersions.add(workflowVersion);
+        }
+        workflow.setWorkflowVersionsOverride(workflowVersions);
         initializeAdditionalFields(include, workflow);
         ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
     }
@@ -1131,13 +1137,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "getPublishedWorkflowByPath", description = "Get a published workflow by path")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext, @ApiParam(value = "Version name", required = false) @QueryParam("versionName") String versionName) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
         Hibernate.initialize(workflow.getAliases());
-        setWorkflowVersionSubset(workflow, include);
+        setWorkflowVersionSubset(workflow, include, versionName);
         filterContainersForHiddenTags(workflow);
 
         // evil hack for backwards compatibility with 1.6.0 CLI, sorry
