@@ -5,6 +5,7 @@ import java.util.Date;
 
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Used to retrieve specific entry fields from workflows/tools.  Also used in response for all endpoints that return a single collection.
@@ -12,6 +13,7 @@ import io.swagger.annotations.ApiModelProperty;
 public class CollectionEntry implements Serializable {
     private String entryPath;
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Date dbUpdateDate;
     private long id;
     private String entryType;

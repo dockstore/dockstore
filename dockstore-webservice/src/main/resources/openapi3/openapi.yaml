@@ -45,11 +45,11 @@ components:
             $ref: '#/components/schemas/Alias'
           type: object
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           description: Description of the collection
           type: string
@@ -89,8 +89,8 @@ components:
     CollectionEntry:
       properties:
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         entryPath:
           type: string
         entryType:
@@ -214,11 +214,11 @@ components:
         conceptDoi:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         defaultVersion:
           type: string
         description:
@@ -245,14 +245,14 @@ components:
           type: array
           uniqueItems: true
         lastUpdated:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         last_modified:
           format: int32
           type: integer
         last_modified_date:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         metadataFromEntry:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
@@ -295,11 +295,11 @@ components:
         conceptDoi:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         defaultVersion:
           type: string
         description:
@@ -326,14 +326,14 @@ components:
           type: array
           uniqueItems: true
         lastUpdated:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         last_modified:
           format: int32
           type: integer
         last_modified_date:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         metadataFromEntry:
           type: object
           writeOnly: true
@@ -372,8 +372,8 @@ components:
             - SERVICE
           type: string
         lastUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         path:
           type: string
         prettyPath:
@@ -394,11 +394,11 @@ components:
         collection:
           $ref: '#/components/schemas/Collection'
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           format: int64
           type: integer
@@ -525,8 +525,8 @@ components:
     LambdaEvent:
       properties:
         eventDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         githubUsername:
           type: string
         id:
@@ -561,14 +561,14 @@ components:
     Notification:
       properties:
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         expiration:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           format: int64
           type: integer
@@ -598,11 +598,11 @@ components:
           pattern: ([^\s]+)(\.jpg|\.jpeg|\.png|\.gif)
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         displayName:
@@ -648,8 +648,8 @@ components:
         displayName:
           type: string
         lastUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         name:
           type: string
       type: object
@@ -658,11 +658,11 @@ components:
         accepted:
           type: boolean
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           $ref: '#/components/schemas/OrganizationUserId'
         organization:
@@ -694,8 +694,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         hasHTTPImports:
           type: boolean
@@ -858,8 +858,8 @@ components:
         cwl_path:
           type: string
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         descriptionSource:
@@ -901,8 +901,8 @@ components:
           type: array
           uniqueItems: true
         last_built:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         name:
           type: string
         output_file_formats:
@@ -959,11 +959,11 @@ components:
         content:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           format: int64
           type: integer
@@ -1259,21 +1259,21 @@ components:
             - PRIVACY_POLICY_VERSION_2_5
           type: string
         privacyPolicyVersionAcceptanceDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         setupComplete:
           type: boolean
         tosacceptanceDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         tosversion:
           enum:
             - NONE
             - TOS_VERSION_1
           type: string
         tosversionAcceptanceDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
           writeOnly: true
         userProfiles:
           additionalProperties:
@@ -1327,8 +1327,8 @@ components:
         commitID:
           type: string
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         descriptionSource:
@@ -1447,11 +1447,11 @@ components:
         conceptDoi:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         defaultTestParameterFilePath:
           type: string
         defaultVersion:
@@ -1466,8 +1466,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -1503,14 +1503,14 @@ components:
           type: array
           uniqueItems: true
         lastUpdated:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         last_modified:
           format: int32
           type: integer
         last_modified_date:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         metadataFromEntry:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
@@ -1582,8 +1582,8 @@ components:
         commitID:
           type: string
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         descriptionSource:
@@ -1621,8 +1621,8 @@ components:
           type: array
           uniqueItems: true
         last_modified:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         legacyVersion:
           type: boolean
         name:
@@ -3631,7 +3631,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -6515,7 +6515,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []
