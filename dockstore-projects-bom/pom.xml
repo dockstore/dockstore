@@ -28,13 +28,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <github.url>scm:git:git@github.com:dockstore/dockstore-cli.git</github.url>
         <dropwizard.version>2.0.10</dropwizard.version>
         <dropwizard-annotations.version>4.1.9</dropwizard-annotations.version>
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
         <openapi-annotations-version>2.1.1</openapi-annotations-version>
-        <dockstore-core.version>1.9.0</dockstore-core.version>
-        <dockstore-core-snapshot.version>1.9.1-SNAPSHOT</dockstore-core-snapshot.version>
         <assertj.version>3.14.0</assertj.version>
         <jersey-version>2.31</jersey-version>
         <junit-version>4.13</junit-version>
