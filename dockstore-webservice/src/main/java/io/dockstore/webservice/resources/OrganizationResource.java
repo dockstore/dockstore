@@ -42,6 +42,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
@@ -416,6 +418,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @UnitOfWork
     @ApiOperation(value = "hidden", hidden = true)
     @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete pending or rejected organization", description = "Delete pending or rejected organization", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "OK"),
+            @ApiResponse(responseCode = "400", description = "BAD REQUEST"),
+            @ApiResponse(responseCode = "403", description = "FORBIDDEN")
+    })
     public void deleteRejectedOrPendingOrganization(
             @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
