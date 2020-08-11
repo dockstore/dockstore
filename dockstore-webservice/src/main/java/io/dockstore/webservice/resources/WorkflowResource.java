@@ -945,8 +945,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 200, 0);
         SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
         if (versionName != null && !workflowVersions.stream().anyMatch(version -> version.getName().equals(versionName))) {
-            WorkflowVersion workflowVersion = this.workflowDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionName);
-            workflowVersions.add(workflowVersion);
+            List<WorkflowVersion> workflowVersionByWorkflowIdAndVersionName = this.workflowDAO
+                    .getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionName);
+            if (workflowVersionByWorkflowIdAndVersionName.size() == 1) {
+                WorkflowVersion workflowVersion = workflowVersionByWorkflowIdAndVersionName.get(0);
+                workflowVersions.add(workflowVersion);
+            }
         }
         workflow.setWorkflowVersionsOverride(workflowVersions);
         initializeAdditionalFields(include, workflow);
