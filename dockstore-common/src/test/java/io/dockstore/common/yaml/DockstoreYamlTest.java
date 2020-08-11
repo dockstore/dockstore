@@ -91,6 +91,9 @@ public class DockstoreYamlTest {
         final List<String> testParameterFiles = workflow.getTestParameterFiles();
         assertEquals(1, testParameterFiles.size());
         assertEquals("/dockstore.wdl.json", testParameterFiles.get(0));
+        final List<String> filter = workflow.getFilter();
+        assertEquals(2, filter.size());
+        assertEquals("gwas*", filter.get(0));
         final Service12 service = dockstoreYaml.getService();
         assertNotNull(service);
     }

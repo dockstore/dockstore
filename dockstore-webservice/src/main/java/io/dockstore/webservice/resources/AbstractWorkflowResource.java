@@ -1,6 +1,9 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -383,7 +386,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final SourceFile dockstoreYml) {
         try {
             List<Workflow> updatedWorkflows = new ArrayList<>();
+            final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
+                final List<String> filters = wf.getFilter();
+                // Ignore filters if none specified
+                Boolean isFiltered = !filters.isEmpty();
+                for (String filter : filters) {
+                    final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**/" + filter);
+                    // If filter matches, don't exclude workflow
+                    if (pathMatcher.matches(gitRefPath)) {
+                        isFiltered = false;
+                        break;
+                    }
+                }
+                if (isFiltered) {
+                    continue;
+                }
+
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
 
@@ -411,6 +430,21 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
+            final Path gitRefPath = Path.of(gitReference);
+            final List<String> filters = service.getFilter();
+            // Ignore filters if none specified
+            Boolean isFiltered = !filters.isEmpty();
+            for (String filter : filters) {
+                final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**/" + filter);
+                // If filter matches, don't exclude service
+                if (pathMatcher.matches(gitRefPath)) {
+                    isFiltered = false;
+                    break;
+                }
+            }
+            if (isFiltered) {
+                return updatedServices;
+            }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
