@@ -872,6 +872,13 @@
                             <outputXML>true</outputXML>
                             <ignoreNonCompile>true</ignoreNonCompile>
                             <ignoredDependencies>
+                                <!--
+                                Added these to solve warning messages that said
+                                dependencies were unused when declared, and needed
+                                when undeclared. I assume the dependency plugin
+                                became confused because plugin seems to work without
+                                them being declared as dependencies.
+                                -->
                                 <ignoredDependency>org.apache.httpcomponents:httpcore</ignoredDependency>
                                 <ignoredDependency>org.apache.httpcomponents:httpcore-nio</ignoredDependency>
                                 <ignoredDependency>org.apache.httpcomponents:httpcore-osgi</ignoredDependency>
