@@ -516,7 +516,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         Hibernate.initialize(workflow.getAliases());
-        setWorkflowVersionSubset(workflow, include, null);
+        initializeAdditionalFields(include, workflow);
         return workflow;
     }
 
@@ -932,7 +932,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         checkCanRead(user, workflow);
         Hibernate.initialize(workflow.getAliases());
-        setWorkflowVersionSubset(workflow, include, null);
+        initializeAdditionalFields(include, workflow);
         return workflow;
     }
     @SuppressWarnings("checkstyle:MagicNumber")
