@@ -2087,7 +2087,6 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testGettingSourceFilesForWorkflowVersion() {
-
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -2123,15 +2122,28 @@ public class WorkflowIT extends BaseIT {
                         "test", "cwl", null);
         workflow2 = workflowsApi.refresh(workflow2.getId());
         WorkflowVersion workflow2Version = workflow2.getWorkflowVersions().get(0);
-        boolean throwsError = false;
         try {
             sourceFiles = workflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflow2Version.getId(), null);
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            throwsError = true;
-        }
-        if (!throwsError) {
             fail("Should not be able to grab sourcefile for a version not belonging to a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Version " + workflow2Version.getId() + " does not exist for this entry", ex.getMessage());
         }
+
+        // check that sourcefiles can't be viewed by another user if entry isn't published
+        final io.dockstore.openapi.client.ApiClient user1OpenAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi user1WorkflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(user1OpenAPIWebClient);
+        try {
+            sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+            fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
+        }
+
+        // sourcefiles can be viewed by others once published
+        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
     }
 
     /**
