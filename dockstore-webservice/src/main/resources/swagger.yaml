@@ -6367,7 +6367,11 @@ definitions:
         type: "string"
       bitBucketClientId:
         type: "string"
+      composeSetupVersion:
+        type: "string"
       cwlVisualizerUri:
+        type: "string"
+      deployCommitId:
         type: "string"
       discourseUrl:
         type: "string"
