@@ -414,7 +414,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Path("/{organizationId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Deletes an organization that is pending or rejected", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, hidden = true)
+    @ApiOperation(value = "hidden", hidden = true)
     @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete pending or rejected organization", description = "Delete pending or rejected organization", security = @SecurityRequirement(name = "bearer"))
     public void deleteRejectedOrPendingOrganization(
             @Parameter(hidden = true, name = "user") @Auth User user,
@@ -430,14 +430,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // If the organization to be deleted is pending or has been rejected, then delete the organization
         if (organization.getStatus() == Organization.ApplicationState.PENDING || organization.getStatus() == Organization.ApplicationState.REJECTED) {
-            organization.getStarredUsers().clear();
-            organization.getAliases().clear();
-
             eventDAO.deleteEventByOrganizationID(organizationId);
-            organizationDAO.update(organization);
             organizationDAO.delete(organization);
         } else { // else if the organization is not pending nor rejected, then throw an error
-            throw new CustomWebApplicationException("You cannot delete an organization that is not currently pending or rejected", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("You can only delete organizations that are pending or has been rejected", HttpStatus.SC_BAD_REQUEST);
         }
     }
 

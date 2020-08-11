@@ -96,9 +96,7 @@ public class EventDAO extends AbstractDAO<Event> {
         query.setParameter("organizationId", organizationId);
         query.executeUpdate();
         // Flush after executing the DELETE query. This would force Hibernate to synchronize the state of the
-        // current session with the database so the session can see that an organization has been deleted
-        // NOTE: Flushing does not commit the changes; manually accessing the DB will result with no changes to the
-        // "affected" rows until unit of work is over.
+        // current session with the database so the session can see that an event has been deleted
         currentSession().flush();
     }
 
