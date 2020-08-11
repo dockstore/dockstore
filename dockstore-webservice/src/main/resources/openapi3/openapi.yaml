@@ -1759,7 +1759,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -3694,7 +3694,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -4563,7 +4563,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
         - bearer: []
@@ -4615,6 +4615,27 @@ paths:
       tags:
         - organizations
   /organizations/{organizationId}:
+    delete:
+      description: Delete pending or rejected organization
+      operationId: deleteRejectedOrPendingOrganization
+      parameters:
+        - description: Organization ID.
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+        - bearer: []
+      summary: Delete pending or rejected organization
+      tags:
+        - organizations
     get:
       description: Retrieve an organization by ID. Supports optional authentication.
       operationId: getOrganizationById
@@ -4993,26 +5014,6 @@ paths:
       security:
         - bearer: []
       summary: Add an entry to a collection.
-      tags:
-        - organizations
-  /organizations/{organizationId}/deleteNonApprovedOrg:
-    delete:
-      description: Delete rejected organization
-      operationId: deleteRejectedOrPendingOrganization
-      parameters:
-        - description: Organization ID.
-          in: path
-          name: organizationId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      summary: Delete rejected organization
       tags:
         - organizations
   /organizations/{organizationId}/description:
@@ -6572,7 +6573,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -6598,7 +6599,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []

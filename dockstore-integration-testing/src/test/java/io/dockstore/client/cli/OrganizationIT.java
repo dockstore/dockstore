@@ -1585,9 +1585,14 @@ public class OrganizationIT extends BaseIT {
 
     @Test
     public void testRemoveRejectedOrPendingOrganization() {
-        // Setup admin
+        // Setup admin and one user
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+        io.dockstore.openapi.client.api.OrganizationsApi userOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
+
+        // Revoke admin privileges for user2
+        testingPostgres.runUpdateStatement("UPDATE enduser set isadmin = false WHERE username='DockstoreTestUser2'");
 
         // Create an organization
         io.dockstore.openapi.client.model.Organization organization = organizationsApi.createOrganization(openApiStubOrgObject());
@@ -1622,7 +1627,20 @@ public class OrganizationIT extends BaseIT {
             assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
         }
 
-        // Recreate the organization
+        // Recreate the organization with user2
+        organization = userOrganizationsApi.createOrganization(openApiStubOrgObject());
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.PENDING, organization.getStatus());
+
+        // Delete the organization with the admin - this should pass
+        organizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
+        try {
+            organizationsApi.getOrganizationByName(organization.getName());
+            fail("Organization should not be found since it was deleted");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Recreate the organization with the admin
         organization = organizationsApi.createOrganization(openApiStubOrgObject());
         assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.PENDING, organization.getStatus());
 
@@ -1631,12 +1649,23 @@ public class OrganizationIT extends BaseIT {
         organization = organizationsApi.getOrganizationById(organization.getId());
         assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());
 
-        //Try to delete the organization - this should fail
+        // Try to delete the organization - this should fail
         try {
             organizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
             fail("User cannot delete their approved organization");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
+
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());
+        assertEquals("testname", organization.getName());
+
+        // Try to delete the organization with a user who is not affiliated with the organization - this should fail
+        try {
+            userOrganizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
+            fail("User has no permissions to delete this organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
         }
 
         assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());

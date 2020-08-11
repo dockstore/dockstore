@@ -411,28 +411,34 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     @DELETE
-    @Path("/{organizationId}/deleteNonApprovedOrg")
+    @Path("/{organizationId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Deletes an organization that has been rejected", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = void.class, hidden = true)
-    @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete rejected organization", description = "Delete rejected organization")
+    @ApiOperation(value = "Deletes an organization that is pending or rejected", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, hidden = true)
+    @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete pending or rejected organization", description = "Delete pending or rejected organization", security = @SecurityRequirement(name = "bearer"))
     public void deleteRejectedOrPendingOrganization(
-            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+            @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
+        OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
 
-        if (organization.getStatus() == Organization.ApplicationState.APPROVED) {
-            throw new CustomWebApplicationException("Cannot delete organization that has not been rejected", HttpStatus.SC_BAD_REQUEST);
+        // If the user does not belong to the organization or if the user is not a maintainer of the organization
+        // and if the user is neither an admin nor curator, then throw an error
+        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.MAINTAINER) && (!user.isCurator() && !user.getIsAdmin())) {
+            throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
         }
 
-        organization.getUsers().clear();
-        organization.getStarredUsers().clear();
-        organization.getAliases().clear();
-        organization.getCollections().clear();
+        // If the organization to be deleted is pending or has been rejected, then delete the organization
+        if (organization.getStatus() == Organization.ApplicationState.PENDING || organization.getStatus() == Organization.ApplicationState.REJECTED) {
+            organization.getStarredUsers().clear();
+            organization.getAliases().clear();
 
-        eventDAO.deleteEventByOrganizationID(organizationId);
-        organizationDAO.update(organization);
-        organizationDAO.delete(organization);
+            eventDAO.deleteEventByOrganizationID(organizationId);
+            organizationDAO.update(organization);
+            organizationDAO.delete(organization);
+        } else { // else if the organization is not pending nor rejected, then throw an error
+            throw new CustomWebApplicationException("You cannot delete an organization that is not currently pending or rejected", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @GET
