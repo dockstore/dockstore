@@ -16,8 +16,12 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
 import io.dockstore.webservice.core.WorkflowVersion;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 /**
  * @author dyuen
@@ -30,5 +34,22 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
 
     public WorkflowVersion findByAlias(String alias) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
+    }
+
+    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(Long workflowId, int size, int firstResult) {
+        Session session = currentSession();
+        Query query = session.createQuery("FROM workflowversion v WHERE v.parent.id = :id ORDER by dbUpdateDate DESC");
+        query.setParameter("id", workflowId);
+        query.setFirstResult(firstResult);
+        query.setMaxResults(size);
+        List<WorkflowVersion> workflowVersionIds = query.getResultList();
+        return workflowVersionIds;
+    }
+
+    public List<WorkflowVersion> getWorkflowVersionByWorkflowIdAndVersionName(Long workflowId, String name) {
+        Query query = namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName");
+        query.setParameter("id", workflowId);
+        query.setParameter("name", name);
+        return query.getResultList();
     }
 }

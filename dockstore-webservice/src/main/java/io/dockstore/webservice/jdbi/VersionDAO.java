@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 /**
  * @author xliu
@@ -43,5 +44,12 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
     public Version<T> findVersionInEntry(Long entryId, Long versionId) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Version.findVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
+    }
+
+    // Currently not used for anything, will be used for paginated versions
+    public Long getVersionsCount(Long entryId) {
+        Query query = namedQuery("io.dockstore.webservice.core.Version.getCountByEntryId");
+        query.setParameter("id", entryId);
+        return (Long)query.getSingleResult();
     }
 }

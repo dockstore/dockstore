@@ -73,7 +73,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 // Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM version v WHERE v.parent.id = :id")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

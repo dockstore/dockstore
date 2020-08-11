@@ -938,14 +938,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
         sessionFactory.getCurrentSession().detach(workflow);
-        Long workflowVersionsCount = this.workflowDAO.getWorkflowVersionsCount(workflow.getId());
-        LOG.info(String.valueOf(workflowVersionsCount));
 
         // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
-        List<WorkflowVersion> ids = this.workflowDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 200, 0);
+        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 200, 0);
         SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
-        if (versionName != null && !workflowVersions.stream().anyMatch(version -> version.getName().equals(versionName))) {
-            List<WorkflowVersion> workflowVersionByWorkflowIdAndVersionName = this.workflowDAO
+        if (versionName != null && workflowVersions.stream().noneMatch(version -> version.getName().equals(versionName))) {
+            List<WorkflowVersion> workflowVersionByWorkflowIdAndVersionName = this.workflowVersionDAO
                     .getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionName);
             if (workflowVersionByWorkflowIdAndVersionName.size() == 1) {
                 WorkflowVersion workflowVersion = workflowVersionByWorkflowIdAndVersionName.get(0);

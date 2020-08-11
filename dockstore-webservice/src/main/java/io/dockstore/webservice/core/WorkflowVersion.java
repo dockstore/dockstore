@@ -52,6 +52,8 @@ import org.apache.commons.io.FilenameUtils;
     "name" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "FROM workflowversion v WHERE v.parent.id = :id And v.name = :name")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

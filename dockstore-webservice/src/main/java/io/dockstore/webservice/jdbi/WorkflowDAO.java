@@ -33,9 +33,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.http.HttpStatus;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
@@ -230,31 +228,6 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         q.where(cb.or(predicates.toArray(new Predicate[]{})));
 
         return list(q);
-    }
-
-    public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(Long workflowId, int size, int firstResult) {
-        Session session = currentSession();
-        Query query = session.createQuery("FROM Version v WHERE v.parent.id = :id ORDER by dbUpdateDate DESC");
-        query.setParameter("id", workflowId);
-        query.setFirstResult(firstResult);
-        query.setMaxResults(size);
-        List<WorkflowVersion> workflowVersionIds = query.getResultList();
-        return workflowVersionIds;
-    }
-
-    public List<WorkflowVersion> getWorkflowVersionByWorkflowIdAndVersionName(Long workflowId, String name) {
-        Session session = currentSession();
-        Query query = session.createQuery("FROM Version v WHERE v.parent.id = :id And v.name = :name");
-        query.setParameter("id", workflowId);
-        query.setParameter("name", name);
-        return query.getResultList();
-    }
-
-    public Long getWorkflowVersionsCount(Long workflowId) {
-        Session session = currentSession();
-        Query query = session.createQuery("select count(v) from Version v WHERE v.parent.id = :id");
-        query.setParameter("id", workflowId);
-        return (Long)query.getSingleResult();
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
