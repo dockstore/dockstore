@@ -804,6 +804,7 @@ components:
     SourceFile:
       properties:
         absolutePath:
+          description: Absolute path of sourcefile in git repo
           type: string
         checksums:
           items:
@@ -817,8 +818,10 @@ components:
           format: int64
           type: integer
         path:
+          description: Path to sourcefile relative to its parent
           type: string
         type:
+          description: Enumerates the type of file
           enum:
             - DOCKSTORE_CWL
             - DOCKSTORE_WDL
@@ -841,6 +844,10 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/VerificationInformation'
           type: object
+      required:
+        - absolutePath
+        - path
+        - type
       type: object
     StarRequest:
       properties:
@@ -1425,8 +1432,14 @@ components:
       properties:
         metadata:
           type: string
+        path:
+          type: string
+        platformVersion:
+          type: string
         source:
           type: string
+        verified:
+          type: boolean
         versionId:
           format: int64
           type: integer
@@ -3606,6 +3619,56 @@ paths:
                 items:
                   $ref: '#/components/schemas/VersionVerifiedPlatform'
                 type: array
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - entries
+  /entries/{entryId}/versions/{versionId}/fileTypes:
+    get:
+      description: Retrieve the unique file types of a version's sourcefile
+      operationId: getVersionsFileTypes
+      parameters:
+        - description: Entry to retrieve the version from
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Version to retrieve the sourcefile types from
+          in: path
+          name: versionId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  enum:
+                    - DOCKSTORE_CWL
+                    - DOCKSTORE_WDL
+                    - DOCKERFILE
+                    - CWL_TEST_JSON
+                    - WDL_TEST_JSON
+                    - NEXTFLOW
+                    - NEXTFLOW_CONFIG
+                    - NEXTFLOW_TEST_PARAMS
+                    - DOCKSTORE_YML
+                    - DOCKSTORE_SERVICE_YML
+                    - DOCKSTORE_SERVICE_TEST_JSON
+                    - DOCKSTORE_SERVICE_OTHER
+                    - DOCKSTORE_GXFORMAT2
+                    - GXFORMAT2_TEST_FILE
+                    - DOCKSTORE_SWL
+                    - SWL_TEST_JSON
+                  type: string
+                type: array
+                uniqueItems: true
           description: default response
       security:
         - bearer: []
