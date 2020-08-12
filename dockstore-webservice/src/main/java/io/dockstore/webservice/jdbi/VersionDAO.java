@@ -47,9 +47,9 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     }
 
     // Currently not used for anything, will be used for paginated versions
-    public Long getVersionsCount(Long entryId) {
+    public long getVersionsCount(long entryId) {
         Query query = namedQuery("io.dockstore.webservice.core.Version.getCountByEntryId");
         query.setParameter("id", entryId);
-        return (Long)query.getSingleResult();
+        return (long)query.getSingleResult();
     }
 }
