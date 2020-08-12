@@ -388,18 +388,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
-                final List<String> filters = wf.getFilter();
-                // Ignore filters if none specified
-                Boolean isFiltered = !filters.isEmpty();
-                for (String filter : filters) {
-                    final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**/" + filter);
-                    // If filter matches, don't exclude workflow
-                    if (pathMatcher.matches(gitRefPath)) {
-                        isFiltered = false;
-                        break;
-                    }
-                }
-                if (isFiltered) {
+                if (filterGitReference(gitRefPath, wf.getFilter())) {
                     continue;
                 }
 
@@ -430,19 +419,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
-            final Path gitRefPath = Path.of(gitReference);
-            final List<String> filters = service.getFilter();
-            // Ignore filters if none specified
-            Boolean isFiltered = !filters.isEmpty();
-            for (String filter : filters) {
-                final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**/" + filter);
-                // If filter matches, don't exclude service
-                if (pathMatcher.matches(gitRefPath)) {
-                    isFiltered = false;
-                    break;
-                }
-            }
-            if (isFiltered) {
+            if (filterGitReference(Path.of(gitReference), service.getFilter())) {
                 return updatedServices;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
@@ -451,6 +428,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             updatedServices.add(workflow);
         }
         return updatedServices;
+    }
+
+    /**
+     * Decide whether a gitReference is excluded, given a workflow/service's filters
+     * @param gitRefPath Path.of(gitReference) for glob matching with PathMatcher
+     * @param filters Filters specified for a workflow/service in .dockstore.yml
+     * @return
+     */
+    private boolean filterGitReference(final Path gitRefPath, final List<String> filters) {
+        return !filters.isEmpty() && !filters.stream().anyMatch(filter -> {
+            final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**/" + filter);
+            return pathMatcher.matches(gitRefPath);
+        });
     }
 
     /**
