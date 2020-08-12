@@ -1,20 +1,19 @@
 package io.dockstore.wdlparser;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class AppTest {
   @Test
@@ -57,7 +56,9 @@ public class AppTest {
     WDLParserResponse response = objectMapper.readValue(content, WDLParserResponse.class);
     assertTrue(response.isValid());
     assertTrue(response.getClonedRepositoryAbsolutePath().contains("/tmp"));
-    assertFalse("Main descriptor isn't a secondary file path", response.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"));
+    assertFalse(
+        "Main descriptor isn't a secondary file path",
+        response.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"));
     assertEquals(76, response.getSecondaryFilePaths().size());
     System.out.println(response.getClonedRepositoryAbsolutePath());
   }

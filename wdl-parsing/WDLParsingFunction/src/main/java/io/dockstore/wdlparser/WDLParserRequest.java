@@ -1,32 +1,32 @@
 package io.dockstore.wdlparser;
 
 public class WDLParserRequest {
-    private String uri;
+  private String uri;
 
-    public String getUri() {
-        return uri;
-    }
+  public String getUri() {
+    return uri;
+  }
 
-    public void setUri(String uri) {
-        this.uri = uri;
-    }
+  public void setUri(String uri) {
+    this.uri = uri;
+  }
 
-    public String getBranch() {
-        return branch;
-    }
+  public String getBranch() {
+    return branch;
+  }
 
-    public void setBranch(String branch) {
-        this.branch = branch;
-    }
+  public void setBranch(String branch) {
+    this.branch = branch;
+  }
 
-    public String getDescriptorRelativePathInGit() {
-        return descriptorRelativePathInGit;
-    }
+  public String getDescriptorRelativePathInGit() {
+    return descriptorRelativePathInGit;
+  }
 
-    public void setDescriptorRelativePathInGit(String descriptorRelativePathInGit) {
-        this.descriptorRelativePathInGit = descriptorRelativePathInGit;
-    }
+  public void setDescriptorRelativePathInGit(String descriptorRelativePathInGit) {
+    this.descriptorRelativePathInGit = descriptorRelativePathInGit;
+  }
 
-    private String branch;
-    private String descriptorRelativePathInGit;
+  private String branch;
+  private String descriptorRelativePathInGit;
 }
