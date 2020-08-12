@@ -42,7 +42,7 @@ public abstract class AbstractYamlService {
      */
     private List<String> files;
     /**
-     * A list of git reference globs that Dockstore should ignore
+     * A list of git reference globs that Dockstore should filter for
      */
     private List<String> filter = new ArrayList<>();
     /**
