@@ -1,15 +1,19 @@
 package io.dockstore.wdlparser;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URL;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -54,15 +58,17 @@ public class AppTest {
     Response response = objectMapper.readValue(content, Response.class);
     assertTrue(response.isValid());
     assertTrue(response.getClonedRepositoryAbsolutePath().contains("/tmp"));
-    assertTrue(response.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"));
+    assertFalse("Main descriptor isn't a secondary file path", response.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"));
     assertEquals(76, response.getSecondaryFilePaths().size());
     System.out.println(response.getClonedRepositoryAbsolutePath());
   }
 
   @Test
   public void testRecursiveWDL() throws IOException {
-    String path = ClassLoader.getSystemClassLoader().getResource("recursive.wdl").getPath();
+    File file = new File("src/test/resources/recursive.wdl");
+    String path = file.getAbsolutePath();
     App app = new App();
-    app.getResponse(path);
+    Response response = app.getResponse(path);
+    Assert.assertFalse("A workflow that has recursive HTTP imports is invalid", response.isValid());
   }
 }
