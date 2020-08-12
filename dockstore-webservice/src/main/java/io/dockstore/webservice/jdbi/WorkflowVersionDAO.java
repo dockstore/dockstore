@@ -19,7 +19,6 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.WorkflowVersion;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
