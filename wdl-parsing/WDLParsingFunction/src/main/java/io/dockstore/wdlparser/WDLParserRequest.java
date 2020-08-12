@@ -1,6 +1,6 @@
 package io.dockstore.wdlparser;
 
-public class Request {
+public class WDLParserRequest {
     private String uri;
 
     public String getUri() {
