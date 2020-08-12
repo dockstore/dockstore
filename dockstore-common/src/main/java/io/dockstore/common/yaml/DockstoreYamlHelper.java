@@ -1,6 +1,10 @@
 package io.dockstore.common.yaml;
 
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -198,6 +202,19 @@ public final class DockstoreYamlHelper {
         public DockstoreYamlException(final String msg) {
             super(msg);
         }
+    }
+
+    /**
+     * Decide whether a gitReference is excluded, given a workflow/service's filters
+     * @param gitRefPath Path.of(gitReference) for glob matching with PathMatcher
+     * @param filters Filters specified for a workflow/service in .dockstore.yml
+     * @return
+     */
+    public static boolean filterGitReference(final Path gitRefPath, final List<String> filters) {
+        return filters.isEmpty() || filters.stream().anyMatch(filter -> {
+            final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:refs/{,heads/,tags/}" + filter);
+            return pathMatcher.matches(gitRefPath);
+        });
     }
 
 }

@@ -1,9 +1,7 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -388,7 +386,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
-                if (filterGitReference(gitRefPath, wf.getFilter())) {
+                if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilter())) {
                     continue;
                 }
 
@@ -419,7 +417,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
-            if (filterGitReference(Path.of(gitReference), service.getFilter())) {
+            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilter())) {
                 return updatedServices;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
@@ -428,19 +426,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             updatedServices.add(workflow);
         }
         return updatedServices;
-    }
-
-    /**
-     * Decide whether a gitReference is excluded, given a workflow/service's filters
-     * @param gitRefPath Path.of(gitReference) for glob matching with PathMatcher
-     * @param filters Filters specified for a workflow/service in .dockstore.yml
-     * @return
-     */
-    private boolean filterGitReference(final Path gitRefPath, final List<String> filters) {
-        return !filters.isEmpty() && !filters.stream().anyMatch(filter -> {
-            final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:refs/{,heads/,tags/}" + filter);
-            return pathMatcher.matches(gitRefPath);
-        });
     }
 
     /**
