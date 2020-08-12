@@ -30,6 +30,8 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -40,6 +42,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -81,10 +84,13 @@ public class WebhookIT extends BaseIT {
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String installationId = "1179416";
+    private FileDAO fileDAO;
 
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        this.fileDAO = new FileDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -387,8 +393,9 @@ public class WebhookIT extends BaseIT {
         assertFalse("Version should be invalid", missingPrimaryDescriptorVersion.isValid());
 
         // Check existence of files and validations
-        assertTrue("Should have .dockstore.yml file", missingPrimaryDescriptorVersion.getSourceFiles().stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
-        assertTrue("Should not have doesnotexist.wdl file", missingPrimaryDescriptorVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(missingPrimaryDescriptorVersion.getId());
+        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));;
+        assertTrue("Should not have doesnotexist.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
         assertFalse("Should have invalid .dockstore.yml", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertFalse("Should have invalid doesnotexist.wdl", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 
@@ -405,9 +412,10 @@ public class WebhookIT extends BaseIT {
         assertTrue("Version should be valid (missing test parameter doesn't make the version invalid)", missingTestParameterFileVersion.isValid());
 
         // Check existence of files and validations
-        assertTrue("Should have .dockstore.yml file", missingTestParameterFileVersion.getSourceFiles().stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
-        assertTrue("Should not have /test/doesnotexist.txt file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty());
-        assertTrue("Should have Dockstore2.wdl file", missingTestParameterFileVersion.getSourceFiles().stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")));
+        sourceFiles = fileDAO.findSourceFilesByVersion(missingTestParameterFileVersion.getId());
+        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
+        assertTrue("Should not have /test/doesnotexist.txt file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty());
+        assertTrue("Should have Dockstore2.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
         assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 

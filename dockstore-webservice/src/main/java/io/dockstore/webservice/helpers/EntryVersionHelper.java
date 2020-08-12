@@ -135,11 +135,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             // clear users which are also lazy loaded
             entry.setUsers(null);
             // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<Version> versions = entry.getWorkflowVersions();
-            versions.forEach(version ->
-                version.getSourceFiles().forEach(sourceFile ->
-                        ((SourceFile)sourceFile).setContent(null))
-            );
+//            Set<Version> versions = entry.getWorkflowVersions();
+//            versions.forEach(version ->
+//                version.getSourceFiles().forEach(sourceFile ->
+//                        ((SourceFile)sourceFile).setContent(null))
+//            );
         }
     }
 
@@ -162,8 +162,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType narrow the file to a specific type
      * @return return the primary descriptor or Dockerfile
      */
-    default SourceFile getSourceFile(long entryId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
-        return getSourceFileByPath(entryId, tag, fileType, null, user);
+    default SourceFile getSourceFile(long entryId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
+        return getSourceFileByPath(entryId, tag, fileType, null, user, fileDAO);
     }
 
     /**
@@ -176,8 +176,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param path     a specific path to a file
      * @return a single file depending on parameters
      */
-    default SourceFile getSourceFileByPath(long entryId, String tag, DescriptorLanguage.FileType fileType, String path, Optional<User> user) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user);
+    default SourceFile getSourceFileByPath(long entryId, String tag, DescriptorLanguage.FileType fileType, String path, Optional<User> user, FileDAO fileDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user, fileDAO);
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
             if (path != null) {
                 //db stored paths are absolute, convert relative to absolute
@@ -198,8 +198,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
+    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO);
         return sourceFiles.entrySet().stream()
             .filter(entry -> entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor)
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
@@ -212,8 +212,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
+    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO);
         return sourceFiles.entrySet().stream().filter(entry -> entry.getValue().getLeft().getType().equals(fileType))
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
     }
@@ -226,7 +226,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      */
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
-            DescriptorLanguage.FileType fileType, Optional<User> user) {
+            DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
         T entry = getDAO().findById(workflowId);
         checkEntry(entry);
         checkOptionalAuthRead(user, entry);
@@ -261,7 +261,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
         if (tagInstance instanceof WorkflowVersion) {
             final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
-            List<SourceFile> filteredTypes = workflowVersion.getSourceFiles().stream()
+            List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
+            List<SourceFile> filteredTypes = sourceFiles.stream()
                 .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
                 if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
@@ -279,7 +280,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         } else {
             final Tool tool = (Tool)entry;
             final Tag toolTag = (Tag)tagInstance;
-            List<SourceFile> filteredTypes = toolTag.getSourceFiles().stream().filter(file -> Objects.equals(file.getType(), fileType))
+            List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(toolTag.getId());
+            List<SourceFile> filteredTypes = sourceFiles.stream().filter(file -> Objects.equals(file.getType(), fileType))
                 .collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
                 // dockerfile is a special case since there always is only a max of one

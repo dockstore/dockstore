@@ -870,7 +870,7 @@ public class DockerRepoResource
     public SourceFile dockerfile(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user);
+        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user, fileDAO);
     }
 
     // Add for new descriptor types
@@ -885,7 +885,7 @@ public class DockerRepoResource
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(containerId, tag, fileType, user);
+        return getSourceFile(containerId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -900,7 +900,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFileByPath(containerId, tag, fileType, path, user);
+        return getSourceFileByPath(containerId, tag, fileType, path, user, fileDAO);
     }
 
     @GET
@@ -914,7 +914,7 @@ public class DockerRepoResource
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getAllSecondaryFiles(containerId, tag, fileType, user);
+        return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -929,7 +929,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
         final FileType testParameterType = DescriptorLanguage.getTestParameterType(descriptorType).orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
-        return getAllSourceFiles(containerId, tag, testParameterType, user);
+        return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO);
     }
 
     /**

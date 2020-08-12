@@ -25,13 +25,11 @@ import java.util.List;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
-import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.DropwizardTestSupport;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -46,6 +44,10 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.io.FileUtils;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -71,9 +73,6 @@ import static org.junit.Assert.assertTrue;
 @Category(ConfidentialTest.class)
 public class CRUDClientIT extends BaseIT {
 
-    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -85,6 +84,20 @@ public class CRUDClientIT extends BaseIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    private FileDAO fileDAO;
+
+    @Before
+    public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+
+        this.fileDAO = new FileDAO(sessionFactory);
+
+        // used to allow us to use fileDAO outside of the web service
+        Session session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+    }
 
     @Test
     public void testToolCreation() {
@@ -131,7 +144,8 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
         Optional<Tag> first = dockstoreTool.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
+        assertEquals("correct number of source files", 2, sourceFiles.size());
         assertTrue("a tool lacks a date", dockstoreTool.getLastModifiedDate() != null && dockstoreTool.getLastModified() != 0);
 
         SourceFile file2 = new SourceFile();
@@ -221,7 +235,8 @@ public class CRUDClientIT extends BaseIT {
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
-        assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
+        assertEquals("correct number of source files", 1, sourceFiles.size());
         assertTrue("a workflow lacks a date", first.get().getLastModified() != null && first.get().getLastModified() != 0);
 
         SourceFile file2 = new SourceFile();
@@ -233,7 +248,8 @@ public class CRUDClientIT extends BaseIT {
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file2));
         first = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
-        assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
+        assertEquals("correct number of source files", 2, sourceFiles.size());
 
         SourceFile file3 = new SourceFile();
         file3.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
@@ -244,7 +260,8 @@ public class CRUDClientIT extends BaseIT {
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
         first = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
-        assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
+        sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
+        assertEquals("correct number of source files", 3, sourceFiles.size());
         assertEquals("Name of the version that was just created should be 3", "3", first.get().getName());
         // Delete the workflow version and recreate it
         api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "3");
@@ -259,7 +276,8 @@ public class CRUDClientIT extends BaseIT {
         dockstoreWorkflow = api.editHostedWorkflow(dockstoreWorkflow.getId(), Lists.newArrayList(file, file2));
         first = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
-        assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
+        assertEquals("correct number of source files", 2, sourceFiles.size());
 
         dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "1");
         assertEquals("should only be three revisions", 3, dockstoreWorkflow.getWorkflowVersions().size());
@@ -467,7 +485,8 @@ public class CRUDClientIT extends BaseIT {
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
-        assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        long numSourcefiles = testingPostgres.runSelectStatement("SELECT COUNT(*) FROM sourcefile, workflow, workflowversion, version_sourcefile WHERE workflow.id = " + hostedWorkflow.getId() + " AND workflowversion.parentid = workflow.id AND version_sourcefile.versionid = workflowversion.id AND sourcefile.id = version_sourcefile.sourcefileid", long.class);
+        assertEquals("correct number of source files", 1, numSourcefiles);
         // Update the default version of the workflow
         workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), first.get().getName());
     }
