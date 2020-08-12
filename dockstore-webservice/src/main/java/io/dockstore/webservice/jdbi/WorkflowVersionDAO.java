@@ -37,8 +37,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     }
 
     public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(Long workflowId, int size, int firstResult) {
-        Session session = currentSession();
-        Query query = session.createQuery("FROM workflowversion v WHERE v.parent.id = :id ORDER by dbUpdateDate DESC");
+        Query query = namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId");
         query.setParameter("id", workflowId);
         query.setFirstResult(firstResult);
         query.setMaxResults(size);
