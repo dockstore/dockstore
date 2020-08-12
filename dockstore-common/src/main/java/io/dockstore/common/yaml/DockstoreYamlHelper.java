@@ -198,12 +198,6 @@ public final class DockstoreYamlHelper {
         return validatorFactory.getValidator();
     }
 
-    public static class DockstoreYamlException extends Exception {
-        public DockstoreYamlException(final String msg) {
-            super(msg);
-        }
-    }
-
     /**
      * Decide whether a gitReference is excluded, given a workflow/service's filters
      * @param gitRefPath Path.of(gitReference) for glob matching with PathMatcher
@@ -215,6 +209,12 @@ public final class DockstoreYamlHelper {
             final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:refs/{,heads/,tags/}" + filter);
             return pathMatcher.matches(gitRefPath);
         });
+    }
+
+    public static class DockstoreYamlException extends Exception {
+        public DockstoreYamlException(final String msg) {
+            super(msg);
+        }
     }
 
 }
