@@ -438,7 +438,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     private boolean filterGitReference(final Path gitRefPath, final List<String> filters) {
         return !filters.isEmpty() && !filters.stream().anyMatch(filter -> {
-            final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**/" + filter);
+            final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**" + filter);
             return pathMatcher.matches(gitRefPath);
         });
     }
