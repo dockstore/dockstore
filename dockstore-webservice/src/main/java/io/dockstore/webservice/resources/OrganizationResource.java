@@ -440,7 +440,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             eventDAO.deleteEventByOrganizationID(organizationId);
             organizationDAO.delete(organization);
         } else { // else if the organization is not pending nor rejected, then throw an error
-            throw new CustomWebApplicationException("You can only delete organizations that are pending or has been rejected", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("You can only delete organizations that are pending or have been rejected", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
