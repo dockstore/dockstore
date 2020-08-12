@@ -134,12 +134,6 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             dao.evict(entry);
             // clear users which are also lazy loaded
             entry.setUsers(null);
-            // need to have this evicted so that hibernate does not actually delete the tags and users
-//            Set<Version> versions = entry.getWorkflowVersions();
-//            versions.forEach(version ->
-//                version.getSourceFiles().forEach(sourceFile ->
-//                        ((SourceFile)sourceFile).setContent(null))
-//            );
         }
     }
 
