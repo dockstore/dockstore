@@ -84,6 +84,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 
 /**
@@ -755,20 +756,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (CustomWebApplicationException ex) {
             throw new CustomWebApplicationException("Could not find repository " + repositoryId + ".", LAMBDA_FAILURE);
         }
-        String dockstoreYmlContent = this.readFileFromRepo(DOCKSTORE_YML_PATH, gitReference, repository);
-        if (dockstoreYmlContent != null) {
-            // Create file for .dockstore.yml
-            SourceFile dockstoreYml = new SourceFile();
-            dockstoreYml.setContent(dockstoreYmlContent);
-            dockstoreYml.setPath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setAbsolutePath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
+        String dockstoreYmlContent = null;
+        for (String dockstoreYmlPath : DOCKSTORE_YML_PATHS) {
+            dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
+            if (dockstoreYmlContent != null) {
+                // Create file for .dockstore.yml
+                SourceFile dockstoreYml = new SourceFile();
+                dockstoreYml.setContent(dockstoreYmlContent);
+                dockstoreYml.setPath(dockstoreYmlPath);
+                dockstoreYml.setAbsolutePath(dockstoreYmlPath);
+                dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
 
-            return dockstoreYml;
-        } else {
-            // TODO: https://github.com/dockstore/dockstore/issues/3239
-            throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
+                return dockstoreYml;
+            }
         }
+        // TODO: https://github.com/dockstore/dockstore/issues/3239
+        throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
