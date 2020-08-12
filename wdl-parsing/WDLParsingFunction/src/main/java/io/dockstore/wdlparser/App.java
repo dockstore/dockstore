@@ -28,6 +28,7 @@ import womtool.WomtoolMain;
  */
 public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     ObjectMapper mapper = new ObjectMapper();
+    @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
 
         Map<String, String> headers = new HashMap<>();
@@ -38,7 +39,7 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
                 .withHeaders(headers);
         if (input != null && input.getBody() != null) {
             try {
-                Request request = mapper.readValue(input.getBody(), Request.class);
+                WDLParserRequest request = mapper.readValue(input.getBody(), WDLParserRequest.class);
                 try {
                     String s = parseWDLFile(request.getUri(), request.getBranch(), request.getDescriptorRelativePathInGit());
                     return response.withStatusCode(HttpURLConnection.HTTP_OK).withBody(s);
@@ -64,12 +65,14 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
         git.checkout().setName(branch).call();
         Path descriptorAbsolutePath = tempDirWithPrefix.resolve(descriptorRelativePathInGit);
         String descriptorAbsolutePathString = descriptorAbsolutePath.toString();
-        Response response = getResponse(descriptorAbsolutePathString);
+        WDLParserResponse response = getResponse(descriptorAbsolutePathString);
         response.getSecondaryFilePaths().replaceAll(s -> s.replaceFirst(tempDirWithPrefix.toString(), ""));
         return mapper.writeValueAsString(response);
     }
 
-    private void handleSuccessResponse(Response response, List<String> strings) {
+    // The first two lines aren't actual paths.
+    // It looks like "Success!" and "List of Workflow dependencies is:"
+    private static void handleSuccessResponse(WDLParserResponse response, List<String> strings) {
         strings.remove(0);
         strings.remove(0);
         // If there are no imports, womtool says None
@@ -79,8 +82,8 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
         response.setSecondaryFilePaths(strings);
     }
 
-    public Response getResponse(String descriptorAbsolutePathString) throws IOException {
-        Response response = new Response();
+    public static WDLParserResponse getResponse(String descriptorAbsolutePathString) throws IOException {
+        WDLParserResponse response = new WDLParserResponse();
         response.setClonedRepositoryAbsolutePath(descriptorAbsolutePathString);
         List<String> commandLineArgs = Arrays.asList("validate", "-l", descriptorAbsolutePathString);
         try {

@@ -2,7 +2,7 @@ package io.dockstore.wdlparser;
 
 import java.util.List;
 
-public class Response {
+public class WDLParserResponse {
     public List<String> getSecondaryFilePaths() {
         return secondaryFilePaths;
     }
