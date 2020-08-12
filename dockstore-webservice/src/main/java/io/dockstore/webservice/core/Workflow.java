@@ -46,6 +46,7 @@ import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -230,6 +231,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.workflowVersions;
     }
 
+    @Hidden
     public void setWorkflowVersionsOverride(SortedSet<WorkflowVersion> newWorkflowVersions) {
         this.workflowVersions = newWorkflowVersions;
     }

@@ -138,6 +138,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -940,7 +941,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         sessionFactory.getCurrentSession().detach(workflow);
 
         // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
-        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), 200, 0);
+        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
         SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
         if (versionName != null && workflowVersions.stream().noneMatch(version -> version.getName().equals(versionName))) {
             List<WorkflowVersion> workflowVersionByWorkflowIdAndVersionName = this.workflowVersionDAO
