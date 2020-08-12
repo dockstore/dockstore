@@ -206,7 +206,14 @@ public final class DockstoreYamlHelper {
      */
     public static boolean filterGitReference(final Path gitRefPath, final List<String> filters) {
         return filters.isEmpty() || filters.stream().anyMatch(filter -> {
-            final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:refs/{,heads/,tags/}" + filter);
+            String matcherString;
+            // Use regex if filter string is surrounded by /
+            if (filter.matches("^\\/.*\\/$")) {
+                matcherString = "regex:^refs\\/(heads\\/|tags\\/|)" + filter.substring(1, filter.length() - 1);
+            } else {
+                matcherString = "glob:refs/{heads/,tags/,}" + filter;
+            }
+            PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(matcherString);
             return pathMatcher.matches(gitRefPath);
         });
     }

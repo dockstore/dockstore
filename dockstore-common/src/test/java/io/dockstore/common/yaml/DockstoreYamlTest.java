@@ -18,6 +18,7 @@ package io.dockstore.common.yaml;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -199,6 +200,83 @@ public class DockstoreYamlTest {
     public void testGalaxySubclass() throws DockstoreYamlHelper.DockstoreYamlException {
         final List<YamlWorkflow> workflows = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE_GALAXY_YAML).getWorkflows();
         assertEquals(4, workflows.stream().filter(w -> w.getSubclass().equalsIgnoreCase("gxformat2")).count());
+    }
+
+    @Test
+    public void testGitReferenceFilter() {
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("anything"), List.of()));
+
+        // Generic name filter
+        // Glob
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("develop")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("develop")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("develop")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("develop")));
+        // Regex
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("/develop/")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("/develop/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("/develop/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("/develop/")));
+
+        // Branch-only name filter
+        // Glob
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("heads/develop")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("heads/develop")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("heads/develop")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("heads/develop")));
+        // Regex
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("/heads\\/develop/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("/heads\\/develop/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("/heads\\/develop/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("/heads\\/develop/")));
+
+        // Tag-only name filter
+        // Glob
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("tags/develop")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("tags/develop")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("tags/develop")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("tags/develop")));
+        // Regex
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("/tags\\/develop/")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("/tags\\/develop/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("/tags\\/develop/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("/tags\\/develop/")));
+
+        // Tags-only
+        // Glob
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("tags/**")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("tags/**")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("tags/**")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("tags/**")));
+        // Regex
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("/tags\\/.*/")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("/tags\\/.*/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("/tags\\/.*/")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("/tags\\/.*/")));
+
+        // Any *dev* branch goes
+        // Glob
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("heads/**dev**")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("heads/**dev**")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("heads/**dev**")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("heads/**dev**")));
+        // Regex
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("/heads\\/.*dev.*/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("/heads\\/.*dev.*/")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("/heads\\/.*dev.*/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("/heads\\/.*dev.*/")));
+
+        // Any *foo* tag or head goes
+        // Glob
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("**foo**")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("**foo**")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("**foo**")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("**foo**")));
+        // Regex
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), List.of("/.*foo.*/")));
+        assertTrue(!DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), List.of("/.*foo.*/")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), List.of("/.*foo.*/")));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/develop"), List.of("/.*foo.*/")));
     }
 
 }
