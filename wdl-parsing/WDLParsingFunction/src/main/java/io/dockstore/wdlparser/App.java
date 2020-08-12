@@ -72,6 +72,10 @@ public class App implements RequestHandler<APIGatewayProxyRequestEvent, APIGatew
     private void handleSuccessResponse(Response response, List<String> strings) {
         strings.remove(0);
         strings.remove(0);
+        // If there are no imports, womtool says None
+        if (strings.get(0).equals("None")) {
+            strings.remove(0);
+        }
         response.setSecondaryFilePaths(strings);
     }
 
