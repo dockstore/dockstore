@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class AppTest {
@@ -63,8 +64,7 @@ public class AppTest {
     System.out.println(response.getClonedRepositoryAbsolutePath());
   }
 
-  // Potentially dangerous test to run
-  @Test
+  @Ignore("Too dangerous test to run, also flakey")
   public void testRecursiveWDL() throws IOException {
     File file = new File("src/test/resources/recursive.wdl");
     String path = file.getAbsolutePath();
