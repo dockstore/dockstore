@@ -55,6 +55,7 @@ import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dropwizard.testing.ResourceHelpers;
@@ -155,6 +156,7 @@ public class WorkflowIT extends BaseIT {
 
     private WorkflowDAO workflowDAO;
     private WorkflowVersionDAO workflowVersionDAO;
+    private FileDAO fileDAO;
 
     @Before
     public void setup() {
@@ -163,6 +165,7 @@ public class WorkflowIT extends BaseIT {
 
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
+        this.fileDAO = new FileDAO(sessionFactory);
 
         // used to allow us to use workflowDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
@@ -657,8 +660,8 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
         Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
         ownerWorkflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(true));
-        final List<SourceFile> sourceFiles = refresh.getWorkflowVersions().stream()
-                .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getSourceFiles();
+        final List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(refresh.getWorkflowVersions().stream()
+                .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getId());
         final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
         final List<ToolFile> files = ga4GhApi
                 .toolsIdVersionsVersionIdTypeFilesGet("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
@@ -783,10 +786,9 @@ public class WorkflowIT extends BaseIT {
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null, false);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
-
         assertEquals("workflow does not include expected config included files", 3,
-            refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("master")).findFirst().get()
-                .getSourceFiles().stream().filter(file -> file.getPath().startsWith("conf/")).count());
+            fileDAO.findSourceFilesByVersion(refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("master")).findFirst().get().getId())
+                    .stream().filter(file -> file.getPath().startsWith("conf/")).count());
     }
 
     @Test
@@ -867,14 +869,17 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("a workflow lacks a date", mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0);
         assertNotNull("Nextflow workflow not found after update", mtaNf);
         assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
-        int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> version.getSourceFiles().size()).sum();
+
+        int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> fileDAO.findSourceFilesByVersion(version.getId()).size()).sum();
         assertTrue("nextflow workflow should have at least two sourcefiles", numOfSourceFiles >= 2);
+
         long scriptCount = mtaNf.getWorkflowVersions().stream()
-            .mapToLong(version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW).count())
-            .sum();
-        long configCount = mtaNf.getWorkflowVersions().stream().mapToLong(
-            version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW_CONFIG).count())
-            .sum();
+                .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW).count())
+                .sum();
+
+        long configCount = mtaNf.getWorkflowVersions().stream()
+                .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW_CONFIG).count())
+                .sum();
         assertTrue("nextflow workflow should have at least one config file and one script file", scriptCount >= 1 && configCount >= 1);
 
         // check that we can pull down the nextflow workflow via the ga4gh TRS API

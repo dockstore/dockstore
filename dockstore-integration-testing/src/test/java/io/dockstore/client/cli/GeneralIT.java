@@ -431,8 +431,9 @@ public class GeneralIT extends BaseIT {
     public void verifySourcefileChecksumsSaved(final List<Tag> tags) {
         assertTrue(tags.size() > 0);
         tags.stream().forEach(tag -> {
-            assertTrue(tag.getSourceFiles().size() > 0);
-            tag.getSourceFiles().stream().forEach(sourceFile -> {
+            List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
+            assertTrue(sourceFiles.size() > 0);
+            sourceFiles.stream().forEach(sourceFile -> {
                 assertTrue(sourceFile.getChecksums().size() > 0);
                 sourceFile.getChecksums().stream().forEach(checksum -> {
                     assertFalse(checksum.getChecksum().isEmpty());
