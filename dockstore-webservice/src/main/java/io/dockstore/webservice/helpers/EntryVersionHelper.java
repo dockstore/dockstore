@@ -58,6 +58,7 @@ import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 
 /**
  * This interface contains code for interacting with the files of versions for all types of entries (currently, tools and workflows)
@@ -103,6 +104,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @return the filtered entry
      */
     default T filterContainersForHiddenTags(T entry) {
+        Hibernate.initialize(entry.getWorkflowVersions());
         return filterContainersForHiddenTags(Lists.newArrayList(entry)).get(0);
     }
 
@@ -112,6 +114,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     default List<T> filterContainersForHiddenTags(List<T> entries) {
         for (T entry : entries) {
+            Hibernate.initialize(entry.getWorkflowVersions());
             getDAO().evict(entry);
             // clear users which are also lazy loaded
             entry.setUsers(null);

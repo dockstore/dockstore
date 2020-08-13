@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -137,6 +138,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -515,11 +517,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkCanRead(user, workflow);
-
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        initializeAdditionalFields(include, workflow);
         return workflow;
     }
 
@@ -936,10 +937,27 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
-
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        initializeAdditionalFields(include, workflow);
         return workflow;
+    }
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
+        sessionFactory.getCurrentSession().detach(workflow);
+
+        // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
+        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
+        SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
+        if (versionName != null && workflowVersions.stream().noneMatch(version -> version.getName().equals(versionName))) {
+            WorkflowVersion workflowVersionByWorkflowIdAndVersionName = this.workflowVersionDAO
+                    .getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionName);
+            if (workflowVersionByWorkflowIdAndVersionName != null) {
+                workflowVersions.add(workflowVersionByWorkflowIdAndVersionName);
+            }
+        }
+        workflow.setWorkflowVersionsOverride(workflowVersions);
+        initializeAdditionalFields(include, workflow);
+        ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
     }
 
     /**
@@ -1126,13 +1144,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "getPublishedWorkflowByPath", description = "Get a published workflow by path")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext, @ApiParam(value = "Version name", required = false) @QueryParam("versionName") String versionName) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        setWorkflowVersionSubset(workflow, include, versionName);
         filterContainersForHiddenTags(workflow);
 
         // evil hack for backwards compatibility with 1.6.0 CLI, sorry

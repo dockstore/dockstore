@@ -46,6 +46,7 @@ import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -126,12 +127,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
     private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
-    private final SortedSet<WorkflowVersion> workflowVersions;
+    private SortedSet<WorkflowVersion> workflowVersions;
 
     @JsonIgnore
     @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
@@ -227,7 +228,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Override
     public Set<WorkflowVersion> getWorkflowVersions() {
-        return workflowVersions;
+        return this.workflowVersions;
+    }
+
+    @Hidden
+    public void setWorkflowVersionsOverride(SortedSet<WorkflowVersion> newWorkflowVersions) {
+        this.workflowVersions = newWorkflowVersions;
     }
 
     /**

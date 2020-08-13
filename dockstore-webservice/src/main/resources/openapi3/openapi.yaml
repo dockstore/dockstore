@@ -1417,8 +1417,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -6808,6 +6808,10 @@ paths:
           schema:
             default: false
             type: boolean
+        - in: query
+          name: versionName
+          schema:
+            type: string
       responses:
         default:
           content:

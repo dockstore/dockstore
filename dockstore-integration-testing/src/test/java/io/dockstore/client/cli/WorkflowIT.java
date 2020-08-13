@@ -566,6 +566,9 @@ public class WorkflowIT extends BaseIT {
         } finally {
             FileUtils.deleteQuietly(tempFile);
         }
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        sessionFactory.getCurrentSession().close();
     }
 
     /**
@@ -886,7 +889,7 @@ public class WorkflowIT extends BaseIT {
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId(), null);
         assertNotNull("did not get published workflow", publishedWorkflow);
         final Workflow publishedWorkflowByPath = workflowApi
-            .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+            .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false, null);
         assertNotNull("did not get published workflow", publishedWorkflowByPath);
 
         // publish everything so pagination testing makes more sense (going to unfortunately use rate limit)
@@ -1890,7 +1893,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNull("Getting workflow version via workflow path has null alias", workflowVersionByPath.getAliases());
 
         final Workflow publishedWorkflowByPath = workflowApi
-                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false, null);
         assertNotNull("did not get published workflow by path", publishedWorkflowByPath);
         Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPath = publishedWorkflowByPath.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
@@ -1930,7 +1933,7 @@ public class WorkflowIT extends BaseIT {
 
 
         final Workflow publishedWorkflowByPathValidation = workflowApi
-                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "aliases", false);
+                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "aliases", false, null);
         assertNotNull("did not get published workflow by path", publishedWorkflowByPathValidation);
         Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPathValidation = publishedWorkflowByPathValidation.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
