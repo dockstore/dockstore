@@ -3,6 +3,10 @@ package io.dockstore.wdlparser;
 import java.util.List;
 
 public class WDLParserResponse {
+  private String clonedRepositoryAbsolutePath;
+  private boolean isValid;
+  private List<String> secondaryFilePaths;
+
   public List<String> getSecondaryFilePaths() {
     return secondaryFilePaths;
   }
@@ -10,9 +14,6 @@ public class WDLParserResponse {
   public void setSecondaryFilePaths(List<String> secondaryFilePaths) {
     this.secondaryFilePaths = secondaryFilePaths;
   }
-
-  private List<String> secondaryFilePaths;
-  private boolean isValid;
 
   public boolean isValid() {
     return isValid;
@@ -29,6 +30,4 @@ public class WDLParserResponse {
   public void setClonedRepositoryAbsolutePath(String clonedRepositoryAbsolutePath) {
     this.clonedRepositoryAbsolutePath = clonedRepositoryAbsolutePath;
   }
-
-  private String clonedRepositoryAbsolutePath;
 }
