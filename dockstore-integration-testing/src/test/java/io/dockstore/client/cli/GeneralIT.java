@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.ws.rs.core.Response;
 
@@ -51,6 +53,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -434,19 +437,16 @@ public class GeneralIT extends BaseIT {
 
         workflow = workflowApi.refresh(workflow.getId());
         SourceFile sourceFile = workflow.getWorkflowVersions().get(0).getSourceFiles().get(0);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        workflowApi.publish(workflow.getId(), publishRequest);
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
-        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata, platformversion) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho', '1.0')");
         versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         sourceFile = tool.getWorkflowVersions().get(0).getSourceFiles().get(0);
-        toolApi.publish(tool.getId(), publishRequest);
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
@@ -454,6 +454,96 @@ public class GeneralIT extends BaseIT {
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
+        // check that verified platforms can't be viewed by another user if entry isn't published
+        io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi user1EntriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
+        try {
+            versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
+            fail("Should not be able to verified platforms if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("This entry is not published.", ex.getMessage());
+        }
+
+        // verified platforms can be viewed by others once published
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(workflow.getId(), publishRequest);
+        versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
+        Assert.assertEquals(1, versionsVerified.size());
+    }
+
+    @Test
+    public void testGettingVersionsFileTypes() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final HostedApi hostedApi = new HostedApi(webClient);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
+
+        Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, DescriptorLanguage.WDL.toString(), null, null);
+        SourceFile sourceFile = new SourceFile();
+        sourceFile.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
+        sourceFile.setContent("workflow potato {\n}");
+        sourceFile.setPath("/Dockstore.wdl");
+        sourceFile.setAbsolutePath("/Dockstore.wdl");
+
+        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
+        List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(1, fileTypes.size());
+        assertEquals(SourceFile.TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
+
+        SourceFile testFile = new SourceFile();
+        testFile.setType(SourceFile.TypeEnum.WDL_TEST_JSON);
+        testFile.setContent("{}");
+        testFile.setPath("/test.wdl.json");
+        testFile.setAbsolutePath("/test.wdl.json");
+
+        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile, testFile));
+        workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
+        fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(2, fileTypes.size());
+        assertFalse(fileTypes.get(0) == fileTypes.get(1));
+
+        DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        SourceFile cwl = new SourceFile();
+        cwl.setContent("class: CommandLineTool\ncwlVersion: v1.0");
+        cwl.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        cwl.setPath("/Dockstore.cwl");
+        cwl.setAbsolutePath("/Dockstore.cwl");
+        SourceFile testcwl = new SourceFile();
+        testcwl.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        testcwl.setContent("{}");
+        testcwl.setPath("/test.cwl.json");
+        testcwl.setAbsolutePath("/test.cwl.json");
+        tool = hostedApi.editHostedTool(tool.getId(), Lists.newArrayList(sourceFile, testFile, cwl, testcwl, dockerfile));
+
+        fileTypes = entriesApi.getVersionsFileTypes(tool.getId(), tool.getWorkflowVersions().get(0).getId());
+        assertEquals(5, fileTypes.size());
+        // ensure no duplicates
+        SortedSet set = new TreeSet(fileTypes);
+        assertEquals(set.size(), fileTypes.size());
+
+        // check that file types can't be viewed by another user if entry isn't published
+        io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi user1entriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
+        try {
+            fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+            fail("Should not be able to grab a versions file types if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("This entry is not published.", ex.getMessage());
+        }
+
+        // file types can be viewed by others once published
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(workflow.getId(), publishRequest);
+        fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(2, fileTypes.size());
+        assertFalse(fileTypes.get(0) == fileTypes.get(1));
     }
 
     // Tests 1.10.0 migration where id=adddescriptortypecolumn

@@ -25,6 +25,7 @@ import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -84,6 +85,25 @@ public class OrganizationIT extends BaseIT {
     private Organization stubOrgObject() {
         String markdownDescription = "An h1 header ============ Paragraphs are separated by a blank line. 2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists look like: * this one * that one * the other one Note that --- not considering the asterisk --- the actual text content starts at 4-columns in. > Block quotes are > written like so. > > They can span multiple paragraphs, > if you like. Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., \"it's all in chapters 12--14\"). Three dots ... will be converted to an ellipsis. Unicode is supported. ☺ ";
         Organization organization = new Organization();
+        organization.setName("testname");
+        organization.setDisplayName("test name");
+        organization.setLocation("testlocation");
+        organization.setLink("https://www.google.com");
+        organization.setEmail("test@email.com");
+        organization.setDescription(markdownDescription);
+        organization.setTopic("This is a short topic");
+        organization.setAvatarUrl("https://www.lifehardin.net/images/employees/default-logo.png");
+        return organization;
+    }
+
+    /**
+     * Creates an openAPI version of a stub Organization object
+     *
+     * @return openAPI Organization object
+     */
+    private io.dockstore.openapi.client.model.Organization openApiStubOrgObject() {
+        String markdownDescription = "An h1 header ============ Paragraphs are separated by a blank line. 2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists look like: * this one * that one * the other one Note that --- not considering the asterisk --- the actual text content starts at 4-columns in. > Block quotes are > written like so. > > They can span multiple paragraphs, > if you like. Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., \"it's all in chapters 12--14\"). Three dots ... will be converted to an ellipsis. Unicode is supported. ☺ ";
+        io.dockstore.openapi.client.model.Organization organization = new io.dockstore.openapi.client.model.Organization();
         organization.setName("testname");
         organization.setDisplayName("test name");
         organization.setLocation("testlocation");
@@ -1561,5 +1581,94 @@ public class OrganizationIT extends BaseIT {
         users.remove(user);
         organization.setStarredUsers(users);
         assertEquals(0, organization.getStarredUsers().size());
+    }
+
+    @Test
+    public void testRemoveRejectedOrPendingOrganization() {
+        // Setup admin and one user
+        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+        io.dockstore.openapi.client.api.OrganizationsApi userOrganizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
+
+        // Revoke admin privileges for user2
+        testingPostgres.runUpdateStatement("UPDATE enduser set isadmin = false WHERE username='DockstoreTestUser2'");
+
+        // Create an organization
+        io.dockstore.openapi.client.model.Organization organization = organizationsApi.createOrganization(openApiStubOrgObject());
+
+        // Organization should initially be pending
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.PENDING, organization.getStatus());
+
+        // Delete the organization
+        organizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
+        try {
+            organizationsApi.getOrganizationByName(organization.getName());
+            fail("Organization should not be found since it was deleted");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Recreate the organization
+        organization = organizationsApi.createOrganization(openApiStubOrgObject());
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.PENDING, organization.getStatus());
+
+        // Reject the organization
+        organizationsApi.rejectOrganization(organization.getId());
+        organization = organizationsApi.getOrganizationById(organization.getId());
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.REJECTED, organization.getStatus());
+
+        // Delete the organization
+        organizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
+        try {
+            organizationsApi.getOrganizationByName(organization.getName());
+            fail("Organization should not be found since it was deleted");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Recreate the organization with user2
+        organization = userOrganizationsApi.createOrganization(openApiStubOrgObject());
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.PENDING, organization.getStatus());
+
+        // Delete the organization with the admin - this should pass
+        organizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
+        try {
+            organizationsApi.getOrganizationByName(organization.getName());
+            fail("Organization should not be found since it was deleted");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Recreate the organization with the admin
+        organization = organizationsApi.createOrganization(openApiStubOrgObject());
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.PENDING, organization.getStatus());
+
+        // Approve the organization
+        organizationsApi.approveOrganization(organization.getId());
+        organization = organizationsApi.getOrganizationById(organization.getId());
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());
+
+        // Try to delete the organization - this should fail
+        try {
+            organizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
+            fail("User cannot delete their approved organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
+
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());
+        assertEquals("testname", organization.getName());
+
+        // Try to delete the organization with a user who is not affiliated with the organization - this should fail
+        try {
+            userOrganizationsApi.deleteRejectedOrPendingOrganization(organization.getId());
+            fail("User has no permissions to delete this organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+        }
+
+        assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());
+        assertEquals("testname", organization.getName());
     }
 }

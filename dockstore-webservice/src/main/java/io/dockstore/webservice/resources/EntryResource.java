@@ -20,6 +20,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
@@ -31,12 +34,14 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
@@ -145,9 +150,44 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public List<VersionVerifiedPlatform> getVerifiedPlatforms(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "entryId", description = "id of the entry", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
-        checkOptionalAuthRead(user, entry);
+        checkEntry(entry);
+
+        checkEntryPermissions(user, entry);
+
         List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
         return verifiedVersions;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{entryId}/versions/{versionId}/fileTypes")
+    @ApiOperation(value = "Retrieve the file types of a version's sourcefiles",  hidden = true)
+    @Operation(operationId = "getVersionsFileTypes", description = "Retrieve the unique file types of a version's sourcefile", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public SortedSet<DescriptorLanguage.FileType> getVersionsFileTypes(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+            @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
+            @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
+        checkEntry(entry);
+
+        checkEntryPermissions(user, entry);
+
+        Version version = versionDAO.findVersionInEntry(entryId, versionId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+        return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    public void checkEntryPermissions(final Optional<User> user, final Entry<? extends Entry, ? extends Version> entry) {
+        if (!entry.getIsPublished()) {
+            if (user.isEmpty()) {
+                throw new CustomWebApplicationException("This entry is not published.", HttpStatus.SC_NOT_FOUND);
+            }
+            checkUser(user.get(), entry);
+        }
     }
 
     @POST

@@ -301,7 +301,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 configuration.getAuthenticationCachePolicy());
         environment.jersey().register(new AuthDynamicFeature(
                 new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(cachingAuthenticator).setAuthorizer(new SimpleAuthorizer())
-                        .setPrefix("Bearer").setRealm("SUPER SECRET STUFF").buildAuthFilter()));
+                        .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
 

@@ -36,6 +36,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -94,7 +95,7 @@ public class Organization implements Serializable, Aliasable {
 
     @Column
     @ApiModelProperty(value = "Set of users in the organization", required = true, position = 7)
-    @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<OrganizationUser> users = new HashSet<>();
 
     @Column
@@ -127,11 +128,13 @@ public class Organization implements Serializable, Aliasable {
     @Column(updatable = false)
     @CreationTimestamp
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     @Column

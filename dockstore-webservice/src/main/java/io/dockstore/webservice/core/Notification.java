@@ -16,6 +16,7 @@ import javax.validation.constraints.Size;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -49,6 +50,7 @@ public class Notification {
 
     @Column
     @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp expiration;
 
     @Column
@@ -65,11 +67,13 @@ public class Notification {
     @Column(updatable = false)
     @CreationTimestamp
     @ApiModelProperty(value = "Timestamp at which the notification was created", position = 5, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
     @ApiModelProperty(value = "Timestamp at which the notification was last updated", position = 6, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     public Notification() { }  // blank constructor called by POST request

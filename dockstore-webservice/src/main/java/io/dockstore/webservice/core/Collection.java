@@ -107,11 +107,13 @@ public class Collection implements Serializable, Aliasable {
     @Column(updatable = false)
     @CreationTimestamp
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     @Transient

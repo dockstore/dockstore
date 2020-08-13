@@ -11,11 +11,17 @@ public class VersionVerifiedPlatform {
     private final Long versionId;
     private final String metadata;
     private final String source;
+    private final String platformVersion;
+    private final String path;
+    private final boolean verified;
 
-    public VersionVerifiedPlatform(final Long versionId, final String source, final String metadata) {
+    public VersionVerifiedPlatform(final Long versionId, final String source, final String metadata, final String platformVersion, final String path, final boolean verified) {
         this.versionId = versionId;
         this.source = source;
         this.metadata = metadata;
+        this.platformVersion = platformVersion;
+        this.path = path;
+        this.verified = verified;
     }
 
     public long getVersionId() {
@@ -29,4 +35,17 @@ public class VersionVerifiedPlatform {
     public String getSource() {
         return source;
     }
+
+    public String getPlatformVersion() {
+        return platformVersion;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
 }

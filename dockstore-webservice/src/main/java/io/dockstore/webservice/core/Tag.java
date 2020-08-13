@@ -31,6 +31,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -50,6 +51,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     @Column
     @JsonProperty("last_built")
     @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 101, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Date lastBuilt;
 
     @Column

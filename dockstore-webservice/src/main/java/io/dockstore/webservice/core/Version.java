@@ -56,6 +56,7 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
@@ -75,7 +76,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
         @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
-                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata) FROM Version version "
+                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "
                         + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                         + "version.parent.id = :entryId"
         )
@@ -157,12 +158,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
     @ApiModelProperty(position = 10, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
     @ApiModelProperty(position = 11, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)

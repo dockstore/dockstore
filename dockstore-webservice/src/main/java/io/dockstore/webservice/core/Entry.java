@@ -64,6 +64,7 @@ import io.dockstore.common.EntryType;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
@@ -160,6 +161,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice. "
             + "Tools-> For automated builds: last time tool/namespace was refreshed Dockstore, tool info (like changing dockerfile path) updated, or default version selected. For hosted tools: when you created the tool. "
             + "Workflows-> For remote: When refresh all is hit for first time. Hosted: Seems to be time created.", position = 10, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Date lastUpdated;
 
     @Column
@@ -183,11 +185,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     @Column
@@ -385,6 +389,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty("last_modified_date")
     @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     public Date getLastModifiedDate() {
         return lastModified;
     }
