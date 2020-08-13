@@ -77,11 +77,6 @@ public class GeneralWorkflowIT extends BaseIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
-    @Before
-    @Override
-    public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-    }
     private FileDAO fileDAO;
 
     @Before
@@ -93,8 +88,15 @@ public class GeneralWorkflowIT extends BaseIT {
         // used to allow us to use fileDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
-
     }
+
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+    }
+
+
 
 
     /**
