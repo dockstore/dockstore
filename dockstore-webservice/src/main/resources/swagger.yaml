@@ -2913,6 +2913,8 @@ paths:
       summary: "Create an organization."
       description: "Organization requires approval by an admin before being made public."
       operationId: "createOrganization"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:

@@ -7,6 +7,7 @@ import java.util.Set;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -41,6 +42,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
@@ -409,6 +412,38 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
+    @DELETE
+    @Path("/{organizationId}")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "hidden", hidden = true)
+    @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete pending or rejected organization", description = "Delete pending or rejected organization", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "NO CONTENT"),
+            @ApiResponse(responseCode = "400", description = "BAD REQUEST"),
+            @ApiResponse(responseCode = "403", description = "FORBIDDEN")
+    })
+    public void deleteRejectedOrPendingOrganization(
+            @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
+        Organization organization = organizationDAO.findById(organizationId);
+        OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
+
+        // If the user does not belong to the organization or if the user is not a maintainer of the organization
+        // and if the user is neither an admin nor curator, then throw an error
+        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.MAINTAINER) && (!user.isCurator() && !user.getIsAdmin())) {
+            throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
+        }
+
+        // If the organization to be deleted is pending or has been rejected, then delete the organization
+        if (organization.getStatus() == Organization.ApplicationState.PENDING || organization.getStatus() == Organization.ApplicationState.REJECTED) {
+            eventDAO.deleteEventByOrganizationID(organizationId);
+            organizationDAO.delete(organization);
+        } else { // else if the organization is not pending nor rejected, then throw an error
+            throw new CustomWebApplicationException("You can only delete organizations that are pending or have been rejected", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -444,6 +479,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @ApiOperation(value = "Create an organization.", notes = "Organization requires approval by an admin before being made public.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     @Operation(operationId = "createOrganization", summary = "Create an organization.", description = "Create an organization. Organization requires approval by an admin before being made public.", security = @SecurityRequirement(name = "bearer"))
