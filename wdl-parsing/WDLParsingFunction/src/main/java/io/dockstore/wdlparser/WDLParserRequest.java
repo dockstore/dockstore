@@ -2,6 +2,8 @@ package io.dockstore.wdlparser;
 
 public class WDLParserRequest {
   private String uri;
+  private String branch;
+  private String descriptorRelativePathInGit;
 
   public String getUri() {
     return uri;
@@ -26,7 +28,4 @@ public class WDLParserRequest {
   public void setDescriptorRelativePathInGit(String descriptorRelativePathInGit) {
     this.descriptorRelativePathInGit = descriptorRelativePathInGit;
   }
-
-  private String branch;
-  private String descriptorRelativePathInGit;
 }
