@@ -414,7 +414,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        return refreshWorkflow(user, workflowId, Optional.empty());
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.empty());
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     @GET
@@ -432,7 +434,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        return refreshWorkflow(user, workflowId, Optional.of(version));
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.of(version));
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     /**

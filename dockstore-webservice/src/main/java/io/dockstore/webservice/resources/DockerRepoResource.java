@@ -138,10 +138,12 @@ public class DockerRepoResource
     private final EventDAO eventDAO;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
+    private final SessionFactory sessionFactory;
 
     public DockerRepoResource(final HttpClient client, final SessionFactory sessionFactory, final DockstoreWebserviceConfiguration configuration,
         final WorkflowResource workflowResource, final EntryResource entryResource) {
 
+        this.sessionFactory = sessionFactory;
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.tagDAO = new TagDAO(sessionFactory);
@@ -269,6 +271,7 @@ public class DockerRepoResource
         }
         refreshedTool.getWorkflowVersions().forEach(Version::updateVerified);
         PublicStateManager.getInstance().handleIndexUpdate(refreshedTool, StateManagerMode.UPDATE);
+        EntryVersionHelper.removeSourceFilesFromEntry(tool, sessionFactory);
         return refreshedTool;
     }
 

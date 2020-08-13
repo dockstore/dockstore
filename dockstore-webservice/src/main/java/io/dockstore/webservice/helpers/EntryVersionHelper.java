@@ -58,6 +58,8 @@ import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
 /**
  * This interface contains code for interacting with the files of versions for all types of entries (currently, tools and workflows)
@@ -135,6 +137,17 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             // clear users which are also lazy loaded
             entry.setUsers(null);
         }
+    }
+
+    static void removeSourceFilesFromEntry(Entry entry, SessionFactory sessionFactory) {
+        Session currentSession = sessionFactory.getCurrentSession();
+        currentSession.save(entry);
+        currentSession.flush();
+        currentSession.evict(entry);
+        Set<Version> versions = entry.getWorkflowVersions();
+        versions.forEach(version ->
+                version.getSourceFiles().clear()
+        );
     }
 
     default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO) {
