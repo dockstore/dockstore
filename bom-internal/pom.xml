@@ -82,6 +82,13 @@ POM as their parent.
 
     <dependencyManagement>
         <dependencies>
+            <!-- Specify newer version of reflections to pass pgpverify-maven-plugin check -->
+            <!-- https://mvnrepository.com/artifact/org.reflections/reflections -->
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>0.9.12</version>
+            </dependency>
             <dependency>
                 <groupId>io.dockstore</groupId>
                 <artifactId>zenodo-client-generated</artifactId>
