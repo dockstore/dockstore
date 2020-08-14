@@ -47,27 +47,27 @@ jobs:
     - stage: coverage
       env:
         - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=false
+      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=false
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
       env:
         - TESTING_PROFILE=tool-integration-tests
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
       env:
         - TESTING_PROFILE=workflow-integration-tests
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
 #    - stage: coverage
-#      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+#      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
 #      if: branch = master OR branch =~ /^release.*$/
 #      env:
 #        - TESTING_PROFILE=toil-integration-tests
 
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
       env:
         - TESTING_PROFILE=regression-integration-tests
       if: branch = master OR branch =~ /^release.*$/
