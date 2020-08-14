@@ -695,7 +695,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String featuredContentUrl;
 
-        private String deployCommitId;
+        private String deployVersion;
 
         private String composeSetupVersion;
 
@@ -916,12 +916,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.featuredContentUrl = featuredContentUrl;
         }
 
-        public String getDeployCommitId() {
-            return deployCommitId;
+        public String getDeployVersion() {
+            return deployVersion;
         }
 
-        public void setDeployCommitId(final String deployCommitId) {
-            this.deployCommitId = deployCommitId;
+        public void setDeployVersion(final String deployVersion) {
+            this.deployVersion = deployVersion;
         }
 
         public String getComposeSetupVersion() {

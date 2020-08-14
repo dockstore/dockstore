@@ -6373,7 +6373,7 @@ definitions:
         type: "string"
       cwlVisualizerUri:
         type: "string"
-      deployCommitId:
+      deployVersion:
         type: "string"
       discourseUrl:
         type: "string"
