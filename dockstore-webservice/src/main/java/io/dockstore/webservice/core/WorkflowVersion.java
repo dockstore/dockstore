@@ -170,7 +170,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, reference);
+        return Objects.hash(this.getName(), this.getReference());
     }
 
     @Override
@@ -181,7 +181,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("name", name).add("reference", reference).toString();
+        return MoreObjects.toStringHelper(this).add("id", id).add("name", this.getName()).add("reference", this.getReference()).toString();
     }
 
     public Service.SubClass getSubClass() {
