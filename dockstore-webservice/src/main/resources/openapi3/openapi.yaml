@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes.  This exposes the hashcode for specific image versions to verify that the container version pulled is actually the version that was indexed by the registry.
-      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
+      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
+      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -694,8 +694,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         hasHTTPImports:
           type: boolean
@@ -1479,8 +1479,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         descriptorTypeSubclass:
           enum:
@@ -4472,7 +4472,7 @@ paths:
       operationId: createOrganization
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Organization'
         description: Organization to register.
@@ -4563,7 +4563,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
         - bearer: []
@@ -4615,6 +4615,29 @@ paths:
       tags:
         - organizations
   /organizations/{organizationId}:
+    delete:
+      description: Delete pending or rejected organization
+      operationId: deleteRejectedOrPendingOrganization
+      parameters:
+        - description: Organization ID.
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "204":
+          description: NO CONTENT
+        "400":
+          description: BAD REQUEST
+        "403":
+          description: FORBIDDEN
+      security:
+        - bearer: []
+      summary: Delete pending or rejected organization
+      tags:
+        - organizations
     get:
       description: Retrieve an organization by ID. Supports optional authentication.
       operationId: getOrganizationById
@@ -4691,7 +4714,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -6552,7 +6575,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -6578,7 +6601,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []

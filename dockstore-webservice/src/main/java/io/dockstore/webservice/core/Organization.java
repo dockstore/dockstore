@@ -95,7 +95,7 @@ public class Organization implements Serializable, Aliasable {
 
     @Column
     @ApiModelProperty(value = "Set of users in the organization", required = true, position = 7)
-    @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<OrganizationUser> users = new HashSet<>();
 
     @Column
