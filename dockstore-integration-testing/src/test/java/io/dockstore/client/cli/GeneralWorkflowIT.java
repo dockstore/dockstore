@@ -1006,7 +1006,7 @@ public class GeneralWorkflowIT extends BaseIT {
             fail("wdl_import version should exist");
         }
         assertTrue(
-            version.get().getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
+            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
                 .findFirst().isPresent());
     }
 
@@ -1037,7 +1037,7 @@ public class GeneralWorkflowIT extends BaseIT {
             fail("master version should exist");
         }
         assertTrue(
-            version.get().getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
+            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
                 .findFirst().isPresent());
     }
 

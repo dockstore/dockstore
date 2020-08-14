@@ -156,7 +156,7 @@ public class CRUDClientIT extends BaseIT {
         // add one file and include the old one implicitly
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
         first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
+        assertEquals("correct number of source files", 3, fileDAO.findSourceFilesByVersion(first.get().getId()).size());
         String revisionWithTestFile = first.get().getName();
 
         // delete a file
@@ -164,7 +164,7 @@ public class CRUDClientIT extends BaseIT {
 
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, file2, dockerfile));
         first = dockstoreTool.getWorkflowVersions().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        assertEquals("correct number of source files", 2, fileDAO.findSourceFilesByVersion(first.get().getId()).size());
 
         // Default version automatically updated to the latest version (3).
         dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "3");
@@ -314,7 +314,7 @@ public class CRUDClientIT extends BaseIT {
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file4));
         first = dockstoreWorkflow.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
-        Optional<SourceFile> msf = first.get().getSourceFiles().stream().filter(sf -> absPathTest.equals(sf.getPath())).findFirst();
+        Optional<io.dockstore.webservice.core.SourceFile> msf = fileDAO.findSourceFilesByVersion(first.get().getId()).stream().filter(sf -> absPathTest.equals(sf.getPath())).findFirst();
         String absolutePath = msf.get().getAbsolutePath();
         assertEquals(absPathTest, absolutePath);
     }
@@ -457,7 +457,7 @@ public class CRUDClientIT extends BaseIT {
         Optional<Tag> first = dockstoreTool.getWorkflowVersions().stream()
             .max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
-        assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        assertEquals("correct number of source files", 2, fileDAO.findSourceFilesByVersion(first.get().getId()).size());
         // Update the default version of the tool
         containersApi.updateToolDefaultVersion(hostedTool.getId(), first.get().getName());
 
