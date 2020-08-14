@@ -200,7 +200,6 @@
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
-            <version>${swagger-annotations-version}</version>
         </dependency>
 
         <!-- HTTP client: jersey-client -->
@@ -247,7 +246,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.major.version}</version>
         </dependency>
 
         <dependency>

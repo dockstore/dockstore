@@ -40,7 +40,6 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>zenodo-client-generated</artifactId>
-            <version>0.2</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -61,7 +60,6 @@
         <dependency>
             <groupId>com.spotify</groupId>
             <artifactId>docker-client</artifactId>
-            <version>8.11.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-configuration2 -->
         <dependency>
@@ -85,7 +83,6 @@
         <dependency>
             <groupId>cloud.localstack</groupId>
             <artifactId>localstack-utils</artifactId>
-            <version>0.1.19</version>
             <scope>test</scope>
         </dependency>
         <dependency>
