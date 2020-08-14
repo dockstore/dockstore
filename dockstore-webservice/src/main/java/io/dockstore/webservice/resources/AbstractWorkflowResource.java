@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -323,7 +324,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             return workflows;
-        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
+        } catch (CustomWebApplicationException | ClassCastException | PatternSyntaxException | DockstoreYamlHelper.DockstoreYamlException ex) {
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
@@ -386,7 +387,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
-                if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilter())) {
+                if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                     continue;
                 }
 
@@ -417,7 +418,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
-            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilter())) {
+            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
                 return updatedServices;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();

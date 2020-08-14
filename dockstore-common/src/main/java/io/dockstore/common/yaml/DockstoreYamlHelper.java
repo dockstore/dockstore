@@ -204,17 +204,37 @@ public final class DockstoreYamlHelper {
      * @param filters Filters specified for a workflow/service in .dockstore.yml
      * @return
      */
-    public static boolean filterGitReference(final Path gitRefPath, final List<String> filters) {
-        return filters.isEmpty() || filters.stream().anyMatch(filter -> {
+    public static boolean filterGitReference(final Path gitRefPath, final Filters filters) {
+        final List<String> branches = filters.getBranches();
+        final List<String> tags = filters.getTags();
+
+        // If no filters specified, accept anything
+        if (branches.isEmpty() && tags.isEmpty()) {
+            return true;
+        }
+
+        List<String> patterns;
+        if (gitRefPath.startsWith("refs/heads/")) {
+            patterns = branches;
+        } else if (gitRefPath.startsWith("refs/tags/")) {
+            patterns = tags;
+        } else {
+            // Reaching this is unexpected - should have a warning here.
+            return false;
+        }
+
+        // Remove refs/heads/ or refs/tags/ from Path for matching
+        final Path matchPath = gitRefPath.subpath(2, gitRefPath.getNameCount());
+        return patterns.stream().anyMatch(pattern -> {
             String matcherString;
-            // Use regex if filter string is surrounded by /
-            if (filter.matches("^\\/.*\\/$")) {
-                matcherString = "regex:^refs\\/(heads\\/|tags\\/|)" + filter.substring(1, filter.length() - 1);
+            // Use regex if pattern string is surrounded by /, otherwise use glob
+            if (pattern.matches("^\\/.*\\/$")) {
+                matcherString = "regex:" + pattern.substring(1, pattern.length() - 1);
             } else {
-                matcherString = "glob:refs/{heads/,tags/,}" + filter;
+                matcherString = "glob:" + pattern;
             }
             PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(matcherString);
-            return pathMatcher.matches(gitRefPath);
+            return pathMatcher.matches(matchPath);
         });
     }
 

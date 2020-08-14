@@ -15,7 +15,6 @@
  */
 package io.dockstore.common.yaml;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,9 +41,9 @@ public abstract class AbstractYamlService {
      */
     private List<String> files;
     /**
-     * A list of git reference globs that Dockstore should filter for
+     * A set of git reference globs/regex patterns that Dockstore should filter for
      */
-    private List<String> filter = new ArrayList<>();
+    private Filters filters;
     /**
      * A scripts object for the service's lifecycle
      */
@@ -90,12 +89,12 @@ public abstract class AbstractYamlService {
         this.files = files;
     }
 
-    public List<String> getFilter() {
-        return filter;
+    public Filters getFilters() {
+        return filters;
     }
 
-    public void setFilter(final List<String> filter) {
-        this.filter = filter;
+    public void setFilters(final Filters filters) {
+        this.filters = filters;
     }
 
     public Scripts getScripts() {
