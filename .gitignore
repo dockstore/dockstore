@@ -2,6 +2,7 @@
 .idea
 *.class
 *.swp
+.aws-sam
 target
 
 # Contains SQL statements to initialize testing DB with a confidential user and tokens
