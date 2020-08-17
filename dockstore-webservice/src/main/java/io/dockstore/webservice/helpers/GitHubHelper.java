@@ -48,6 +48,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -56,6 +57,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+import org.kohsuke.github.GHLicense;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +86,19 @@ public final class GitHubHelper {
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    public static LicenseInformation getLicenseInformation(GitHub gitHub, String repositoryName) {
+        LicenseInformation licenseInformation = new LicenseInformation();
+        try {
+            GHRepository repository = gitHub.getRepository(repositoryName);
+            GHLicense license = repository.getLicense();
+            licenseInformation.setLicenseName(license.getName());
+            licenseInformation.setLicenseContent(repository.getLicenseContent().getContent());
+            return licenseInformation;
+        } catch (IOException e) {
+            return new LicenseInformation();
         }
     }
 

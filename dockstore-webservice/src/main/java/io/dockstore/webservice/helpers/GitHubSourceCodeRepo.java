@@ -47,6 +47,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
@@ -517,6 +518,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, existingDefaults);
         }
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, workflow.getOrganization() + '/' + workflow.getRepository());
+        version.setLicenseInformation(licenseInformation);
 
         return versionValidation(version, workflow, calculatedPath);
     }
