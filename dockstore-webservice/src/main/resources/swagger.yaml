@@ -6489,6 +6489,8 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      licenseInformation:
+        $ref: "#/definitions/LicenseInformation"
       output_file_formats:
         type: "array"
         readOnly: true
@@ -6725,6 +6727,8 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      licenseInformation:
+        $ref: "#/definitions/LicenseInformation"
       output_file_formats:
         type: "array"
         readOnly: true
@@ -7054,6 +7058,11 @@ definitions:
         - "PUSH"
         - "DELETE"
         - "INSTALL"
+  LicenseInformation:
+    type: "object"
+    properties:
+      licenseName:
+        type: "string"
   Limits:
     type: "object"
     properties:
@@ -8290,6 +8299,8 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      licenseInformation:
+        $ref: "#/definitions/LicenseInformation"
       output_file_formats:
         type: "array"
         readOnly: true
