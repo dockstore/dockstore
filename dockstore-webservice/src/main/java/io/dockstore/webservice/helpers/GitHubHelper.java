@@ -89,6 +89,13 @@ public final class GitHubHelper {
         }
     }
 
+    /**
+     * TODO: Possibly alter this to be version-specific
+     * Get license for a specific GitHub repository
+     * @param gitHub    The GitHub API
+     * @param repositoryName    Name of the GitHub repository (e.g. dockstore/lambda)
+     * @return  The LicenseInformation associated with the repository
+     */
     public static LicenseInformation getLicenseInformation(GitHub gitHub, String repositoryName) {
         LicenseInformation licenseInformation = new LicenseInformation();
         try {

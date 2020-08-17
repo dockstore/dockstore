@@ -12,6 +12,7 @@ import org.kohsuke.github.RateLimitHandler;
 
 public class GitHubHelperTest {
 
+    // TODO: Replace repos with something less likely to change, add an integration test with refresh
     @Test
     public void testGitHubLicense() throws IOException {
         GitHub gitHub = new GitHubBuilder().withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(

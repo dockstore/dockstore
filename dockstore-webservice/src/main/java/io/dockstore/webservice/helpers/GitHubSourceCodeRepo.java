@@ -518,6 +518,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, existingDefaults);
         }
+
+        // TODO: Move this out if only doing entry-level license information, alter this to version-specific otherwise
         LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, workflow.getOrganization() + '/' + workflow.getRepository());
         version.setLicenseInformation(licenseInformation);
 
