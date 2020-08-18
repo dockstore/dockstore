@@ -298,6 +298,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, workflow.getOrganization() + '/' + workflow.getRepository());
+            workflow.setLicenseInformation(licenseInformation);
+
             // Why is the path not set here?
         } catch (GHFileNotFoundException e) {
             LOG.info(gitUsername + ": GitHub reports file not found: " + e.getCause().getLocalizedMessage(), e);
@@ -326,7 +329,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
-
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
+        service.setLicenseInformation(licenseInformation);
         // Validate subclass
         if (subclass != null) {
             DescriptorLanguageSubclass descriptorLanguageSubclass;
@@ -518,10 +522,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             version = setupWorkflowFilesForVersion(calculatedPath, ref, repository, version, identifiedType, workflow, existingDefaults);
         }
-
-        // TODO: Move this out if only doing entry-level license information, alter this to version-specific otherwise
-        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, workflow.getOrganization() + '/' + workflow.getRepository());
-        version.setLicenseInformation(licenseInformation);
 
         return versionValidation(version, workflow, calculatedPath);
     }

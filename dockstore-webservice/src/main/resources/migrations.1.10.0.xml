@@ -64,16 +64,13 @@
         <sql dbms="postgresql">delete from version_metadata vm where vm.id not in (select wv.id from workflowversion wv union select t.id from tag t);</sql>
     </changeSet>
     <changeSet author="gluu (generated)" id="addLicenseInformation">
-        <addColumn tableName="tag">
-            <column name="licensecontent" type="text"/>
-        </addColumn>
-        <addColumn tableName="workflowversion">
-            <column name="licensecontent" type="text"/>
-        </addColumn>
-        <addColumn tableName="tag">
+        <addColumn tableName="service">
             <column name="licensename" type="varchar(255 BYTE)"/>
         </addColumn>
-        <addColumn tableName="workflowversion">
+        <addColumn tableName="tool">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
             <column name="licensename" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>

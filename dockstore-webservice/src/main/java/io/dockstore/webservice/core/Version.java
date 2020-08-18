@@ -28,7 +28,6 @@ import java.util.TreeSet;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -196,9 +195,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
 
-    @Embedded
-    private LicenseInformation licenseInformation;
-
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();
@@ -265,13 +261,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         frozen = version.isFrozen();
         commitID = version.getCommitID();
         this.setVersionMetadata(version.getVersionMetadata());
-    }
-    public LicenseInformation getLicenseInformation() {
-        return licenseInformation;
-    }
-
-    public void setLicenseInformation(LicenseInformation licenseInformation) {
-        this.licenseInformation = licenseInformation;
     }
 
     public void clone(T version) {
