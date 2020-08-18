@@ -182,6 +182,11 @@ public class WDLHandlerTest {
             return "gatk";
         }
 
+        @Override
+        public void setLicenseInformation(Entry entry, String gitRepository) {
+
+        }
+
         // From here on down these methods are not invoked in our tests
         @Override
         public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {

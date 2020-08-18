@@ -110,6 +110,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+
+    }
+
+    @Override
     public Workflow initializeWorkflow(String repositoryId, Workflow workflow) {
         // Does this split not work if name has a slash?
         String[] id = repositoryId.split("/");

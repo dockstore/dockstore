@@ -220,7 +220,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String conceptDoi;
 
     @Embedded
-    private LicenseInformation licenseInformation;
+    private LicenseInformation licenseInformation = new LicenseInformation();
 
     public Entry() {
         users = new TreeSet<>();
@@ -456,6 +456,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
+        setLicenseInformation(entry.getLicenseInformation());
         setMetadataFromEntry(entry);
         lastModified = entry.getLastModifiedDate();
         // Only overwrite the giturl if the new git url is not empty (no value)

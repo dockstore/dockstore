@@ -96,7 +96,7 @@ public abstract class SourceCodeRepoInterface {
     }
 
     public abstract String getName();
-
+    public abstract void setLicenseInformation(Entry entry, String gitRepository);
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag

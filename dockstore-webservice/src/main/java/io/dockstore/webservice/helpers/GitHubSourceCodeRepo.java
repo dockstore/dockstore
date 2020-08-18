@@ -190,6 +190,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+        if (gitRepository != null) {
+            LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, gitRepository);
+            entry.setLicenseInformation(licenseInformation);
+        }
+    }
+
     /**
      * For a given file, in a github repo, with a particular cleaned reference name.
      * @param fileName
@@ -298,8 +306,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
-            LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, workflow.getOrganization() + '/' + workflow.getRepository());
-            workflow.setLicenseInformation(licenseInformation);
+            setLicenseInformation(workflow, workflow.getOrganization() + '/' + workflow.getRepository());
 
             // Why is the path not set here?
         } catch (GHFileNotFoundException e) {
