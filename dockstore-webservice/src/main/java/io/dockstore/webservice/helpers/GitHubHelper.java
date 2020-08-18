@@ -90,7 +90,6 @@ public final class GitHubHelper {
     }
 
     /**
-     * TODO: Possibly alter this to be version-specific
      * Get license for a specific GitHub repository
      * @param gitHub    The GitHub API
      * @param repositoryName    Name of the GitHub repository (e.g. dockstore/lambda)
@@ -101,8 +100,10 @@ public final class GitHubHelper {
         try {
             GHRepository repository = gitHub.getRepository(repositoryName);
             GHLicense license = repository.getLicense();
+            if (license == null) {
+                return new LicenseInformation();
+            }
             licenseInformation.setLicenseName(license.getName());
-            licenseInformation.setLicenseContent(repository.getLicenseContent().getContent());
             return licenseInformation;
         } catch (IOException e) {
             return new LicenseInformation();
