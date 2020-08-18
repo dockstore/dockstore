@@ -19,10 +19,11 @@ public class GitHubHelperTest {
                 AbuseLimitHandler.WAIT).build();
         LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore/lambda");
         Assert.assertEquals("Apache License 2.0", licenseInformation.getLicenseName());
-        Assert.assertTrue(licenseInformation.getLicenseContent().contains("http://www.apache.org/licenses/"));
 
         licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore/dockstore");
         Assert.assertEquals("Other", licenseInformation.getLicenseName());
-        Assert.assertTrue(licenseInformation.getLicenseContent().contains("http://www.apache.org/licenses/"));
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/silly-example");
+        Assert.assertNull(licenseInformation.getLicenseName());
     }
 }
