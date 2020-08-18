@@ -125,6 +125,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // refresh individual that is valid
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
         workflow = workflowsApi.refresh(workflow.getId());
+        Assert.assertNull(workflow.getLicenseInformation().getLicenseName());
 
         // check that valid is valid and full
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
