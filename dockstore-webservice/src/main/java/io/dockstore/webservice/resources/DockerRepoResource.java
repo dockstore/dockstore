@@ -595,7 +595,9 @@ public class DockerRepoResource
         if (!isGit(tool.getGitUrl())) {
             tool.setGitUrl(convertHttpsToSsh(tool.getGitUrl()));
         }
-        setToolLicenseInformation(user, tool);
+
+        // Can't set tool license information here, far too many tests register a tool without a GitHub token
+        // setToolLicenseInformation(user, tool);
 
         return toolDAO.findById(id);
     }
