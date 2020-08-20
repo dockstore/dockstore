@@ -322,7 +322,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public LicenseInformation getLicenseInformation() {
-        return licenseInformation;
+        return licenseInformation != null ? licenseInformation : new LicenseInformation();
     }
 
     public void setLicenseInformation(LicenseInformation licenseInformation) {
