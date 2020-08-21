@@ -597,7 +597,7 @@ public class DockerRepoResource
         }
 
         // Can't set tool license information here, far too many tests register a tool without a GitHub token
-        // setToolLicenseInformation(user, tool);
+        setToolLicenseInformation(user, tool);
 
         return toolDAO.findById(id);
     }
@@ -613,11 +613,12 @@ public class DockerRepoResource
         Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
         Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
         Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
-        String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
                         gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
         if (sourceCodeRepo != null) {
+            sourceCodeRepo.checkSourceCodeValidity();
+            String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
             sourceCodeRepo.setLicenseInformation(tool, gitRepositoryFromGitUrl);
         }
     }

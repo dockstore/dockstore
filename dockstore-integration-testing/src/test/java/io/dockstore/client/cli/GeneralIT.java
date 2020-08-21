@@ -1357,8 +1357,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        // Assert.assertEquals("Should be able to get license after manual register", "Apache License 2.0", toolTest.getLicenseInformation().getLicenseName());
-        Assert.assertNull("Should not be able to get license after manual register", toolTest.getLicenseInformation().getLicenseName());
+        Assert.assertEquals("Should be able to get license after manual register", "Apache License 2.0", toolTest.getLicenseInformation().getLicenseName());
 
         // Clear license name to mimic old entry that does not have a license associated with it
         testingPostgres.runUpdateStatement("update tool set licensename=null");
