@@ -17,10 +17,13 @@ public class GitHubHelperTest {
     public void testGitHubLicense() throws IOException {
         GitHub gitHub = new GitHubBuilder().withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(
                 AbuseLimitHandler.WAIT).build();
-        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore/lambda");
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/md5sum-checker");
         Assert.assertEquals("Apache License 2.0", licenseInformation.getLicenseName());
 
-        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore/dockstore");
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/galaxy-workflows");
+        Assert.assertEquals("MIT License", licenseInformation.getLicenseName());
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstoretestuser2/cwl-gene-prioritization");
         Assert.assertEquals("Other", licenseInformation.getLicenseName());
 
         licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/silly-example");
