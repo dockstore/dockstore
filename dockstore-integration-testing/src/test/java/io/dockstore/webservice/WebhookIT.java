@@ -212,10 +212,14 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
 
+        // Unset the license information to simulate license change
+        testingPostgres.runUpdateStatement("update workflow set licensename=null");
         // Branch master on GitHub - updates two existing workflows
         workflows = client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
-        assertEquals("Should only have two services", 2, workflows.size());
-
+        assertEquals("Should only have two workflows", 2, workflows.size());
+        workflows.forEach(workflowIndividual -> {
+            Assert.assertEquals("Should be able to get license after manual GitHub App version update", "Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName());
+        });
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
         assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
