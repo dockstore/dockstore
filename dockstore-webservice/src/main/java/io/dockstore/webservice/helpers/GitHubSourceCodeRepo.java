@@ -336,6 +336,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
+        this.setLicenseInformation(service, repositoryId);
         LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
         service.setLicenseInformation(licenseInformation);
         // Validate subclass
@@ -369,6 +370,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
         workflow.setWorkflowName(workflowName);
+        this.setLicenseInformation(workflow, repositoryId);
         DescriptorLanguage descriptorLanguage;
         try {
             descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
