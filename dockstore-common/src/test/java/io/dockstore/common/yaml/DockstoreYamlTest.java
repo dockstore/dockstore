@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.PatternSyntaxException;
 
 import io.dropwizard.testing.FixtureHelpers;
 import org.apache.commons.io.IOUtils;
@@ -33,7 +32,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
