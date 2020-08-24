@@ -216,10 +216,6 @@ public class DockstoreYamlTest {
         assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/anything"), filters));
         assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/any/thing"), filters));
 
-        // Invalid regex throws error
-        filters.setBranches(List.of("/[/"));
-        assertThrows(PatternSyntaxException.class, () -> DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), filters));
-
         // Only match develop branch
         // glob
         filters.setBranches(List.of("develop"));
