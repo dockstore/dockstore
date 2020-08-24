@@ -31,7 +31,7 @@ public class Filters {
         return branches;
     }
 
-    public void setBranches(List<String> branches) {
+    public void setBranches(final List<String> branches) {
         this.branches = branches;
     }
 
@@ -39,7 +39,7 @@ public class Filters {
         return tags;
     }
 
-    public void setTags(List<String> tags) {
+    public void setTags(final List<String> tags) {
         this.tags = tags;
     }
 }

@@ -43,7 +43,7 @@ public abstract class AbstractYamlService {
     /**
      * A set of git reference globs/regex patterns that Dockstore should filter for
      */
-    private Filters filters;
+    private Filters filters = new Filters();
     /**
      * A scripts object for the service's lifecycle
      */

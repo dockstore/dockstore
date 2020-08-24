@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -233,8 +234,14 @@ public final class DockstoreYamlHelper {
             } else {
                 matcherString = "glob:" + pattern;
             }
-            PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(matcherString);
-            return pathMatcher.matches(matchPath);
+            try {
+                final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(matcherString);
+                return pathMatcher.matches(matchPath);
+            } catch (PatternSyntaxException e) {
+                final String msg = ERROR_READING_DOCKSTORE_YML + e.getMessage();
+                LOG.warn(msg, e);
+                return false;
+            }
         });
     }
 

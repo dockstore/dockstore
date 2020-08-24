@@ -40,7 +40,7 @@ public class YamlWorkflow {
     @NotNull
     private String primaryDescriptorPath;
 
-    private Filters filters;
+    private Filters filters = new Filters();
 
     private List<String> testParameterFiles = new ArrayList<>();
 

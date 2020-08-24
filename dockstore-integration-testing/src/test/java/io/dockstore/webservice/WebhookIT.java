@@ -437,9 +437,10 @@ public class WebhookIT extends BaseIT {
     /**
      * This tests filters functionality in .dockstore.yml ; Workflow filters are configured as follows:
      * * filterbranch filters for "develop"
-     * * filtertag filters for "tags/1.0"
-     * * filtermulti filters for "heads/dev*" and "1.*"
+     * * filtertag filters for "1.0"
+     * * filtermulti filters for "dev*" and "1.*"
      * * filternone has no filters (accepts all tags & branches)
+     * * filterregexerror has a filter with an invalid regex string (matches nothing)
      */
     @Test
     public void testDockstoreYmlFilters() throws Exception {
@@ -454,6 +455,7 @@ public class WebhookIT extends BaseIT {
         assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false));
         Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertEquals(1, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
 
         // tag 2.0 should be excluded by all of the workflows with filters
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
@@ -462,6 +464,7 @@ public class WebhookIT extends BaseIT {
         assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false));
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertEquals(2, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
 
         // develop2 should be accepted by the heads/dev* filter in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/develop2", installationId);
@@ -471,6 +474,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflow.getWorkflowVersions().size());
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertEquals(3, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
 
         // tag 1.1 should be accepted by the 1.* filter in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.1", installationId);
@@ -480,6 +484,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, workflow.getWorkflowVersions().size());
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertEquals(4, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
 
         // tag 1.0 should be accepted by tags/1.0 in filtertag and 1.* in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
@@ -490,6 +495,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(3, workflow.getWorkflowVersions().size());
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertEquals(5, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
 
         // develop should be accepted by develop in filterbranch and heads/dev* in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/develop", installationId);
@@ -501,5 +507,6 @@ public class WebhookIT extends BaseIT {
         assertEquals(4, workflow.getWorkflowVersions().size());
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertEquals(6, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
     }
 }
