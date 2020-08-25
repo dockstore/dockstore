@@ -107,6 +107,11 @@ public class VersionMetadata {
 
     public void setParsedInformationSet(List<ParsedInformation> parsedInformationSet) {
         this.parsedInformationSet.clear();
-        this.parsedInformationSet.addAll(parsedInformationSet);
+
+        // Check if the parsedInformationSet is null first
+        // versionMetadata passed from the UI can be null, which leads to a NullPointerException
+        if (parsedInformationSet != null) {
+            this.parsedInformationSet.addAll(parsedInformationSet);
+        }
     }
 }
