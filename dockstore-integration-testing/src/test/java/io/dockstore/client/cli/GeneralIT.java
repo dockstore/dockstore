@@ -1357,7 +1357,12 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        toolsApi.refresh(toolTest.getId());
+        Assert.assertEquals("Should be able to get license after manual register", "Apache License 2.0", toolTest.getLicenseInformation().getLicenseName());
+
+        // Clear license name to mimic old entry that does not have a license associated with it
+        testingPostgres.runUpdateStatement("update tool set licensename=null");
+        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        Assert.assertEquals("Should be able to get license after refresh", "Apache License 2.0", refresh.getLicenseInformation().getLicenseName());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '"

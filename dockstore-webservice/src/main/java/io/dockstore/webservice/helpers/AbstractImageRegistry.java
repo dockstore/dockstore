@@ -71,6 +71,8 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
+
 /**
  * Abstract class for registries of docker containers.
  * *
@@ -329,10 +331,23 @@ public abstract class AbstractImageRegistry {
         logToolRefresh(dashboardPrefix, tool);
 
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
+        String gitUrl = tool.getGitUrl();
+        String gitRepository = getGitRepositoryFromGitUrl(gitUrl);
+        sourceCodeRepoInterface.setLicenseInformation(updatedTool, gitRepository);
         sourceCodeRepoInterface.setDefaultBranchIfNotSet(updatedTool, repositoryId);
         updatedTool.syncMetadataWithDefault();
         // Return the updated tool
         return updatedTool;
+    }
+
+    public static String getGitRepositoryFromGitUrl(String gitUrl) {
+        Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
+        if (repoUrlMap == null) {
+            return null;
+        }
+        String username = repoUrlMap.get("Username");
+        String repository = repoUrlMap.get("Repository");
+        return username + '/' + repository;
     }
 
     /**

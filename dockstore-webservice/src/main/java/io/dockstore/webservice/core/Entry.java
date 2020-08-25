@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.FetchType;
@@ -218,6 +219,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 13)
     private String conceptDoi;
 
+    @Embedded
+    private LicenseInformation licenseInformation = new LicenseInformation();
+
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
@@ -316,6 +320,15 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
             return null;
         }
     }
+
+    public LicenseInformation getLicenseInformation() {
+        return licenseInformation != null ? licenseInformation : new LicenseInformation();
+    }
+
+    public void setLicenseInformation(LicenseInformation licenseInformation) {
+        this.licenseInformation = licenseInformation;
+    }
+
 
     public void setAuthor(String newAuthor) {
         this.author = newAuthor;
@@ -443,6 +456,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      * @param entry
      */
     public void update(S entry) {
+        setLicenseInformation(entry.getLicenseInformation());
         setMetadataFromEntry(entry);
         lastModified = entry.getLastModifiedDate();
         // Only overwrite the giturl if the new git url is not empty (no value)

@@ -47,6 +47,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
@@ -189,6 +190,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+        if (gitRepository != null) {
+            LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, gitRepository);
+            entry.setLicenseInformation(licenseInformation);
+        }
+    }
+
     /**
      * For a given file, in a github repo, with a particular cleaned reference name.
      * @param fileName
@@ -297,6 +306,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            setLicenseInformation(workflow, workflow.getOrganization() + '/' + workflow.getRepository());
+
             // Why is the path not set here?
         } catch (GHFileNotFoundException e) {
             LOG.info(gitUsername + ": GitHub reports file not found: " + e.getCause().getLocalizedMessage(), e);
@@ -325,7 +336,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
-
+        this.setLicenseInformation(service, repositoryId);
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
+        service.setLicenseInformation(licenseInformation);
         // Validate subclass
         if (subclass != null) {
             DescriptorLanguageSubclass descriptorLanguageSubclass;
@@ -357,6 +370,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
         workflow.setWorkflowName(workflowName);
+        this.setLicenseInformation(workflow, repositoryId);
         DescriptorLanguage descriptorLanguage;
         try {
             descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);

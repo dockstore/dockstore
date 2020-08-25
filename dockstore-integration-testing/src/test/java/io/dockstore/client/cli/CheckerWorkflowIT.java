@@ -224,8 +224,13 @@ public class CheckerWorkflowIT extends BaseIT {
             // Manually register a workflow
             Workflow githubWorkflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "", "cwl", "/testcwl.json");
+            Assert.assertEquals("Should be able to get license after manual register", "Apache License 2.0", githubWorkflow.getLicenseInformation().getLicenseName());
+            // Clear license name to mimic old workflow that does not have a license associated with it
+            testingPostgres.runUpdateStatement("update workflow set licensename=null");
+            Workflow refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId());
+            Assert.assertEquals("Should be able to get license after refresh", "Apache License 2.0", refreshedWorkflow.getLicenseInformation().getLicenseName());
             // Refresh the workflow
-            baseEntryId = workflowApi.refresh(githubWorkflow.getId()).getId();
+            baseEntryId = refreshedWorkflow.getId();
         } else {
             // Manually register a tool
             DockstoreTool newTool = new DockstoreTool();
