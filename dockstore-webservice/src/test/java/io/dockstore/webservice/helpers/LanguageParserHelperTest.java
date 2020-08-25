@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.dockstore.webservice.core.languageParsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageParsing.LanguageParsingResponse;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 public class LanguageParserHelperTest {
 
+    @Ignore("Ignoring until CircleCI and Travis can bring up SAM CLI")
     @Test
     public void sendToLambdaSyncTest() throws IOException, InterruptedException {
         LanguageParsingRequest languageParsingRequest = new LanguageParsingRequest();
@@ -30,6 +32,7 @@ public class LanguageParserHelperTest {
         Assert.assertEquals(languageParsingRequest.getBranch(), languageParsingResponse.getLanguageParsingRequest().getBranch());
     }
 
+    @Ignore("Ignoring until CircleCI and Travis can bring up SAM CLI")
     @Test
     public void sendToLambdaAsyncTest() throws InterruptedException, ExecutionException, JsonProcessingException {
         LanguageParserHelper.sendToLambdaAsync(new LanguageParsingRequest());
