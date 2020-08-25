@@ -139,6 +139,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
+    /**
+     * This function does the following: Saves the current state of the entry, forces the data between the session and the database to synchronize (flush),
+     * and removes the entry from the session so that the cleared sourcefiles are not saved to the database.
+     */
     static void removeSourceFilesFromEntry(Entry entry, SessionFactory sessionFactory) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.save(entry);
