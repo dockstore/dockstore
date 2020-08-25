@@ -75,6 +75,14 @@ POM as their parent.
         <skipITs>true</skipITs>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>artifacts.oicr.on.ca-releases</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+        </repository>
+    </distributionManagement>
+
     <organization>
         <name>Dockstore</name>
         <url>https://www.dockstore.org/</url>
