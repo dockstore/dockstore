@@ -96,16 +96,17 @@ public final class GitHubHelper {
      * @return  The LicenseInformation associated with the repository
      */
     public static LicenseInformation getLicenseInformation(GitHub gitHub, String repositoryName) {
-        LicenseInformation licenseInformation = new LicenseInformation();
         try {
             GHRepository repository = gitHub.getRepository(repositoryName);
             GHLicense license = repository.getLicense();
             if (license == null) {
                 return new LicenseInformation();
             }
+            LicenseInformation licenseInformation = new LicenseInformation();
             licenseInformation.setLicenseName(license.getName());
             return licenseInformation;
         } catch (IOException e) {
+            LOG.info("Could not get license information from GitHub for repository: " + repositoryName, e);
             return new LicenseInformation();
         }
     }

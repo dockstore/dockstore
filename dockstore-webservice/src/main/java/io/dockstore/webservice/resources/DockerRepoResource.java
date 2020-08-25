@@ -608,7 +608,7 @@ public class DockerRepoResource
      * @param tool  The tool to get license information for
      */
     private void setToolLicenseInformation(User user, Tool tool) {
-        // Get user's quay and git tokens
+        // Get user's Git tokens
         List<Token> tokens = tokenDAO.findByUserId(user.getId());
         Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
         Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
