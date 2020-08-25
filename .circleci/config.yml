@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  sam: circleci/aws-sam-serverless@1.0.1
 workflows:
   version: 2
   everything:
@@ -12,13 +10,6 @@ workflows:
                 - gh-pages
       - openapi_validation
 jobs:
-  build_and_package:
-    executor: sam/default
-    steps:
-      - checkout
-      - cd wdl-parsing
-      - sam install
-      - sam/local-start-api
   openapi_validation:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
@@ -34,6 +25,19 @@ jobs:
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
           environment:
             DOCKERIZE_VERSION: v0.3.0
+      - run:
+          name: Install aws-sam-cli
+          command: | 
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+            brew tap aws/tap
+            brew install aws-sam-cli
+      - run:
+          name: Build and run aws-sam-cli
+          command: |
+            cd wdl-parsing
+            sam build
+            sam local start-api
+          background: true
       - run: 
           name: Install yq
           command: |
