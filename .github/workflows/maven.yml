@@ -13,9 +13,11 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
+    - name: Build SNAPSHOT of web service
+      run: mvn -B clean install -DskipTests
     - name: Test with Maven
       working-directory: ./wdl-parsing/WDLParsingFunction
-      run: mvn clean install
+      run: mvn -B clean install
   testWithSAMCLI:
      runs-on: ubuntu-latest
      steps:
@@ -34,7 +36,7 @@ jobs:
          pip install aws-sam-cli
      - name: Build SNAPSHOT of web service
        working-directory: .
-       run: mvn clean install -DskipTests
+       run: mvn -B clean install -DskipTests
      - name: Build with SAM CLI
        working-directory: ./wdl-parsing
        run:  sam build
