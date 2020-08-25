@@ -25,20 +25,6 @@ jobs:
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
           environment:
             DOCKERIZE_VERSION: v0.3.0
-      - run:
-          name: Install aws-sam-cli
-          command: | 
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-            brew tap aws/tap
-            brew install aws-sam-cli
-      - run:
-          name: Build and run aws-sam-cli
-          command: |
-            cd wdl-parsing
-            sam build
-            sam local start-api
-          background: true
-      - run: 
           name: Install yq
           command: |
             wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
@@ -88,6 +74,23 @@ jobs:
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
             sudo apt install -y postgresql-client
+      - run:
+          name: run the actual tests
+          command: mvn -B clean install -DskipTests
+      - run:
+          name: Install aws-sam-cli
+          command: | 
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+            brew tap aws/tap
+            brew install aws-sam-cli
+      - run:
+          name: Build and run aws-sam-cli
+          command: |
+            cd wdl-parsing
+            sam build
+            sam local start-api
+          background: true
+      - run: 
       - run:
           name: setup postgres
           command: |
