@@ -13,6 +13,11 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
+    - name: Install yq
+      run: |
+        wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+        chmod a+x yq_linux_amd64
+        sudo mv yq_linux_amd64 /usr/bin/yq
     - name: Build SNAPSHOT of web service
       run: mvn -B clean install -DskipTests
     - name: Test with Maven
@@ -34,6 +39,11 @@ jobs:
        run: |
          python -m pip install --upgrade pip
          pip install aws-sam-cli
+    - name: Install yq
+      run: |
+        wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+        chmod a+x yq_linux_amd64
+        sudo mv yq_linux_amd64 /usr/bin/yq
      - name: Build SNAPSHOT of web service
        working-directory: .
        run: mvn -B clean install -DskipTests
