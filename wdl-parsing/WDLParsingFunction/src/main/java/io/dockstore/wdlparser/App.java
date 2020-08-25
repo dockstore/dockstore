@@ -16,6 +16,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.dockstore.openapi.client.model.LanguageParsingRequest;
+import io.dockstore.openapi.client.model.LanguageParsingResponse;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import scala.Option;
@@ -38,11 +41,11 @@ public class App
     APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent().withHeaders(headers);
     if (input != null && input.getBody() != null) {
       try {
-        WDLParserRequest request = mapper.readValue(input.getBody(), WDLParserRequest.class);
+        LanguageParsingRequest request = mapper.readValue(input.getBody(), LanguageParsingRequest.class);
         try {
           String s =
               parseWDLFile(
-                  request.getUri(), request.getBranch(), request.getDescriptorRelativePathInGit());
+                  request.getUri(), request.getBranch(), request.getDescriptorRelativePathInGit(), request);
           return response.withStatusCode(HttpURLConnection.HTTP_OK).withBody(s);
         } catch (IOException e) {
           e.printStackTrace();
@@ -68,14 +71,14 @@ public class App
     }
   }
 
-  private String parseWDLFile(String uri, String branch, String descriptorRelativePathInGit)
+  private String parseWDLFile(String uri, String branch, String descriptorRelativePathInGit, LanguageParsingRequest languageParsingRequest)
       throws IOException, GitAPIException {
     Path tempDirWithPrefix = Files.createTempDirectory("clonedRepository");
-    Git git = Git.cloneRepository().setURI(uri).setDirectory(tempDirWithPrefix.toFile()).call();
-    git.checkout().setName(branch).call();
+    Git.cloneRepository().setBranch(branch).setURI(uri).setDirectory(tempDirWithPrefix.toFile()).call();
     Path descriptorAbsolutePath = tempDirWithPrefix.resolve(descriptorRelativePathInGit);
     String descriptorAbsolutePathString = descriptorAbsolutePath.toString();
-    WDLParserResponse response = getResponse(descriptorAbsolutePathString);
+    LanguageParsingResponse response = getResponse(descriptorAbsolutePathString);
+    response.setLanguageParsingRequest(languageParsingRequest);
     response
         .getSecondaryFilePaths()
         .replaceAll(s -> s.replaceFirst(tempDirWithPrefix.toString(), ""));
@@ -84,7 +87,7 @@ public class App
 
   // The first two lines aren't actual paths.
   // It looks like "Success!" and "List of Workflow dependencies is:"
-  private static void handleSuccessResponse(WDLParserResponse response, List<String> strings) {
+  private static void handleSuccessResponse(LanguageParsingResponse response, List<String> strings) {
     strings.remove(0);
     strings.remove(0);
     // If there are no imports, womtool says None
@@ -94,9 +97,9 @@ public class App
     response.setSecondaryFilePaths(strings);
   }
 
-  public static WDLParserResponse getResponse(String descriptorAbsolutePathString)
+  public static LanguageParsingResponse getResponse(String descriptorAbsolutePathString)
       throws IOException {
-    WDLParserResponse response = new WDLParserResponse();
+    LanguageParsingResponse response = new LanguageParsingResponse();
     response.setClonedRepositoryAbsolutePath(descriptorAbsolutePathString);
     List<String> commandLineArgs = Arrays.asList("validate", "-l", descriptorAbsolutePathString);
     try {

@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -55,7 +54,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
@@ -71,7 +69,6 @@ import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.LanguageParsingResponse;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -83,10 +80,10 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.languageParsing.LanguageParsingResponse;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
-import io.dockstore.webservice.helpers.LanguageParserHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -420,15 +417,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        try {
-            LanguageParserHelper.sendToLambda();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
         return refreshWorkflow(user, workflowId, Optional.empty());
     }
 
@@ -1657,6 +1645,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
     @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "hidden", hidden = true)
     public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @RequestBody(description = "Created user object", required = true,
                     content = @Content(
