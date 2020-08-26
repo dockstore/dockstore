@@ -711,6 +711,17 @@ public class GeneralIT extends BaseIT {
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
+
+        tags = new ArrayList<>();
+        updatedTag = tag.get();
+        updatedTag.setHidden(true);
+        updatedTag.setVersionMetadata(null);
+        tags.add(updatedTag);
+        toolTagsApi.updateTags(tool.getId(), tags);
+        toolApi.refresh(tool.getId());
+        final long count3 = testingPostgres
+                .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
+        assertEquals("there should be 1 hidden tag", 1, count3);
     }
 
     /**
