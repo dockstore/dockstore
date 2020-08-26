@@ -826,6 +826,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
 
     static boolean isUserAdminOrMaintainer(Organization organization, Long userId) {
+        if (organization == null) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
         OrganizationUser organizationUser = getUserOrgRole(organization, userId);
         if (organizationUser == null) {
             return false;
