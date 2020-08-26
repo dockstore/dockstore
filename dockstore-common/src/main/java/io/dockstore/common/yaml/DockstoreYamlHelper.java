@@ -205,7 +205,7 @@ public final class DockstoreYamlHelper {
      * @param filters Filters specified for a workflow/service in .dockstore.yml
      * @return
      */
-    public static boolean filterGitReference(final Path gitRefPath, final Filters filters) throws Exception {
+    public static boolean filterGitReference(final Path gitRefPath, final Filters filters) {
         final List<String> branches = filters.getBranches();
         final List<String> tags = filters.getTags();
 
@@ -220,7 +220,7 @@ public final class DockstoreYamlHelper {
         } else if (gitRefPath.startsWith("refs/tags/")) {
             patterns = tags;
         } else {
-            throw new Exception("Invalid git reference: " + gitRefPath.toString());
+            throw new UnsupportedOperationException("Invalid git reference: " + gitRefPath.toString());
         }
 
         // Remove refs/heads/ or refs/tags/ from Path for matching

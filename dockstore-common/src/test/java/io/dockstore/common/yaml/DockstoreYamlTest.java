@@ -209,7 +209,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testGitReferenceFilter() throws Exception {
+    public void testGitReferenceFilter() {
         // Empty filters allow anything
         Filters filters = new Filters();
         assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/anything"), filters));
@@ -269,7 +269,7 @@ public class DockstoreYamlTest {
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/0.0.0"), filters));
 
         // Invalid reference throws an error (this should never happen)
-        assertThrows(Exception.class, () -> DockstoreYamlHelper.filterGitReference(Path.of("fake/reference"), filters));
+        assertThrows(UnsupportedOperationException.class, () -> DockstoreYamlHelper.filterGitReference(Path.of("fake/reference"), filters));
     }
 
 }
