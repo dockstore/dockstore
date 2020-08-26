@@ -1191,7 +1191,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
-        String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
+        String fileName = tool.getToolPath().replaceAll("/", "-") + '-' + tag.getName() + ".zip";
         java.nio.file.Path path = Paths.get(tag.getWorkingDirectory());
 
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
