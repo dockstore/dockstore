@@ -443,7 +443,9 @@ public class WebhookIT extends BaseIT {
     }
 
     /**
-     * This tests filters functionality in .dockstore.yml ; Workflow filters are configured as follows:
+     * This tests filters functionality in .dockstore.yml
+     * https://github.com/DockstoreTestUser2/dockstoreyml-github-filters-test
+     * Workflow filters are configured as follows:
      * * filterbranch filters for "develop"
      * * filtertag filters for "1.0"
      * * filtermulti filters for "dev*" and "1.*"

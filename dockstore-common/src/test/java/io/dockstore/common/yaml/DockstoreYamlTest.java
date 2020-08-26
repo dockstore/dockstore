@@ -32,6 +32,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -208,7 +209,7 @@ public class DockstoreYamlTest {
     }
 
     @Test
-    public void testGitReferenceFilter() {
+    public void testGitReferenceFilter() throws Exception {
         // Empty filters allow anything
         Filters filters = new Filters();
         assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/anything"), filters));
@@ -266,6 +267,9 @@ public class DockstoreYamlTest {
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/a.b.c"), filters));
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/1.0."), filters));
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/0.0.0"), filters));
+
+        // Invalid reference throws an error (this should never happen)
+        assertThrows(Exception.class, () -> DockstoreYamlHelper.filterGitReference(Path.of("fake/reference"), filters));
     }
 
 }

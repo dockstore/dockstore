@@ -381,7 +381,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return List of new and updated workflows
      */
     private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user,
-            final SourceFile dockstoreYml) {
+            final SourceFile dockstoreYml) throws Exception {
         try {
             List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
@@ -414,7 +414,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return List of new and updated services
      */
     private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference,
-            GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
+            GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) throws Exception {
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
             if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
