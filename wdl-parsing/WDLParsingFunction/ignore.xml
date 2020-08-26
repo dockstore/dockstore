@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <Match>
+        <Source name="WorkflowsApi.java"/>
+    </Match>
+    <Match>
+        <Source name="ServerVariable.java"/>
+    </Match>
+    <Match>
+        <Source name="ServerConfiguration.java"/>
+    </Match>
+    <Match>
+        <Source name="ApiClient.java"/>
+    </Match>
+</FindBugsFilter>

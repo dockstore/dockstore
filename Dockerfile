@@ -4,7 +4,7 @@ RUN wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 
     && mv yq_linux_amd64 /usr/bin/yq
 
 COPY . /
-RUN mvn -B clean install -DskipTests -ntp
+RUN mvn -B clean install -DskipTests -ntp -q
 
 FROM openjdk:11.0.6-jdk
 

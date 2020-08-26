@@ -549,6 +549,49 @@ components:
             - INSTALL
           type: string
       type: object
+    LanguageParsingRequest:
+      description: Request sent to the external language parsing service
+      properties:
+        branch:
+          description: The Git branch/tag
+          type: string
+        descriptorRelativePathInGit:
+          description: The relative path to the primary descriptor (relative to the base in Git)
+          type: string
+        entryId:
+          description: Id of the Dockstore entry
+          format: int64
+          type: integer
+        uri:
+          description: The Git URI
+          type: string
+        workflowVersionId:
+          description: Id of the Dockstore entry's workflowVersion
+          format: int64
+          type: integer
+      required:
+        - branch
+        - descriptorRelativePathInGit
+        - entryId
+        - uri
+        - workflowVersionId
+      type: object
+    LanguageParsingResponse:
+      description: Response from the external lambda parsing service
+      properties:
+        clonedRepositoryAbsolutePath:
+          type: string
+        languageParsingRequest:
+          $ref: '#/components/schemas/LanguageParsingRequest'
+        parsedInformation:
+          $ref: '#/components/schemas/ParsedInformation'
+        secondaryFilePaths:
+          items:
+            type: string
+          type: array
+        valid:
+          type: boolean
+      type: object
     Limits:
       properties:
         hostedEntryCountLimit:
@@ -694,8 +737,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         hasHTTPImports:
           type: boolean
@@ -1479,8 +1522,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         descriptorTypeSubclass:
           enum:
@@ -2482,7 +2525,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -3694,7 +3737,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -6552,7 +6595,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -6704,6 +6747,26 @@ paths:
                   $ref: '#/components/schemas/Workflow'
                 type: array
           description: default response
+      tags:
+        - workflows
+  /workflows/parsedInformation:
+    post:
+      description: Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.
+      operationId: postParsedInformation
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LanguageParsingResponse'
+        description: Created user object
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+        - bearer: []
       tags:
         - workflows
   /workflows/path/entry/{repository}:

@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  sam: circleci/aws-sam-serverless@1.0.1
 workflows:
   version: 2
   everything:
@@ -44,7 +46,6 @@ jobs:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
         environment:
-          JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
           PGHOST: 127.0.0.1
       - image: circleci/postgres:9.6.5-alpine-ram
         environment:
@@ -67,6 +68,26 @@ jobs:
             chmod a+x yq_linux_amd64
             sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
+          name: run the actual tests
+          command: mvn -B clean install -DskipTests
+      - run:
+          command: |
+            curl -fsSL "https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh" | bash
+            /home/linuxbrew/.linuxbrew/bin/brew shellenv >> $BASH_ENV
+          name: Install Homebrew (for Linux)
+      - run:
+          command: |
+            brew tap aws/tap
+            brew install aws-sam-cli
+            sam --version
+          name: Install the AWS SAM CLI
+      - run: 
+          name: sam local start-api
+          background: true
+          command: |
+            cd wdl-parsing
+            sam local start-api
+      - run:
           name: Wait for db
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
       - run:
@@ -75,24 +96,6 @@ jobs:
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
             sudo apt install -y postgresql-client
-      - run:
-          name: run the actual tests
-          command: mvn -B clean install -DskipTests
-      - run:
-          name: Install aws-sam-cli
-          command: | 
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-            echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> /home/circleci/.profile
-            eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
-            brew tap aws/tap
-            brew install aws-sam-cli
-      - run:
-          name: Build and run aws-sam-cli
-          command: |
-            cd wdl-parsing
-            sam build
-            sam local start-api
-          background: true
       - run:
           name: setup postgres
           command: |

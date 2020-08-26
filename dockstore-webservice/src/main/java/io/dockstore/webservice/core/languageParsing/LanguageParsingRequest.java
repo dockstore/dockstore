@@ -14,6 +14,7 @@ public class LanguageParsingRequest {
     private String descriptorRelativePathInGit;
     @Schema(description = "Id of the Dockstore entry", required = true)
     private long entryId;
+
     @Schema(description = "Id of the Dockstore entry's workflowVersion", required = true)
     private long workflowVersionId;
 
@@ -39,6 +40,22 @@ public class LanguageParsingRequest {
 
     public void setDescriptorRelativePathInGit(String descriptorRelativePathInGit) {
         this.descriptorRelativePathInGit = descriptorRelativePathInGit;
+    }
+
+    public long getEntryId() {
+        return entryId;
+    }
+
+    public void setEntryId(long entryId) {
+        this.entryId = entryId;
+    }
+
+    public long getWorkflowVersionId() {
+        return workflowVersionId;
+    }
+
+    public void setWorkflowVersionId(long workflowVersionId) {
+        this.workflowVersionId = workflowVersionId;
     }
 
     @Override
