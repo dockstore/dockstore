@@ -63,4 +63,15 @@
     <changeSet id="removeOrphanVersionMetadata" author="gluu">
         <sql dbms="postgresql">delete from version_metadata vm where vm.id not in (select wv.id from workflowversion wv union select t.id from tag t);</sql>
     </changeSet>
+    <changeSet author="gluu (generated)" id="addLicenseInformation">
+        <addColumn tableName="service">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

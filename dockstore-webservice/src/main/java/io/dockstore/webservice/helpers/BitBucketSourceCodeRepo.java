@@ -156,6 +156,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return "Bitbucket";
     }
 
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+
+    }
 
     /**
      * Gets arbitrary URLs that Bitbucket seems to use for pagination

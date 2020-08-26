@@ -98,6 +98,12 @@ public abstract class SourceCodeRepoInterface {
     public abstract String getName();
 
     /**
+     * Set the entry's license information based on the Git repository
+     * @param entry The entry whose license information should be set
+     * @param gitRepository The Git repository (e.g. dockstore/hello_world)
+     */
+    public abstract void setLicenseInformation(Entry entry, String gitRepository);
+    /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
      *

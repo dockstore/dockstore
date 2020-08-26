@@ -424,6 +424,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow workflow = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/cwl-gene-prioritization", "", "cwl", SourceControl.GITHUB, "/Dockstore.cwl", true);
+        Assert.assertEquals("Other", workflow.getLicenseInformation().getLicenseName());
         WorkflowVersion branchVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("master")).findFirst().get();
         WorkflowVersion tagVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("test")).findFirst().get();
 
@@ -1392,7 +1393,8 @@ public class WorkflowIT extends BaseIT {
                 "/examples/chksum_seqval_wf_interleaved_fq.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, null, false);
 
-        workflowApi.refresh(workflowByPathGithub.getId());
+        Workflow refreshedWorkflow = workflowApi.refresh(workflowByPathGithub.getId());
+        Assert.assertEquals("GNU General Public License v3.0", refreshedWorkflow.getLicenseInformation().getLicenseName());
         workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
 
         // check on URLs for workflows via ga4gh calls
