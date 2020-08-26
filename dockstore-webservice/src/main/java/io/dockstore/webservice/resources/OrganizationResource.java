@@ -165,7 +165,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
         OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
-        if (organizationUser == null) {
+        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
             String msg = "Organization not found";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
@@ -280,8 +280,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Organization oldOrganization = organizationDAO.findById(organizationId);
 
         // Ensure that the user is a member of the organization
-        OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
+        boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(oldOrganization, user.getId());
+        if (!isUserAdminOrMaintainer) {
             String msg = "You do not have permissions to update the organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
@@ -429,9 +429,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Organization organization = organizationDAO.findById(organizationId);
         OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
 
-        // If the user does not belong to the organization or if the user is not a maintainer of the organization
+        // If the user does not belong to the organization or if the user is not an admin of the organization
         // and if the user is neither an admin nor curator, then throw an error
-        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.MAINTAINER) && (!user.isCurator() && !user.getIsAdmin())) {
+        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.ADMIN) && (!user.isCurator() && !user.getIsAdmin())) {
             throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
         }
 
@@ -509,7 +509,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         User foundUser = userDAO.findById(user.getId());
 
         // Create Role for user creating the organization
-        OrganizationUser organizationUser = new OrganizationUser(foundUser, organizationDAO.findById(id), OrganizationUser.Role.MAINTAINER);
+        OrganizationUser organizationUser = new OrganizationUser(foundUser, organizationDAO.findById(id), OrganizationUser.Role.ADMIN);
         organizationUser.setAccepted(true);
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organizationUser);
@@ -540,9 +540,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         Organization oldOrganization = organizationDAO.findById(id);
 
-        // Ensure that the user is a member of the organization
+        // Ensure that the user is an admin or maintainer of the organization
         OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
+        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
             String msg = "You do not have permissions to update the organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
@@ -637,7 +637,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
     @Operation(operationId = "addUserToOrg", summary = "Add a user role to an organization.", description = "Add a user role to an organization.", security = @SecurityRequirement(name = "bearer"))
     public OrganizationUser addUserToOrg(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {"MAINTAINER", "MEMBER"}), required = true) @QueryParam("role") String role,
+        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {"ADMIN", "MAINTAINER", "MEMBER"}), required = true) @QueryParam("role") String role,
         @ApiParam(value = "User ID of user to add to organization.", required = true) @Parameter(description = "User ID of user to add to organization.", name = "userId", in = ParameterIn.QUERY, required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -672,7 +672,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
     @Operation(operationId = "updateUserRole", summary = "Update a user role in an organization.", description = "Update a user role in an organization.", security = @SecurityRequirement(name = "bearer"))
     public OrganizationUser updateUserRole(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, required = true, schema = @Schema(allowableValues = {"MAINTAINER", "MEMBER"})) @QueryParam("role") String role,
+        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, required = true, schema = @Schema(allowableValues = {"ADMIN", "MAINTAINER", "MEMBER"})) @QueryParam("role") String role,
         @ApiParam(value = "User ID of user to update within organization.", required = true) @Parameter(description = "User ID of user to add to organization.", name = "userId", in = ParameterIn.QUERY, required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
 
@@ -681,7 +681,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Check for existing roles the user has
         OrganizationUser existingRole = getUserOrgRole(organizationAndUserToUpdate.getLeft(), userId);
-        if (existingRole == null) {
+        if (existingRole == null || existingRole.getRole() != OrganizationUser.Role.ADMIN) {
             String msg = "The user with id '" + userId + "' does not have a role in the organization with id '" + organizationId + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
@@ -845,6 +845,31 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
 
+    static boolean isUserAdminOrMaintainer(Organization organization, Long userId) {
+        OrganizationUser organizationUser = getUserOrgRole(organization, userId);
+        if (organizationUser == null) {
+            return false;
+        }
+
+        if (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) {
+            return true;
+        }
+        return false;
+    }
+
+    static boolean isUserAdminOrMaintainer(Long organizationId, Long userId, OrganizationDAO organizationDAO) {
+        Organization organization = organizationDAO.findById(organizationId);
+        if (organization == null) {
+            return false;
+        }
+        OrganizationUser organizationUser = getUserOrgRole(organization, userId);
+        if (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) {
+            return true;
+        }
+        return false;
+    }
+
+
     /**
      * Common checks done by the user add/edit/delete endpoints
      *
@@ -879,8 +904,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Ensure that the calling user is a maintainer of the organization
-        checkUserOrgRole(organization, user.getId(), OrganizationUser.Role.MAINTAINER);
+        // Ensure that the calling user is an admin of the organization
+        checkUserOrgRole(organization, user.getId(), OrganizationUser.Role.ADMIN);
 
         return new ImmutablePair<>(organization, userToAdd);
     }

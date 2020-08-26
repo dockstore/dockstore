@@ -74,4 +74,12 @@
             <column name="licensename" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet id="changeOrganizationUserRoles" author="natalieperez">
+        <sql dbms="postgresql">
+            UPDATE organization_user
+            SET role = REPLACE(role, 'MAINTAINER', 'ADMIN');
+            UPDATE organization_user
+            SET role = REPLACE(role, 'MEMBER', 'MAINTAINER');
+        </sql>
+    </changeSet>
 </databaseChangeLog>
