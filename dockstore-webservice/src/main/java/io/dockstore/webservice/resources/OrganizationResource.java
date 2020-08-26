@@ -661,7 +661,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Check for existing roles the user has
         OrganizationUser existingRole = getUserOrgRole(organizationAndUserToUpdate.getLeft(), userId);
-        if (existingRole == null || existingRole.getRole() != OrganizationUser.Role.ADMIN) {
+        if (existingRole == null) {
             String msg = "The user with id '" + userId + "' does not have a role in the organization with id '" + organizationId + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
