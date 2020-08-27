@@ -41,6 +41,10 @@ public abstract class AbstractYamlService {
      */
     private List<String> files;
     /**
+     * A set of git reference globs/regex patterns that Dockstore should filter for
+     */
+    private Filters filters = new Filters();
+    /**
      * A scripts object for the service's lifecycle
      */
     private Scripts scripts;
@@ -83,6 +87,14 @@ public abstract class AbstractYamlService {
 
     public void setFiles(final List<String> files) {
         this.files = files;
+    }
+
+    public Filters getFilters() {
+        return filters;
+    }
+
+    public void setFilters(final Filters filters) {
+        this.filters = filters;
     }
 
     public Scripts getScripts() {

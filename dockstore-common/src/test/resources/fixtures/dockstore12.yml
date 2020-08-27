@@ -5,6 +5,11 @@ workflows:
      primaryDescriptorPath: /Dockstore2.wdl
      testParameterFiles:
        - /dockstore.wdl.json
+     filters:
+       branches:
+         - develop
+       tags:
+         - gwas*
   -  name: foobar2
      subclass: cwl
      primaryDescriptorPath: /Dockstore.cwl
