@@ -275,7 +275,7 @@ public class DockstoreYamlTest {
         filters.setTags(List.of("["));
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
 
-        // Invalid regex does not match (logs a warning
+        // Invalid regex does not match (logs a warning)
         filters.setTags(List.of("/[/"));
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
     }
