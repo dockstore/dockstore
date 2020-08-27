@@ -40,6 +40,8 @@ public class YamlWorkflow {
     @NotNull
     private String primaryDescriptorPath;
 
+    private Filters filters = new Filters();
+
     private List<String> testParameterFiles = new ArrayList<>();
 
 
@@ -68,6 +70,14 @@ public class YamlWorkflow {
 
     public void setPrimaryDescriptorPath(final String primaryDescriptorPath) {
         this.primaryDescriptorPath = primaryDescriptorPath;
+    }
+
+    public Filters getFilters() {
+        return filters;
+    }
+
+    public void setFilters(final Filters filters) {
+        this.filters = filters;
     }
 
     public List<String> getTestParameterFiles() {
