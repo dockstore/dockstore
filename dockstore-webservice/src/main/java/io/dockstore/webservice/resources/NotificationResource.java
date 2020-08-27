@@ -3,6 +3,7 @@ package io.dockstore.webservice.resources;
 import java.util.List;
 
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -21,6 +22,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -72,11 +74,12 @@ public class NotificationResource {
     @POST
     @Path("/notifications")
     @UnitOfWork
+    @Consumes("application/json")
     @RolesAllowed({"curator", "admin"})
     @Operation(operationId = "createNotification", description = "Create a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Create a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
-    public Notification createNotification(@ApiParam(value = "Notification to create", required = true) Notification notification) {
+    public Notification createNotification(@ApiParam(value = "Notification to create", required = true) @Parameter(name = "notification", description = "Notification to create", required = true) Notification notification) {
         long id = notificationDAO.create(notification);
         return notificationDAO.findById(id);
     }
