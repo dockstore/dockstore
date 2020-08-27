@@ -27,7 +27,7 @@ public final class Constants {
     public static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows,"
             + " authentication can be provided for restricted workflows";
     public static final String DOCKSTORE_YML_PATH = "/.dockstore.yml";
-    public static final List<String> DOCKSTORE_YML_PATHS = List.of("/.dockstore.yml", "/.github/.dockstore.yml");
+    public static final List<String> DOCKSTORE_YML_PATHS = List.of(DOCKSTORE_YML_PATH, "/.github/.dockstore.yml");
 
     private Constants() {
         // not called

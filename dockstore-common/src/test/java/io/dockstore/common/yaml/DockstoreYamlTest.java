@@ -270,6 +270,14 @@ public class DockstoreYamlTest {
 
         // Invalid reference throws an error (this should never happen)
         assertThrows(UnsupportedOperationException.class, () -> DockstoreYamlHelper.filterGitReference(Path.of("fake/reference"), filters));
+
+        // Invalid glob does not match (logs a warning)
+        filters.setTags(List.of("["));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
+
+        // Invalid regex does not match (logs a warning
+        filters.setTags(List.of("/[/"));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
     }
 
 }

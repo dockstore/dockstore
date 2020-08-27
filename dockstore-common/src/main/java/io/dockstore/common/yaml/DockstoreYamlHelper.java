@@ -236,7 +236,7 @@ public final class DockstoreYamlHelper {
             try {
                 final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(matcherString);
                 return pathMatcher.matches(matchPath);
-            } catch (PatternSyntaxException e) {
+            } catch (PatternSyntaxException | UnsupportedOperationException e) {
                 final String msg = ERROR_READING_DOCKSTORE_YML + e.getMessage();
                 LOG.warn(msg, e);
                 return false;
