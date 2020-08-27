@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.9.1"
+  version: "1.9.2-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3718,6 +3718,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       - name: "userId"
@@ -3754,6 +3755,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       - name: "userId"
@@ -7339,6 +7341,7 @@ definitions:
         type: "string"
         description: "The role of the user in the organization"
         enum:
+        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       user:
