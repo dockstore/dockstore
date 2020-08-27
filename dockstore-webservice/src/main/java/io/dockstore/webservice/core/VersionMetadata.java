@@ -108,8 +108,8 @@ public class VersionMetadata {
     public void setParsedInformationSet(List<ParsedInformation> parsedInformationSet) {
         this.parsedInformationSet.clear();
 
-        // Check if the parsedInformationSet is null first
-        // versionMetadata passed from the UI can be null, which leads to a NullPointerException
+        // Deserializer can call this method while parsedInformationSet is null, which causes a Null Pointer Exception
+        // Adding a checker here to avoid a Null Pointer Exception caused by the deserializer
         if (parsedInformationSet != null) {
             this.parsedInformationSet.addAll(parsedInformationSet);
         }
