@@ -27,11 +27,11 @@ jobs:
     - stage: unit-tests
       env:
         - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -ntp
     - stage: language-parsing-tests
       env:
         - TESTING_PROFILE=language-parsing-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -ntp
 # moved to CircleCI (may move back if build speed improves)
 #    - stage: unit-tests
 #      jdk: openjdk11
@@ -51,15 +51,15 @@ jobs:
     - stage: coverage
       env:
         - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -ntp
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=false
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=false -ntp
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -ntp
       env:
         - TESTING_PROFILE=tool-integration-tests
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -ntp
       env:
         - TESTING_PROFILE=workflow-integration-tests
         
@@ -71,7 +71,7 @@ jobs:
 #        - TESTING_PROFILE=toil-integration-tests
 
     - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -ntp
       env:
         - TESTING_PROFILE=regression-integration-tests
       if: branch = master OR branch =~ /^release.*$/
