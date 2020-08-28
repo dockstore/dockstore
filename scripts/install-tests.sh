@@ -30,9 +30,6 @@ else
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.7.0/requirements3.txt
 fi
 
-mvn -B clean install -DskipTests -ntp
-
-
 # hook up integration tests with elastic search
 docker pull elasticsearch:5.6.3
 docker run -p 9200:9200 -d elasticsearch:5.6.3
