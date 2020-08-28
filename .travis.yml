@@ -28,6 +28,10 @@ jobs:
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE
+    - stage: language-parsing-tests
+      env:
+        - TESTING_PROFILE=language-parsing-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE
 # moved to CircleCI (may move back if build speed improves)
 #    - stage: unit-tests
 #      jdk: openjdk11
