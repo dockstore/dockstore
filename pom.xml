@@ -1443,7 +1443,7 @@
         <profile>
             <id>language-parsing-tests</id>
             <properties>
-                <skipTests>true</skipTests>
+                <skipTests>false</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.LanguageParsingTest</groups>
             </properties>
