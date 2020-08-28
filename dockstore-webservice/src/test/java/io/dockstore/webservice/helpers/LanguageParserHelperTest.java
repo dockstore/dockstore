@@ -19,10 +19,7 @@ public class LanguageParserHelperTest {
 
     @Test
     public void sendToLambdaSyncTest() throws IOException, InterruptedException {
-        LanguageParsingRequest languageParsingRequest = new LanguageParsingRequest();
-        languageParsingRequest.setBranch("dockstore-test");
-        languageParsingRequest.setUri("https://github.com/dockstore-testing/gatk-sv-clinical.git");
-        languageParsingRequest.setDescriptorRelativePathInGit("GATKSVPipelineClinical.wdl");
+        LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
         LanguageParsingResponse languageParsingResponse = LanguageParserHelper.sendToLambdaSync(languageParsingRequest);
         Assert.assertTrue(languageParsingResponse.isValid());
         assertTrue(languageParsingResponse.isValid());
@@ -33,8 +30,23 @@ public class LanguageParserHelperTest {
         Assert.assertEquals(languageParsingRequest.getBranch(), languageParsingResponse.getLanguageParsingRequest().getBranch());
     }
 
+    /**
+     * Tests that an async request can be made without other exceptions thrown
+     * @throws InterruptedException
+     * @throws ExecutionException
+     * @throws JsonProcessingException
+     */
     @Test
     public void sendToLambdaAsyncTest() throws InterruptedException, ExecutionException, JsonProcessingException {
-        LanguageParserHelper.sendToLambdaAsync(new LanguageParsingRequest());
+        LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
+        LanguageParserHelper.sendToLambdaAsync(languageParsingRequest);
+    }
+
+    private LanguageParsingRequest getLanguageParsingRequest() {
+        LanguageParsingRequest languageParsingRequest = new LanguageParsingRequest();
+        languageParsingRequest.setBranch("dockstore-test");
+        languageParsingRequest.setUri("https://github.com/dockstore-testing/gatk-sv-clinical.git");
+        languageParsingRequest.setDescriptorRelativePathInGit("GATKSVPipelineClinical.wdl");
+        return languageParsingRequest;
     }
 }

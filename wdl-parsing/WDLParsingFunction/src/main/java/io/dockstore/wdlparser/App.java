@@ -45,7 +45,7 @@ public class App
             mapper.readValue(input.getBody(), LanguageParsingRequest.class);
         try {
           String s =
-              parseWDLFile(
+              parseWdlFile(
                   request.getUri(),
                   request.getBranch(),
                   request.getDescriptorRelativePathInGit(),
@@ -77,7 +77,7 @@ public class App
     }
   }
 
-  private String parseWDLFile(
+  private String parseWdlFile(
       String uri,
       String branch,
       String descriptorRelativePathInGit,
@@ -115,6 +115,13 @@ public class App
     response.setSecondaryFilePaths(strings);
   }
 
+  /**
+   * Get a language parsing response by running womtool.
+   *
+   * @param descriptorAbsolutePathString Absolute path to the main descriptor file
+   * @return LanguageParsingResponse constructed after running womtool
+   * @throws IOException Unexpected exception from running womtool
+   */
   public static LanguageParsingResponse getResponse(String descriptorAbsolutePathString)
       throws IOException {
     LanguageParsingResponse response = new LanguageParsingResponse();
