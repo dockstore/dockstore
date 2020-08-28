@@ -68,25 +68,10 @@ jobs:
             chmod a+x yq_linux_amd64
             sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
-          name: run the actual tests
-          command: mvn -B clean install -DskipTests
-      - run:
           command: |
             curl -fsSL "https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh" | bash
             /home/linuxbrew/.linuxbrew/bin/brew shellenv >> $BASH_ENV
           name: Install Homebrew (for Linux)
-      - run:
-          command: |
-            brew tap aws/tap
-            brew install aws-sam-cli
-            sam --version
-          name: Install the AWS SAM CLI
-      - run: 
-          name: sam local start-api
-          background: true
-          command: |
-            cd wdl-parsing
-            sam local start-api
       - run:
           name: Wait for db
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
