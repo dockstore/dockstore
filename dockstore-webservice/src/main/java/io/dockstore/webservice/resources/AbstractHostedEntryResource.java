@@ -52,6 +52,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -83,7 +84,7 @@ import org.slf4j.LoggerFactory;
 @Api("hosted")
 @Produces(MediaType.APPLICATION_JSON)
 public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U extends Version<U>, W extends EntryDAO<T>, X extends VersionDAO<U>>
-        implements AuthenticatedResourceInterface {
+        implements AuthenticatedResourceInterface, EntryVersionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
     private final FileDAO fileDAO;
