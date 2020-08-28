@@ -224,7 +224,8 @@
               <artifactId>maven-checkstyle-plugin</artifactId>
               <version>3.1.1</version>
               <configuration>
-                  <configLocation>checkstyle.xml</configLocation>
+                  <configLocation>google_checks.xml</configLocation>
+                  <violationSeverity>warning</violationSeverity>
                   <encoding>UTF-8</encoding>
                   <consoleOutput>true</consoleOutput>
                   <failsOnError>true</failsOnError>
