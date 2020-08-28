@@ -60,6 +60,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
@@ -96,6 +97,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
+    private static FileDAO fileDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
     private static TRSListener trsListener = null;
@@ -109,6 +111,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static void setWorkflowDAO(WorkflowDAO workflowDAO) {
         ToolsApiServiceImpl.workflowDAO = workflowDAO;
         ToolsApiServiceImpl.workflowHelper = () -> workflowDAO;
+    }
+
+    public static void setFileDAO(FileDAO fileDAO) {
+        ToolsApiServiceImpl.fileDAO = fileDAO;
     }
 
     public static void setTrsListener(TRSListener listener) {
@@ -504,12 +510,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 // this only works for test parameters associated with tools
                 List<SourceFile> testSourceFiles = new ArrayList<>();
                 try {
-                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user));
+                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
                 } catch (CustomWebApplicationException e) {
                     LOG.warn("intentionally ignoring failure to get test parameters", e);
                 }
                 try {
-                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user));
+                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
                 } catch (CustomWebApplicationException e) {
                     LOG.warn("intentionally ignoring failure to get source files", e);
                 }

@@ -28,6 +28,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -36,6 +38,9 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.eclipse.jetty.http.HttpStatus;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -72,11 +77,27 @@ public class GeneralWorkflowIT extends BaseIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+    private FileDAO fileDAO;
+
+    @Before
+    public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        this.fileDAO = new FileDAO(sessionFactory);
+
+        // used to allow us to use fileDAO outside of the web service
+        Session session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+    }
+
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
+
+
+
 
     /**
      * Manually register and publish a workflow with the given path and name
@@ -558,8 +579,9 @@ public class GeneralWorkflowIT extends BaseIT {
         master = refresh.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
 
         // cannot modify sourcefiles for a frozen version
-        assertFalse(master.getSourceFiles().isEmpty());
-        master.getSourceFiles().forEach(s -> {
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(master.getId());
+        assertFalse(sourceFiles.isEmpty());
+        sourceFiles.forEach(s -> {
             assertTrue(s.isFrozen());
             testingPostgres.runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
             final String content = testingPostgres
@@ -568,14 +590,14 @@ public class GeneralWorkflowIT extends BaseIT {
         });
 
         // try deleting a row join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
             assertEquals(0, affected);
         });
 
         // try updating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
             assertEquals(0, affected);
@@ -583,7 +605,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final Long versionId = master.getId();
         // try creating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             try {
                 testingPostgres.runUpdateStatement(
                     "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");
@@ -984,7 +1006,7 @@ public class GeneralWorkflowIT extends BaseIT {
             fail("wdl_import version should exist");
         }
         assertTrue(
-            version.get().getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
+            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
                 .findFirst().isPresent());
     }
 
@@ -1015,7 +1037,7 @@ public class GeneralWorkflowIT extends BaseIT {
             fail("master version should exist");
         }
         assertTrue(
-            version.get().getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
+            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
                 .findFirst().isPresent());
     }
 
