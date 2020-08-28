@@ -366,6 +366,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         }
     }
 
+    static String generateZipFileName(String path, String versionName) {
+        final String pathName = path.replaceAll("/", "-");
+        return pathName + '-' + versionName + ".zip";
+    }
+
     static String removeWorkingDirectory(String path, String filename) {
         // remove quirk of working directory, but preserve hidden files
         final int nameIndex = path.lastIndexOf(filename);
