@@ -93,7 +93,10 @@ jobs:
           command: |
             docker build -t quay.io/dockstore/dockstore-webservice:${CIRCLE_TAG-$CIRCLE_BRANCH} .
             docker login -u=$QUAY_USERNAME -p=$QUAY_PASSWORD quay.io
-            docker push quay.io/dockstore/dockstore-webservice:${CIRCLE_TAG-$CIRCLE_BRANCH}
+            tagOrBranch=${CIRCLE_TAG-$CIRCLE_BRANCH}
+            # Convert slashes to underscores, e.g., feature/seab-1675/pushtoquay to feature_seab-1675_pushtoquay
+            dockerVersion=$(echo "${x//\//_}")
+            docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
     branches:
       ignore:
         - gh-pages
