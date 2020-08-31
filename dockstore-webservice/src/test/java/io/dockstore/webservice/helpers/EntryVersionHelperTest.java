@@ -77,7 +77,7 @@ public class EntryVersionHelperTest {
 
     @Test
     public void testZipFileName() {
-        String path = "github.com-dockstore-hello_world";
+        String path = "github.com/dockstore/hello_world";
         String versionName = "master";
         Assert.assertEquals("github.com-dockstore-hello_world-master.zip", EntryVersionHelper.generateZipFileName(path, versionName));
     }
