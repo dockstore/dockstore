@@ -4,9 +4,10 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.openapitools.client.model.LanguageParsingRequest;
+import org.openapitools.client.model.LanguageParsingResponse;
 import scala.Option;
 import scala.collection.JavaConverters;
 import womtool.WomtoolMain;
@@ -38,11 +41,15 @@ public class App
     APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent().withHeaders(headers);
     if (input != null && input.getBody() != null) {
       try {
-        WDLParserRequest request = mapper.readValue(input.getBody(), WDLParserRequest.class);
+        LanguageParsingRequest request =
+            mapper.readValue(input.getBody(), LanguageParsingRequest.class);
         try {
           String s =
-              parseWDLFile(
-                  request.getUri(), request.getBranch(), request.getDescriptorRelativePathInGit());
+              parseWdlFile(
+                  request.getUri(),
+                  request.getBranch(),
+                  request.getDescriptorRelativePathInGit(),
+                  request);
           return response.withStatusCode(HttpURLConnection.HTTP_OK).withBody(s);
         } catch (IOException e) {
           e.printStackTrace();
@@ -50,12 +57,14 @@ public class App
               .withBody("Could not clone repository to temporary directory")
               .withStatusCode(HttpURLConnection.HTTP_INTERNAL_ERROR);
         } catch (GitAPIException e) {
-          e.printStackTrace();
+          StringWriter sw = new StringWriter();
+          e.printStackTrace(new PrintWriter(sw));
+          String exceptionAsString = sw.toString();
           return response
-              .withBody("Could not clone Git repository")
+              .withBody(exceptionAsString)
               .withStatusCode(HttpURLConnection.HTTP_INTERNAL_ERROR);
         }
-      } catch (JsonProcessingException e) {
+      } catch (IOException e) {
         e.printStackTrace();
         return response
             .withBody("Could not process request")
@@ -68,23 +77,35 @@ public class App
     }
   }
 
-  private String parseWDLFile(String uri, String branch, String descriptorRelativePathInGit)
+  private String parseWdlFile(
+      String uri,
+      String branch,
+      String descriptorRelativePathInGit,
+      LanguageParsingRequest languageParsingRequest)
       throws IOException, GitAPIException {
     Path tempDirWithPrefix = Files.createTempDirectory("clonedRepository");
-    Git git = Git.cloneRepository().setURI(uri).setDirectory(tempDirWithPrefix.toFile()).call();
-    git.checkout().setName(branch).call();
+    Git.cloneRepository()
+        .setCloneAllBranches(false)
+        .setBranch(branch)
+        .setURI(uri)
+        .setDirectory(tempDirWithPrefix.toFile())
+        .call();
     Path descriptorAbsolutePath = tempDirWithPrefix.resolve(descriptorRelativePathInGit);
     String descriptorAbsolutePathString = descriptorAbsolutePath.toString();
-    WDLParserResponse response = getResponse(descriptorAbsolutePathString);
-    response
-        .getSecondaryFilePaths()
-        .replaceAll(s -> s.replaceFirst(tempDirWithPrefix.toString(), ""));
+    LanguageParsingResponse response = getResponse(descriptorAbsolutePathString);
+    response.setLanguageParsingRequest(languageParsingRequest);
+    if (response.getSecondaryFilePaths() != null) {
+      response
+          .getSecondaryFilePaths()
+          .replaceAll(s -> s.replaceFirst(tempDirWithPrefix.toString(), ""));
+    }
     return mapper.writeValueAsString(response);
   }
 
   // The first two lines aren't actual paths.
   // It looks like "Success!" and "List of Workflow dependencies is:"
-  private static void handleSuccessResponse(WDLParserResponse response, List<String> strings) {
+  private static void handleSuccessResponse(
+      LanguageParsingResponse response, List<String> strings) {
     strings.remove(0);
     strings.remove(0);
     // If there are no imports, womtool says None
@@ -94,9 +115,16 @@ public class App
     response.setSecondaryFilePaths(strings);
   }
 
-  public static WDLParserResponse getResponse(String descriptorAbsolutePathString)
+  /**
+   * Get a language parsing response by running womtool.
+   *
+   * @param descriptorAbsolutePathString Absolute path to the main descriptor file
+   * @return LanguageParsingResponse constructed after running womtool
+   * @throws IOException Unexpected exception from running womtool
+   */
+  public static LanguageParsingResponse getResponse(String descriptorAbsolutePathString)
       throws IOException {
-    WDLParserResponse response = new WDLParserResponse();
+    LanguageParsingResponse response = new LanguageParsingResponse();
     response.setClonedRepositoryAbsolutePath(descriptorAbsolutePathString);
     List<String> commandLineArgs = Arrays.asList("validate", "-l", descriptorAbsolutePathString);
     try {
