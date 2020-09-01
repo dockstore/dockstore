@@ -91,11 +91,11 @@ jobs:
       - run:
           name: Build and publish Docker
           command: |
-            docker build -t quay.io/dockstore/dockstore-webservice:${CIRCLE_TAG-$CIRCLE_BRANCH} .
-            docker login -u=$QUAY_USERNAME -p=$QUAY_PASSWORD quay.io
             export tagOrBranch=${CIRCLE_TAG-$CIRCLE_BRANCH}
             # Convert slashes to underscores, e.g., feature/seab-1675/pushtoquay to feature_seab-1675_pushtoquay
-            export dockerVersion="${tagOrBranch//\//_}"
+            export dockerVersion=${tagOrBranch//\//_}
+            docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
+            docker login -u=$QUAY_USERNAME -p=$QUAY_PASSWORD quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
     branches:
       ignore:
