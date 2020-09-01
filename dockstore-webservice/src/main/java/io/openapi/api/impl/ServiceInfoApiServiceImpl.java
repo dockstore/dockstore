@@ -8,20 +8,18 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.core.User;
-import io.openapi.api.NotFoundException;
 import io.openapi.api.ServiceInfoApiService;
 import io.openapi.model.Service;
 import io.openapi.model.ServiceType;
 
 public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
     @Override
-    public Response getServiceInfo(SecurityContext securityContext, ContainerRequestContext value, Optional<User> user)
-            throws NotFoundException {
+    public Response getServiceInfo(SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         Service service = getService();
         return Response.ok().entity(service).build();
     }
 
-    private static Service getService() {
+    public static Service getService() {
         Service service = new Service();
         service.setId("1");
         service.setName("Dockstore");
@@ -30,9 +28,12 @@ public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
         service.setOrganization(getOrganization());
         service.setContactUrl("https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506");
         service.setDocumentationUrl("https://docs.dockstore.org/en/develop");
+        // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date
         service.setCreatedAt(new Date());
+        // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date
         service.setUpdatedAt(new Date());
         service.setEnvironment("prod");
+        service.setVersion("2.0.1");
         return service;
     }
 

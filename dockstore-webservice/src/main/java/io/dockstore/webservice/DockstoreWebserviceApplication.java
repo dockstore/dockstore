@@ -372,6 +372,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new io.openapi.api.ToolClassesApi(null));
+        environment.jersey().register(new io.openapi.api.ServiceInfoApi(null));
         environment.jersey().register(new MetadataApi(null));
         environment.jersey().register(new ToolClassesApi(null));
         environment.jersey().register(new PersistenceExceptionMapper());
