@@ -30,6 +30,8 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -40,6 +42,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,6 +60,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -80,11 +84,15 @@ public class WebhookIT extends BaseIT {
     public ExpectedException thrown = ExpectedException.none();
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
+    private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
     private final String installationId = "1179416";
+    private FileDAO fileDAO;
 
     @Before
     public void setup() {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        this.fileDAO = new FileDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -387,8 +395,9 @@ public class WebhookIT extends BaseIT {
         assertFalse("Version should be invalid", missingPrimaryDescriptorVersion.isValid());
 
         // Check existence of files and validations
-        assertTrue("Should have .dockstore.yml file", missingPrimaryDescriptorVersion.getSourceFiles().stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
-        assertTrue("Should not have doesnotexist.wdl file", missingPrimaryDescriptorVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(missingPrimaryDescriptorVersion.getId());
+        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
+        assertTrue("Should not have doesnotexist.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
         assertFalse("Should have invalid .dockstore.yml", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertFalse("Should have invalid doesnotexist.wdl", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 
@@ -405,9 +414,10 @@ public class WebhookIT extends BaseIT {
         assertTrue("Version should be valid (missing test parameter doesn't make the version invalid)", missingTestParameterFileVersion.isValid());
 
         // Check existence of files and validations
-        assertTrue("Should have .dockstore.yml file", missingTestParameterFileVersion.getSourceFiles().stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
-        assertTrue("Should not have /test/doesnotexist.txt file", missingTestParameterFileVersion.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty());
-        assertTrue("Should have Dockstore2.wdl file", missingTestParameterFileVersion.getSourceFiles().stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")));
+        sourceFiles = fileDAO.findSourceFilesByVersion(missingTestParameterFileVersion.getId());
+        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
+        assertTrue("Should not have /test/doesnotexist.txt file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/test/doesnotexist.txt")).findFirst().isEmpty());
+        assertTrue("Should have Dockstore2.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
         assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 
@@ -424,5 +434,97 @@ public class WebhookIT extends BaseIT {
             assertEquals("There should be 1 unsuccessful event", 1,
                     failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
         }
+    }
+
+    /**
+     * This tests the GitHub release with .dockstore.yml located in /.github/.dockstore.yml
+     */
+    @Test
+    public void testGithubDirDockstoreYml() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertNotNull(workflow);
+    }
+
+    /**
+     * This tests filters functionality in .dockstore.yml
+     * https://github.com/DockstoreTestUser2/dockstoreyml-github-filters-test
+     * Workflow filters are configured as follows:
+     * * filterbranch filters for "develop"
+     * * filtertag filters for "1.0"
+     * * filtermulti filters for "dev*" and "1.*"
+     * * filternone has no filters (accepts all tags & branches)
+     * * filterregexerror has a filter with an invalid regex string (matches nothing)
+     */
+    @Test
+    public void testDockstoreYmlFilters() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        // master should be excluded by all of the workflows with filters
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false));
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+
+        // tag 2.0 should be excluded by all of the workflows with filters
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals(2, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+
+        // develop2 should be accepted by the heads/dev* filter in filtermulti
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/develop2", installationId);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false);
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals(3, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+
+        // tag 1.1 should be accepted by the 1.* filter in filtermulti
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.1", installationId);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false);
+        assertEquals(2, workflow.getWorkflowVersions().size());
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals(4, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+
+        // tag 1.0 should be accepted by tags/1.0 in filtertag and 1.* in filtermulti
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false);
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false);
+        assertEquals(3, workflow.getWorkflowVersions().size());
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals(5, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+
+        // develop should be accepted by develop in filterbranch and heads/dev* in filtermulti
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/develop", installationId);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false);
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false);
+        assertEquals(1, workflow.getWorkflowVersions().size());
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false);
+        assertEquals(4, workflow.getWorkflowVersions().size());
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals(6, workflow.getWorkflowVersions().size());
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
     }
 }

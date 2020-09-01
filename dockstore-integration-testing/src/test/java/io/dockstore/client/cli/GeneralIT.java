@@ -39,6 +39,8 @@ import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -54,6 +56,9 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -92,6 +97,19 @@ public class GeneralIT extends BaseIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    private FileDAO fileDAO;
+    private Session session;
+
+    @Before
+    public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+
+        this.fileDAO = new FileDAO(sessionFactory);
+        this.session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+    }
 
     @Before
     @Override
@@ -413,8 +431,9 @@ public class GeneralIT extends BaseIT {
     public void verifySourcefileChecksumsSaved(final List<Tag> tags) {
         assertTrue(tags.size() > 0);
         tags.stream().forEach(tag -> {
-            assertTrue(tag.getSourceFiles().size() > 0);
-            tag.getSourceFiles().stream().forEach(sourceFile -> {
+            List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
+            assertTrue(sourceFiles.size() > 0);
+            sourceFiles.stream().forEach(sourceFile -> {
                 assertTrue(sourceFile.getChecksums().size() > 0);
                 sourceFile.getChecksums().stream().forEach(checksum -> {
                     assertFalse(checksum.getChecksum().isEmpty());
@@ -436,21 +455,21 @@ public class GeneralIT extends BaseIT {
                 .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
 
         workflow = workflowApi.refresh(workflow.getId());
-        SourceFile sourceFile = workflow.getWorkflowVersions().get(0).getSourceFiles().get(0);
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflow.getWorkflowVersions().get(0).getId());
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
-        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata, platformversion) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho', '1.0')");
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata, platformversion) VALUES (" + sourceFiles.get(0).getId() + ", true, 'Potato CLI', 'Idaho', '1.0')");
         versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
-        sourceFile = tool.getWorkflowVersions().get(0).getSourceFiles().get(0);
+        sourceFiles = fileDAO.findSourceFilesByVersion(tool.getWorkflowVersions().get(0).getId());
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
-        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFiles.get(0).getId() + ", true, 'Potato CLI', 'Idaho')");
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
@@ -1251,8 +1270,9 @@ public class GeneralIT extends BaseIT {
 
         // try modifying sourcefiles
         // cannot modify sourcefiles for a frozen version
-        assertFalse(master.getSourceFiles().isEmpty());
-        master.getSourceFiles().forEach(s -> {
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(master.getId());
+        assertFalse(sourceFiles.isEmpty());
+        sourceFiles.forEach(s -> {
             assertTrue(s.isFrozen());
             testingPostgres.runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
             final String content = testingPostgres
@@ -1261,14 +1281,14 @@ public class GeneralIT extends BaseIT {
         });
 
         // try deleting a row join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
             assertEquals(0, affected);
         });
 
         // try updating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
             assertEquals(0, affected);
@@ -1276,7 +1296,7 @@ public class GeneralIT extends BaseIT {
 
         final Long versionId = master.getId();
         // try creating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             try {
                 testingPostgres.runUpdateStatement(
                     "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");

@@ -30,9 +30,11 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -90,6 +92,7 @@ public class ServiceIT extends BaseIT {
     private ServiceDAO serviceDAO;
     private Session session;
     private UserDAO userDAO;
+    private FileDAO fileDAO;
 
     @Before
     public void setup() {
@@ -99,6 +102,8 @@ public class ServiceIT extends BaseIT {
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
+        this.fileDAO = new FileDAO(sessionFactory);
+
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         testingPostgres.runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -207,7 +212,8 @@ public class ServiceIT extends BaseIT {
 
         assertNotNull(service);
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
-        assertEquals("Should have 3 source files", 3, service.getWorkflowVersions().get(0).getSourceFiles().size());
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(service.getWorkflowVersions().get(0).getId());
+        assertEquals("Should have 3 source files", 3, sourceFiles.size());
         assertEquals("Should have 1 user", 1, service.getUsers().size());
 
         final long count = testingPostgres.runSelectStatement(

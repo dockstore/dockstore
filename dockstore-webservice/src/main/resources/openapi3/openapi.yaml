@@ -1770,7 +1770,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -3531,9 +3531,11 @@ paths:
       operationId: createNotification
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Notification'
+        description: Notification to create
+        required: true
       responses:
         default:
           content:
@@ -4574,7 +4576,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
         - bearer: []
@@ -6586,7 +6588,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []

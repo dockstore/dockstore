@@ -18,6 +18,7 @@ package io.dockstore.common.yaml;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +30,9 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -91,6 +94,13 @@ public class DockstoreYamlTest {
         final List<String> testParameterFiles = workflow.getTestParameterFiles();
         assertEquals(1, testParameterFiles.size());
         assertEquals("/dockstore.wdl.json", testParameterFiles.get(0));
+        final Filters filters = workflow.getFilters();
+        final List<String> branches = filters.getBranches();
+        assertEquals(1, branches.size());
+        assertEquals("develop", branches.get(0));
+        final List<String> tags = filters.getTags();
+        assertEquals(1, tags.size());
+        assertEquals("gwas*", tags.get(0));
         final Service12 service = dockstoreYaml.getService();
         assertNotNull(service);
     }
@@ -196,6 +206,78 @@ public class DockstoreYamlTest {
     public void testGalaxySubclass() throws DockstoreYamlHelper.DockstoreYamlException {
         final List<YamlWorkflow> workflows = DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE_GALAXY_YAML).getWorkflows();
         assertEquals(4, workflows.stream().filter(w -> w.getSubclass().equalsIgnoreCase("gxformat2")).count());
+    }
+
+    @Test
+    public void testGitReferenceFilter() {
+        // Empty filters allow anything
+        Filters filters = new Filters();
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/anything"), filters));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/any/thing"), filters));
+
+        // Only match develop branch
+        // glob
+        filters.setBranches(List.of("develop"));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/developfoo"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), filters));
+        // regex
+        filters.setBranches(List.of());
+        filters.setBranches(List.of("/develop/"));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/develop"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/develop"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/developfoo"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/develop"), filters));
+
+        // Only match 0.1 tag
+        // glob
+        filters.setBranches(List.of());
+        filters.setTags(List.of("0.1"));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/0.1"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/0.1"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/0.1/foo"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/0.1"), filters));
+        // regex
+        filters.setBranches(List.of());
+        filters.setTags(List.of("/0\\.1/"));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/0.1"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/foo/0.1"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/0.1/foo"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/0.1"), filters));
+
+        // Match any feature/** branch and ALL tags
+        // glob/regex combo
+        filters.setBranches(List.of("feature/**"));
+        filters.setTags(List.of("/.*/"));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/feature"), filters));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/feature/1234"), filters));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/feature/1234/filters"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/foo/feature/1234"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/featurefoo"), filters));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/anything"), filters));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/any/thing"), filters));
+
+        // X.X.X semantic version tags with regex
+        filters.setBranches(List.of());
+        filters.setTags(List.of("/\\d+\\.\\d+\\.\\d+/"));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/0.0.0"), filters));
+        assertTrue(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/1.10.0"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/1.10.0-beta"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/a.b.c"), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/1.0."), filters));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/heads/0.0.0"), filters));
+
+        // Invalid reference throws an error (this should never happen)
+        assertThrows(UnsupportedOperationException.class, () -> DockstoreYamlHelper.filterGitReference(Path.of("fake/reference"), filters));
+
+        // Invalid glob does not match (logs a warning)
+        filters.setTags(List.of("["));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
+
+        // Invalid regex does not match (logs a warning)
+        filters.setTags(List.of("/[/"));
+        assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
     }
 
 }
