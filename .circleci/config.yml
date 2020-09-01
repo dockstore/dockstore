@@ -138,6 +138,3 @@ jobs:
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             docker login -u=$QUAY_USERNAME -p=$QUAY_PASSWORD quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
-    branches:
-      ignore:
-        - gh-pages
