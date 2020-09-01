@@ -6614,7 +6614,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []
