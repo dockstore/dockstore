@@ -90,7 +90,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
-
+        if (fileName.isEmpty()) {
+            LOG.info(gitUsername + ": no file path provided for " + repositoryId);
+            return null;
+        }
         try {
             String fileContent = this
                 .getArbitraryURL(BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName,
