@@ -25,16 +25,20 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.Utilities;
 import io.dockstore.openapi.client.model.FileWrapper;
+import io.dockstore.openapi.client.model.TRSService;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.openapi.client.model.ToolFile;
 import io.dockstore.openapi.client.model.ToolVersion;
 import io.dropwizard.testing.ResourceHelpers;
+import io.openapi.model.Service;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.openapi.api.impl.ServiceInfoApiServiceImpl.getService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -76,6 +80,26 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     public void testToolsId() throws Exception {
         toolsIdTool();
         toolsIdWorkflow();
+    }
+
+    /**
+     * TODO: Support and test dates
+     * TODO: Test organization
+     */
+    @Test
+    public void serviceInfoTest() {
+        Response response = checkedResponse(baseURL + "service-info");
+        TRSService responseObject = response.readEntity(TRSService.class);
+        Service service = getService();
+        Assert.assertEquals(service.getDocumentationUrl(), responseObject.getDocumentationUrl());
+        Assert.assertEquals(service.getContactUrl(), responseObject.getContactUrl());
+        Assert.assertEquals(service.getDescription(), responseObject.getDescription());
+        Assert.assertEquals(service.getEnvironment(), responseObject.getEnvironment());
+        Assert.assertEquals(service.getName(), responseObject.getName());
+        Assert.assertEquals(service.getType().getArtifact(), responseObject.getType().getArtifact());
+        Assert.assertEquals(service.getType().getGroup(), responseObject.getType().getGroup());
+        Assert.assertEquals(service.getType().getVersion(), responseObject.getType().getVersion());
+        Assert.assertEquals(service.getVersion(), responseObject.getVersion());
     }
 
     private void toolsIdTool() throws Exception {
