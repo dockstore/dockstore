@@ -83,7 +83,6 @@ public class GA4GHV2FinalIT extends GA4GHIT {
     }
 
     /**
-     * TODO: Support and test dates
      * TODO: Test organization
      */
     @Test

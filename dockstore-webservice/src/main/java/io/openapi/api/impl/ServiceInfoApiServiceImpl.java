@@ -36,10 +36,11 @@ public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
         service.setContactUrl("https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506");
         service.setDocumentationUrl("https://docs.dockstore.org");
         final int createYear = 2020;
+        // Current create date is set to the 1.9.0 Dockstore release which is when we first started supporting TRS 2.0.0
         Date createDate = Date.from(LocalDate.of(createYear, Month.JULY, 2).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date
+        // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date. Or...get the object mapper to selectively map Dates different for this endpoint.
         service.setCreatedAt(createDate);
-        // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date
+        // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date. Or...get the object mapper to selectively map Dates different for this endpoint.
         service.setUpdatedAt(UPDATE_DATE);
         String implVersion = ToolsApiServiceImpl.class.getPackage().getImplementationVersion();
         String environment = implVersion == null ? "dev" : "prod";
@@ -53,6 +54,8 @@ public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
         ServiceType serviceType = new ServiceType();
         serviceType.setGroup("org.ga4gh");
         serviceType.setArtifact("TRS");
+        // Need to manually set this every time we support a new version, though it's not very often
+        // TODO: Maybe parse the YAML for the version, though is it worth it?
         serviceType.setVersion("2.0.1");
         return serviceType;
     }
