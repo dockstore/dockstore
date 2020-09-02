@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes.  This exposes the hashcode for specific image versions to verify that the container version pulled is actually the version that was indexed by the registry.
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -790,6 +790,26 @@ components:
       allOf:
         - $ref: '#/components/schemas/Workflow'
       type: object
+    ServiceType:
+      description: Type of a GA4GH service
+      properties:
+        artifact:
+          description: Name of the API or GA4GH specification implemented. Official GA4GH types should be assigned as part of standards approval process. Custom artifacts are supported.
+          example: beacon
+          type: string
+        group:
+          description: Namespace in reverse domain name format. Use `org.ga4gh` for implementations compliant with official GA4GH specifications. For services with custom APIs not standardized by GA4GH, or implementations diverging from official GA4GH specifications, use a different namespace (e.g. your organization's reverse domain name).
+          example: org.ga4gh
+          type: string
+        version:
+          description: Version of the API or specification. GA4GH specifications use semantic versioning.
+          example: 1.0.0
+          type: string
+      required:
+        - artifact
+        - group
+        - version
+      type: object
     SharedWorkflows:
       properties:
         role:
@@ -862,6 +882,59 @@ components:
       properties:
         star:
           type: boolean
+      type: object
+    TRSService:
+      description: GA4GH service
+      properties:
+        contactUrl:
+          description: URL of the contact for the provider of this service, e.g. a link to a contact form (RFC 3986 format), or an email (RFC 2368 format).
+          example: mailto:support@example.com
+          type: string
+        createdAt:
+          description: Timestamp describing when the service was first deployed and available (RFC 3339 format)
+          example: "2019-06-04T12:58:19Z"
+          format: date-time
+          type: string
+        description:
+          description: Description of the service. Should be human readable and provide information about the service.
+          example: This service provides...
+          type: string
+        documentationUrl:
+          description: URL of the documentation of this service (RFC 3986 format). This should help someone learn how to use your service, including any specifics required to access data, e.g. authentication.
+          example: https://docs.myservice.example.com
+          type: string
+        environment:
+          description: Environment the service is running in. Use this to distinguish between production, development and testing/staging deployments. Suggested values are prod, test, dev, staging. However this is advised and not enforced.
+          example: test
+          type: string
+        id:
+          description: Unique ID of this service. Reverse domain name notation is recommended, though not required. The identifier should attempt to be globally unique so it can be used in downstream aggregator services e.g. Service Registry.
+          example: org.ga4gh.myservice
+          type: string
+        name:
+          description: Name of this service. Should be human readable.
+          example: My project
+          type: string
+        organization:
+          description: Organization providing the service
+          type: object
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        updatedAt:
+          description: Timestamp describing when the service was last updated (RFC 3339 format)
+          example: "2019-06-04T12:58:19Z"
+          format: date-time
+          type: string
+        version:
+          description: Version of the service being described. Semantic versioning is recommended, but other identifiers, such as dates or commit hashes, are also allowed. The version should be changed whenever the service is updated.
+          example: 1.0.0
+          type: string
+      required:
+        - id
+        - name
+        - organization
+        - type
+        - version
       type: object
     Tag:
       properties:
@@ -1770,7 +1843,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -2493,7 +2566,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -3707,7 +3780,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -3799,6 +3872,19 @@ paths:
       summary: Get events based on filters.
       tags:
         - events
+  /ga4gh/trs/v2/service-info:
+    get:
+      operationId: getServiceInfo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TRSService'
+          description: A successful operation to request the service information about this running service.'
+      summary: Show information about this service. It is assumed that removing this endpoint from a URL will result in a valid URL to query against
+      tags:
+        - GA4GHV20
   /ga4gh/trs/v2/toolClasses:
     get:
       description: 'This endpoint returns all tool-classes available. '
@@ -4576,7 +4662,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -6588,7 +6674,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
       security:
         - bearer: []
