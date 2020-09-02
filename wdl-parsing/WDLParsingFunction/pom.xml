@@ -175,30 +175,18 @@
           <plugin>
               <groupId>org.openapitools</groupId>
               <artifactId>openapi-generator-maven-plugin</artifactId>
-              <!-- RELEASE_VERSION -->
               <version>4.3.1</version>
-              <!-- /RELEASE_VERSION -->
               <executions>
                   <execution>
                       <goals>
                           <goal>generate</goal>
                       </goals>
                       <configuration>
-                          <!-- specify the swagger yaml -->
-                          <inputSpec>https://raw.githubusercontent.com/dockstore/dockstore/SEAB-1598/lambdaTesting/dockstore-webservice/src/main/resources/openapi3/openapi.yaml</inputSpec>
-
-                          <!-- target to generate java client code -->
+			  <inputSpec>https://raw.githubusercontent.com/dockstore/dockstore/feature/languageParsingLambda/dockstore-webservice/src/main/resources/openapi3/openapi.yaml</inputSpec>
                           <generatorName>java</generatorName>
-
-                          <!-- hint: if you want to generate java server code, e.g. based on Spring Boot,
-                               you can use the following target: <generatorName>spring</generatorName> -->
-
-                          <!-- pass any necessary config options -->
                           <configOptions>
                               <dateLibrary>joda</dateLibrary>
                           </configOptions>
-
-                          <!-- override the default library to jersey2 -->
                           <library>jersey2</library>
                       </configuration>
                   </execution>

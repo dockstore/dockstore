@@ -1592,13 +1592,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(description = "Dummy endpoint for now to get the Dockstore web service to add the models to the openapi.yaml", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "hidden", hidden = true)
     public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @RequestBody(description = "Created user object", required = true,
                     content = @Content(
                             schema = @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
-        LOG.debug(languageParsingResponse.toString());
+            // To avoid checkstyle
     }
 
     @POST
