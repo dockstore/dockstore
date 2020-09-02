@@ -16,7 +16,7 @@
 package io.dockstore.common;
 
 /**
- * Setting aside integration tests that do not require our confidential data bundles
+ * Setting aside tests that requires the external language parsing lambda service
  */
 public interface LanguageParsingTest {
 }
