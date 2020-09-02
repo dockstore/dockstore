@@ -7,12 +7,7 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 if [ "${TESTING_PROFILE}" = "language-parsing-tests" ]; then
-    curl -fsSL "https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh" | bash
-    echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> /home/travis/.bash_profile
-    eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
-    brew tap aws/tap
-    brew install aws-sam-cli
-    sam --version
+    pip3 install aws-sam-cli
     cd wdl-parsing
     docker pull amazon/aws-sam-cli-build-image-java11
     sam build --use-container
