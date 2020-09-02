@@ -1,5 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.dockstore</groupId>
     <artifactId>wdl-parser</artifactId>
@@ -14,23 +14,21 @@
         <jersey-version>2.27</jersey-version>
         <jackson-version>2.9.10</jackson-version>
         <jackson-databind-nullable-version>0.2.0</jackson-databind-nullable-version>
-        <jodatime-version>2.7</jodatime-version>
-        <maven-plugin-version>1.0.0</maven-plugin-version>
-        <junit-version>4.8.1</junit-version>
-        <scribejava-apis-version>6.9.0</scribejava-apis-version>
+        <junit-version>5.6.2</junit-version>
+        <maven-plugin-version>2.22.2</maven-plugin-version>
     </properties>
     <repositories>
-    <repository>
-        <id>artifactory.broadinstitute.org</id>
-        <name>artifactory.broadinstitute.org</name>
-        <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
-        <releases>
-            <enabled>true</enabled>
-        </releases>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-    </repository>
+        <repository>
+            <id>artifactory.broadinstitute.org</id>
+            <name>artifactory.broadinstitute.org</name>
+            <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <repository>
             <id>jgit-repository</id>
             <url>https://repo.eclipse.org/content/groups/releases/</url>
@@ -43,26 +41,15 @@
             <version>1.2.0</version>
         </dependency>
         <dependency>
-          <groupId>com.amazonaws</groupId>
-          <artifactId>aws-lambda-java-events</artifactId>
-          <version>3.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.11.1</version>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-events</artifactId>
+            <version>3.1.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.12.11</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>27.0.1-jre</version>
+            <version>2.12.8</version>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
@@ -70,10 +57,16 @@
             <version>${cromwell.version}</version>
         </dependency>
         <dependency>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-          <version>4.12</version>
-          <scope>test</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -116,16 +109,6 @@
 
         <!-- JSON processing: jackson -->
         <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-base</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <version>${jackson-version}</version>
@@ -133,11 +116,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
             <version>${jackson-version}</version>
         </dependency>
         <dependency>
@@ -152,149 +130,181 @@
             <artifactId>jackson-datatype-joda</artifactId>
             <version>${jackson-version}</version>
         </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>${jodatime-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.scribejava</groupId>
-            <artifactId>scribejava-apis</artifactId>
-            <version>${scribejava-apis-version}</version>
-        </dependency>
         <!-- Base64 encoding that works in both JVM and Android -->
         <dependency>
             <groupId>com.brsanthu</groupId>
             <artifactId>migbase64</artifactId>
             <version>2.2</version>
         </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>${jersey-version}</version>
+        </dependency>
     </dependencies>
 
     <build>
-      <plugins>
-          <plugin>
-              <groupId>org.openapitools</groupId>
-              <artifactId>openapi-generator-maven-plugin</artifactId>
-              <version>4.3.1</version>
-              <executions>
-                  <execution>
-                      <goals>
-                          <goal>generate</goal>
-                      </goals>
-                      <configuration>
-			  <inputSpec>https://raw.githubusercontent.com/dockstore/dockstore/feature/languageParsingLambda/dockstore-webservice/src/main/resources/openapi3/openapi.yaml</inputSpec>
-                          <generatorName>java</generatorName>
-                          <configOptions>
-                              <dateLibrary>joda</dateLibrary>
-                          </configOptions>
-                          <library>jersey2</library>
-                      </configuration>
-                  </execution>
-              </executions>
-          </plugin>
-          <plugin>
-              <groupId>com.github.spotbugs</groupId>
-              <artifactId>spotbugs-maven-plugin</artifactId>
-              <version>4.0.4</version>
-              <configuration>
-                  <excludeFilterFile>${project.basedir}/ignore.xml</excludeFilterFile>
-              </configuration>
-              <executions>
-                  <execution>
-                      <goals>
-                          <goal>check</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
-          <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-checkstyle-plugin</artifactId>
-              <version>3.1.1</version>
-              <configuration>
-                  <configLocation>google_checks.xml</configLocation>
-                  <violationSeverity>warning</violationSeverity>
-                  <encoding>UTF-8</encoding>
-                  <consoleOutput>true</consoleOutput>
-                  <failsOnError>true</failsOnError>
-                  <linkXRef>false</linkXRef>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>validate</id>
-                      <phase>validate</phase>
-                      <goals>
-                          <goal>check</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
-          <plugin>
-              <groupId>com.coveo</groupId>
-              <artifactId>fmt-maven-plugin</artifactId>
-              <version>2.10</version>
-              <executions>
-                  <execution>
-                      <goals>
-                          <goal>format</goal>
-                      </goals>
-                  </execution>
-              </executions>
-          </plugin>
-          <plugin>
-          <groupId>net.alchim31.maven</groupId>
-          <artifactId>scala-maven-plugin</artifactId>
-          <executions>
-              <execution>
-                  <id>scala-compile</id>
-                  <phase>compile</phase>
-                  <goals>
-                      <goal>add-source</goal>
-                      <goal>compile</goal>
-                  </goals>
-              </execution>
-              <execution>
-                  <id>scala-test-compile</id>
-                  <phase>test-compile</phase>
-                  <goals>
-                      <goal>testCompile</goal>
-                  </goals>
-              </execution>
-          </executions>
-      </plugin>
-          <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-shade-plugin</artifactId>
-          <version>3.1.1</version>
-          <configuration>
-          </configuration>
-          <executions>
-            <execution>
-              <phase>package</phase>
-              <goals>
-                <goal>shade</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
-          <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-compiler-plugin</artifactId>
-              <configuration>
-                  <source>11</source>
-                  <target>11</target>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>default-compile</id>
-                      <phase>none</phase>
-                  </execution>
-                  <execution>
-                      <id>default-testCompile</id>
-                      <phase>none</phase>
-                  </execution>
-              </executions>
-          </plugin>
-      </plugins>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-plugin-version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven-plugin-version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <failOnWarning>true</failOnWarning>
+                    <outputXML>true</outputXML>
+                    <ignoreNonCompile>true</ignoreNonCompile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>4.3.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>
+                                https://raw.githubusercontent.com/dockstore/dockstore/feature/languageParsingLambda/dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+                            </inputSpec>
+                            <generatorName>java</generatorName>
+                            <configOptions>
+                                <dateLibrary>joda</dateLibrary>
+                            </configOptions>
+                            <library>jersey2</library>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.0.4</version>
+                <configuration>
+                    <excludeFilterFile>${project.basedir}/ignore.xml</excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <configLocation>google_checks.xml</configLocation>
+                    <violationSeverity>warning</violationSeverity>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.coveo</groupId>
+                <artifactId>fmt-maven-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>4.4.0</version>
+                <executions>
+                    <execution>
+                        <id>scala-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>scala-test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

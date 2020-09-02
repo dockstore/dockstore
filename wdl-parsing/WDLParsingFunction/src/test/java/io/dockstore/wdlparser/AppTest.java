@@ -1,9 +1,9 @@
 package io.dockstore.wdlparser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import javax.ws.rs.core.MediaType;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.openapitools.client.model.LanguageParsingRequest;
 import org.openapitools.client.model.LanguageParsingResponse;
 
@@ -31,13 +31,16 @@ public class AppTest {
     APIGatewayProxyResponseEvent result = app.handleRequest(requestEvent, null);
     System.out.println(result.getBody());
     assertEquals(HttpURLConnection.HTTP_OK, result.getStatusCode().intValue());
-    assertEquals(result.getHeaders().get("Content-Type"), "application/json");
+    assertEquals(MediaType.APPLICATION_JSON, result.getHeaders().get("Content-Type"));
     String content = result.getBody();
     assertNotNull(content);
     LanguageParsingResponse response =
         objectMapper.readValue(content, LanguageParsingResponse.class);
+    assertNotNull(response.getValid());
     assertTrue(response.getValid());
+    assertNotNull(response.getClonedRepositoryAbsolutePath());
     assertTrue(response.getClonedRepositoryAbsolutePath().contains("/tmp"));
+    assertNotNull(response.getSecondaryFilePaths());
     assertEquals(0, response.getSecondaryFilePaths().size());
     System.out.println(response.getClonedRepositoryAbsolutePath());
   }
@@ -55,26 +58,29 @@ public class AppTest {
     APIGatewayProxyResponseEvent result = app.handleRequest(requestEvent, null);
     System.out.println(result.getBody());
     assertEquals(HttpURLConnection.HTTP_OK, result.getStatusCode().intValue());
-    assertEquals(result.getHeaders().get("Content-Type"), "application/json");
+    assertEquals(MediaType.APPLICATION_JSON, result.getHeaders().get("Content-Type"));
     String content = result.getBody();
     assertNotNull(content);
     LanguageParsingResponse response =
         objectMapper.readValue(content, LanguageParsingResponse.class);
+    assertNotNull(response.getValid());
     assertTrue(response.getValid());
+    assertNotNull(response.getClonedRepositoryAbsolutePath());
     assertTrue(response.getClonedRepositoryAbsolutePath().contains("/tmp"));
+    assertNotNull(response.getSecondaryFilePaths());
     assertFalse(
-        "Main descriptor isn't a secondary file path",
-        response.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"));
+        response.getSecondaryFilePaths().contains("GATKSVPipelineClinical.wdl"),
+        "Main descriptor isn't a secondary file path");
     assertEquals(76, response.getSecondaryFilePaths().size());
     System.out.println(response.getClonedRepositoryAbsolutePath());
   }
 
-  @Ignore("Too dangerous test to run, also flakey")
+  @Disabled("Too dangerous test to run, also flakey")
   public void testRecursiveWDL() throws IOException {
     File file = new File("src/test/resources/recursive.wdl");
     String path = file.getAbsolutePath();
     LanguageParsingResponse response = App.getResponse(path);
-    Assert.assertFalse(
-        "A workflow that has recursive HTTP imports is invalid", response.getValid());
+    assertNotNull(response.getValid());
+    assertFalse(response.getValid(), "A workflow that has recursive HTTP imports is invalid");
   }
 }
