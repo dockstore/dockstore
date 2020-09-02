@@ -1,5 +1,8 @@
 package io.openapi.api.impl;
 
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 
@@ -16,6 +19,7 @@ import io.swagger.api.impl.ToolsApiServiceImpl;
 import static io.dockstore.common.PipHelper.DEV_SEM_VER;
 
 public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
+    public static final Date UPDATE_DATE = new Date();
     @Override
     public Response getServiceInfo(SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         Service service = getService();
@@ -31,10 +35,12 @@ public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
         service.setOrganization(getOrganization());
         service.setContactUrl("https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506");
         service.setDocumentationUrl("https://docs.dockstore.org");
+        final int createYear = 2020;
+        Date createDate = Date.from(LocalDate.of(createYear, Month.JULY, 2).atStartOfDay(ZoneId.systemDefault()).toInstant());
         // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date
-        service.setCreatedAt(new Date());
+        service.setCreatedAt(createDate);
         // TODO: Somehow get swagger codegen to generate string parameter (RFC 3339) instead of Date
-        service.setUpdatedAt(new Date());
+        service.setUpdatedAt(UPDATE_DATE);
         String implVersion = ToolsApiServiceImpl.class.getPackage().getImplementationVersion();
         String environment = implVersion == null ? "dev" : "prod";
         implVersion = implVersion == null ? DEV_SEM_VER : implVersion;
