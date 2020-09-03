@@ -18,7 +18,7 @@ public class LanguageParsingRequest {
     private long entryId;
 
     @Schema(description = "Id of the Dockstore entry's workflowVersion", required = true)
-    private long workflowVersionId;
+    private long versionId;
 
     @Schema(description = "List of SourceFiles that will be required for parsing hosted entries from Dockstore")
     private List<SourceFile> sourceFiles;
@@ -55,12 +55,12 @@ public class LanguageParsingRequest {
         this.entryId = entryId;
     }
 
-    public long getWorkflowVersionId() {
-        return workflowVersionId;
+    public long getVersionId() {
+        return versionId;
     }
 
-    public void setWorkflowVersionId(long workflowVersionId) {
-        this.workflowVersionId = workflowVersionId;
+    public void setVersionId(long versionId) {
+        this.versionId = versionId;
     }
 
     public List<SourceFile> getSourceFiles() {
@@ -82,13 +82,13 @@ public class LanguageParsingRequest {
         }
 
         LanguageParsingRequest that = (LanguageParsingRequest)o;
-        return entryId == that.entryId && workflowVersionId == that.workflowVersionId && Objects.equals(uri, that.uri) && Objects
+        return entryId == that.entryId && versionId == that.versionId && Objects.equals(uri, that.uri) && Objects
             .equals(branch, that.branch) && Objects.equals(descriptorRelativePathInGit, that.descriptorRelativePathInGit) && Objects
             .equals(sourceFiles, that.sourceFiles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(uri, branch, descriptorRelativePathInGit, entryId, workflowVersionId, sourceFiles);
+        return Objects.hash(uri, branch, descriptorRelativePathInGit, entryId, versionId, sourceFiles);
     }
 }

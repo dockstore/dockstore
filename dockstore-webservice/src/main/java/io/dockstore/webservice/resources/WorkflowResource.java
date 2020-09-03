@@ -80,6 +80,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.languageParsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageParsing.LanguageParsingResponse;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -1587,18 +1588,29 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     }
 
     @POST
-    @Path("/parsedInformation")
+    @Path("/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation")
     @Timed
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Operation(description = "Dummy endpoint for now to get the Dockstore web service to add the models to the openapi.yaml", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(description = "Language parser calls this endpoint to update parsed information for this version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "hidden", hidden = true)
-    public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @RequestBody(description = "Created user object", required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
-            // To avoid checkstyle
+    public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
+            @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+            @RequestBody(description = "Created user object", required = true, content = @Content(schema = @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
+        checkLanguageParsingRequest(languageParsingResponse, workflowId, workflowVersionId);
+        // TODO: Actually do something useful with this endpoint
+    }
+
+    private static void checkLanguageParsingRequest(LanguageParsingResponse languageParsingResponse, Long entryId, Long versionId) {
+        LanguageParsingRequest languageParsingRequest = languageParsingResponse.getLanguageParsingRequest();
+        if (entryId != languageParsingRequest.getEntryId()) {
+            throw new CustomWebApplicationException("Entry Id from the LambdaParsingResponse does not match the path parameter", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (versionId != languageParsingRequest.getVersionId()) {
+            throw new CustomWebApplicationException("Version Id from the LambdaParsingResponse does not match the path parameter", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @POST
