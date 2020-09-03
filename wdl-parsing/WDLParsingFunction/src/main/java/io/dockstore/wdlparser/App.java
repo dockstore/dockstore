@@ -21,6 +21,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.openapitools.client.model.LanguageParsingRequest;
 import org.openapitools.client.model.LanguageParsingResponse;
+import org.openapitools.client.model.VersionTypeValidation;
 import scala.Option;
 import scala.collection.JavaConverters;
 import womtool.WomtoolMain;
@@ -140,15 +141,21 @@ public class App
       // The first two lines aren't actual paths.
       if (strings.get(0).equals("Success!")
           && strings.get(1).equals("List of Workflow dependencies is:")) {
-        response.setValid(true);
+        VersionTypeValidation versionTypeValidation = new VersionTypeValidation();
+        versionTypeValidation.setValid(true);
+        response.setVersionTypeValidation(versionTypeValidation);
         handleSuccessResponse(response, strings);
         return response;
       } else {
-        response.setValid(false);
+        VersionTypeValidation versionTypeValidation = new VersionTypeValidation();
+        versionTypeValidation.setValid(false);
+        response.setVersionTypeValidation(versionTypeValidation);
         throw new IOException();
       }
     } catch (StackOverflowError e) {
-      response.setValid(false);
+      VersionTypeValidation versionTypeValidation = new VersionTypeValidation();
+      versionTypeValidation.setValid(false);
+      response.setVersionTypeValidation(versionTypeValidation);
       return response;
     }
   }

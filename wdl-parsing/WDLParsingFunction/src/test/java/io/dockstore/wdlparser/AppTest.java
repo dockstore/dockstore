@@ -36,8 +36,9 @@ public class AppTest {
     assertNotNull(content);
     LanguageParsingResponse response =
         objectMapper.readValue(content, LanguageParsingResponse.class);
-    assertNotNull(response.getValid());
-    assertTrue(response.getValid());
+    assertNotNull(response.getVersionTypeValidation());
+    assertNotNull(response.getVersionTypeValidation().getValid());
+    assertTrue(response.getVersionTypeValidation().getValid());
     assertNotNull(response.getClonedRepositoryAbsolutePath());
     assertTrue(response.getClonedRepositoryAbsolutePath().contains("/tmp"));
     assertNotNull(response.getSecondaryFilePaths());
@@ -63,8 +64,9 @@ public class AppTest {
     assertNotNull(content);
     LanguageParsingResponse response =
         objectMapper.readValue(content, LanguageParsingResponse.class);
-    assertNotNull(response.getValid());
-    assertTrue(response.getValid());
+    assertNotNull(response.getVersionTypeValidation());
+    assertNotNull(response.getVersionTypeValidation().getValid());
+    assertTrue(response.getVersionTypeValidation().getValid());
     assertNotNull(response.getClonedRepositoryAbsolutePath());
     assertTrue(response.getClonedRepositoryAbsolutePath().contains("/tmp"));
     assertNotNull(response.getSecondaryFilePaths());
@@ -80,7 +82,10 @@ public class AppTest {
     File file = new File("src/test/resources/recursive.wdl");
     String path = file.getAbsolutePath();
     LanguageParsingResponse response = App.getResponse(path);
-    assertNotNull(response.getValid());
-    assertFalse(response.getValid(), "A workflow that has recursive HTTP imports is invalid");
+    assertNotNull(response.getVersionTypeValidation());
+    assertNotNull(response.getVersionTypeValidation().getValid());
+    assertFalse(
+        response.getVersionTypeValidation().getValid(),
+        "A workflow that has recursive HTTP imports is invalid");
   }
 }

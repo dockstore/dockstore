@@ -21,8 +21,8 @@ public class LanguageParserHelperTest {
     public void sendToLambdaSyncTest() throws IOException, InterruptedException {
         LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
         LanguageParsingResponse languageParsingResponse = LanguageParserHelper.sendToLambdaSync(languageParsingRequest);
-        Assert.assertTrue(languageParsingResponse.isValid());
-        assertTrue(languageParsingResponse.isValid());
+        Assert.assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
+        assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
         assertTrue(languageParsingResponse.getClonedRepositoryAbsolutePath().contains("/tmp"));
         assertFalse(
                 "Main descriptor isn't a secondary file path",
@@ -32,6 +32,7 @@ public class LanguageParserHelperTest {
 
     /**
      * Tests that an async request can be made without other exceptions thrown
+     * TODO: Somehow test the async response works (lambda hitting web service endpoint)
      * @throws InterruptedException
      * @throws ExecutionException
      * @throws JsonProcessingException
