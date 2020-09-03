@@ -9,6 +9,7 @@ set -o xtrace
 if [ "${TESTING_PROFILE}" = "language-parsing-tests" ]; then
     pip3 install aws-sam-cli
     cd wdl-parsing
+    # For some reason, Travis has issues pulling the Docker image through sam build --use-container https://github.com/aws/aws-sam-cli/issues/2121
     docker pull amazon/aws-sam-cli-build-image-java11
     sam build --use-container
     sam local start-api &
