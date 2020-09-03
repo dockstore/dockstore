@@ -443,30 +443,8 @@
                                 <goal>exec</goal>
                             </goals>
                             <configuration>
-                                <executable>git</executable>
-                                <commandlineArgs>secrets --register-aws</commandlineArgs>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>Unset the git hook directory</id>
-                            <phase>initialize</phase>
-                            <goals>
-                                <goal>exec</goal>
-                            </goals>
-                            <configuration>
-                                <executable>git</executable>
-                                <commandlineArgs>config --unset core.hookspath</commandlineArgs>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>Set the git hook directory</id>
-                            <phase>initialize</phase>
-                            <goals>
-                                <goal>exec</goal>
-                            </goals>
-                            <configuration>
-                                <executable>git</executable>
-                                <commandlineArgs>config --add core.hookspath git-hooks/</commandlineArgs>
+                                <executable>bash</executable>
+                                <commandlineArgs>${project.parent.basedir}/git-hooks/install.sh</commandlineArgs>
                             </configuration>
                         </execution>
                     </executions>
