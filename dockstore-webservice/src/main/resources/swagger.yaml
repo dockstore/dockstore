@@ -7504,14 +7504,6 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
-      sourceFiles:
-        type: "array"
-        position: 6
-        description: "Cached files for each version. Includes Dockerfile and Descriptor\
-          \ files"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/SourceFile"
       valid:
         type: "boolean"
         position: 7
@@ -8144,14 +8136,6 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
-      sourceFiles:
-        type: "array"
-        position: 6
-        description: "Cached files for each version. Includes Dockerfile and Descriptor\
-          \ files"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/SourceFile"
       valid:
         type: "boolean"
         position: 7
@@ -8525,14 +8509,6 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
-      sourceFiles:
-        type: "array"
-        position: 6
-        description: "Cached files for each version. Includes Dockerfile and Descriptor\
-          \ files"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/SourceFile"
       valid:
         type: "boolean"
         position: 7

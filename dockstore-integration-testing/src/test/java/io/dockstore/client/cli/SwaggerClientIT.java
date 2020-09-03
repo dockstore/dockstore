@@ -206,12 +206,12 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
-        DockstoreTool c = getContainer();
+        DockstoreTool c = getContainerWithoutSourcefiles();
 
         containersApi.registerManual(c);
     }
 
-    private DockstoreTool getContainer() {
+    private DockstoreTool getContainerWithoutSourcefiles() {
         DockstoreTool c = new DockstoreTool();
         c.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         c.setName("seqware_full");
@@ -222,7 +222,7 @@ public class SwaggerClientIT extends BaseIT {
         c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(true);
         c.setNamespace("seqware");
-        c.setToolname("test5");
+        c.setToolname("anotherName");
         c.setPrivateAccess(false);
         //c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
@@ -232,33 +232,6 @@ public class SwaggerClientIT extends BaseIT {
         tag.setImageId("123456");
         tag.setVerified(false);
         tag.setVerifiedSource(null);
-        // construct source files
-        SourceFile fileCWL = new SourceFile();
-        fileCWL.setContent("cwlstuff");
-        fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        fileCWL.setPath("/Dockstore.cwl");
-        fileCWL.setAbsolutePath("/Dockstore.cwl");
-        List<SourceFile> files = new ArrayList<>();
-        files.add(fileCWL);
-        tag.setSourceFiles(files);
-        SourceFile fileDockerFile = new SourceFile();
-        fileDockerFile.setContent("dockerstuff");
-        fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
-        fileDockerFile.setPath("/Dockerfile");
-        fileDockerFile.setAbsolutePath("/Dockerfile");
-        tag.getSourceFiles().add(fileDockerFile);
-        SourceFile testParameterFile = new SourceFile();
-        testParameterFile.setContent("testparameterstuff");
-        testParameterFile.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
-        testParameterFile.setPath("/test1.json");
-        testParameterFile.setAbsolutePath("/test1.json");
-        tag.getSourceFiles().add(testParameterFile);
-        SourceFile testParameterFile2 = new SourceFile();
-        testParameterFile2.setContent("moretestparameterstuff");
-        testParameterFile2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
-        testParameterFile2.setPath("/test2.json");
-        testParameterFile2.setAbsolutePath("/test2.json");
-        tag.getSourceFiles().add(testParameterFile2);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
         c.setWorkflowVersions(tags);
@@ -271,9 +244,8 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
-        DockstoreTool c = getContainer();
+        final DockstoreTool container = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        final DockstoreTool container = containersApi.registerManual(c);
         thrown.expect(ApiException.class);
         containersApi.registerManual(container);
     }
@@ -306,9 +278,7 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        containersApi.registerManual(c);
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
         assertEquals(3, tools.size());
@@ -331,9 +301,7 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        containersApi.registerManual(c);
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
@@ -358,22 +326,20 @@ public class SwaggerClientIT extends BaseIT {
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         ContainertagsApi containertagsApi = new ContainertagsApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        final DockstoreTool dockstoreTool = containersApi.registerManual(c);
+        final DockstoreTool dockstoreTool = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
         assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        assertEquals(1, tags.size());
+        assertEquals(2, tags.size());
         // register more tags
         Tag tag = new Tag();
         tag.setName("funky_tag");
         tag.setReference("funky_tag");
         containertagsApi.addTags(dockstoreTool.getId(), Lists.newArrayList(tag));
         tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        assertEquals(2, tags.size());
+        assertEquals(3, tags.size());
         // attempt to register duplicates (should fail)
 
         Tag secondTag = new Tag();
@@ -388,9 +354,7 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        final DockstoreTool registeredDockstoreTool = containersApi.registerManual(c);
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final ToolDockerfile toolDockerfile = toolApi
             .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
@@ -437,7 +401,7 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         Ga4GhApi ga4GhApi = new Ga4GhApi(client);
         // register one more to give us something to look at
-        DockstoreTool c = getContainer();
+        DockstoreTool c = getContainerWithoutSourcefiles();
         c.setIsPublished(true);
         final Tag tag = c.getWorkflowVersions().get(0);
         tag.setVerified(true);
@@ -512,17 +476,15 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
 
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        c.getWorkflowVersions().get(0).setHidden(true);
-        c = containersApi.registerManual(c);
+        // Tool contains 2 versions, 1 is hidden
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        assertEquals("should see one tag as an admin, saw " + c.getWorkflowVersions().size(), 1, c.getWorkflowVersions().size());
+        assertEquals("should see one tag as an admin, saw " + c.getWorkflowVersions().size(), 2, c.getWorkflowVersions().size());
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
-        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getWorkflowVersions().size(), 0,
+        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getWorkflowVersions().size(), 1,
             registeredContainer.getWorkflowVersions().size());
     }
 

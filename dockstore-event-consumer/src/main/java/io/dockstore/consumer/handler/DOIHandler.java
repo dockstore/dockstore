@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -127,7 +129,9 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 // upload a new file
                 int depositionID = returnDeposit.getId();
                 FilesApi filesApi = new FilesApi(zenodoClient);
-                for (SourceFile file : tag.getSourceFiles()) {
+                // This code isn't used currently, so changing it to get around @JsonIgnore being added to sourcefiles. Previously iterated through tag.getSourcefiles()
+                List<SourceFile> sourceFileList = new ArrayList<>();
+                for (SourceFile file : sourceFileList) {
                     Path tempFile = Files.createTempFile("temp", "file");
                     FileUtils.writeStringToFile(tempFile.toFile(), file.getContent(), StandardCharsets.UTF_8);
                     // file name is passsed in but seems to be ignore
