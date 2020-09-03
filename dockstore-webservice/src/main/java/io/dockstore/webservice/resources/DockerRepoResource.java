@@ -138,10 +138,12 @@ public class DockerRepoResource
     private final EventDAO eventDAO;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
+    private final SessionFactory sessionFactory;
 
     public DockerRepoResource(final HttpClient client, final SessionFactory sessionFactory, final DockstoreWebserviceConfiguration configuration,
         final WorkflowResource workflowResource, final EntryResource entryResource) {
 
+        this.sessionFactory = sessionFactory;
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.tagDAO = new TagDAO(sessionFactory);
@@ -269,6 +271,7 @@ public class DockerRepoResource
         }
         refreshedTool.getWorkflowVersions().forEach(Version::updateVerified);
         PublicStateManager.getInstance().handleIndexUpdate(refreshedTool, StateManagerMode.UPDATE);
+        EntryVersionHelper.removeSourceFilesFromEntry(tool, sessionFactory);
         return refreshedTool;
     }
 
@@ -596,7 +599,31 @@ public class DockerRepoResource
             tool.setGitUrl(convertHttpsToSsh(tool.getGitUrl()));
         }
 
+        // Can't set tool license information here, far too many tests register a tool without a GitHub token
+        setToolLicenseInformation(user, tool);
+
         return toolDAO.findById(id);
+    }
+
+    /**
+     * Set the license information for a tool
+     * @param user  The user the tool belongs to
+     * @param tool  The tool to get license information for
+     */
+    private void setToolLicenseInformation(User user, Tool tool) {
+        // Get user's Git tokens
+        List<Token> tokens = tokenDAO.findByUserId(user.getId());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+        if (sourceCodeRepo != null) {
+            sourceCodeRepo.checkSourceCodeValidity();
+            String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
+            sourceCodeRepo.setLicenseInformation(tool, gitRepositoryFromGitUrl);
+        }
     }
 
     /**
@@ -846,7 +873,7 @@ public class DockerRepoResource
     public SourceFile dockerfile(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user);
+        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user, fileDAO);
     }
 
     // Add for new descriptor types
@@ -861,7 +888,7 @@ public class DockerRepoResource
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(containerId, tag, fileType, user);
+        return getSourceFile(containerId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -876,7 +903,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFileByPath(containerId, tag, fileType, path, user);
+        return getSourceFileByPath(containerId, tag, fileType, path, user, fileDAO);
     }
 
     @GET
@@ -890,7 +917,7 @@ public class DockerRepoResource
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getAllSecondaryFiles(containerId, tag, fileType, user);
+        return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -905,7 +932,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
         final FileType testParameterType = DescriptorLanguage.getTestParameterType(descriptorType).orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
-        return getAllSourceFiles(containerId, tag, testParameterType, user);
+        return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO);
     }
 
     /**
@@ -1167,7 +1194,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
-        String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
+        String fileName = EntryVersionHelper.generateZipFileName(tool.getToolPath(), tag.getName());
         java.nio.file.Path path = Paths.get(tag.getWorkingDirectory());
 
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))

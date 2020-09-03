@@ -414,7 +414,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        return refreshWorkflow(user, workflowId, Optional.empty());
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.empty());
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     @GET
@@ -432,7 +434,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        return refreshWorkflow(user, workflowId, Optional.of(version));
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.of(version));
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     /**
@@ -1174,7 +1178,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
         @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(workflowId, tag, fileType, user);
+        return getSourceFile(workflowId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -1189,7 +1193,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFileByPath(workflowId, tag, fileType, path, user);
+        return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
     }
 
     @GET
@@ -1203,7 +1207,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getAllSecondaryFiles(workflowId, tag, fileType, user);
+        return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
     }
 
 
@@ -1222,7 +1226,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         FileType testParameterType = workflow.getTestParameterType();
-        return getAllSourceFiles(workflowId, version, testParameterType, user);
+        return getAllSourceFiles(workflowId, version, testParameterType, user, fileDAO);
     }
 
     @PUT
@@ -1854,7 +1858,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
-        String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+        String fileName = EntryVersionHelper.generateZipFileName(workflow.getWorkflowPath(), workflowVersion.getName());
 
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();

@@ -1,6 +1,7 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -322,7 +323,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             return workflows;
-        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
+        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
@@ -383,7 +384,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final SourceFile dockstoreYml) {
         try {
             List<Workflow> updatedWorkflows = new ArrayList<>();
+            final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
+                if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                    continue;
+                }
+
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
 
@@ -411,6 +417,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
+            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
+                return updatedServices;
+            }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
@@ -454,7 +463,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LOG.info("Workflow " + dockstoreWorkflowPath + " has been created.");
         } else {
             workflowToUpdate = workflow.get();
-
+            gitHubSourceCodeRepo.setLicenseInformation(workflowToUpdate, repository);
             if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
                 LOG.info("Converting workflow to DOCKSTORE_YML");
                 workflowToUpdate.setMode(DOCKSTORE_YML);

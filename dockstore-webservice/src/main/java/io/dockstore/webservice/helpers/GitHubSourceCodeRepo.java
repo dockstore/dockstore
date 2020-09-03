@@ -47,6 +47,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
@@ -84,6 +85,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 
 /**
@@ -186,6 +188,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } finally {
             GHRateLimit endRateLimit = getGhRateLimitQuietly();
             reportOnRateLimit("readFileFromRepo", startRateLimit, endRateLimit);
+        }
+    }
+
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+        if (gitRepository != null) {
+            LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, gitRepository);
+            entry.setLicenseInformation(licenseInformation);
         }
     }
 
@@ -297,6 +307,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            setLicenseInformation(workflow, workflow.getOrganization() + '/' + workflow.getRepository());
+
             // Why is the path not set here?
         } catch (GHFileNotFoundException e) {
             LOG.info(gitUsername + ": GitHub reports file not found: " + e.getCause().getLocalizedMessage(), e);
@@ -325,7 +337,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
-
+        this.setLicenseInformation(service, repositoryId);
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
+        service.setLicenseInformation(licenseInformation);
         // Validate subclass
         if (subclass != null) {
             DescriptorLanguageSubclass descriptorLanguageSubclass;
@@ -357,6 +371,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
         workflow.setWorkflowName(workflowName);
+        this.setLicenseInformation(workflow, repositoryId);
         DescriptorLanguage descriptorLanguage;
         try {
             descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
@@ -755,20 +770,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (CustomWebApplicationException ex) {
             throw new CustomWebApplicationException("Could not find repository " + repositoryId + ".", LAMBDA_FAILURE);
         }
-        String dockstoreYmlContent = this.readFileFromRepo(DOCKSTORE_YML_PATH, gitReference, repository);
-        if (dockstoreYmlContent != null) {
-            // Create file for .dockstore.yml
-            SourceFile dockstoreYml = new SourceFile();
-            dockstoreYml.setContent(dockstoreYmlContent);
-            dockstoreYml.setPath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setAbsolutePath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
+        String dockstoreYmlContent = null;
+        for (String dockstoreYmlPath : DOCKSTORE_YML_PATHS) {
+            dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
+            if (dockstoreYmlContent != null) {
+                // Create file for .dockstore.yml
+                SourceFile dockstoreYml = new SourceFile();
+                dockstoreYml.setContent(dockstoreYmlContent);
+                dockstoreYml.setPath(dockstoreYmlPath);
+                dockstoreYml.setAbsolutePath(dockstoreYmlPath);
+                dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
 
-            return dockstoreYml;
-        } else {
-            // TODO: https://github.com/dockstore/dockstore/issues/3239
-            throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
+                return dockstoreYml;
+            }
         }
+        // TODO: https://github.com/dockstore/dockstore/issues/3239
+        throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {

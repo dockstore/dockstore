@@ -38,6 +38,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
@@ -64,6 +66,9 @@ import org.slf4j.LoggerFactory;
 @ApiModel("SourceFile")
 @Entity
 @Table(name = "sourcefile")
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion", query = "SELECT sourcefiles FROM Version version INNER JOIN version.sourceFiles as sourcefiles WHERE version.id = :versionId"),
+})
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile implements Comparable<SourceFile> {
 

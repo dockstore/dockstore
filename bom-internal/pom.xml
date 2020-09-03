@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.10.0-alpha.0-SNAPSHOT</version>
+    <version>1.10.0-alpha.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
@@ -74,6 +74,14 @@ POM as their parent.
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>artifacts.oicr.on.ca-releases</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+        </repository>
+    </distributionManagement>
 
     <organization>
         <name>Dockstore</name>
@@ -1055,7 +1063,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
-                <version>1.101</version>
+                <version>1.116</version>
             </dependency>
 
             <dependency>
