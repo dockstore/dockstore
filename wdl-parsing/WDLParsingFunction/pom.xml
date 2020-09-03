@@ -189,7 +189,10 @@
                         </goals>
                         <configuration>
                             <inputSpec>
-                                https://raw.githubusercontent.com/dockstore/dockstore/feature/languageParsingLambda/dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+                            <!-- This is going to be annoying, need to solidify request and response so it's less likely to change over time, even temporarily symlinking won't work -->
+                            https://raw.githubusercontent.com/dockstore/dockstore/feature/languageParsingLambda/dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+                            <!-- This is for local dev only, it won't work during deployment or on Travis. Create symlink with `ln -s ../../dockstore-webservice/src/main/resources/openapi3/openapi.yaml` -->
+                            <!-- openapi.yaml-->
                             </inputSpec>
                             <generatorName>java</generatorName>
                             <configOptions>
