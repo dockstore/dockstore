@@ -39,10 +39,7 @@ dockstore-webservice/src/test/resources/not-really-recursive.*.https://raw.githu
 # dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*
 dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*checksum=
 
-# dockstore-webservice/src/test/resources/gatk-sv-clinical/README.md:.*
 # dockstore-webservice/src/main/java/io/dockstore/webservice/helpers/GitHubSourceCodeRepo.java:.*
-
-# dockstore-webservice/src/main/java/io/dockstore/webservice/helpers/GitHubSourceCodeRepo.java:.*https://raw.githubusercontent.com/denis-yuen/
 dockstore-webservice/src/main/java/io/dockstore/webservice/helpers/GitHubSourceCodeRepo.java:.*https://raw.githubusercontent.com/denis-yuen/
 
 # dockstore-webservice/src/test/resources/importTesting.wdl:.*
