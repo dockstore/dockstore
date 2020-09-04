@@ -444,7 +444,7 @@
                             </goals>
                             <configuration>
                                 <executable>bash</executable>
-                                <commandlineArgs>${project.parent.basedir}/git-hooks/install.sh</commandlineArgs>
+                                <commandlineArgs>${project.parent.basedir}/scripts/install-git-hooks.sh</commandlineArgs>
                             </configuration>
                         </execution>
                     </executions>
