@@ -87,6 +87,11 @@ before_install:
 # turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
 #- scripts/check-swagger.sh
 # codacy hookup
+- wget --no-verbose -O https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz git-secrets-1.3.0.tar.gz
+- tar -zxf git-secrets-1.3.0.tar.gz
+- cd git-secrets-1.3.0
+- sudo make install
+- cd ../
 - sudo apt-get install jq
 - wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
 - pyenv global 3.6.10
