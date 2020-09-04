@@ -17,12 +17,7 @@ package io.dockstore.consumer.handler;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,7 +31,6 @@ import io.dockstore.zenodo.client.ApiClient;
 import io.dockstore.zenodo.client.ApiException;
 import io.dockstore.zenodo.client.api.ActionsApi;
 import io.dockstore.zenodo.client.api.DepositsApi;
-import io.dockstore.zenodo.client.api.FilesApi;
 import io.dockstore.zenodo.client.model.Author;
 import io.dockstore.zenodo.client.model.Deposit;
 import io.dockstore.zenodo.client.model.DepositMetadata;
@@ -46,7 +40,6 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
@@ -128,15 +121,14 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 returnDeposit = depositApi.createDeposit(deposit);
                 // upload a new file
                 int depositionID = returnDeposit.getId();
-                FilesApi filesApi = new FilesApi(zenodoClient);
-                // This code isn't used currently, so changing it to get around @JsonIgnore being added to sourcefiles. Previously iterated through tag.getSourcefiles()
-                List<SourceFile> sourceFileList = new ArrayList<>();
-                for (SourceFile file : sourceFileList) {
-                    Path tempFile = Files.createTempFile("temp", "file");
-                    FileUtils.writeStringToFile(tempFile.toFile(), file.getContent(), StandardCharsets.UTF_8);
-                    // file name is passsed in but seems to be ignore
-                    filesApi.createFile(depositionID, tempFile.toFile(), new File(file.getPath()).getName());
-                }
+                // Commenting out to get around json ignoring source files. The files in this section aren't used, but keeping them around for reference for possible future work.
+                // FilesApi filesApi = new FilesApi(zenodoClient);
+                //                for (SourceFile file : tag.getSourceFiles()) {
+                //                    Path tempFile = Files.createTempFile("temp", "file");
+                //                    FileUtils.writeStringToFile(tempFile.toFile(), file.getContent(), StandardCharsets.UTF_8);
+                //                    // file name is passsed in but seems to be ignore
+                //                    filesApi.createFile(depositionID, tempFile.toFile(), new File(file.getPath()).getName());
+                //                }
                 // TODO: this would be fleshed out to populate descriptors, secondary descriptors, test json, dockerfiles, etc.
                 // TODO: this could use a progress indicator, uploading docker images seems slow
                 //DepositionFile file = filesApi.createFile(depositionID, dockerImageFile, dockerImageFile.getAbsolutePath());
@@ -164,7 +156,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 Deposit publishedDeposit = actionsApi.publishDeposit(depositionID);
                 // need to grab and save the generated DOI here
                 LOG.info(publishedDeposit.toString());
-            } catch (ApiException | IOException e) {
+            } catch (ApiException e) {
                 LOG.error("could not create zenodo representation", e);
                 return false;
             }

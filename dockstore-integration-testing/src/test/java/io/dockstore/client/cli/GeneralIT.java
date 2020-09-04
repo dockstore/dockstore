@@ -118,7 +118,7 @@ public class GeneralIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
     }
 
     /**
@@ -155,7 +155,7 @@ public class GeneralIT extends BaseIT {
     public void testListAvailableContainers() {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", long.class);
-        assertEquals("there should be 4 entries, there are " + count, 4, count);
+        assertEquals("there should be 4 entries, there are " + count, 6, count);
     }
 
     /**
@@ -671,7 +671,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 1 hidden tag", 1, count);
 
         tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
@@ -686,7 +686,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 

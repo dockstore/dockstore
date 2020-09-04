@@ -76,6 +76,7 @@ import io.swagger.client.model.Workflow;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -124,6 +125,11 @@ public class SwaggerClientIT extends BaseIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.dropAndCreateWithTestDataAndAdditionalTools(SUPPORT, true);
+    }
     @Test
     public void testListUsersTools() throws ApiException {
         ApiClient client = getAdminWebClient();
@@ -132,7 +138,7 @@ public class SwaggerClientIT extends BaseIT {
         User user = usersApi.getUser();
 
         List<DockstoreTool> tools = usersApi.userContainers(user.getId());
-        assertEquals(2, tools.size());
+        assertEquals(5, tools.size());
     }
 
     @Test
@@ -141,7 +147,7 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
-        assertEquals(1, containers.size());
+        assertEquals(2, containers.size());
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
