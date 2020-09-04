@@ -358,12 +358,12 @@ public class CWLHandler implements LanguageHandlerInterface {
                         stepToType.put(workflowStepId, expressionToolType);
                     } else if (run instanceof Map) {
                         // must be import or include
-                        Object importVal = ((Map)run).get("import");
+                        Object importVal = ((Map)run).get("$import");
                         if (importVal != null) {
                             secondaryFile = importVal.toString();
                         }
 
-                        Object includeVal = ((Map)run).get("include");
+                        Object includeVal = ((Map)run).get("$include");
                         if (includeVal != null) {
                             secondaryFile = includeVal.toString();
                         }
