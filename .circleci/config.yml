@@ -32,10 +32,12 @@ jobs:
             chmod a+x yq_linux_amd64
             sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
-          wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
-          tar -zxf git-secrets-1.3.0.tar.gz
-          cd git-secrets-1.3.0
-          sudo make install
+          name: Install git-secrets
+          command: |
+            wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
+            tar -zxf git-secrets-1.3.0.tar.gz
+            cd git-secrets-1.3.0
+            sudo make install
       - run:
           name: run the actual tests
           command: mvn -B clean install -DskipTests
@@ -108,6 +110,12 @@ jobs:
             scripts/check_migrations.sh
           environment:
             TESTING_PROFILE: automated-review
+      - run:
+          name: git-secrets Scan
+          # Needs to be after a build so that the correct configuration is set
+          # by the exec-maven plugin
+          command: |
+            git secrets --scan
       - run:
           name: clean the cache
           command: |
