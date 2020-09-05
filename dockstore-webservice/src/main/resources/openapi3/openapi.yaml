@@ -126,7 +126,11 @@ components:
           type: string
         bitBucketClientId:
           type: string
+        composeSetupVersion:
+          type: string
         cwlVisualizerUri:
+          type: string
+        deployVersion:
           type: string
         discourseUrl:
           type: string

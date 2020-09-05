@@ -695,6 +695,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String featuredContentUrl;
 
+        private String deployVersion;
+
+        private String composeSetupVersion;
+
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
         }
@@ -910,6 +914,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setFeaturedContentUrl(String featuredContentUrl) {
             this.featuredContentUrl = featuredContentUrl;
+        }
+
+        public String getDeployVersion() {
+            return deployVersion;
+        }
+
+        public void setDeployVersion(final String deployVersion) {
+            this.deployVersion = deployVersion;
+        }
+
+        public String getComposeSetupVersion() {
+            return composeSetupVersion;
+        }
+
+        public void setComposeSetupVersion(final String composeSetupVersion) {
+            this.composeSetupVersion = composeSetupVersion;
         }
     }
 }
