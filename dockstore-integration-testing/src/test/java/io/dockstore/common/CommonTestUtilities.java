@@ -114,6 +114,7 @@ public final class CommonTestUtilities {
         runMigration(migrationList, application, dropwizardConfigurationFile);
     }
 
+    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
     public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
             throws Exception {
         dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
@@ -243,6 +244,7 @@ public final class CommonTestUtilities {
         runMigration(migrationList, application, configPath);
     }
 
+    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
     public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
             throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 2 test data and additonal tools");

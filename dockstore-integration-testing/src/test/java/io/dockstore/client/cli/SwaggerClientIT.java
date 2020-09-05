@@ -485,13 +485,12 @@ public class SwaggerClientIT extends BaseIT {
         // Tool contains 2 versions, 1 is hidden
         DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        assertEquals("should see one tag as an admin, saw " + c.getWorkflowVersions().size(), 2, c.getWorkflowVersions().size());
+        assertEquals("should see all tags even if hidden as an admin", 2, c.getWorkflowVersions().size());
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
-        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getWorkflowVersions().size(), 1,
-            registeredContainer.getWorkflowVersions().size());
+        assertEquals("should only see non-hidden tags as a regular user", 1, registeredContainer.getWorkflowVersions().size());
     }
 
     @Test

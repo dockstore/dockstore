@@ -155,7 +155,7 @@ public class GeneralIT extends BaseIT {
     public void testListAvailableContainers() {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", long.class);
-        assertEquals("there should be 4 entries, there are " + count, 6, count);
+        assertEquals("unpublished entries should match", 6, count);
     }
 
     /**
