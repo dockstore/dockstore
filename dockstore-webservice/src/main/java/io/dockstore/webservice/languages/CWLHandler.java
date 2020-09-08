@@ -393,7 +393,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     }
 
                     String dockerUrl = null;
-                    if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {//
+                    if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
                         dockerUrl = getURLFromEntry(stepDockerRequirement, dao);
                     }
 
