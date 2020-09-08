@@ -189,10 +189,9 @@
                         </goals>
                         <configuration>
                             <inputSpec>
-                            <!-- This is going to be annoying, need to solidify request and response so it's less likely to change over time, even temporarily symlinking won't work -->
-                            https://raw.githubusercontent.com/dockstore/dockstore/feature/languageParsingLambda/dockstore-webservice/src/main/resources/openapi3/openapi.yaml
-                            <!-- This is for local dev only, it won't work during deployment or on Travis. Create symlink with `ln -s ../../dockstore-webservice/src/main/resources/openapi3/openapi.yaml` -->
-			    <!-- openapi.yaml -->
+                            <!-- This is a temporary situation while the models are frequently changing. Once it's settled, this will use a tagged version of the openapi.yaml (like how the Dockstore CLI does) -->
+                            <!-- Currently Travis manually copies the openapi.yaml before building. Locally, you can try doing the same or try using the symlink without "use-container" in the sam build command -->
+			                openapi.yaml
                             </inputSpec>
                             <generatorName>java</generatorName>
                             <configOptions>

@@ -8,6 +8,8 @@ set -o nounset
 set -o xtrace
 if [ "${TESTING_PROFILE}" = "language-parsing-tests" ]; then
     pip3 install aws-sam-cli
+    # Temporary workaround while the models are still changing
+    cp --remove-destination dockstore-webservice/src/main/resources/openapi3/openapi.yaml wdl-parsing/WDLParsingFunction/openapi.yaml
     cd wdl-parsing
     # For some reason, Travis has issues pulling the Docker image through sam build --use-container https://github.com/aws/aws-sam-cli/issues/2121
     docker pull amazon/aws-sam-cli-build-image-java11
