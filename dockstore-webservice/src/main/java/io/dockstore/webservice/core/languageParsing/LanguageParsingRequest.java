@@ -3,6 +3,7 @@ package io.dockstore.webservice.core.languageParsing;
 import java.util.List;
 import java.util.Objects;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -10,10 +11,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class LanguageParsingRequest {
     @Schema(description = "The Git URI", required = true)
     private String uri;
+
     @Schema(description = "The Git branch/tag", required = true)
     private String branch;
+
     @Schema(description = "The relative path to the primary descriptor (relative to the base in Git)", required = true)
     private String descriptorRelativePathInGit;
+
     @Schema(description = "Id of the Dockstore entry", required = true)
     private long entryId;
 
@@ -22,6 +26,9 @@ public class LanguageParsingRequest {
 
     @Schema(description = "List of SourceFiles that will be required for parsing hosted entries from Dockstore")
     private List<SourceFile> sourceFiles;
+
+    @Schema(description = "The language of the workflow")
+    private DescriptorLanguage descriptorLanguage;
 
     public String getUri() {
         return uri;
@@ -69,6 +76,14 @@ public class LanguageParsingRequest {
 
     public void setSourceFiles(List<SourceFile> sourceFiles) {
         this.sourceFiles = sourceFiles;
+    }
+
+    public DescriptorLanguage getDescriptorLanguage() {
+        return descriptorLanguage;
+    }
+
+    public void setDescriptorLanguage(DescriptorLanguage descriptorLanguage) {
+        this.descriptorLanguage = descriptorLanguage;
     }
 
     @Override
