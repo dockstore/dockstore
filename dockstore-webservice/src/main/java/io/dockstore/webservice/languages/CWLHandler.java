@@ -367,6 +367,11 @@ public class CWLHandler implements LanguageHandlerInterface {
                         if (includeVal != null) {
                             secondaryFile = includeVal.toString();
                         }
+
+                        if (secondaryFile == null) {
+                            LOG.error("Syntax incorrect. Could not $import or $include secondary file for run command: " + run);
+                            return null;
+                        }
                     }
 
                     // Check secondary file for docker pull
@@ -388,7 +393,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     }
 
                     String dockerUrl = null;
-                    if (!stepToType.get(workflowStepId).equals(workflowType) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
+                    if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {//
                         dockerUrl = getURLFromEntry(stepDockerRequirement, dao);
                     }
 
@@ -561,7 +566,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      * @param yaml
      * @return
      */
-    private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) {
+    private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) { //
         if (secondaryFileContents != null) {
             Map<String, Object> entryMapping = yaml.loadAs(secondaryFileContents, Map.class);
             JSONObject entryJson = new JSONObject(entryMapping);
