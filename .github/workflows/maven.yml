@@ -31,7 +31,7 @@ jobs:
          python -m pip install --upgrade pip
          pip install aws-sam-cli
      - name: Workaround for openapi.yaml
-       run: cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml wdl-parsing/WDLParsingFunction/openapi.yaml
+       run: cp --remove-destination dockstore-webservice/src/main/resources/openapi3/openapi.yaml wdl-parsing/WDLParsingFunction/openapi.yaml
      - name: Build with SAM CLI
        working-directory: ./wdl-parsing
        run:  sam build --use-container
