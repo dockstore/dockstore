@@ -19,8 +19,6 @@ package io.dockstore.client.cli;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
@@ -31,8 +29,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -67,6 +63,7 @@ public class GeneralRegressionIT extends BaseIT {
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     static URL url;
     static File dockstore;
+    private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
     @Rule
@@ -86,51 +83,7 @@ public class GeneralRegressionIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-    }
-
-    /**
-     * This method will create and register a new container for testing
-     *
-     * @return DockstoreTool
-     * @throws ApiException comes back from a web service error
-     */
-    private DockstoreTool getContainer() {
-        DockstoreTool c = new DockstoreTool();
-        c.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        c.setName("testUpdatePath");
-        c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
-        c.setDefaultDockerfilePath("/Dockerfile");
-        c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
-        c.setIsPublished(false);
-        c.setNamespace("testPath");
-        c.setToolname("test5");
-        c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
-        Tag tag = new Tag();
-        tag.setName("master");
-        tag.setReference("refs/heads/master");
-        tag.setValid(true);
-        tag.setImageId("123456");
-        // construct source files
-        SourceFile fileCWL = new SourceFile();
-        fileCWL.setContent("cwlstuff");
-        fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        fileCWL.setPath("/Dockstore.cwl");
-        fileCWL.setAbsolutePath("/Dockstore.cwl");
-        List<SourceFile> list = new ArrayList<>();
-        list.add(fileCWL);
-        tag.setSourceFiles(list);
-        SourceFile fileDockerFile = new SourceFile();
-        fileDockerFile.setContent("dockerstuff");
-        fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
-        fileDockerFile.setPath("/Dockerfile");
-        fileDockerFile.setAbsolutePath("/Dockerfile");
-        tag.getSourceFiles().add(fileDockerFile);
-        List<Tag> tags = new ArrayList<>();
-        tags.add(tag);
-        c.setWorkflowVersions(tags);
-        return c;
+        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
     }
 
     /**
@@ -437,8 +390,7 @@ public class GeneralRegressionIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
 
         //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
         //change the default cwl path and refresh
@@ -462,9 +414,7 @@ public class GeneralRegressionIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
 
         //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
 
         //change the default wdl path and refresh
         toolTest.setDefaultWdlPath("/test1.wdl");
@@ -487,9 +437,7 @@ public class GeneralRegressionIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
 
         //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
-        toolsApi.refresh(toolTest.getId());
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
 
         //change the default dockerfile and refresh
         toolTest.setDefaultDockerfilePath("/test1/Dockerfile");

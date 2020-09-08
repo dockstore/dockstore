@@ -318,12 +318,15 @@ public class ToolsImplCommonTest {
         actualWorkflowVersion2.setName(reference2);
         actualWorkflowVersion2.setReference(reference2);
         actualWorkflowVersion2.setHidden(false);
+        actualWorkflowVersion2.addSourceFile(actualSourceFile1);
         SourceFile sourceFile2 = getFakeSourceFile("chickenTesterSource", isService, "/pcawg-cgp-somatic-workflow2.wdl");
         actualWorkflowVersion2.addSourceFile(sourceFile2);
         json = mapper.writeValueAsString(actualWorkflowVersion2);
         WorkflowVersion actualWorkflowVersion3 = mapper.readValue(json, WorkflowVersion.class);
         actualWorkflowVersion3.setName(reference3);
         actualWorkflowVersion3.setReference(reference3);
+        actualWorkflowVersion3.addSourceFile(actualSourceFile1);
+        actualWorkflowVersion3.addSourceFile(sourceFile2);
         SourceFile sourceFile3 = getFakeSourceFile("potatoTesterSource", isService, "/pcawg-cgp-somatic-workflow.wdl3");
         actualWorkflowVersion3.addSourceFile(sourceFile3);
         actualWorkflowVersion1.updateVerified();
