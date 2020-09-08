@@ -89,6 +89,10 @@ public class GeneralIT extends BaseIT {
 
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
 
+    private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
+
+    private static final String QUAY_TOOL_PATH = "quay.io/dockstoretestuser2/dockstore-tool-imports/test5";
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -114,53 +118,7 @@ public class GeneralIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-    }
-
-    /**
-     * This method will create and register a new container for testing
-     *
-     * @return DockstoreTool
-     * @throws ApiException
-     */
-    private DockstoreTool getContainer() {
-        DockstoreTool c = new DockstoreTool();
-        c.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        c.setName("testUpdatePath");
-        c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
-        c.setDefaultDockerfilePath("/Dockerfile");
-        c.setDefaultCwlPath("/dockstore.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
-        c.setIsPublished(false);
-        c.setNamespace("testPath");
-        c.setToolname("test5");
-        c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
-        Tag tag = new Tag();
-        tag.setName("1.0");
-        tag.setReference("master");
-        tag.setValid(true);
-        tag.setImageId("123456");
-        tag.setCwlPath(c.getDefaultCwlPath());
-        tag.setWdlPath(c.getDefaultWdlPath());
-        // construct source files
-        SourceFile fileCWL = new SourceFile();
-        fileCWL.setContent("cwlstuff");
-        fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        fileCWL.setPath("/dockstore.cwl");
-        fileCWL.setAbsolutePath("/dockstore.cwl");
-        List<SourceFile> list = new ArrayList<>();
-        list.add(fileCWL);
-        tag.setSourceFiles(list);
-        SourceFile fileDockerFile = new SourceFile();
-        fileDockerFile.setContent("dockerstuff");
-        fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
-        fileDockerFile.setPath("/Dockerfile");
-        fileDockerFile.setAbsolutePath("/Dockerfile");
-        tag.getSourceFiles().add(fileDockerFile);
-        List<Tag> tags = new ArrayList<>();
-        tags.add(tag);
-        c.setWorkflowVersions(tags);
-        return c;
+        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
     }
 
     /**
@@ -197,7 +155,7 @@ public class GeneralIT extends BaseIT {
     public void testListAvailableContainers() {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", long.class);
-        assertEquals("there should be 4 entries, there are " + count, 4, count);
+        assertEquals("unpublished entries should match", 6, count);
     }
 
     /**
@@ -713,7 +671,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 1 hidden tag", 1, count);
 
         tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
@@ -728,7 +686,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
@@ -948,9 +906,7 @@ public class GeneralIT extends BaseIT {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
-        //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
         //change the default cwl path and refresh
@@ -971,29 +927,22 @@ public class GeneralIT extends BaseIT {
     @Test
     public void testImageIDUpdateDuringRefresh() throws ApiException {
         ContainersApi containersApi = setupWebService();
+        DockstoreTool toolTest = containersApi.getContainerByToolPath(QUAY_TOOL_PATH, null);
 
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        c.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
-        c.setNamespace("dockstoretestuser2");
-        c.setName(DOCKSTORE_TOOL_IMPORTS);
-        c.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
-        c = containersApi.registerManual(c);
-
-        assertTrue("should see one (or more) tags: " + c.getWorkflowVersions().size(), c.getWorkflowVersions().size() >= 1);
+        assertTrue("should see one (or more) tags: " + toolTest.getWorkflowVersions().size(), toolTest.getWorkflowVersions().size() >= 1);
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
         usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
 
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
-        int size = containersApi.getContainer(c.getId(), null).getWorkflowVersions().size();
-        long size2 = containersApi.getContainer(c.getId(), null).getWorkflowVersions().stream()
+        int size = containersApi.getContainer(toolTest.getId(), null).getWorkflowVersions().size();
+        long size2 = containersApi.getContainer(toolTest.getId(), null).getWorkflowVersions().stream()
             .filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size == size2 && size >= 1);
         // individual refresh should update image ids
-        containersApi.refresh(c.getId());
-        DockstoreTool container = containersApi.getContainer(c.getId(), null);
+        containersApi.refresh(toolTest.getId());
+        DockstoreTool container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -1001,7 +950,7 @@ public class GeneralIT extends BaseIT {
         // so should overall refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
-        container = containersApi.getContainer(c.getId(), null);
+        container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -1009,7 +958,7 @@ public class GeneralIT extends BaseIT {
         // so should organizational refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, container.getNamespace(), DOCKSTORE_TOOL_IMPORTS);
-        container = containersApi.getContainer(c.getId(), null);
+        container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -1021,12 +970,7 @@ public class GeneralIT extends BaseIT {
     @Test
     public void testGrabbingImagesFromQuay() {
         ContainersApi containersApi = setupWebService();
-        DockstoreTool tool = getContainer();
-        tool.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
-        tool.setNamespace("dockstoretestuser2");
-        tool.setName(DOCKSTORE_TOOL_IMPORTS);
-        tool.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
-        tool = containersApi.registerManual(tool);
+        DockstoreTool tool = containersApi.getContainerByToolPath(QUAY_TOOL_PATH, null);
 
         assertEquals(0, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().size());
 
@@ -1166,9 +1110,9 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
 
         // Create tool with mismatching tag name and tag reference
-        DockstoreTool tool = getContainer();
+        DockstoreTool tool = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         tool.setDefaultVersion("1.0");
-        DockstoreTool toolTest = toolsApi.registerManual(tool);
+        DockstoreTool toolTest = toolsApi.updateContainer(tool.getId(), tool);
         toolsApi.refresh(toolTest.getId());
 
         DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId(), null);
@@ -1186,8 +1130,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
 
         //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
         //change the default wdl path and refresh
@@ -1206,18 +1149,19 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
 
-        //register tool
-        DockstoreTool c = getContainer();
+        // change default paths
+        DockstoreTool c = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         c.setDefaultCwlPath("foo.cwl");
         c.setDefaultWdlPath("foo.wdl");
         c.setDefaultDockerfilePath("foo");
+        c = toolsApi.updateContainer(c.getId(), c);
         c.getWorkflowVersions().forEach(tag -> {
             tag.setCwlPath("foo.cwl");
             tag.setWdlPath("foo.wdl");
             tag.setDockerfilePath("foo");
         });
-        DockstoreTool toolTest = toolsApi.registerManual(c);
-        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        c = toolsApi.updateTagContainerPath(c.getId(), c);
+        DockstoreTool refresh = toolsApi.refresh(c.getId());
         assertFalse(refresh.getWorkflowVersions().isEmpty());
         Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         master.setFrozen(true);
@@ -1238,10 +1182,8 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
 
-        //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
-        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        DockstoreTool c = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
+        DockstoreTool refresh = toolsApi.refresh(c.getId());
 
         assertFalse(refresh.getWorkflowVersions().isEmpty());
         Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
@@ -1332,9 +1274,7 @@ public class GeneralIT extends BaseIT {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
-        //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
         //change the default dockerfile and refresh
@@ -1451,7 +1391,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Add tool
-        DockstoreTool tool = containersApi.registerManual(getContainer());
+        DockstoreTool tool = containersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         DockstoreTool refresh = containersApi.refresh(tool.getId());
 
         // Add alias
@@ -1511,7 +1451,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool
-        DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
+        DockstoreTool tool = ownerContainersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
         Long toolId = refresh.getId();
         Tag tag = refresh.getWorkflowVersions().get(0);

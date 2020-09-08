@@ -1,0 +1,279 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2020 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="add_test_tools">
+    <changeSet id="dockerhub_tool" author="natalieperez">
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="50"/>
+            <column name="content" value="cwlstuff"/>
+            <column name="path" value="/dockstore.cwl"/>
+            <column name="type" value="DOCKSTORE_CWL"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="51"/>
+            <column name="content" value="dockerstuff"/>
+            <column name="path" value="/Dockerfile"/>
+            <column name="type" value="DOCKERFILE"/>
+        </insert>
+        <insert tableName="tag">
+            <column name="id" valueNumeric="50"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2016-02-04 16:44:00.0"/>
+            <column name="name" value="1.0"/>
+            <column name="reference" value="master"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="automated" valueBoolean="true"/>
+            <column name="cwlpath" value="/dockstore.cwl"/>
+            <column name="dockerfilepath" value="/Dockerfile"/>
+            <column name="imageid" value="123456"/>
+            <column name="size" valueNumeric="108608297"/>
+            <column name="wdlpath" value="/Dockstore.wdl"/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="50"/>
+            <column name="author" value=""/>
+            <column name="defaultversion"/>
+            <column name="description" value=""/>
+            <column name="email" value=""/>
+            <column name="giturl" value="git@github.com:DockstoreTestUser2/dockstore-tool-imports.git"/>
+            <column name="ispublished" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-03-15 15:55:38.502"/>
+            <column name="defaultcwlpath" value="/dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile" value=""/>
+            <column name="defaulttestwdlparameterfile" value=""/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild" valueDate="2016-02-16 17:04:59.0"/>
+            <column name="mode" value="MANUAL_IMAGE_PATH"/>
+            <column name="name" value="testUpdatePath"/>
+            <column name="namespace" value="testPath"/>
+            <column name="path" value="quay.io/dockstoretestuser2/dockstore-tool-imports"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="DOCKER_HUB"/>
+            <column name="toolmaintaineremail" value=""/>
+            <column name="toolname" value="test5"/>
+        </insert>
+        <insert tableName="tool_tag">
+            <column name="toolid" valueNumeric="50"/>
+            <column name="tagid" valueNumeric="50"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="1"/>
+            <column name="entryid" valueNumeric="50"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="50"/>
+            <column name="sourcefileid" valueNumeric="50"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="50"/>
+            <column name="sourcefileid" valueNumeric="51"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="quay_tool" author="natalieperez">
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="60"/>
+            <column name="content" value="cwlstuff"/>
+            <column name="path" value="/dockstore.cwl"/>
+            <column name="type" value="DOCKSTORE_CWL"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="61"/>
+            <column name="content" value="dockerstuff"/>
+            <column name="path" value="/Dockerfile"/>
+            <column name="type" value="DOCKERFILE"/>
+        </insert>
+        <insert tableName="tag">
+            <column name="id" valueNumeric="60"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2016-02-04 16:44:00.0"/>
+            <column name="name" value="1.0"/>
+            <column name="reference" value="master"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="automated" valueBoolean="true"/>
+            <column name="cwlpath" value="/dockstore.cwl"/>
+            <column name="dockerfilepath" value="/Dockerfile"/>
+            <column name="imageid" value="123456"/>
+            <column name="size" valueNumeric="108608297"/>
+            <column name="wdlpath" value="/Dockstore.wdl"/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="60"/>
+            <column name="author" value=""/>
+            <column name="defaultversion"/>
+            <column name="description" value=""/>
+            <column name="email" value=""/>
+            <column name="giturl" value="git@github.com:DockstoreTestUser2/dockstore-tool-imports.git"/>
+            <column name="ispublished" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-03-15 15:55:38.502"/>
+            <column name="defaultcwlpath" value="/dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile" value=""/>
+            <column name="defaulttestwdlparameterfile" value=""/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild" valueDate="2016-02-16 17:04:59.0"/>
+            <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
+            <column name="name" value="dockstore-tool-imports"/>
+            <column name="namespace" value="dockstoretestuser2"/>
+            <column name="path" value="quay.io/dockstoretestuser2/dockstore-tool-imports"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="QUAY_IO"/>
+            <column name="toolmaintaineremail" value=""/>
+            <column name="toolname" value="test5"/>
+        </insert>
+        <insert tableName="tool_tag">
+            <column name="toolid" valueNumeric="60"/>
+            <column name="tagid" valueNumeric="60"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="1"/>
+            <column name="entryid" valueNumeric="60"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="60"/>
+            <column name="sourcefileid" valueNumeric="60"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="60"/>
+            <column name="sourcefileid" valueNumeric="61"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="dockerhub_seqware_tool" author="natalieperez">
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="70"/>
+            <column name="content" value="cwlstuff"/>
+            <column name="path" value="/dockstore.cwl"/>
+            <column name="type" value="DOCKSTORE_CWL"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="71"/>
+            <column name="content" value="dockerstuff"/>
+            <column name="path" value="/Dockerfile"/>
+            <column name="type" value="DOCKERFILE"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="72"/>
+            <column name="content" value="testparameterstuff"/>
+            <column name="path" value="/test1.json"/>
+            <column name="type" value="CWL_TEST_JSON"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="73"/>
+            <column name="content" value="moretestparameterstuff"/>
+            <column name="path" value="/test2.json"/>
+            <column name="type" value="CWL_TEST_JSON"/>
+        </insert>
+        <insert tableName="tag">
+            <column name="id" valueNumeric="70"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2016-02-04 16:44:00.0"/>
+            <column name="name" value="master"/>
+            <column name="reference" value="refs/heads/master"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="automated" valueBoolean="true"/>
+            <column name="cwlpath" value="/Dockstore.cwl"/>
+            <column name="dockerfilepath" value="/Dockerfile"/>
+            <column name="imageid" value="123456"/>
+            <column name="size" valueNumeric="108608297"/>
+            <column name="wdlpath" value="/Dockstore.wdl"/>
+        </insert>
+        <insert tableName="tag">
+            <column name="id" valueNumeric="71"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="hidden" valueBoolean="true"/>
+            <column name="lastmodified" valueDate="2016-02-04 16:44:00.0"/>
+            <column name="name" value="master2"/>
+            <column name="reference" value="refs/heads/master"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="automated" valueBoolean="true"/>
+            <column name="cwlpath" value="/Dockstore.cwl"/>
+            <column name="dockerfilepath" value="/Dockerfile"/>
+            <column name="imageid" value="123456"/>
+            <column name="size" valueNumeric="108608297"/>
+            <column name="wdlpath" value="/Dockstore.wdl"/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="70"/>
+            <column name="author" value=""/>
+            <column name="defaultversion"/>
+            <column name="description" value=""/>
+            <column name="email" value=""/>
+            <column name="giturl" value="git@github.com:github.com/denis-yuen/test1.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-03-15 15:55:38.502"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile" value=""/>
+            <column name="defaulttestwdlparameterfile" value=""/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild" valueDate="2016-02-16 17:04:59.0"/>
+            <column name="mode" value="MANUAL_IMAGE_PATH"/>
+            <column name="name" value="seqware"/>
+            <column name="namespace" value="seqware"/>
+            <column name="path" value="registry.hub.docker.com/seqware/seqware/test5"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="DOCKER_HUB"/>
+            <column name="toolmaintaineremail" value=""/>
+            <column name="toolname" value="test5"/>
+        </insert>
+        <insert tableName="tool_tag">
+            <column name="toolid" valueNumeric="70"/>
+            <column name="tagid" valueNumeric="70"/>
+        </insert>
+        <insert tableName="tool_tag">
+            <column name="toolid" valueNumeric="70"/>
+            <column name="tagid" valueNumeric="71"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="1"/>
+            <column name="entryid" valueNumeric="70"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="70"/>
+            <column name="sourcefileid" valueNumeric="70"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="70"/>
+            <column name="sourcefileid" valueNumeric="71"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="70"/>
+            <column name="sourcefileid" valueNumeric="72"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="70"/>
+            <column name="sourcefileid" valueNumeric="73"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
