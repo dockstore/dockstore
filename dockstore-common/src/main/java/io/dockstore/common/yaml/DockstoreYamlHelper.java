@@ -177,7 +177,15 @@ public final class DockstoreYamlHelper {
             final Yaml yaml = new Yaml(constructor);
             return yaml.load(content);
         } catch (Exception e) {
-            final String msg = ERROR_READING_DOCKSTORE_YML + e.getMessage();
+            String msg = ERROR_READING_DOCKSTORE_YML;
+            String errorMsg = e.getMessage();
+            if (errorMsg.startsWith("Cannot create property=")) {
+                int startIndex = errorMsg.indexOf("=") + 1;
+                int endIndex = errorMsg.indexOf(" for JavaBean");
+                msg += " Unrecognized property \"" + errorMsg.substring(startIndex, endIndex) + "\".";
+            } else {
+                msg += e.getMessage();
+            }
             LOG.error(msg, e);
             throw new DockstoreYamlException(msg);
         }
