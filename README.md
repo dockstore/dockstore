@@ -166,7 +166,7 @@ For users of Intellij or comparable IDEs, we also suggest loading the checkstyle
 #### Installing git-secrets
 
 Dockstore uses git-secrets to help make sure that keys and private data stay out
-of the source tree. For information on installing it on your platform check https://github.com/awslabs/git-secrets#id6 .
+of the source tree. For information on installing it on your platform check <https://github.com/awslabs/git-secrets#id6> .
 
 If you're on mac with homebrew use `brew install git-secrets`.
 

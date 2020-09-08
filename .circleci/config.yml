@@ -111,7 +111,7 @@ jobs:
           environment:
             TESTING_PROFILE: automated-review
       - run:
-          name: git-secrets Scan
+          name: Run git-secrets scan on dockstore repository
           # Needs to be after a build so that the correct configuration is set
           # by the exec-maven plugin
           command: |
