@@ -179,10 +179,16 @@ public final class DockstoreYamlHelper {
         } catch (Exception e) {
             String msg = ERROR_READING_DOCKSTORE_YML;
             String errorMsg = e.getMessage();
-            if (errorMsg.startsWith("Cannot create property=")) {
-                int startIndex = errorMsg.indexOf("=") + 1;
-                int endIndex = errorMsg.indexOf(" for JavaBean");
-                msg += " Unrecognized property \"" + errorMsg.substring(startIndex, endIndex) + "\".";
+            final String cannotCreateProperty = "Unable to find property ";
+            if (errorMsg.contains(cannotCreateProperty)) {
+                String truncatedError = errorMsg.substring(errorMsg.indexOf(cannotCreateProperty) + cannotCreateProperty.length());
+                Pattern pattern = Pattern.compile("'(.+)'");
+                Matcher matcher = pattern.matcher(truncatedError);
+                if (matcher.find()) {
+                    msg += " Unrecognized property \"" + matcher.group(1) + "\"";
+                } else {
+                    msg += e.getMessage();
+                }
             } else {
                 msg += e.getMessage();
             }
