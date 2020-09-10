@@ -8,7 +8,7 @@ workflows:
             branches:
               ignore:
                 - gh-pages
-      - openapi_validation
+#      - openapi_validation
 jobs:
 #  openapi_validation:
 #    docker: # run the steps with Docker
