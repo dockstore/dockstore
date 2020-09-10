@@ -30,6 +30,7 @@ import org.yaml.snakeyaml.introspector.PropertyUtils;
 public final class DockstoreYamlHelper {
 
     public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
+    public static final Pattern pattern = Pattern.compile("Unable to find property '(.+)'");
 
     enum Version {
         ONE_ZERO("1.0") {
@@ -177,23 +178,17 @@ public final class DockstoreYamlHelper {
             final Yaml yaml = new Yaml(constructor);
             return yaml.load(content);
         } catch (Exception e) {
-            String msg = ERROR_READING_DOCKSTORE_YML;
-            String errorMsg = e.getMessage();
-            final String cannotCreateProperty = "Unable to find property ";
-            if (errorMsg.contains(cannotCreateProperty)) {
-                String truncatedError = errorMsg.substring(errorMsg.indexOf(cannotCreateProperty) + cannotCreateProperty.length());
-                Pattern pattern = Pattern.compile("'(.+)'");
-                Matcher matcher = pattern.matcher(truncatedError);
-                if (matcher.find()) {
-                    msg += " Unrecognized property \"" + matcher.group(1) + "\"";
-                } else {
-                    msg += e.getMessage();
-                }
+            final String exceptionMsg = e.getMessage();
+            String errorMsg = ERROR_READING_DOCKSTORE_YML;
+            final Matcher matcher = pattern.matcher(exceptionMsg);
+
+            if (matcher.find()) {
+                errorMsg += " Unrecognized property \"" + matcher.group(1) + "\"";
             } else {
-                msg += e.getMessage();
+                errorMsg += exceptionMsg;
             }
-            LOG.error(msg, e);
-            throw new DockstoreYamlException(msg);
+            LOG.error(errorMsg, e);
+            throw new DockstoreYamlException(errorMsg);
         }
     }
 
