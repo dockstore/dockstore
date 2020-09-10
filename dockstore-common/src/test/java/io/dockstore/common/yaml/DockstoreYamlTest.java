@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import io.dropwizard.testing.FixtureHelpers;
 import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -181,6 +182,40 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12(content);
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             assertEquals(Service12.MISSING_SUBCLASS, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testWrongKeys() {
+        final String content = DOCKSTORE_GALAXY_YAML;
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12(content);
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            Assert.fail("Should be able to parse correctly");
+        }
+
+        final String workflowsKey = DOCKSTORE_GALAXY_YAML.replaceFirst("workflows", "workflow");
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12(workflowsKey);
+            Assert.fail("Shouldn't be able to parse correctly");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains("Unrecognized property \"workflow\""));
+        }
+
+        final String nameKey = DOCKSTORE_GALAXY_YAML.replaceFirst("name", "Name");
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12(nameKey);
+            Assert.fail("Shouldn't be able to parse correctly");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains("Unrecognized property \"Name\""));
+        }
+
+        final String multipleKeys = DOCKSTORE_GALAXY_YAML.replaceFirst("name", "Name").replaceFirst("workflows", "workflow");
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12(multipleKeys);
+            Assert.fail("Shouldn't be able to parse correctly");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue("Should only return first error", ex.getMessage().contains("Unrecognized property \"workflow\""));
         }
     }
 
