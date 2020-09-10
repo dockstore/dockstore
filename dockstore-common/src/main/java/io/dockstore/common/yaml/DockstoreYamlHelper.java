@@ -30,6 +30,7 @@ import org.yaml.snakeyaml.introspector.PropertyUtils;
 public final class DockstoreYamlHelper {
 
     public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
+    public static final Pattern WRONG_KEY_PATTERN = Pattern.compile("Unable to find property '(.+)'");
 
     enum Version {
         ONE_ZERO("1.0") {
@@ -177,9 +178,17 @@ public final class DockstoreYamlHelper {
             final Yaml yaml = new Yaml(constructor);
             return yaml.load(content);
         } catch (Exception e) {
-            final String msg = ERROR_READING_DOCKSTORE_YML + e.getMessage();
-            LOG.error(msg, e);
-            throw new DockstoreYamlException(msg);
+            final String exceptionMsg = e.getMessage();
+            String errorMsg = ERROR_READING_DOCKSTORE_YML;
+            final Matcher matcher = WRONG_KEY_PATTERN.matcher(exceptionMsg);
+
+            if (matcher.find()) {
+                errorMsg += " Unrecognized property \"" + matcher.group(1) + "\"";
+            } else {
+                errorMsg += exceptionMsg;
+            }
+            LOG.error(errorMsg, e);
+            throw new DockstoreYamlException(errorMsg);
         }
     }
 
