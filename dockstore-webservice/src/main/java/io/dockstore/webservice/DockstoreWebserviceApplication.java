@@ -247,6 +247,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
         objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+        // To convert every Date we have to RFC 3339, we can use this
+        // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
@@ -372,6 +374,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new io.openapi.api.ToolClassesApi(null));
+        environment.jersey().register(new io.openapi.api.ServiceInfoApi(null));
         environment.jersey().register(new MetadataApi(null));
         environment.jersey().register(new ToolClassesApi(null));
         environment.jersey().register(new PersistenceExceptionMapper());
