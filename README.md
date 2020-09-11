@@ -163,6 +163,13 @@ We also have a matching [checkstyle.xml](checkstyle.xml) that can be imported in
 
 For users of Intellij or comparable IDEs, we also suggest loading the checkstyle.xml with a plugin in order to display warnings and errors while coding live rather than encountering them later when running a build. 
 
+#### Installing git-secrets
+
+Dockstore uses git-secrets to help make sure that keys and private data stay out
+of the source tree. For information on installing it on your platform check <https://github.com/awslabs/git-secrets#id6> .
+
+If you're on mac with homebrew use `brew install git-secrets`.
+
 ### Dockstore Command Line
 
 The dockstore command line should be installed in a location in your path.
