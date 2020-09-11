@@ -1,14 +1,19 @@
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
 
 import io.dockstore.common.ConfidentialTest;
+import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.CurationApi;
 import io.swagger.client.model.Notification;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -130,5 +135,21 @@ public class NotificationIT extends BaseIT {
         String message = testingPostgres.runSelectStatement(String.format("select message from notification where id = '%s'", id), String.class);
         assertEquals(currentMsg, message);  // confirm that the database entry was updated
 
+    }
+    @Test
+    public void testLongNotification() throws IOException {
+
+        // set up a test notification
+        Notification longNotification = new Notification();
+        String message = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("longNotification.txt")), StandardCharsets.UTF_8);
+
+        // try to create notification with too long of a message
+        try {
+            longNotification.setMessage(message);
+        } catch (ApiException e) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode());
+        }
+        longNotification.setMessage("short");
+        assertEquals(longNotification.getMessage(), "short");
     }
 }
