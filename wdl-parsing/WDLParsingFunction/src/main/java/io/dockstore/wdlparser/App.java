@@ -121,10 +121,8 @@ public class App
    *
    * @param descriptorAbsolutePathString Absolute path to the main descriptor file
    * @return LanguageParsingResponse constructed after running womtool
-   * @throws IOException Unexpected exception from running womtool
    */
-  public static LanguageParsingResponse getResponse(String descriptorAbsolutePathString)
-      throws IOException {
+  public static LanguageParsingResponse getResponse(String descriptorAbsolutePathString) {
     LanguageParsingResponse response = new LanguageParsingResponse();
     response.setClonedRepositoryAbsolutePath(descriptorAbsolutePathString);
     List<String> commandLineArgs = Arrays.asList("validate", "-l", descriptorAbsolutePathString);
@@ -139,19 +137,17 @@ public class App
       Collections.addAll(strings, split);
 
       // The first two lines aren't actual paths.
+      VersionTypeValidation versionTypeValidation = new VersionTypeValidation();
       if (strings.get(0).equals("Success!")
           && strings.get(1).equals("List of Workflow dependencies is:")) {
-        VersionTypeValidation versionTypeValidation = new VersionTypeValidation();
         versionTypeValidation.setValid(true);
         response.setVersionTypeValidation(versionTypeValidation);
         handleSuccessResponse(response, strings);
-        return response;
       } else {
-        VersionTypeValidation versionTypeValidation = new VersionTypeValidation();
         versionTypeValidation.setValid(false);
         response.setVersionTypeValidation(versionTypeValidation);
-        throw new IOException();
       }
+      return response;
     } catch (StackOverflowError e) {
       VersionTypeValidation versionTypeValidation = new VersionTypeValidation();
       versionTypeValidation.setValid(false);
