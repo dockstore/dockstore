@@ -191,7 +191,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         // Test: "run: {import:.....}"
         // Return: JSON string contains the two tools, both have docker requirement
 
-        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "master");
+        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "update-to-valid-cwl");
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);

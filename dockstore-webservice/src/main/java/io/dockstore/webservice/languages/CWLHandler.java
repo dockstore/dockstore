@@ -240,7 +240,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     //TODO: Occassionally misses dockerpulls. One case is when a dockerPull is nested within a run that's within a step. There are other missed cases though that are TBD.
-    public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
+    public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
         Yaml yaml = new Yaml();
         if (isValidCwl(mainDescriptor, yaml)) {
@@ -276,7 +276,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                 if (workflow == null) {
                     LOG.error("The workflow does not seem to conform to CWL specs.");
-                    return null;
+                    return Optional.empty();
                 }
 
                 // Determine default docker path (Check requirement first and then hint)
@@ -298,12 +298,12 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                 if (stepJson == null) {
                     LOG.error("Could not find any steps for the workflow.");
-                    return null;
+                    return Optional.empty();
                 }
 
                 if (workflowStepMap == null) {
                     LOG.error("Error deserializing workflow steps");
-                    return null;
+                    return Optional.empty();
                 }
 
                 // Iterate through steps to find dependencies and docker requirements
@@ -370,7 +370,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                         if (secondaryFile == null) {
                             LOG.error("Syntax incorrect. Could not $import or $include secondary file for run command: " + run);
-                            return null;
+                            return Optional.empty();
                         }
                     }
 
@@ -429,16 +429,16 @@ public class CWLHandler implements LanguageHandlerInterface {
                     }
                     nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
 
-                    return setupJSONDAG(nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    return Optional.of(setupJSONDAG(nodePairs, toolInfoMap, stepToType, nodeDockerInfo));
                 } else {
-                    return getJSONTableToolContent(nodeDockerInfo);
+                    return Optional.of(getJSONTableToolContent(nodeDockerInfo));
                 }
             } catch (JsonParseException ex) {
                 LOG.error("The JSON file provided is invalid.", ex);
-                return null;
+                return Optional.empty();
             }
         } else {
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -566,7 +566,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      * @param yaml
      * @return
      */
-    private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) { //
+    private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) {
         if (secondaryFileContents != null) {
             Map<String, Object> entryMapping = yaml.loadAs(secondaryFileContents, Map.class);
             JSONObject entryJson = new JSONObject(entryMapping);

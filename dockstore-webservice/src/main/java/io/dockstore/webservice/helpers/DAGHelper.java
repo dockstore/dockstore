@@ -15,6 +15,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,11 +39,14 @@ public final class DAGHelper {
      * @param dag The unclean DAG with edges that may have undefined nodes
      * @return The clean DAG without edges that have undefined nodes
      */
-    public static String cleanDAG(String dag) {
-        ElementsDefinition elementsDefinition = GSON.fromJson(dag, ElementsDefinition.class);
-        Set<String> nodeIDs = elementsDefinition.nodes.stream().map(nodeDefinition -> nodeDefinition.data.id).collect(Collectors.toSet());
-        elementsDefinition.edges = elementsDefinition.edges.stream().filter(edgeDefinition -> nodeIDs.contains(edgeDefinition.data.source))
-            .collect(Collectors.toList());
-        return GSON.toJson(elementsDefinition);
+    public static Optional<String> cleanDAG(Optional<String> dag) {
+        if (dag.isPresent()) {
+            ElementsDefinition elementsDefinition = GSON.fromJson(dag.get(), ElementsDefinition.class);
+            Set<String> nodeIDs = elementsDefinition.nodes.stream().map(nodeDefinition -> nodeDefinition.data.id).collect(Collectors.toSet());
+            elementsDefinition.edges = elementsDefinition.edges.stream().filter(edgeDefinition -> nodeIDs.contains(edgeDefinition.data.source))
+                    .collect(Collectors.toList());
+            return Optional.of(GSON.toJson(elementsDefinition));
+        }
+        return Optional.empty();
     }
 }

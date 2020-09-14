@@ -141,7 +141,7 @@ public interface LanguageHandlerInterface {
      * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
-    String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao);
+    Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao);
 
     /**
      * Checks that the test parameter files are valid JSON or YAML
@@ -167,7 +167,7 @@ public interface LanguageHandlerInterface {
         return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
-    default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+    default Optional<String> getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         return DAGHelper.cleanDAG(getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao));
     }
 
@@ -562,7 +562,7 @@ public interface LanguageHandlerInterface {
      * @param namespaceToPath ?
      * @return the actual JSON output of either a DAG or tool listing
      */
-    default String convertMapsToContent(final String mainDescName, final Type type, ToolDAO dao, final String callType,
+    default Optional<String> convertMapsToContent(final String mainDescName, final Type type, ToolDAO dao, final String callType,
         final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
 
         // Initialize data structures for DAG
@@ -626,12 +626,12 @@ public interface LanguageHandlerInterface {
 
         // Create JSON for DAG/table
         if (type == Type.DAG) {
-            return setupJSONDAG(nodePairs, toolInfoMap, callToType, nodeDockerInfo);
+            return Optional.of(setupJSONDAG(nodePairs, toolInfoMap, callToType, nodeDockerInfo));
         } else if (type == Type.TOOLS) {
-            return getJSONTableToolContent(nodeDockerInfo);
+            return Optional.of(getJSONTableToolContent(nodeDockerInfo));
         }
 
-        return null;
+        return Optional.empty();
     }
 
     enum Type {
