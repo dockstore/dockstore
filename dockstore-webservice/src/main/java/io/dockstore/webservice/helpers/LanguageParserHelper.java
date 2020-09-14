@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class LanguageParserHelper {
+    // TODO: Make this configurable
+    public static final String LANGUAGE_PARSER_ENDPOINT = "http://localhost:3000/parse";
     private static final Logger LOGGER = LoggerFactory.getLogger(LanguageParserHelper.class);
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -66,6 +68,6 @@ public final class LanguageParserHelper {
         String requestBody = objectMapper.writeValueAsString(languageParsingRequest);
         HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofString(requestBody);
         // Cannot use swagger client, even the lambda doesn't know which endpoint it is
-        return HttpRequest.newBuilder().uri(URI.create("http://localhost:3000/parse")).POST(bodyPublisher).build();
+        return HttpRequest.newBuilder().uri(URI.create(LANGUAGE_PARSER_ENDPOINT)).POST(bodyPublisher).build();
     }
 }
