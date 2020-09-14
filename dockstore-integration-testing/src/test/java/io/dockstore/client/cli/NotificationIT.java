@@ -18,9 +18,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 @Category(ConfidentialTest.class)
 public class NotificationIT extends BaseIT {
@@ -45,6 +43,15 @@ public class NotificationIT extends BaseIT {
     private Notification anotherTestNotification() {
         Notification notification = new Notification();
         notification.setMessage(currentMsg);
+        notification.setExpiration(System.currentTimeMillis() + 100000L);  // a future timestamp
+        notification.setPriority(Notification.PriorityEnum.CRITICAL);
+        return notification;
+    }
+
+    private Notification longNotification() throws IOException {
+        Notification notification = new Notification();
+        String message = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("longNotification.txt")), StandardCharsets.UTF_8);
+        notification.setMessage(message);
         notification.setExpiration(System.currentTimeMillis() + 100000L);  // a future timestamp
         notification.setPriority(Notification.PriorityEnum.CRITICAL);
         return notification;
@@ -139,17 +146,30 @@ public class NotificationIT extends BaseIT {
     @Test
     public void testLongNotification() throws IOException {
 
-        // set up a test notification
-        Notification longNotification = new Notification();
-        String message = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("longNotification.txt")), StandardCharsets.UTF_8);
+        // set up a notification that is too long
+        Notification notification = longNotification();
 
         // try to create notification with too long of a message
         try {
-            longNotification.setMessage(message);
+            curationApiAdmin.createNotification(notification);
         } catch (ApiException e) {
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode());
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode()); // this should return a 400 code right now
         }
-        longNotification.setMessage("short");
-        assertEquals(longNotification.getMessage(), "short");
+
+        // make another notification that will be updated
+        Notification updateNotification = curationApiAdmin.createNotification(testNotification());
+        long id = updateNotification.getId();
+        notification.setId(id);
+
+        // try to update notification with long notification
+        try {
+            curationApiAdmin.updateNotification(id, notification);
+        } catch (ApiException e) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode());  // this should return a 400 error
+        }
+
+        // confirm that the database entry was not updated
+        String message = testingPostgres.runSelectStatement(String.format("select message from notification where id = '%s'", id), String.class);
+        assertEquals(updateNotification.getMessage(), message);
     }
 }
