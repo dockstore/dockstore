@@ -1507,8 +1507,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             if (dagJson.isPresent()) {
                 workflowVersion.setDagJson(dagJson.get());
                 return dagJson.get();
+            } else {
+                workflowVersion.setDagJson(null);
+                return null;
             }
-            return null;
+
         }
         return null;
     }
@@ -1554,8 +1557,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             if (toolTableJson.isPresent()) {
                 workflowVersion.setToolTableJson(toolTableJson.get());
                 return toolTableJson.get();
+            } else {
+                workflowVersion.setToolTableJson(null);
+                return null;
             }
-            return null;
+
         }
 
         return null;
