@@ -1,14 +1,11 @@
 package io.dockstore.client.cli;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
 
 import io.dockstore.common.ConfidentialTest;
-import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.CurationApi;
@@ -50,9 +47,9 @@ public class NotificationIT extends BaseIT {
         return notification;
     }
 
-    private Notification longNotification() throws IOException {
+    private Notification longNotification(int length) throws IOException {
         Notification notification = new Notification();
-        String message = Files.readString(Paths.get(ResourceHelpers.resourceFilePath("longNotification.txt")));
+        String message = "a".repeat(length);
         notification.setMessage(message);
         notification.setExpiration(System.currentTimeMillis() + 100000L);  // a future timestamp
         notification.setPriority(Notification.PriorityEnum.CRITICAL);
@@ -145,11 +142,19 @@ public class NotificationIT extends BaseIT {
         assertEquals(currentMsg, message);  // confirm that the database entry was updated
 
     }
+
     @Test
     public void testLongNotification() throws IOException {
 
-        // set up a notification that is too long
-        Notification notification = longNotification();
+        // create a notification that is on the edge
+        Notification notification = longNotification(1024);
+
+        // try to create notification that is the limit
+        Notification result = curationApiAdmin.createNotification(notification);
+        assertNotNull(result);
+
+        // make notification over character limit
+        notification = longNotification(1025);
 
         // try to create notification with too long of a message
         try {
