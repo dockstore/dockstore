@@ -1,8 +1,8 @@
 package io.dockstore.client.cli;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -13,7 +13,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.CurationApi;
 import io.swagger.client.model.Notification;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -21,6 +20,7 @@ import org.junit.experimental.categories.Category;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @Category(ConfidentialTest.class)
 public class NotificationIT extends BaseIT {
@@ -52,7 +52,7 @@ public class NotificationIT extends BaseIT {
 
     private Notification longNotification() throws IOException {
         Notification notification = new Notification();
-        String message = FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("longNotification.txt")), StandardCharsets.UTF_8);
+        String message = Files.readString(Paths.get(ResourceHelpers.resourceFilePath("longNotification.txt")));
         notification.setMessage(message);
         notification.setExpiration(System.currentTimeMillis() + 100000L);  // a future timestamp
         notification.setPriority(Notification.PriorityEnum.CRITICAL);
@@ -154,6 +154,7 @@ public class NotificationIT extends BaseIT {
         // try to create notification with too long of a message
         try {
             curationApiAdmin.createNotification(notification);
+            fail("create should fail since message is too long");
         } catch (ApiException e) {
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode()); // this should return a 400 code right now
         }
@@ -166,6 +167,7 @@ public class NotificationIT extends BaseIT {
         // try to update notification with long notification
         try {
             curationApiAdmin.updateNotification(id, notification);
+            fail("update should fail since update notification is too long");
         } catch (ApiException e) {
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode());  // this should return a 400 error
         }
