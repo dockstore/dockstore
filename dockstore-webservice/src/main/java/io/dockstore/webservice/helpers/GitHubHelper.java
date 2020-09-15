@@ -37,10 +37,7 @@ import java.util.stream.Collectors;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
-import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
-import com.google.api.client.auth.oauth2.BearerToken;
-import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
-import com.google.api.client.auth.oauth2.TokenResponse;
+import com.google.api.client.auth.oauth2.*;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.util.PemReader;
 import com.google.gson.JsonElement;
@@ -53,6 +50,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.swagger.annotations.Authorization;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
@@ -82,11 +80,17 @@ public final class GitHubHelper {
         try {
             TokenResponse tokenResponse = flow.newTokenRequest(code)
                     .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-            return tokenResponse.getAccessToken();
+            if(tokenResponse.getAccessToken() != null) {
+                return tokenResponse.getAccessToken();
+            } else {
+                LOG.error("Retrieving accessToken was unsuccessful");
+                throw new CustomWebApplicationException("Could not retrieve github.com token", HttpStatus.SC_BAD_REQUEST);
+            }
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
         }
+
     }
 
     /**
