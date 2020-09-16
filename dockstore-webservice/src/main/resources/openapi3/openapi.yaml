@@ -1418,8 +1418,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -2421,7 +2421,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
       security:
         - bearer: []
@@ -7228,6 +7228,42 @@ paths:
           description: default response
       security:
         - bearer: []
+      tags:
+        - workflows
+  /workflows/{workflowId}/descriptorType:
+    post:
+      description: Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.
+      operationId: updateDescriptorType
+      parameters:
+        - in: path
+          name: workflowId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - in: query
+          name: descriptorType
+          schema:
+            enum:
+              - CWL
+              - WDL
+              - gxformat2
+              - SWL
+              - NFL
+              - service
+              - cwl
+              - wdl
+            type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+        - bearer: []
+      summary: Changes the descriptor type of an unpublished, invalid workflow.
       tags:
         - workflows
   /workflows/{workflowId}/labels:
