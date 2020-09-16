@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1665,6 +1666,44 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
 
         return workflow.getStarredUsers();
+    }
+
+    /**
+     *
+     * @param user  The user the workflow belongs to
+     * @param workflowId    The ID of the workflow to change descriptor type
+     * @param descriptorLanguage    The descriptor type to change to
+     * @return  The modified workflow
+     */
+    @POST
+    @Path("/{workflowId}/descriptorType")
+    @Timed
+    @Operation(operationId = "updateDescriptorType", summary = "Changes the descriptor type of an unpublished, invalid workflow.", description = "Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "hidden", hidden = true)
+    public Workflow updateLanguage(
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "Descriptor type to update to", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        if (workflow.getIsPublished()) {
+            throw new CustomWebApplicationException("Cannot change descriptor type of a published workflow", Response.Status.BAD_REQUEST.getStatusCode());
+        } else {
+            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+            workflowVersions.forEach(workflowVersion -> {
+                if (workflowVersion.isValid()) {
+                    throw new CustomWebApplicationException("Cannot change descriptor type of a valid workflow", Response.Status.BAD_REQUEST.getStatusCode());
+                }
+            });
+            // If the language was wrong, then is any workflowVersion even worth keeping?
+            // If there's no workflowVersions, is the workflow even worth keeping? Maybe just delete the workflow? Maybe keep for events?
+            workflow.setWorkflowVersions(new HashSet<>());
+            if (descriptorLanguage == null) {
+                throw new CustomWebApplicationException("Descriptor type must be not be null", Response.Status.BAD_REQUEST.getStatusCode());
+            }
+            workflow.setDescriptorType(descriptorLanguage);
+            return workflow;
+        }
     }
 
     @POST
