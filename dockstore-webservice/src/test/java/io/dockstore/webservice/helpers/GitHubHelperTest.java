@@ -22,11 +22,13 @@ public class GitHubHelperTest {
     public void testGetGitHubAccessToken() {
         try {
             GitHubHelper.getGitHubAccessToken(CODE, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET);
+            Assert.fail("No CustomWebApplicationException thrown");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals("HTTP 400 Bad Request", e.getMessage());
         }
 
     }
+
 
     // TODO: Replace repos with something less likely to change
     @Test
