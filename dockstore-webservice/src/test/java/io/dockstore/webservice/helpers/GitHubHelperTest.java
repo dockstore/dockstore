@@ -17,6 +17,7 @@ public class GitHubHelperTest {
     private static final String GITHUB_CLIENT_ID = "123456789abcd";
     private static final String GITHUB_CLIENT_SECRET = "98654321dcba";
 
+    // Invalid GitHub authentication should return 400
     @Test
     public void testGetGitHubAccessToken() {
         try {
