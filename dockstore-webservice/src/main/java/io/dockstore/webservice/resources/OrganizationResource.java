@@ -574,7 +574,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
 
         // Update organization
-        if (user.getIsAdmin() || user.isCurator() || organization.getStatus() != Organization.ApplicationState.APPROVED) {
+        if (user.getIsAdmin() || user.isCurator() || oldOrganization.getStatus() != Organization.ApplicationState.APPROVED) {
             // Only update the name and display name if the user is an admin/curator or if the org is not yet approved
             // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
             oldOrganization.setName(organization.getName());
