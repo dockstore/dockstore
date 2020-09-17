@@ -574,8 +574,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
 
         // Update organization
-        oldOrganization.setName(organization.getName());
-        oldOrganization.setDisplayName(organization.getDisplayName());
+        if (user.getIsAdmin() || user.isCurator()) {
+            // Only update the name and display name if the user is an admin/curator
+            // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
+            oldOrganization.setName(organization.getName());
+            oldOrganization.setDisplayName(organization.getDisplayName());
+        }
         oldOrganization.setDescription(organization.getDescription());
         oldOrganization.setTopic(organization.getTopic());
         oldOrganization.setEmail(organization.getEmail());
