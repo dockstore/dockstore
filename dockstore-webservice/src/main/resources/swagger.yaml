@@ -7123,7 +7123,7 @@ definitions:
         position: 1
         description: "Text content of the notification to be displayed"
         minLength: 0
-        maxLength: 280
+        maxLength: 1024
       expiration:
         type: "integer"
         format: "int64"

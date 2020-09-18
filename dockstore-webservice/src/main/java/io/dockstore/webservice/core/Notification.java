@@ -44,7 +44,7 @@ public class Notification {
     private long id;
 
     @Column
-    @Size(max = 280)
+    @Size(max = 1024) // increase for extra markdown characters such as hyper-links
     @ApiModelProperty(value = "Text content of the notification to be displayed", position = 1)
     private String message;
 
