@@ -358,18 +358,18 @@ public class CWLHandler implements LanguageHandlerInterface {
                         stepToType.put(workflowStepId, expressionToolType);
                     } else if (run instanceof Map) {
                         // must be import or include
-                        Object importVal = ((Map)run).get("$import");
+                        Object importVal = ((Map)run).containsKey("$import") ? ((Map)run).get("$import") : ((Map)run).get("import");
                         if (importVal != null) {
                             secondaryFile = importVal.toString();
                         }
 
-                        Object includeVal = ((Map)run).get("$include");
+                        Object includeVal = ((Map)run).containsKey("$include") ? ((Map)run).get("$include") : ((Map)run).get("include");
                         if (includeVal != null) {
                             secondaryFile = includeVal.toString();
                         }
 
                         if (secondaryFile == null) {
-                            LOG.error("Syntax incorrect. Could not $import or $include secondary file for run command: " + run);
+                            LOG.error("Syntax incorrect. Could not ($)import or ($)include secondary file for run command: " + run);
                             return Optional.empty();
                         }
                     }

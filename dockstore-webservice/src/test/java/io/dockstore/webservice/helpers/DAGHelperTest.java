@@ -15,8 +15,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.Optional;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,9 +33,9 @@ public class DAGHelperTest {
     @Test
     public void cleanDAGTest() {
         String uncleanDAG = fixture("fixtures/uncleanDAG.json");
-        Optional<String> cleanDAG = DAGHelper.cleanDAG(Optional.of(uncleanDAG));
-        Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.get().trim());
-        Optional<String> cleanerDAG = DAGHelper.cleanDAG(cleanDAG);
-        Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanerDAG.get().trim());
+        String cleanDAG = DAGHelper.cleanDAG(uncleanDAG);
+        Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanDAG.trim());
+        String cleanerDAG = DAGHelper.cleanDAG(cleanDAG);
+        Assert.assertEquals(fixture("fixtures/cleanDAG.json").replace(" ", "").replace("\n", ""), cleanerDAG.trim());
     }
 }

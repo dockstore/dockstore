@@ -1440,11 +1440,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     } else {
                         toolsJSONTable = Optional.of(existingTag.getToolTableJson());
                     }
+
                     if (toolsJSONTable.isPresent()) {
                         Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
                         existingTag.getImages().addAll(images);
                     }
-
                     // Grab checksum for file descriptors if not already available.
                     for (SourceFile sourceFile : existingTag.getSourceFiles()) {
                         Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
@@ -1462,10 +1462,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                     // store dag
                     if (existingTag.getDagJson() == null) {
-                        Optional<String> dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
-                        if (dagJson.isPresent()) {
-                            existingTag.setDagJson(dagJson.get());
-                        }
+                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                        existingTag.setDagJson(dagJson);
                     }
                 }
             }
@@ -1502,16 +1500,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            final Optional<String> dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
-            if (dagJson.isPresent()) {
-                workflowVersion.setDagJson(dagJson.get());
-                return dagJson.get();
-            } else {
-                workflowVersion.setDagJson(null);
-                return null;
-            }
 
+            workflowVersion.setDagJson(dagJson);
+            return dagJson;
         }
         return null;
     }
@@ -1554,14 +1547,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             final Optional<String> toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            if (toolTableJson.isPresent()) {
-                workflowVersion.setToolTableJson(toolTableJson.get());
-                return toolTableJson.get();
-            } else {
-                workflowVersion.setToolTableJson(null);
-                return null;
-            }
-
+            final String json = toolTableJson.orElseGet(null);
+            workflowVersion.setToolTableJson(json);
+            return json;
         }
 
         return null;

@@ -225,7 +225,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     public void testDAGImportSyntax() throws ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
-        // Branch: master
+        // Branch: update-to-valid-cwl
         // Test: "run: {import:.....}"
         // Return: DAG with two nodes and an edge connecting it (nodes:{{rev},{sorted}}, edges:{rev->sorted})
 
