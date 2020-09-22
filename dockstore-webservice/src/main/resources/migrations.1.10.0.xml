@@ -74,4 +74,7 @@
             <column name="licensename" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet author="nolwarre (generated)" id="notificationsCharLimit">
+        <modifyDataType columnName="message" newDataType="varchar(1024)" tableName="notification"/>
+    </changeSet>
 </databaseChangeLog>

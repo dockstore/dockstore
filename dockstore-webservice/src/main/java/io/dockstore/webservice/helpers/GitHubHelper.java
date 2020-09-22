@@ -82,11 +82,17 @@ public final class GitHubHelper {
         try {
             TokenResponse tokenResponse = flow.newTokenRequest(code)
                     .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-            return tokenResponse.getAccessToken();
+            if (tokenResponse.getAccessToken() != null) {
+                return tokenResponse.getAccessToken();
+            } else {
+                LOG.error("Retrieving accessToken was unsuccessful");
+                throw new CustomWebApplicationException("Could not retrieve github.com token", HttpStatus.SC_BAD_REQUEST);
+            }
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
         }
+
     }
 
     /**
