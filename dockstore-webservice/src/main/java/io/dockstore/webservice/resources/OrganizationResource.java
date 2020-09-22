@@ -542,7 +542,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Ensure that the user is a member of the organization
         OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
+        if (organizationUser == null && !user.isCurator() && !user.getIsAdmin()) {
             String msg = "You do not have permissions to update the organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
