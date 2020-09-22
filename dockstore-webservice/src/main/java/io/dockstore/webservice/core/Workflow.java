@@ -113,6 +113,10 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
+    @Column
+    @ApiModelProperty(value = "This is a link to a forum or discussion board")
+    private String forumUrl;
+
     // DOCKSTORE-2428 - demo how to add new workflow language
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
@@ -183,6 +187,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setEmail(getEmail());
         targetWorkflow.setDescription(getDescription());
         targetWorkflow.setLastModified(getLastModifiedDate());
+        targetWorkflow.setForumUrl(getForumUrl());
         targetWorkflow.setOrganization(getOrganization());
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
@@ -243,6 +248,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     public String getDefaultWorkflowPath() {
         return getDefaultPaths().getOrDefault(this.getDescriptorType().getFileType(), "/Dockstore.cwl");
     }
+
+    @JsonProperty("forum_url")
+    public String getForumUrl() {
+        return forumUrl; }
+    public void setForumUrl(String forumUrl) {
+        this.forumUrl = forumUrl; }
 
     //TODO: odd side effect, this means that if the descriptor language is set wrong, we will get or set the wrong the default paths
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
