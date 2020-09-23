@@ -397,7 +397,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @return either a list of tools or a json map
      */
     @Override
-    public String getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles,
+    public Optional<String> getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles,
             LanguageHandlerInterface.Type type, ToolDAO dao) {
         // Initialize general variables
         String callType = "call"; // This may change later (ex. tool, workflow)

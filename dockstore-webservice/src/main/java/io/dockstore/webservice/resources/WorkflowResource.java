@@ -1431,18 +1431,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean nowFrozen = existingTag.isFrozen();
                 // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
-                    String toolsJSONTable;
+                    Optional<String> toolsJSONTable;
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
                     // Store tool table json
                     if (existingTag.getToolTableJson() == null) {
                         toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-                        existingTag.setToolTableJson(toolsJSONTable);
+                        existingTag.setToolTableJson(toolsJSONTable.get());
                     } else {
-                        toolsJSONTable = existingTag.getToolTableJson();
+                        toolsJSONTable = Optional.of(existingTag.getToolTableJson());
                     }
-                    Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
-                    existingTag.getImages().addAll(images);
 
+                    if (toolsJSONTable.isPresent()) {
+                        Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
+                        existingTag.getImages().addAll(images);
+                    }
                     // Grab checksum for file descriptors if not already available.
                     for (SourceFile sourceFile : existingTag.getSourceFiles()) {
                         Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
@@ -1543,10 +1545,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            final String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final Optional<String> toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            workflowVersion.setToolTableJson(toolTableJson);
-            return toolTableJson;
+            final String json = toolTableJson.orElseGet(null);
+            workflowVersion.setToolTableJson(json);
+            return json;
         }
 
         return null;
