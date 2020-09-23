@@ -38,7 +38,6 @@ public final class DAGHelper {
      * @param dag The unclean DAG with edges that may have undefined nodes
      * @return The clean DAG without edges that have undefined nodes
      */
-    //
     public static String cleanDAG(String dag) {
         ElementsDefinition elementsDefinition = GSON.fromJson(dag, ElementsDefinition.class);
         Set<String> nodeIDs = elementsDefinition.nodes.stream().map(nodeDefinition -> nodeDefinition.data.id).collect(Collectors.toSet());
