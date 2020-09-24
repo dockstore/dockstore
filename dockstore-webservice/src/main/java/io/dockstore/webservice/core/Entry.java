@@ -165,7 +165,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String gitUrl;
 
     @JsonIgnore
-    @JoinColumn(name = "checkerid")
+    @JoinColumn(name = "checkerid", unique = true)
     @OneToOne(targetEntity = BioWorkflow.class, fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The id of the associated checker workflow")
     private BioWorkflow checkerWorkflow;
