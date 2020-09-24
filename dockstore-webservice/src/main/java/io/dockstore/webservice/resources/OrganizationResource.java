@@ -542,7 +542,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Ensure that the user is a member of the organization
         OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
+        if (organizationUser == null && !user.isCurator() && !user.getIsAdmin()) {
             String msg = "You do not have permissions to update the organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
@@ -572,10 +572,18 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             validateLink(organization.getLink());
         }
 
+        if (!oldOrganization.getName().equals(organization.getName()) || !oldOrganization.getDisplayName().equals(organization.getDisplayName())) {
+            if (user.getIsAdmin() || user.isCurator() || oldOrganization.getStatus() != Organization.ApplicationState.APPROVED) {
+                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved
+                // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
+                oldOrganization.setName(organization.getName());
+                oldOrganization.setDisplayName(organization.getDisplayName());
+            } else {
+                throw new CustomWebApplicationException("Only admin and curators are able to change an approved Organization's name or display name. Contact Dockstore to have it changed.", HttpStatus.SC_UNAUTHORIZED);
+            }
+        }
 
-        // Update organization
-        oldOrganization.setName(organization.getName());
-        oldOrganization.setDisplayName(organization.getDisplayName());
+        // Update rest of organization
         oldOrganization.setDescription(organization.getDescription());
         oldOrganization.setTopic(organization.getTopic());
         oldOrganization.setEmail(organization.getEmail());
