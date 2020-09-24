@@ -142,15 +142,19 @@ public class OrganizationIT extends BaseIT {
     /**
      * Tests that a user can create an Organization and it will not be approved right away.
      * The user should be able to view and update the Organization before and after approval.
+     * However, the user is not able to update the Organization name/display name after organization approval
      * Also tests who the Organization should be visible to based on approval.
      * Also tests admin being able to approve an org and admin/curators being able to see the Organization
+     * A curator/admin can still update the organization's name/display name
      */
     @Test
     @SuppressWarnings("checkstyle:MethodLength")
     public void testCreateNewOrganization() {
+        // Set the user that's creating the organization to not be an admin
+        testingPostgres.runUpdateStatement("update enduser set isadmin ='f' where username = 'DockstoreTestUser2'");
         // Setup postgres
 
-        // Setup user two
+        // Setup user two. admin: false, curator false
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
 
@@ -158,11 +162,11 @@ public class OrganizationIT extends BaseIT {
         final ApiClient webClientUser1 = getWebClient(USER_1_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiUser1 = new OrganizationsApi(webClientUser1);
 
-        // Setup admin
+        // Setup admin. admin: true, curator: false
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
-        // Setup curator
+        // Setup curator. admin: false, curator: true
         final ApiClient webClientCuratorUser = getWebClient(curatorUsername, testingPostgres);
         OrganizationsApi organizationsApiCurator = new OrganizationsApi(webClientCuratorUser);
 
@@ -266,6 +270,17 @@ public class OrganizationIT extends BaseIT {
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'APPROVE_ORG'", long.class);
         assertEquals("There should be 1 event of type APPROVE_ORG, there are " + count3, 1, count3);
 
+
+        try {
+            organization.setName("NameSquatting");
+            organization.setDisplayName("DisplayNameSquatting");
+            organizationsApiUser2.updateOrganization(organization, organization.getId());
+            fail("Only admin and curators are able to change an approved Organization's name or display name");
+        } catch (ApiException e) {
+            assertEquals("Only admin and curators are able to change an approved Organization's name or display name. Contact Dockstore to have it changed.", e.getMessage());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+        }
+
         // Should be in APPROVED state
         registeredOrganization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
         assertEquals(registeredOrganization.getStatus(), StatusEnum.APPROVED);
@@ -358,6 +373,12 @@ public class OrganizationIT extends BaseIT {
         assertEquals("potato", description);
 
         testStarredOrganizationEvents(organizationsApiUser2, organization);
+
+        organization.setName("NameSquatting");
+        organization.setDisplayName("DisplayNameSquatting");
+        Organization curatorUpdatedOrganization = organizationsApiCurator.updateOrganization(organization, organization.getId());
+        Assert.assertEquals("A curator can still update an approved organization name", "NameSquatting", curatorUpdatedOrganization.getName());
+        Assert.assertEquals("A curator can still update an approved organization display name", "DisplayNameSquatting", curatorUpdatedOrganization.getDisplayName());
     }
 
     /**
