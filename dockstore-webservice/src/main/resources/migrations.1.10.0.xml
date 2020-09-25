@@ -77,4 +77,12 @@
     <changeSet author="nolwarre (generated)" id="notificationsCharLimit">
         <modifyDataType columnName="message" newDataType="varchar(1024)" tableName="notification"/>
     </changeSet>
+    <changeSet author="nzhao (generated)" id="workflowForumUrl">
+        <addColumn tableName="service">
+            <column name="forumurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="forumurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
