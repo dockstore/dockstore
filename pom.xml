@@ -1082,7 +1082,6 @@
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
                     <version>3.0.16</version>
                 </plugin>
-
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
