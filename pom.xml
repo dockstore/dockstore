@@ -671,6 +671,7 @@
                     <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
                     <sortArtifactByName>true</sortArtifactByName>
                     <failOnMissing>true</failOnMissing>
+                    <excludedGroups>^io\.dockstore</excludedGroups>
                 </configuration>
                 <executions>
                     <execution>
