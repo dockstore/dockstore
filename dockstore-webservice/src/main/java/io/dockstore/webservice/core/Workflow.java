@@ -113,7 +113,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
-    @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
+    @Column
     @ApiModelProperty(value = "This is a link to a forum or discussion board")
     private String forumUrl;
 

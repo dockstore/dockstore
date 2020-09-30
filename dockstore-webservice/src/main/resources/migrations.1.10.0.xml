@@ -85,10 +85,4 @@
             <column name="forumurl" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
-    <changeSet author="nzhao (generated)" id="addDefaultForumUrl">
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="forumurl" tableName="service"/>
-        <addDefaultValue columnDataType="varchar(255)" columnName="forumurl" defaultValue="n/a" tableName="service"/>
-        <addNotNullConstraint columnDataType="varchar(255)" columnName="forumurl" tableName="workflow"/>
-        <addDefaultValue columnDataType="varchar(255)" columnName="forumurl" defaultValue="n/a" tableName="workflow"/>
-    </changeSet>
 </databaseChangeLog>

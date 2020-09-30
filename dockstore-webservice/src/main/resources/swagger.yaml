@@ -8270,7 +8270,7 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
-      forum_url:
+      forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
       has_checker:
