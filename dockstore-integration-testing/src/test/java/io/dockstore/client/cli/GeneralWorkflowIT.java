@@ -54,12 +54,7 @@ import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_N
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * This test suite tests various workflow related processes.
@@ -501,6 +496,30 @@ public class GeneralWorkflowIT extends BaseIT {
             .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
         assertEquals("master workflow path should be the same as default workflow path, it is " + masterpath, "/Dockstore.cwl", masterpath);
         assertEquals("test workflow path should be the same as default workflow path, it is " + testpath, "/Dockstore.cwl", testpath);
+    }
+
+    @Test
+    public void testAddingWorkflowForumUrl() throws ApiException {
+        // Set up webservice
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        usersApi.getUser();
+
+        Workflow workflow = workflowsApi
+                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl",
+                        "/test.json");
+
+        //update the forumUrl to hello.com
+        workflow.setForumUrl("hello.com");
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflowsApi.refresh(workflow.getId());
+
+        //check the workflow's forumUrl is hello.com
+        final String updatedForumUrl = testingPostgres
+                .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
+        assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
     }
 
     @Test
