@@ -113,7 +113,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
-    @Column
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
     @ApiModelProperty(value = "This is a link to a forum or discussion board")
     private String forumUrl;
 
@@ -254,9 +254,10 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
     }
 
-    @JsonProperty("forum_url")
+    @JsonProperty
     public String getForumUrl() {
-        return forumUrl; }
+        return forumUrl;
+    }
     public void setForumUrl(String forumUrl) {
         this.forumUrl = forumUrl; }
 
