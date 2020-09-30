@@ -54,7 +54,13 @@ import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_N
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
+
 
 /**
  * This test suite tests various workflow related processes.
@@ -630,7 +636,7 @@ public class GeneralWorkflowIT extends BaseIT {
                     "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");
                 fail("Insert should have failed to do row-level security");
             } catch (Exception ex) {
-                Assert.assertTrue(ex.getMessage().contains("new row violates row-level"));
+                assertTrue(ex.getMessage().contains("new row violates row-level"));
             }
         });
 
@@ -659,15 +665,15 @@ public class GeneralWorkflowIT extends BaseIT {
         // Manually register workflow
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl",
                 SourceControl.GITHUB, "/Dockstore.cwl", true);
-        Assert.assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
+        assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
-        Assert.assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
+        assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
         workflow = workflowsApi.refresh(workflow.getId());
-        Assert.assertEquals("Refresh should not have set it back to the automatic one", "testBoth", workflow.getDefaultVersion());
+        assertEquals("Refresh should not have set it back to the automatic one", "testBoth", workflow.getDefaultVersion());
         // Mimic version on Dockstore no longer present on GitHub
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET name = 'deletedGitHubBranch', reference ='deletedGitHubBranch' where name='testBoth'");
         workflow = workflowsApi.refresh(workflow.getId());
-        Assert.assertEquals("the old default was deleted during refresh, it should automatically set the default version again", "master", workflow.getDefaultVersion());
+        assertEquals("the old default was deleted during refresh, it should automatically set the default version again", "master", workflow.getDefaultVersion());
     }
 
     /**
@@ -696,7 +702,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count2);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals("testWDL", workflow.getDefaultVersion());
+        assertEquals("testWDL", workflow.getDefaultVersion());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
         // Update workflow with version with metadata
@@ -712,9 +718,9 @@ public class GeneralWorkflowIT extends BaseIT {
             long.class);
         assertEquals("The given workflow should have contact info", 1, count4);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals("testBoth", workflow.getDefaultVersion());
-        Assert.assertEquals("testAuthor", workflow.getAuthor());
-        Assert.assertEquals("testEmail", workflow.getEmail());
+        assertEquals("testBoth", workflow.getDefaultVersion());
+        assertEquals("testAuthor", workflow.getAuthor());
+        assertEquals("testEmail", workflow.getEmail());
         // Unpublish
         workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
@@ -1126,7 +1132,7 @@ public class GeneralWorkflowIT extends BaseIT {
         toDelete.add("notreal.cwl.json");
         try {
             workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
-            Assert.fail("Should've have thrown an error when deleting non-existent file");
+            fail("Should've have thrown an error when deleting non-existent file");
         } catch (ApiException e) {
             assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
         }
