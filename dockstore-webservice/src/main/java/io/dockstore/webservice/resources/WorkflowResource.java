@@ -1534,7 +1534,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
             // Can't UPDATE workflowversion when frozen = true
             if (workflowVersion.isFrozen()) {
-                LOG.warn("workflow version " + workflowVersionId + " is frozen without a mainDescriptor");
+                LOG.warn("workflow version " + workflowVersionId + " is frozen without toolTableJson");
             } else {
                 workflowVersion.setToolTableJson(toolTableJson);
             }
