@@ -172,7 +172,7 @@ public class Collection implements Serializable, Aliasable {
     }
 
     public void removeEntry(Entry entry) {
-        this.entries.removeIf(entryVersion -> entryVersion.getEntry().equals(entry));
+        this.entries.removeIf(entryVersion -> entryVersion.getEntry().getId() == (entry.getId()));
     }
 
     public Organization getOrganization() {
