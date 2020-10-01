@@ -143,7 +143,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", ((Long)entryId).intValue()));
     }
 
     public T findPublishedById(long id) {
