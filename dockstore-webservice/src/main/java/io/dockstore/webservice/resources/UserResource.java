@@ -427,7 +427,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
-        return tokenDAO.findQuayByUserId(userId);
+        return tokenDAO.findDockstoreByUserId(userId);
     }
 
     @GET
