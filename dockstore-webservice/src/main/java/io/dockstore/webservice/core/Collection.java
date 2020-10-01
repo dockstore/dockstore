@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -20,12 +21,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
 import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -85,10 +87,16 @@ public class Collection implements Serializable, Aliasable {
     @Schema(description = "Short description of the collection", required = true, example = "A collection of alignment algorithms")
     private String topic;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @JoinColumns({
+            @JoinColumn(name = "collectionId", insertable = false, updatable = false),
+    })
     @JsonIgnore
-    private Set<Entry> entries = new HashSet<>();
+    private Set<EntryVersion> entries = new HashSet<>();
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -155,15 +163,16 @@ public class Collection implements Serializable, Aliasable {
     }
 
     public void setEntries(Set<Entry> entries) {
-        this.entries = entries;
+        this.entries = new HashSet<>();
+        entries.stream().map(entry -> new EntryVersion(entry));
     }
 
     public void addEntry(Entry entry) {
-        this.entries.add(entry);
+        this.entries.add(new EntryVersion(entry));
     }
 
     public void removeEntry(Entry entry) {
-        this.entries.remove(entry);
+        this.entries.removeIf(entryVersion -> entryVersion.getEntry().equals(entry));
     }
 
     public Organization getOrganization() {

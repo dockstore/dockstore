@@ -77,4 +77,20 @@
     <changeSet author="nolwarre (generated)" id="notificationsCharLimit">
         <modifyDataType columnName="message" newDataType="varchar(1024)" tableName="notification"/>
     </changeSet>
+    <changeSet author="gluu (generated)" id="1601569350016-13">
+        <createTable tableName="entry_version">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="entry_version_pkey"/>
+            </column>
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version_id" type="BIGINT"/>
+            <column name="collectionid" type="BIGINT"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="entry_version" constraintName="fkasnj680eyf2wpyni1uy57yqpq" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+        <sql>INSERT into entry_version(collectionId, entry_id) select collectionId, entryId from collection_entry</sql>
+        <dropForeignKeyConstraint baseTableName="collection_entry" constraintName="fk_collectionIdInCollectionEntry"/>
+        <dropTable tableName="collection_entry"/>
+    </changeSet>
 </databaseChangeLog>
