@@ -11,8 +11,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-@Entity(name = "EntryVersion")
-@Table(name = "entry_version")
+/**
+ * The Entry and Version associated with a collection
+ */
+@Entity(name = "CollectionEntryVersion")
+@Table(name = "collection_entry_version")
 public class EntryVersion implements Serializable {
 
     // TODO: Possibly use @EmbeddedID instead
