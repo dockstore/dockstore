@@ -21,6 +21,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
@@ -87,11 +88,13 @@ public class Collection implements Serializable, Aliasable {
     private String topic;
 
     @OneToMany(
-            mappedBy = "collection",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
+    @JoinColumns({
+            @JoinColumn(name = "collection_id", nullable = false),
+    })
     @JsonIgnore
     private Set<EntryVersion> entries = new HashSet<>();
 
@@ -161,11 +164,11 @@ public class Collection implements Serializable, Aliasable {
 
     public void setEntries(Set<Entry> entries) {
         this.entries = new HashSet<>();
-        entries.stream().map(entry -> new EntryVersion(entry, this));
+        entries.stream().map(entry -> new EntryVersion(entry));
     }
 
     public void addEntry(Entry entry) {
-        this.entries.add(new EntryVersion(entry, this));
+        this.entries.add(new EntryVersion(entry));
     }
 
     public void removeEntry(Entry entry) {

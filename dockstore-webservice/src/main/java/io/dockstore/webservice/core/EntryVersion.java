@@ -29,23 +29,16 @@ public class EntryVersion implements Serializable {
     @JoinColumn(name = "version_id")
     private Version version;
 
-    // TODO: Figure out why @MapsId doesn't work
-    @ManyToOne
-    @JoinColumn(name = "collection_id", nullable = false)
-    private Collection collection;
-
     private EntryVersion() {
 
     }
 
-    public EntryVersion(Entry entry, Collection collection) {
+    public EntryVersion(Entry entry) {
         this.entry = entry;
-        this.collection = collection;
     }
 
-    public EntryVersion(Entry entry, Collection collection, Version version) {
+    public EntryVersion(Entry entry, Version version) {
         this.entry = entry;
-        this.collection = collection;
         this.version = version;
     }
 
