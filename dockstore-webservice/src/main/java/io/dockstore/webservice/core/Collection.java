@@ -163,16 +163,15 @@ public class Collection implements Serializable, Aliasable {
     }
 
     public void setEntries(Set<Entry> entries) {
-        this.entries = new HashSet<>();
-        entries.stream().map(entry -> new EntryVersion(entry));
+        this.entries = entries.stream().map(EntryVersion::new).collect(Collectors.toSet());
     }
 
-    public void addEntry(Entry entry) {
-        this.entries.add(new EntryVersion(entry));
+    public void addEntry(Entry entry, Version version) {
+        this.entries.add(new EntryVersion(entry, version));
     }
 
-    public void removeEntry(Entry entry) {
-        this.entries.removeIf(entryVersion -> entryVersion.getEntry().getId() == (entry.getId()));
+    public void removeEntry(Entry entry, Long versionId) {
+        this.entries.removeIf(entryVersion -> entryVersion.getEntry().getId() == (entry.getId()) && ((entryVersion.getVersion() != null ? entryVersion.getVersion().getId() == versionId : null == versionId)));
     }
 
     public Organization getOrganization() {

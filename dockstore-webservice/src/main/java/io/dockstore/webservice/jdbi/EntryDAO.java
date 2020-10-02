@@ -172,6 +172,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
         return list(this.currentSession().getNamedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
     }
+
+    public List<CollectionEntry> getCollectionEntries(long collectionId) {
+        return list(this.currentSession().getNamedQuery("Entry.getCollectionEntries").setParameter("collectionId", collectionId));
+    }
+
     public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
         return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
     }

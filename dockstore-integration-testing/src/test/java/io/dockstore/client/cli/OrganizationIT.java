@@ -1210,7 +1210,7 @@ public class OrganizationIT extends BaseIT {
         Assert.assertEquals(0, collectionOrganizations.size());
 
         // Add tool to collection
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId);
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
 
         // Able to retrieve the collection and organization an entry is part of
         collectionOrganizations = entriesApi.entryCollections(entryId);
@@ -1241,7 +1241,7 @@ public class OrganizationIT extends BaseIT {
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId);
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
 
         // There should be two entries for collection with ID 1
         Collection collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
@@ -1267,7 +1267,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be two entries with the collection, there are " + entryCount, 2, entryCount);
 
         // Remove a tool from the collection
-        organizationsApi.deleteEntryFromCollection(organization.getId(), collectionId, entryId);
+        organizationsApi.deleteEntryFromCollection(organization.getId(), collectionId, entryId, null);
 
         // There should be one REMOVE_FROM_COLLECTION events
         final long count4 = testingPostgres
@@ -1275,8 +1275,6 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4, 1, count4);
 
         // There should now be one entry for collection with ID 1
-
-        // There should be two entries for collection with ID 1
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
         Assert.assertEquals(1, collectionById.getEntries().size());
 
@@ -1313,6 +1311,15 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to reject an approved collection");
         }
+
+        // Add tool and specific version to collection (version 8 and 9 belong to entryId 2)
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, 9L);
+
+        // There should now be two entry for collection with ID 1 (one with version, one without)
+        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        Assert.assertEquals(2, collectionById.getEntries().size());
+        Assert.assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName().equals("latest")));
+        Assert.assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null));
 
     }
 

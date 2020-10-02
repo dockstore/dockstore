@@ -78,7 +78,7 @@
         <modifyDataType columnName="message" newDataType="varchar(1024)" tableName="notification"/>
     </changeSet>
     <changeSet author="gluu (generated)" id="1601569350016-13">
-        <createTable tableName="entry_version">
+        <createTable tableName="collection_entry_version">
             <column autoIncrement="true" name="id" type="SERIAL">
                 <constraints primaryKey="true" primaryKeyName="entry_version_pkey"/>
             </column>
@@ -90,8 +90,8 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addForeignKeyConstraint baseColumnNames="collection_id" baseTableName="entry_version" constraintName="fk55sow8asetsw09h9h9d7yrkw3" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
-        <sql>INSERT into entry_version(collection_id, entry_id) select collectionId, entryId from collection_entry</sql>
+        <addForeignKeyConstraint baseColumnNames="collection_id" baseTableName="collection_entry_version" constraintName="fk55sow8asetsw09h9h9d7yrkw3" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+        <sql>INSERT into collection_entry_version(collection_id, entry_id) select collectionId, entryId from collection_entry</sql>
         <dropForeignKeyConstraint baseTableName="collection_entry" constraintName="fk_collectionIdInCollectionEntry"/>
         <dropTable tableName="collection_entry"/>
     </changeSet>

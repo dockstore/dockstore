@@ -17,19 +17,65 @@ public class CollectionEntry implements Serializable {
     private Date dbUpdateDate;
     private long id;
     private String entryType;
+    private String versionName;
 
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
+        setVersionName(null);
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(registry, organization, repository, entryName);
+        setVersionName(null);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, Version version)  {
+        setEntryType(entryTypeString);
+        setDbUpdateDate(dbUpdateDate);
+        setId(id);
+        setEntryPath(sourceControl.toString(), organization, repository, entryName);
+        if (version != null) {
+            setVersionName(version.getName());
+        } else {
+            setVersionName(null);
+        }
+    }
+
+    public CollectionEntry(EntryVersion entryVersion) {
+        Entry entry = entryVersion.getEntry();
+        Version version = entryVersion.getVersion();
+        setEntryType(entry.getEntryType().toString());
+        setDbUpdateDate(entry.getDbUpdateDate());
+        setId(entry.getId());
+        setEntryPath(entry.getEntryPath());
+        if (version != null) {
+            setVersionName(version.getName());
+        } else {
+            setVersionName(null);
+        }
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, Version version)  {
+        setEntryType(entryTypeString);
+        setDbUpdateDate(dbUpdateDate);
+        setId(id);
+        setEntryPath(registry, organization, repository, entryName);
+        if (version != null) {
+            setVersionName(version.getName());
+        } else {
+            setVersionName(null);
+        }
     }
 
     private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
@@ -66,5 +112,13 @@ public class CollectionEntry implements Serializable {
 
     public void setEntryType(String entryType) {
         this.entryType = entryType;
+    }
+
+    public String getVersionName() {
+        return versionName;
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
     }
 }
