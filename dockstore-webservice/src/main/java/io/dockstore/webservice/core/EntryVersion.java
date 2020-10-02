@@ -20,16 +20,18 @@ public class EntryVersion implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // TODO: Figure out why @MapsId doesn't work
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "entry_id")
+    @JoinColumn(name = "entry_id", nullable = false)
     private Entry entry;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "version_id")
     private Version version;
 
+    // TODO: Figure out why @MapsId doesn't work
     @ManyToOne
-    @JoinColumn(name = "collection_id")
+    @JoinColumn(name = "collection_id", nullable = false)
     private Collection collection;
 
     private EntryVersion() {

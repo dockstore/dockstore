@@ -86,7 +86,9 @@
                 <constraints nullable="false"/>
             </column>
             <column name="version_id" type="BIGINT"/>
-            <column name="collection_id" type="int8"/>
+            <column name="collection_id" type="int8">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
         <addForeignKeyConstraint baseColumnNames="collection_id" baseTableName="entry_version" constraintName="fk55sow8asetsw09h9h9d7yrkw3" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
         <sql>INSERT into entry_version(collection_id, entry_id) select collectionId, entryId from collection_entry</sql>
