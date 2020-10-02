@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -244,6 +245,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (!pattern.asPredicate().test(username)) {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
+        restrictUsername(username);
+
         User user = userDAO.findById(authUser.getId());
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
@@ -262,6 +265,16 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             cachingAuthenticator.invalidate(dockstoreToken.get().getContent());
         }
         return userDAO.findById(user.getId());
+    }
+
+    public static void restrictUsername(String username) {
+        Pattern pattern = Pattern.compile("(?i)^(?!.*(dockstore|admin|curator|system|manager)).*$");
+        Matcher matcher = pattern.matcher(username);
+        if (!matcher.find()) {
+            throw new CustomWebApplicationException("Cannot change username to " + username
+                    + " because it contains one or more of the following keywords: dockstore, admin, curator, system, or manager", HttpStatus.SC_BAD_REQUEST);
+        }
+
     }
 
     @DELETE
