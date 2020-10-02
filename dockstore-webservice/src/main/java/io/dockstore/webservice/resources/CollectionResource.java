@@ -207,10 +207,16 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
         List<CollectionEntry> collectionServices = workflowDAO.getCollectionServices(collection.getId());
         List<CollectionEntry> collectionTools = workflowDAO.getCollectionTools(collection.getId());
+        List<CollectionEntry> collectionWorkflowsWithVersions = workflowDAO.getCollectionWorkflowsWithVersions(collection.getId());
+        List<CollectionEntry> collectionServicesWithVersions = workflowDAO.getCollectionServicesWithVersions(collection.getId());
+        List<CollectionEntry> collectionToolsWithVersions = workflowDAO.getCollectionToolsWithVersions(collection.getId());
         List<CollectionEntry> collectionEntries = new ArrayList<>();
         collectionEntries.addAll(collectionWorkflows);
         collectionEntries.addAll(collectionServices);
         collectionEntries.addAll(collectionTools);
+        collectionEntries.addAll(collectionWorkflowsWithVersions);
+        collectionEntries.addAll(collectionServicesWithVersions);
+        collectionEntries.addAll(collectionToolsWithVersions);
         collection.setCollectionEntries(collectionEntries);
     }
 

@@ -36,6 +36,7 @@ import com.google.common.base.Strings;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -171,6 +172,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
         return list(this.currentSession().getNamedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
+    }
+
+    public List<CollectionEntry> getCollectionWorkflowsWithVersions(long collectionId) {
+        return list(this.currentSession().getNamedQuery("Entry.getCollectionWorkflowsWithVersions").setParameter("collectionId", collectionId));
+    }
+
+    public List<CollectionEntry> getCollectionServicesWithVersions(long collectionId) {
+        return list(this.currentSession().getNamedQuery("Entry.getCollectionServicesWithVersions").setParameter("collectionId", collectionId));
+    }
+
+    public List<CollectionEntry> getCollectionToolsWithVersions(long collectionId) {
+        return list(this.currentSession().getNamedQuery("Entry.getCollectionToolsWithVersions").setParameter("collectionId", collectionId));
     }
 
     public List<CollectionEntry> getCollectionEntries(long collectionId) {
