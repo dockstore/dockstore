@@ -1244,9 +1244,8 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId);
 
         // There should be two entries for collection with ID 1
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", long.class);
-        assertEquals("There should be 2 entries associated with the collection, there are " + count2, 2, count2);
+        Collection collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        Assert.assertEquals(2, collectionById.getEntries().size());
 
         // There should be two ADD_TO_COLLECTION events
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", long.class);
@@ -1276,9 +1275,10 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4, 1, count4);
 
         // There should now be one entry for collection with ID 1
-        final long count5 = testingPostgres
-            .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", long.class);
-        assertEquals("There should be 1 entry associated with the collection, there are " + count5, 1, count5);
+
+        // There should be two entries for collection with ID 1
+        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        Assert.assertEquals(1, collectionById.getEntries().size());
 
         // Try getting all collections
         List<Collection> collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "");

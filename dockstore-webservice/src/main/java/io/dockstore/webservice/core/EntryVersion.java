@@ -7,8 +7,8 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.MapsId;
 import javax.persistence.Table;
 
 @Entity(name = "EntryVersion")
@@ -21,23 +21,29 @@ public class EntryVersion implements Serializable {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("entryId")
+    @JoinColumn(name = "entry_id")
     private Entry entry;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "version_id")
     private Version version;
 
+    @ManyToOne
+    @JoinColumn(name = "collection_id")
+    private Collection collection;
 
     private EntryVersion() {
 
     }
 
-    public EntryVersion(Entry entry) {
+    public EntryVersion(Entry entry, Collection collection) {
         this.entry = entry;
+        this.collection = collection;
     }
 
-    public EntryVersion(Entry entry, Version version) {
+    public EntryVersion(Entry entry, Collection collection, Version version) {
         this.entry = entry;
+        this.collection = collection;
         this.version = version;
     }
 

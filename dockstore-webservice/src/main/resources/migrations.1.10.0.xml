@@ -86,10 +86,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="version_id" type="BIGINT"/>
-            <column name="collectionid" type="BIGINT"/>
+            <column name="collection_id" type="int8"/>
         </createTable>
-        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="entry_version" constraintName="fkasnj680eyf2wpyni1uy57yqpq" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
-        <sql>INSERT into entry_version(collectionId, entry_id) select collectionId, entryId from collection_entry</sql>
+        <addForeignKeyConstraint baseColumnNames="collection_id" baseTableName="entry_version" constraintName="fk55sow8asetsw09h9h9d7yrkw3" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+        <sql>INSERT into entry_version(collection_id, entry_id) select collectionId, entryId from collection_entry</sql>
         <dropForeignKeyConstraint baseTableName="collection_entry" constraintName="fk_collectionIdInCollectionEntry"/>
         <dropTable tableName="collection_entry"/>
     </changeSet>
