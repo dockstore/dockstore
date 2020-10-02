@@ -124,6 +124,8 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
+    private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
+    private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
@@ -241,8 +243,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Change username if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User changeUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
-        Pattern pattern = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
-        if (!pattern.asPredicate().test(username)) {
+        if (!VALID_USERNAME_PATTERN.asPredicate().test(username)) {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
         restrictUsername(username);
@@ -268,9 +269,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     }
 
     public static void restrictUsername(String username) {
-        Pattern pattern = Pattern.compile("(?i)^(?!.*(dockstore|admin|curator|system|manager)).*$");
-        Matcher matcher = pattern.matcher(username);
-        if (!matcher.find()) {
+        Matcher matcher = USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
+        if (matcher.find()) {
             throw new CustomWebApplicationException("Cannot change username to " + username
                     + " because it contains one or more of the following keywords: dockstore, admin, curator, system, or manager", HttpStatus.SC_BAD_REQUEST);
         }
