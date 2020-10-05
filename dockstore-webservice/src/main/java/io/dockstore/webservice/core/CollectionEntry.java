@@ -28,17 +28,12 @@ public class CollectionEntry implements Serializable {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, Version version)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
-        setVersionName(null);
-        if (version != null) {
-            setVersionName(version.getName());
-        } else {
-            setVersionName(null);
-        }
+        setVersionName(versionName);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -51,16 +46,12 @@ public class CollectionEntry implements Serializable {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, Version version)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(registry, organization, repository, entryName);
-        if (version != null) {
-            setVersionName(version.getName());
-        } else {
-            setVersionName(null);
-        }
+        setVersionName(versionName);
     }
 
     private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
