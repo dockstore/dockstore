@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes.  This exposes the hashcode for specific image versions to verify that the container version pulled is actually the version that was indexed by the registry.
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -98,6 +98,8 @@ components:
         id:
           format: int64
           type: integer
+        versionName:
+          type: string
       type: object
     CollectionOrganization:
       properties:
@@ -1788,7 +1790,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.10.0-alpha.1-SNAPSHOT
+  version: 1.10.0-alpha.2-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -1832,7 +1834,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -4802,7 +4804,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -5057,6 +5059,12 @@ paths:
           schema:
             format: int64
             type: integer
+        - description: Version ID.
+          in: query
+          name: versionId
+          schema:
+            format: int64
+            type: integer
       responses:
         default:
           content:
@@ -5091,6 +5099,12 @@ paths:
           in: query
           name: entryId
           required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Version ID.
+          in: query
+          name: versionId
           schema:
             format: int64
             type: integer
