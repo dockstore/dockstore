@@ -228,7 +228,7 @@ public class WebhookIT extends BaseIT {
         workflows = client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         assertEquals("Should only have two workflows", 2, workflows.size());
         workflows.forEach(workflowIndividual -> {
-            Assert.assertEquals("Should be able to get license after manual GitHub App version update", "Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName());
+            assertEquals("Should be able to get license after manual GitHub App version update", "Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName());
         });
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
@@ -325,7 +325,7 @@ public class WebhookIT extends BaseIT {
         // Release 0.1 on GitHub - one new wdl workflow
         List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         assertEquals("Should only have one service", 1, workflows.size());
-        Assert.assertEquals("Should be able to get license after GitHub App register", "Apache License 2.0", workflows.get(0).getLicenseInformation().getLicenseName());
+        assertEquals("Should be able to get license after GitHub App register", "Apache License 2.0", workflows.get(0).getLicenseInformation().getLicenseName());
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
@@ -387,13 +387,13 @@ public class WebhookIT extends BaseIT {
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.CWL.toString());
         io.dockstore.openapi.client.model.Workflow updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "");
-        Assert.assertEquals("The descriptor language should have been changed", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType());
-        Assert.assertEquals("The old versions should have been removed", 0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size());
+        assertEquals("The descriptor language should have been changed", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType());
+        assertEquals("The old versions should have been removed", 0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size());
 
         workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.WDL.toString());
         updatedWorkflowAfterModifyingDescriptorType = workflowsApi.getWorkflow(workflow.getId(), "");
-        Assert.assertEquals("The descriptor language should have been changed", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType());
-        Assert.assertEquals("The old versions should have been removed", 0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size());
+        assertEquals("The descriptor language should have been changed", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, updatedWorkflowAfterModifyingDescriptorType.getDescriptorType());
+        assertEquals("The old versions should have been removed", 0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size());
 
         // Release 0.1 on GitHub - one new wdl workflow
         workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
@@ -410,7 +410,7 @@ public class WebhookIT extends BaseIT {
                     .updateDescriptorType(workflow.getId(), DescriptorLanguage.CWL.toString());
             fail("Should not be able to change the descriptor type of a workflow that has valid versions");
         } catch (io.dockstore.openapi.client.ApiException e) {
-            Assert.assertEquals("Cannot change descriptor type of a valid workflow", e.getMessage());
+            assertEquals("Cannot change descriptor type of a valid workflow", e.getMessage());
         }
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         client.publish(workflow.getId(), publishRequest);
@@ -418,7 +418,7 @@ public class WebhookIT extends BaseIT {
             workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.WDL.toString());
             fail("Should also not be able to change the descriptor type of a workflow that is published");
         } catch (io.dockstore.openapi.client.ApiException e) {
-            Assert.assertEquals("Cannot change descriptor type of a published workflow", e.getMessage());
+            assertEquals("Cannot change descriptor type of a published workflow", e.getMessage());
         }
 
     }
