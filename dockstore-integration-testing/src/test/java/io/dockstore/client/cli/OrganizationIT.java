@@ -1312,14 +1312,24 @@ public class OrganizationIT extends BaseIT {
             fail("Was able to reject an approved collection");
         }
 
-        // Add tool and specific version to collection (version 8 and 9 belong to entryId 2)
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, 9L);
+        // version 8 and 9 belong to entryId 2
+        long versionId = 9L;
 
-        // There should now be two entry for collection with ID 1 (one with version, one without)
+        // Add tool and specific version to collection
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId);
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
+
+        // There should now be two entries for collection with ID 1 (one with version, one without), 3 entries in total
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        Assert.assertEquals(2, collectionById.getEntries().size());
-        Assert.assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName().equals("latest")));
-        Assert.assertTrue(collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null));
+        Assert.assertEquals(3, collectionById.getEntries().size());
+        Assert.assertTrue("Collection has the version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> "latest"
+                .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+        Assert.assertTrue("Collection still has the non-version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+
+        organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, versionId);
+        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        Assert.assertEquals("Two entry remains in collection", 2, collectionById.getEntries().size());
+        Assert.assertTrue("Collection has the non-version-specific entry even after deleting the version-specific one", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
 
     }
 
