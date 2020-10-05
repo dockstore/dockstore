@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.10.0-alpha.1-SNAPSHOT</version>
+    <version>1.10.0-alpha.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -159,7 +159,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.10.0-alpha.1-SNAPSHOT</version>
+                 <version>1.10.0-alpha.2-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
@@ -413,12 +413,6 @@
                     <groupId>io.swagger.codegen.v3</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
                     <version>3.0.16</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
                 <plugin>
@@ -677,6 +671,7 @@
                     <thirdPartyFilename>THIRD-PARTY-LICENSES.txt</thirdPartyFilename>
                     <sortArtifactByName>true</sortArtifactByName>
                     <failOnMissing>true</failOnMissing>
+                    <excludedGroups>^io\.dockstore</excludedGroups>
                 </configuration>
                 <executions>
                     <execution>
