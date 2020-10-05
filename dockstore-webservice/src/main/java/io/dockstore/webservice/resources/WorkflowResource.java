@@ -1532,7 +1532,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             final String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            workflowVersion.setToolTableJson(toolTableJson);
+
+            // Can't UPDATE workflowversion when frozen = true
+            if (workflowVersion.isFrozen()) {
+                LOG.warn("workflow version " + workflowVersionId + " is frozen without toolTableJson");
+            } else {
+                workflowVersion.setToolTableJson(toolTableJson);
+            }
             return toolTableJson;
         }
 
