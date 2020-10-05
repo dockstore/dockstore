@@ -8273,6 +8273,8 @@ definitions:
       forumUrl:
         type: "string"
         description: "This is a link to a forum or discussion board"
+        minLength: 0
+        maxLength: 256
       has_checker:
         type: "boolean"
         readOnly: true

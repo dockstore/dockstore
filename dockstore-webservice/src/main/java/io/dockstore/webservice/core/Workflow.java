@@ -35,6 +35,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -114,6 +115,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     private SourceControl sourceControl;
 
     @Column
+    @Size(max = 256)
     @ApiModelProperty(value = "This is a link to a forum or discussion board")
     private String forumUrl;
 
@@ -259,7 +261,8 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         return forumUrl;
     }
     public void setForumUrl(String forumUrl) {
-        this.forumUrl = forumUrl; }
+        this.forumUrl = forumUrl;
+    }
 
     @JsonProperty
     public String getOrganization() {
