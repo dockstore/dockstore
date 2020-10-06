@@ -131,8 +131,12 @@ public class NextflowHandler implements LanguageHandlerInterface {
             if (sourceFile.isPresent()) {
                 sourceFile.get().setPath(filename);
                 imports.put(filename, sourceFile.get());
+                String absoluteImportPath = convertRelativePathToAbsolutePath("/", sourceFile.get().getAbsolutePath());
+                imports.putAll(processOtherImports(repositoryId, sourceFile.get().getContent(), version, sourceCodeRepoInterface,
+                        absoluteImportPath));
             }
         }
+
         // source files in /lib seem to be automatically added to the script classpath
         // binaries are also there and will need to be ignored
         List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
@@ -140,6 +144,29 @@ public class NextflowHandler implements LanguageHandlerInterface {
         handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
         return imports;
     }
+
+    private Map<String, SourceFile> processOtherImports(String repositoryId, String content, Version version,
+            SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
+        Map<String, SourceFile> imports = new HashMap<>();
+        content.lines().forEach(line -> {
+            if (line.startsWith("include")) {
+                String importPath = StringUtils.substringBetween(line, "'", "'");
+                importPath = importPath.replaceFirst("./", "");
+                String newImportPath = importPath + ".nf";
+                SourceFile sourceFile = new SourceFile();
+                DescriptorLanguage.FileType fileType = DescriptorLanguage.FileType.NEXTFLOW;
+                String absoluteImportPath = convertRelativePathToAbsolutePath(workingDirectoryForFile, (String)newImportPath);
+                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
+                sourceFile.setType(fileType);
+                sourceFile.setContent(fileResponse);
+                sourceFile.setPath(newImportPath);
+                sourceFile.setAbsolutePath(absoluteImportPath);
+                imports.put(absoluteImportPath, sourceFile);
+            }
+        });
+        return imports;
+    }
+
 
     private void createValidationMessageForGeneralFailure(Version version, String filepath) {
         Map<String, String> validationMessageObject = new HashMap<>();
