@@ -605,6 +605,15 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
+    /**
+     *
+     * @param repositoryId
+     * @param content   This is the contents of the main descriptor
+     * @param fileType
+     * @param version
+     * @param filepath
+     * @return
+     */
     public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version<?> version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
