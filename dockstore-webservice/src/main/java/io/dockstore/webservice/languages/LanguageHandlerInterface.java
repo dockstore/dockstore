@@ -326,8 +326,6 @@ public interface LanguageHandlerInterface {
 
         String url;
 
-        Optional<Registry> registry = determineImageRegistry(dockerEntry);
-
         // Remove tag if exists
         Pattern p = Pattern.compile("([^:]+):?(\\S+)?");
         Matcher m = p.matcher(dockerEntry);
@@ -338,6 +336,9 @@ public interface LanguageHandlerInterface {
         if (dockerEntry.isEmpty()) {
             return null;
         }
+
+        // Regex for determining registry requires a tag; add a fake "0" tag
+        Optional<Registry> registry = determineImageRegistry(dockerEntry + ":0");
 
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
