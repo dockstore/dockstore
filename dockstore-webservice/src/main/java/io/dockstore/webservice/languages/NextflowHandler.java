@@ -187,6 +187,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private static String getRelativeImportPathFromLine(String line, String workingDirectoryForFile) {
         String importPath = StringUtils.substringBetween(line, "'", "'");
         importPath = importPath.replaceFirst(workingDirectoryForFile, "");
+        importPath = importPath.replaceFirst("^[.]/", "");
+        importPath = importPath.replaceFirst("^/", "");
         // Sometimes the import line looks like "include { RNASEQ } from './modules/rnaseq'"
         // "./modules/rnaseq" is not a file, it is actually "./modules/rnaseq.nf"
         if (!importPath.endsWith(".nf")) {
