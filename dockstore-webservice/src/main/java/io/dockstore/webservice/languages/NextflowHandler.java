@@ -163,14 +163,13 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private Map<String, SourceFile> processOtherImports(String repositoryId, String content, Version version,
             SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> imports = new HashMap<>();
-        content.lines().forEach(line -> {
-            // Lines that start with "include" means there's an import
-            if (line.startsWith("include")) {
-                String path = getRelativeImportPathFromLine(line, workingDirectoryForFile);
-                String absoluteImportPath = convertRelativePathToAbsolutePath(workingDirectoryForFile, path);
-                handleImport(repositoryId, version, imports, path, sourceCodeRepoInterface, absoluteImportPath);
-            }
-        });
+        Pattern p = Pattern.compile("include.+?from.+?'.+?'", Pattern.DOTALL);
+        Matcher m = p.matcher(content);
+        while (m.find()) {
+            String path = getRelativeImportPathFromLine(m.group(), workingDirectoryForFile);
+            String absoluteImportPath = convertRelativePathToAbsolutePath(workingDirectoryForFile, path);
+            handleImport(repositoryId, version, imports, path, sourceCodeRepoInterface, absoluteImportPath);
+        }
         Map<String, SourceFile> recursiveImports = new HashMap<>();
         for (Map.Entry<String, SourceFile> importFile : imports.entrySet()) {
             final Map<String, SourceFile> sourceFiles = processOtherImports(repositoryId, importFile.getValue().getContent(), version, sourceCodeRepoInterface, importFile.getKey());
@@ -188,9 +187,11 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private static String getRelativeImportPathFromLine(String line, String workingDirectoryForFile) {
         String importPath = StringUtils.substringBetween(line, "'", "'");
         importPath = importPath.replaceFirst(workingDirectoryForFile, "");
-        // The import line looks like "include { RNASEQ } from './modules/rnaseq'"
+        // Sometimes the import line looks like "include { RNASEQ } from './modules/rnaseq'"
         // "./modules/rnaseq" is not a file, it is actually "./modules/rnaseq.nf"
-        importPath = importPath + ".nf";
+        if (!importPath.endsWith(".nf")) {
+            importPath = importPath + ".nf";
+        }
         return importPath;
     }
 
