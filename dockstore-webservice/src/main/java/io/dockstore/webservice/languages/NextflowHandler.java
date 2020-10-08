@@ -58,6 +58,7 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 public class NextflowHandler extends AbstractLanguageHandler implements LanguageHandlerInterface {
 
     private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
+    private static final Pattern IMPORT_PATTERN = Pattern.compile("include.+?from.+?'.+?'", Pattern.DOTALL);
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -163,8 +164,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private Map<String, SourceFile> processOtherImports(String repositoryId, String content, Version version,
             SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> imports = new HashMap<>();
-        Pattern p = Pattern.compile("include.+?from.+?'.+?'", Pattern.DOTALL);
-        Matcher m = p.matcher(content);
+        Matcher m = IMPORT_PATTERN.matcher(content);
         while (m.find()) {
             String path = getRelativeImportPathFromLine(m.group(), workingDirectoryForFile);
             String absoluteImportPath = convertRelativePathToAbsolutePath(workingDirectoryForFile, path);
@@ -184,15 +184,16 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      * @param line  A line in the file that has the import (ex. "include { RNASEQ } from './modules/rnaseq'")
      * @return  The relative path
      */
-    private static String getRelativeImportPathFromLine(String line, String workingDirectoryForFile) {
+    protected static String getRelativeImportPathFromLine(String line, String workingDirectoryForFile) {
+        final String nextflowFileExtension = ".nf";
         String importPath = StringUtils.substringBetween(line, "'", "'");
         importPath = importPath.replaceFirst(workingDirectoryForFile, "");
         importPath = importPath.replaceFirst("^[.]/", "");
         importPath = importPath.replaceFirst("^/", "");
         // Sometimes the import line looks like "include { RNASEQ } from './modules/rnaseq'"
         // "./modules/rnaseq" is not a file, it is actually "./modules/rnaseq.nf"
-        if (!importPath.endsWith(".nf")) {
-            importPath = importPath + ".nf";
+        if (!importPath.endsWith(nextflowFileExtension)) {
+            importPath = importPath + nextflowFileExtension;
         }
         return importPath;
     }

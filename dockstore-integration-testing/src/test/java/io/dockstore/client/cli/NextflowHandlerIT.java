@@ -16,7 +16,7 @@ import org.junit.Test;
 
 /**
  *  TODO: Use fork with tagged version
- *  TODO: Check paths, something's not right
+ *  TODO: Check paths, it looks like it's relative to the file that imported it but this means it won't be unique
  */
 public class NextflowHandlerIT extends BaseIT {
     protected static SourceCodeRepoInterface sourceCodeRepoInterface;
