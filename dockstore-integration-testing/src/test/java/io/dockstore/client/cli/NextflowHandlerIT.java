@@ -3,13 +3,11 @@ package io.dockstore.client.cli;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import org.junit.Assert;
@@ -20,7 +18,7 @@ import org.junit.Test;
  *  TODO: Use fork with tagged version
  *  TODO: Check paths, something's not right
  */
-public class NextflowHandlerIT extends BaseIT{
+public class NextflowHandlerIT extends BaseIT {
     protected static SourceCodeRepoInterface sourceCodeRepoInterface;
 
 
@@ -40,17 +38,17 @@ public class NextflowHandlerIT extends BaseIT{
      */
     @Test
     public void testProcessImportsRnaseq() {
-        final String GITHUB_REPOSITORY = "nextflow-io/rnaseq-nf";
+        final String githubRepository = "nextflow-io/rnaseq-nf";
         WorkflowVersion workflowVersion = new WorkflowVersion();
         workflowVersion.setName("master");
         workflowVersion.setReference("master");
-        String mainDescriptorContents = sourceCodeRepoInterface.readFile(GITHUB_REPOSITORY, "nextflow.config", "master");
+        String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
-                .resolveImports(GITHUB_REPOSITORY, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
+                .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
         List<String> knownFileNames = Arrays.asList("main.nf", "/modules/index.nf", "/modules/multiqc.nf", "/modules/quant.nf", "/modules/fastqc.nf", "/modules/rnaseq.nf");
         int size = knownFileNames.size();
         checkAllSourceFiles(stringSourceFileMap, size);
-        Assert.assertEquals( size, stringSourceFileMap.size());
+        Assert.assertEquals(size, stringSourceFileMap.size());
         knownFileNames.forEach(knownFile -> {
             SourceFile sourceFile = stringSourceFileMap.get(knownFile);
             checkSourceFile(sourceFile);
@@ -64,17 +62,17 @@ public class NextflowHandlerIT extends BaseIT{
      */
     @Test
     public void testProcessImportsCalliNGS() {
-        final String GITHUB_REPOSITORY = "CRG-CNAG/CalliNGS-NF";
+        final String githubRepository = "CRG-CNAG/CalliNGS-NF";
         WorkflowVersion workflowVersion = new WorkflowVersion();
         workflowVersion.setName("master");
         workflowVersion.setReference("master");
-        String mainDescriptorContents = sourceCodeRepoInterface.readFile(GITHUB_REPOSITORY, "nextflow.config", "master");
+        String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
-                .resolveImports(GITHUB_REPOSITORY, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
+                .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
         List<String> knownFileNames = Arrays.asList("main.nf", "bin/gghist.R", "/modules.nf");
         int size = knownFileNames.size();
         checkAllSourceFiles(stringSourceFileMap, size);
-        Assert.assertEquals( size, stringSourceFileMap.size());
+        Assert.assertEquals(size, stringSourceFileMap.size());
         knownFileNames.forEach(knownFile -> {
             SourceFile sourceFile = stringSourceFileMap.get(knownFile);
             checkSourceFile(sourceFile);
@@ -89,17 +87,17 @@ public class NextflowHandlerIT extends BaseIT{
      */
     @Test
     public void testProcessImportsSamtools() {
-        final String GITHUB_REPOSITORY = "nf-core/modules";
+        final String githubRepository = "nf-core/modules";
         WorkflowVersion workflowVersion = new WorkflowVersion();
         workflowVersion.setName("master");
         workflowVersion.setReference("master");
-        String mainDescriptorContents = sourceCodeRepoInterface.readFile(GITHUB_REPOSITORY, "software/samtools/flagstat/test/nextflow.config", "master");
+        String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "software/samtools/flagstat/test/nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
-                .resolveImports(GITHUB_REPOSITORY, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/software/samtools/flagstat/test/nextflow.config");
+                .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/software/samtools/flagstat/test/nextflow.config");
         List<String> knownFileNames = Arrays.asList("main.nf", "/software/samtools/flagstat/main.nf", "lib/checksum.groovy", "/software/samtools/flagstat/functions.nf");
         int size = knownFileNames.size();
         checkAllSourceFiles(stringSourceFileMap, size);
-        Assert.assertEquals( size, stringSourceFileMap.size());
+        Assert.assertEquals(size, stringSourceFileMap.size());
         knownFileNames.forEach(knownFile -> {
             SourceFile sourceFile = stringSourceFileMap.get(knownFile);
             checkSourceFile(sourceFile);
@@ -116,7 +114,7 @@ public class NextflowHandlerIT extends BaseIT{
     }
 
     private void checkAllSourceFiles(Map<String, SourceFile> stringSourceFileMap, int size) {
-        Assert.assertEquals(size , stringSourceFileMap.values().stream().map(SourceFile::getPath).distinct().count());
-        Assert.assertEquals(size , stringSourceFileMap.values().stream().map(SourceFile::getAbsolutePath).distinct().count());
+        Assert.assertEquals(size, stringSourceFileMap.values().stream().map(SourceFile::getPath).distinct().count());
+        Assert.assertEquals(size, stringSourceFileMap.values().stream().map(SourceFile::getAbsolutePath).distinct().count());
     }
 }
