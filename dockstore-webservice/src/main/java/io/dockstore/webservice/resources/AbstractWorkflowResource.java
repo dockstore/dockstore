@@ -282,6 +282,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
                 Collectors.toList());
 
+        // When the git reference is the default version, unset the default version
+        workflows.forEach(workflow -> {
+            if (workflow.getActualDefaultVersion() != null && workflow.getActualDefaultVersion().getName().equals(gitReferenceName.get())) {
+                workflow.setActualDefaultVersion(null);
+            }
+        });
+
         // Delete all non-frozen versions that have the same git reference name
         workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);

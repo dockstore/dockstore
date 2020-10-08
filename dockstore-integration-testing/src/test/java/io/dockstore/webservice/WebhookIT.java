@@ -314,6 +314,27 @@ public class WebhookIT extends BaseIT {
     }
 
     /**
+     * This tests deleting a GitHub App workflow's default version
+     */
+    @Test
+    public void testDeleteDefaultWorkflowVersion() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals("should have 1 version", 1, workflow.getWorkflowVersions().size());
+        assertNull("should have no default version until set", workflow.getDefaultVersion());
+        workflow = client.updateWorkflowDefaultVersion(workflow.getId(), workflow.getWorkflowVersions().get(0).getName());
+        assertNotNull("should have a default version after setting", workflow.getDefaultVersion());
+        client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertEquals("should have 0 versions after deletion", 0, workflow.getWorkflowVersions().size());
+        assertNull("should have no default version after previous default is deleted", workflow.getDefaultVersion());
+    }
+
+    /**
      * This tests calling refresh on a workflow with a Dockstore.yml
      */
     @Test
