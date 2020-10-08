@@ -45,6 +45,10 @@ public class EntryVersion implements Serializable {
         this.version = version;
     }
 
+    public Integer getId() {
+        return id;
+    }
+
     public Entry getEntry() {
         return entry;
     }

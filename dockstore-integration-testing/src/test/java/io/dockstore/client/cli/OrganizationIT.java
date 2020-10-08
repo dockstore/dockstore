@@ -288,7 +288,7 @@ public class OrganizationIT extends BaseIT {
         // Should now appear in approved list
         organizationList = organizationsApiUser2.getApprovedOrganizations();
         assertEquals("Should have one approved Organizations.", organizationList.size(), 1);
-        organizationList.forEach(approvedOrganization -> Assert.assertTrue(approvedOrganization.getAliases().isEmpty()));
+        organizationList.forEach(approvedOrganization -> assertTrue(approvedOrganization.getAliases().isEmpty()));
 
         // Should not be able to request re-review
         canRequestReview = true;
@@ -1322,14 +1322,14 @@ public class OrganizationIT extends BaseIT {
         // There should now be two entries for collection with ID 1 (one with version, one without), 3 entries in total
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
         assertEquals(3, collectionById.getEntries().size());
-        Assert.assertTrue("Collection has the version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> "latest"
+        assertTrue("Collection has the version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> "latest"
                 .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
-        Assert.assertTrue("Collection still has the non-version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+        assertTrue("Collection still has the non-version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
 
         organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, versionId);
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
         assertEquals("Two entry remains in collection", 2, collectionById.getEntries().size());
-        Assert.assertTrue("Collection has the non-version-specific entry even after deleting the version-specific one", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+        assertTrue("Collection has the non-version-specific entry even after deleting the version-specific one", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
 
     }
 
@@ -1604,7 +1604,7 @@ public class OrganizationIT extends BaseIT {
             organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("You cannot star the organization"));
+            assertTrue(ex.getMessage().contains("You cannot star the organization"));
         }
 
         organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
@@ -1615,7 +1615,7 @@ public class OrganizationIT extends BaseIT {
             organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
+            assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
         }
 
         // Test setting/getting starred users
