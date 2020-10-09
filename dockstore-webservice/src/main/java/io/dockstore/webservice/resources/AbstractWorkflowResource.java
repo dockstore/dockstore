@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -282,10 +283,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         List<Workflow> workflows = workflowDAO.findAllByPath("github.com/" + repository, false).stream().filter(workflow -> Objects.equals(workflow.getMode(), DOCKSTORE_YML)).collect(
                 Collectors.toList());
 
-        // When the git reference is the default version, unset the default version
+        // When the git reference to delete is the default version, set it to the next latest version
         workflows.forEach(workflow -> {
             if (workflow.getActualDefaultVersion() != null && workflow.getActualDefaultVersion().getName().equals(gitReferenceName.get())) {
-                workflow.setActualDefaultVersion(null);
+                Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream()
+                        .filter(v -> !Objects.equals(v.getName(), gitReferenceName.get()))
+                        .max(Comparator.comparingLong(ver -> ver.getDate().getTime()));
+                workflow.setActualDefaultVersion(max.orElse(null));
             }
         });
 
