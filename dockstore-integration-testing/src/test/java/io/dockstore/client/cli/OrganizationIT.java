@@ -288,7 +288,7 @@ public class OrganizationIT extends BaseIT {
         // Should now appear in approved list
         organizationList = organizationsApiUser2.getApprovedOrganizations();
         assertEquals("Should have one approved Organizations.", organizationList.size(), 1);
-        organizationList.forEach(approvedOrganization -> Assert.assertTrue(approvedOrganization.getAliases().isEmpty()));
+        organizationList.forEach(approvedOrganization -> assertTrue(approvedOrganization.getAliases().isEmpty()));
 
         // Should not be able to request re-review
         canRequestReview = true;
@@ -377,8 +377,8 @@ public class OrganizationIT extends BaseIT {
         organization.setName("NameSquatting");
         organization.setDisplayName("DisplayNameSquatting");
         Organization curatorUpdatedOrganization = organizationsApiCurator.updateOrganization(organization, organization.getId());
-        Assert.assertEquals("A curator can still update an approved organization name", "NameSquatting", curatorUpdatedOrganization.getName());
-        Assert.assertEquals("A curator can still update an approved organization display name", "DisplayNameSquatting", curatorUpdatedOrganization.getDisplayName());
+        assertEquals("A curator can still update an approved organization name", "NameSquatting", curatorUpdatedOrganization.getName());
+        assertEquals("A curator can still update an approved organization display name", "DisplayNameSquatting", curatorUpdatedOrganization.getDisplayName());
     }
 
     /**
@@ -393,30 +393,30 @@ public class OrganizationIT extends BaseIT {
         EventsApi eventsApi = new EventsApi(openAPIWebClientUser2);
         List<io.dockstore.openapi.client.model.Event> events = eventsApi
                 .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
-        Assert.assertEquals("Should have the correct amount of events", 0, events.size());
+        assertEquals("Should have the correct amount of events", 0, events.size());
 
         organizationsApiUser2.starOrganization(organization.getId(), STAR_REQUEST);
 
         events = eventsApi
                 .getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), null, null);
-        Assert.assertEquals("Should have the correct amount of events (STARRED_ORGANIZATION)", 6, events.size());
+        assertEquals("Should have the correct amount of events (STARRED_ORGANIZATION)", 6, events.size());
         events = eventsApi
                 .getEvents(EventSearchType.ALL_STARRED.toString(), null, null);
-        Assert.assertEquals("Should have the correct amount of events (ALL_STARRED)", 6, events.size());
+        assertEquals("Should have the correct amount of events (ALL_STARRED)", 6, events.size());
         events = eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 5, null);
-        Assert.assertEquals("Should have the correct amount of events", 5, events.size());
+        assertEquals("Should have the correct amount of events", 5, events.size());
         Assert.assertFalse("The create org event is the oldest, it should not be returned", events.stream().anyMatch(event -> event.getType().equals(io.dockstore.openapi.client.model.Event.TypeEnum.CREATE_ORG)));
         try {
             eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), EventDAO.MAX_LIMIT + 1, 0);
             Assert.fail("Should've failed because it's over the limit");
         } catch (io.dockstore.openapi.client.ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
+            assertEquals("{\"errors\":[\"query param limit must be less than or equal to " + EventDAO.MAX_LIMIT + "\"]}", e.getMessage());
         }
         try {
             eventsApi.getEvents(EventSearchType.STARRED_ORGANIZATION.toString(), 0, 0);
             Assert.fail("Should've failed because it's under the limit");
         } catch (io.dockstore.openapi.client.ApiException e) {
-            Assert.assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
+            assertEquals("{\"errors\":[\"query param limit must be greater than or equal to 1\"]}", e.getMessage());
         }
     }
 
@@ -1207,21 +1207,21 @@ public class OrganizationIT extends BaseIT {
         // Able to retrieve the collection and organization an entry is part of, even if there aren't any
         EntriesApi entriesApi = new EntriesApi(webClientUser2);
         List<CollectionOrganization> collectionOrganizations = entriesApi.entryCollections(entryId);
-        Assert.assertEquals(0, collectionOrganizations.size());
+        assertEquals(0, collectionOrganizations.size());
 
         // Add tool to collection
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId);
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
 
         // Able to retrieve the collection and organization an entry is part of
         collectionOrganizations = entriesApi.entryCollections(entryId);
-        Assert.assertEquals(1, collectionOrganizations.size());
+        assertEquals(1, collectionOrganizations.size());
         CollectionOrganization collectionOrganization = collectionOrganizations.get(0);
-        Assert.assertEquals(organization.getId(), collectionOrganization.getOrganizationId());
-        Assert.assertEquals(organization.getName(), collectionOrganization.getOrganizationName());
-        Assert.assertEquals(organization.getDisplayName(), collectionOrganization.getOrganizationDisplayName());
-        Assert.assertEquals(collection.getId(), collectionOrganization.getCollectionId());
-        Assert.assertEquals(collection.getName(), collectionOrganization.getCollectionName());
-        Assert.assertEquals(collection.getDisplayName(), collectionOrganization.getCollectionDisplayName());
+        assertEquals(organization.getId(), collectionOrganization.getOrganizationId());
+        assertEquals(organization.getName(), collectionOrganization.getOrganizationName());
+        assertEquals(organization.getDisplayName(), collectionOrganization.getOrganizationDisplayName());
+        assertEquals(collection.getId(), collectionOrganization.getCollectionId());
+        assertEquals(collection.getName(), collectionOrganization.getCollectionName());
+        assertEquals(collection.getDisplayName(), collectionOrganization.getCollectionDisplayName());
 
         // Unable to retrieve the collection and organization of an entry that does not exist
         try {
@@ -1241,12 +1241,11 @@ public class OrganizationIT extends BaseIT {
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId);
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
 
         // There should be two entries for collection with ID 1
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", long.class);
-        assertEquals("There should be 2 entries associated with the collection, there are " + count2, 2, count2);
+        Collection collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        assertEquals(2, collectionById.getEntries().size());
 
         // There should be two ADD_TO_COLLECTION events
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", long.class);
@@ -1268,7 +1267,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be two entries with the collection, there are " + entryCount, 2, entryCount);
 
         // Remove a tool from the collection
-        organizationsApi.deleteEntryFromCollection(organization.getId(), collectionId, entryId);
+        organizationsApi.deleteEntryFromCollection(organization.getId(), collectionId, entryId, null);
 
         // There should be one REMOVE_FROM_COLLECTION events
         final long count4 = testingPostgres
@@ -1276,9 +1275,8 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4, 1, count4);
 
         // There should now be one entry for collection with ID 1
-        final long count5 = testingPostgres
-            .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", long.class);
-        assertEquals("There should be 1 entry associated with the collection, there are " + count5, 1, count5);
+        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        assertEquals(1, collectionById.getEntries().size());
 
         // Try getting all collections
         List<Collection> collections = organizationsApi.getCollectionsFromOrganization(organization.getId(), "");
@@ -1313,6 +1311,25 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to reject an approved collection");
         }
+
+        // version 8 and 9 belong to entryId 2
+        long versionId = 9L;
+
+        // Add tool and specific version to collection
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId);
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
+
+        // There should now be two entries for collection with ID 1 (one with version, one without), 3 entries in total
+        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        assertEquals(3, collectionById.getEntries().size());
+        assertTrue("Collection has the version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> "latest"
+                .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+        assertTrue("Collection still has the non-version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+
+        organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, versionId);
+        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        assertEquals("Two entry remains in collection", 2, collectionById.getEntries().size());
+        assertTrue("Collection has the non-version-specific entry even after deleting the version-specific one", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
 
     }
 
@@ -1572,7 +1589,7 @@ public class OrganizationIT extends BaseIT {
             organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
-            Assert.assertEquals("Organization not found", ex.getMessage());
+            assertEquals("Organization not found", ex.getMessage());
         }
 
         // Approve organization and star it
@@ -1587,7 +1604,7 @@ public class OrganizationIT extends BaseIT {
             organizationsApi.starOrganization(organization.getId(), STAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("You cannot star the organization"));
+            assertTrue(ex.getMessage().contains("You cannot star the organization"));
         }
 
         organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
@@ -1598,7 +1615,7 @@ public class OrganizationIT extends BaseIT {
             organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
             Assert.fail();
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
+            assertTrue(ex.getMessage().contains("You cannot unstar the organization"));
         }
 
         // Test setting/getting starred users
