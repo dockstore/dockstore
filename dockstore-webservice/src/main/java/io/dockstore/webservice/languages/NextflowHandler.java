@@ -57,8 +57,8 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
  */
 public class NextflowHandler extends AbstractLanguageHandler implements LanguageHandlerInterface {
 
+    protected static final Pattern IMPORT_PATTERN = Pattern.compile("^\\s*include.+?from.+?'.+?'", Pattern.DOTALL | Pattern.MULTILINE);
     private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
-    private static final Pattern IMPORT_PATTERN = Pattern.compile("include.+?from.+?'.+?'", Pattern.DOTALL);
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {

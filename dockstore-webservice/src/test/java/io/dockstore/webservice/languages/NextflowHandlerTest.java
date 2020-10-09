@@ -1,5 +1,7 @@
 package io.dockstore.webservice.languages;
 
+import java.util.regex.Matcher;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,5 +17,17 @@ public class NextflowHandlerTest {
                 + "  PREPARE_VCF_FILE;\n" + "  RNASEQ_MAPPING_STAR;\n" + "  RNASEQ_GATK_SPLITNCIGAR; \n" + "  RNASEQ_GATK_RECALIBRATE;\n"
                 + "  RNASEQ_CALL_VARIANTS;\n" + "  POST_PROCESS_VCF;\n" + "  PREPARE_VCF_FOR_ASE;\n" + "  ASE_KNOWNSNPS;\n"
                 + "  group_per_sample } from './modules.nf'", "/main.nf"));
+    }
+
+    @Test
+    public void testImportPattern() {
+        String content = "#include { RNASEQ } from './modules/rnaseq'\", \"/main.nf";
+        Matcher m = NextflowHandler.IMPORT_PATTERN.matcher(content);
+        boolean matches = m.matches();
+        Assert.assertFalse(matches);
+        content = "     include { RNASEQ } from './modules/rnaseq'";
+        m = NextflowHandler.IMPORT_PATTERN.matcher(content);
+        matches = m.matches();
+        Assert.assertTrue(matches);
     }
 }
