@@ -35,6 +35,7 @@ import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -82,6 +83,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
+    private final VersionDAO versionDAO;
 
     public CollectionResource(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
@@ -90,6 +92,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
+        this.versionDAO = new VersionDAO(sessionFactory);
     }
 
     /**
@@ -204,10 +207,16 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
         List<CollectionEntry> collectionServices = workflowDAO.getCollectionServices(collection.getId());
         List<CollectionEntry> collectionTools = workflowDAO.getCollectionTools(collection.getId());
+        List<CollectionEntry> collectionWorkflowsWithVersions = workflowDAO.getCollectionWorkflowsWithVersions(collection.getId());
+        List<CollectionEntry> collectionServicesWithVersions = workflowDAO.getCollectionServicesWithVersions(collection.getId());
+        List<CollectionEntry> collectionToolsWithVersions = workflowDAO.getCollectionToolsWithVersions(collection.getId());
         List<CollectionEntry> collectionEntries = new ArrayList<>();
         collectionEntries.addAll(collectionWorkflows);
         collectionEntries.addAll(collectionServices);
         collectionEntries.addAll(collectionTools);
+        collectionEntries.addAll(collectionWorkflowsWithVersions);
+        collectionEntries.addAll(collectionServicesWithVersions);
+        collectionEntries.addAll(collectionToolsWithVersions);
         collection.setCollectionEntries(collectionEntries);
     }
 
@@ -228,12 +237,18 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     public Collection addEntryToCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
-            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId) {
+            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
+            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
+        if (versionId == null) {
+            // Add the entry to the collection
+            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null);
+        } else {
+            Version version = versionDAO.findById(versionId);
+            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
+        }
 
-        // Add the entry to the collection
-        entryAndCollection.getRight().addEntry(entryAndCollection.getLeft());
 
         // Event for addition
         Organization organization = organizationDAO.findById(organizationId);
@@ -267,12 +282,13 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     public Collection deleteEntryFromCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
-            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId) {
+            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
+            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
         // Remove the entry from the organization
-        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft());
+        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft(), versionId);
 
         // Event for deletion
         Organization organization = organizationDAO.findById(organizationId);
