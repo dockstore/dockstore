@@ -77,4 +77,14 @@
     <changeSet author="nolwarre (generated)" id="notificationsCharLimit">
         <modifyDataType columnName="message" newDataType="varchar(1024)" tableName="notification"/>
     </changeSet>
+    <changeSet id="fixSevenBridgesImageLinks" author="gfjhogue">
+        <sql dbms="postgresql">
+            UPDATE workflowversion
+            SET tooltablejson = REPLACE(tooltablejson, 'hub.docker.com/_/images.sbgenomics.com', 'images.sbgenomics.com')
+            WHERE tooltablejson LIKE '%hub.docker.com/\_/images.sbgenomics.com%';
+            UPDATE workflowversion
+            SET dagjson = REPLACE(dagjson, 'hub.docker.com/_/images.sbgenomics.com', 'images.sbgenomics.com')
+            WHERE dagjson LIKE '%hub.docker.com/\_/images.sbgenomics.com%';
+        </sql>
+    </changeSet>
 </databaseChangeLog>
