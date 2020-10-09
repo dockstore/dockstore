@@ -15,7 +15,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- *  TODO: Use fork with tagged version
  *  TODO: Check paths, it looks like it's relative to the file that imported it but this means it won't be unique
  */
 public class NextflowHandlerIT extends BaseIT {
@@ -38,10 +37,10 @@ public class NextflowHandlerIT extends BaseIT {
      */
     @Test
     public void testProcessImportsRnaseq() {
-        final String githubRepository = "nextflow-io/rnaseq-nf";
+        final String githubRepository = "dockstore-testing/rnaseq-nf";
         WorkflowVersion workflowVersion = new WorkflowVersion();
-        workflowVersion.setName("master");
-        workflowVersion.setReference("master");
+        workflowVersion.setName("2.0.1");
+        workflowVersion.setReference("2.0.1");
         String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
                 .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
@@ -62,10 +61,10 @@ public class NextflowHandlerIT extends BaseIT {
      */
     @Test
     public void testProcessImportsCalliNGS() {
-        final String githubRepository = "CRG-CNAG/CalliNGS-NF";
+        final String githubRepository = "dockstore-testing/CalliNGS-NF";
         WorkflowVersion workflowVersion = new WorkflowVersion();
-        workflowVersion.setName("master");
-        workflowVersion.setReference("master");
+        workflowVersion.setName("1.0.1");
+        workflowVersion.setReference("1.0.1");
         String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
                 .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/nextflow.config");
@@ -87,10 +86,10 @@ public class NextflowHandlerIT extends BaseIT {
      */
     @Test
     public void testProcessImportsSamtools() {
-        final String githubRepository = "nf-core/modules";
+        final String githubRepository = "dockstore-testing/modules";
         WorkflowVersion workflowVersion = new WorkflowVersion();
-        workflowVersion.setName("master");
-        workflowVersion.setReference("master");
+        workflowVersion.setName("0.0.1");
+        workflowVersion.setReference("0.0.1");
         String mainDescriptorContents = sourceCodeRepoInterface.readFile(githubRepository, "software/samtools/flagstat/test/nextflow.config", "master");
         Map<String, SourceFile> stringSourceFileMap = sourceCodeRepoInterface
                 .resolveImports(githubRepository, mainDescriptorContents, DescriptorLanguage.FileType.NEXTFLOW_CONFIG, workflowVersion, "/software/samtools/flagstat/test/nextflow.config");
