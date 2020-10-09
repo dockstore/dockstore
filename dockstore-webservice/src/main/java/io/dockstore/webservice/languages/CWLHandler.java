@@ -65,8 +65,13 @@ import org.yaml.snakeyaml.error.YAMLException;
 /**
  * This class will eventually handle support for understanding CWL
  */
-public class CWLHandler implements LanguageHandlerInterface {
+public class CWLHandler extends AbstractLanguageHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
+
+    @Override
+    protected DescriptorLanguage.FileType getFileType() {
+        return DescriptorLanguage.FileType.DOCKSTORE_CWL;
+    }
 
     @Override
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
@@ -529,31 +534,6 @@ public class CWLHandler implements LanguageHandlerInterface {
                 handleMapValue(repositoryId, parentFilePath, version, imports, listMember, sourceCodeRepoInterface);
             }
         }
-    }
-
-    /**
-     * Grabs a import file from Git based on its absolute path and add to imports mapping
-     * @param repositoryId              identifies the git repository that we wish to use, normally something like 'organization/repo_name`
-     * @param version                   version of the files to get
-     * @param imports                   mapping of filenames to imports
-     * @param givenImportPath           import path from CWL file
-     * @param sourceCodeRepoInterface   used too retrieve imports
-     * @param absoluteImportPath        absolute path of import in git repository
-     */
-    private void handleImport(String repositoryId, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
-        DescriptorLanguage.FileType fileType = DescriptorLanguage.FileType.DOCKSTORE_CWL;
-        // create a new source file
-        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
-        if (fileResponse == null) {
-            LOG.error("Could not read: " + absoluteImportPath);
-            return;
-        }
-        SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(fileType);
-        sourceFile.setContent(fileResponse);
-        sourceFile.setPath(givenImportPath);
-        sourceFile.setAbsolutePath(absoluteImportPath);
-        imports.put(absoluteImportPath, sourceFile);
     }
 
     /**
