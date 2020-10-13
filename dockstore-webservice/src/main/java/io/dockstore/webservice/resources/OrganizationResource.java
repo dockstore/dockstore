@@ -41,6 +41,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -901,6 +902,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(nickname = "addOrganizationAliases", value = "Add aliases linked to a listing in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Organization.class)
     @Operation(operationId = "addOrganizationAliases", summary = "Add aliases linked to a listing in Dockstore.", description = "Add aliases linked to a listing in Dockstore. Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created organization alias", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Organization.class)))
     public Organization addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization to modify.", required = true) @Parameter(description = "Organization to modify.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @Parameter(description = "Comma-delimited list of aliases.", name = "aliases", in = ParameterIn.QUERY, required = true) @QueryParam("aliases") String aliases) {
