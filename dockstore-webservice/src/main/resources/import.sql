@@ -38,3 +38,6 @@ ALTER TABLE workflowversion ADD CONSTRAINT fk_workflowVersionMetadata FOREIGN KE
 
 -- cannot seem to define these due to inheritance
 ALTER TABLE tag ADD CONSTRAINT parentid_constraint FOREIGN KEY(parentid) REFERENCES tool (id) DEFERRABLE INITIALLY DEFERRED;
+
+CREATE UNIQUE INDEX unique_collection_entry ON collection_entry_version USING btree (collection_id, entry_id) WHERE version_id IS NULL;
+CREATE UNIQUE INDEX unique_collection_entry_version ON collection_entry_version USING btree (collection_id, entry_id, version_id) WHERE version_id IS NOT NULL;

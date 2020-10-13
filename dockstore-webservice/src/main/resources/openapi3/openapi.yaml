@@ -98,6 +98,8 @@ components:
         id:
           format: int64
           type: integer
+        versionName:
+          type: string
       type: object
     CollectionOrganization:
       properties:
@@ -5057,6 +5059,12 @@ paths:
           schema:
             format: int64
             type: integer
+        - description: Version ID.
+          in: query
+          name: versionId
+          schema:
+            format: int64
+            type: integer
       responses:
         default:
           content:
@@ -5091,6 +5099,12 @@ paths:
           in: query
           name: entryId
           required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Version ID.
+          in: query
+          name: versionId
           schema:
             format: int64
             type: integer
