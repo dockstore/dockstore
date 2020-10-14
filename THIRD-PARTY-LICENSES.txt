@@ -255,7 +255,7 @@ Lists of 345 third-party dependencies.
      (The Apache Software License, Version 2.0) JSON.simple (com.googlecode.json-simple:json-simple:1.1.1 - http://code.google.com/p/json-simple/)
      (Revised BSD License) JSONLD Java :: Core (com.github.jsonld-java:jsonld-java:0.8.3 - http://github.com/jsonld-java/jsonld-java/jsonld-java/)
      (MIT License) JUL to SLF4J bridge (org.slf4j:jul-to-slf4j:1.7.30 - http://www.slf4j.org)
-     (Eclipse Public License 1.0) JUnit (junit:junit:4.13 - http://junit.org)
+     (Eclipse Public License 1.0) JUnit (junit:junit:4.13.1 - http://junit.org)
      (Apache License 2.0) JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.1.9 - https://metrics.dropwizard.io/metrics-jvm)
      (WDL License https://github.com/openwdl/wdl/blob/master/LICENSE) language-factory-core (org.broadinstitute:language-factory-core_2.12:41 - no url defined)
      (Apache License, Version 2.0) Liquibase (org.liquibase:liquibase-core:3.8.9 - http://www.liquibase.org/liquibase-root/liquibase-dist)
