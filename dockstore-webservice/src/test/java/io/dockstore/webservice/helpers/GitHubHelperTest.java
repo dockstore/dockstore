@@ -12,6 +12,8 @@ import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.RateLimitHandler;
 
+// Ignoring for now, see https://ucsc-cgl.atlassian.net/browse/SEAB-1855
+@Ignore
 public class GitHubHelperTest {
 
     private static final String CODE = "abcdefghijklmnop";
@@ -20,8 +22,6 @@ public class GitHubHelperTest {
 
     // Invalid GitHub authentication should return 400
     @Test
-    // Ignoring for now, see https://ucsc-cgl.atlassian.net/browse/SEAB-1855
-    @Ignore
     public void testGetGitHubAccessToken() {
         try {
             GitHubHelper.getGitHubAccessToken(CODE, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET);
