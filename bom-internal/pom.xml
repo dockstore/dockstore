@@ -52,7 +52,7 @@ POM as their parent.
         <openapi-annotations-version>2.1.1</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
         <jersey-version>2.31</jersey-version>
-        <junit-version>4.13</junit-version>
+        <junit-version>4.13.1</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>2.5.25</aws.version>
         <powermock.version>2.0.4</powermock.version>
