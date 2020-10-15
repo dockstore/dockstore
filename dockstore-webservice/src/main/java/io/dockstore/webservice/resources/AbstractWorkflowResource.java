@@ -1,6 +1,7 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
@@ -166,31 +168,34 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
-        // Then copy over content that changed
-        for (WorkflowVersion version : newWorkflow.getWorkflowVersions()) {
-            // skip frozen versions
-            WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
-            if (existingVersionMap.containsKey(version.getName())) {
-                if (workflowVersionFromDB.isFrozen()) {
-                    continue;
-                }
-                workflowVersionFromDB.update(version);
-            } else {
-                // attach real workflow
-                workflow.addWorkflowVersion(version);
+        // Then copy over content that changed (ignore versions that have not changed)
+        newWorkflow.getWorkflowVersions().stream()
+                .filter(workflowVersion -> !Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID()))
+                .forEach(version -> {
+                    WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
 
-                final long workflowVersionId = workflowVersionDAO.create(version);
-                workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
-                this.eventDAO.createAddTagToEntryEvent(user, workflow, workflowVersionFromDB);
-                workflow.getWorkflowVersions().add(workflowVersionFromDB);
-                existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
-            }
-            workflowVersionFromDB.setToolTableJson(null);
-            workflowVersionFromDB.setDagJson(null);
+                    // skip frozen versions
+                    if (existingVersionMap.containsKey(version.getName())) {
+                        if (workflowVersionFromDB.isFrozen()) {
+                            return;
+                        }
+                        workflowVersionFromDB.update(version);
+                    } else {
+                        // attach real workflow
+                        workflow.addWorkflowVersion(version);
 
-            // Update sourcefiles
-            updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
-        }
+                        final long workflowVersionId = workflowVersionDAO.create(version);
+                        workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
+                        this.eventDAO.createAddTagToEntryEvent(user, workflow, workflowVersionFromDB);
+                        workflow.getWorkflowVersions().add(workflowVersionFromDB);
+                        existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
+                    }
+                    workflowVersionFromDB.setToolTableJson(null);
+                    workflowVersionFromDB.setDagJson(null);
+
+                    // Update sourcefiles
+                    updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
+                });
     }
 
     /**
@@ -322,7 +327,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             return workflows;
-        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException ex) {
+        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
@@ -383,7 +388,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final SourceFile dockstoreYml) {
         try {
             List<Workflow> updatedWorkflows = new ArrayList<>();
+            final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
+                if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                    continue;
+                }
+
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
 
@@ -411,6 +421,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
+            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
+                return updatedServices;
+            }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);

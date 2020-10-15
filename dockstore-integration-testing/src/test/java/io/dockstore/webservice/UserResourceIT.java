@@ -244,7 +244,7 @@ public class UserResourceIT extends BaseIT {
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
         // refresh targeted
-        workflowsApi.refresh(workflowByPath.getId());
+        workflowsApi.refresh(workflowByPath.getId(), false);
 
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
@@ -351,7 +351,7 @@ public class UserResourceIT extends BaseIT {
 
         // Try making a repo undeletable
         ghWorkflow = workflowsApi.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
-        workflowsApi.refresh(ghWorkflow.getId());
+        workflowsApi.refresh(ghWorkflow.getId(), false);
         repositories = userApi.getUserOrganizationRepositories(SourceControl.GITHUB.name(), "dockstoretesting");
         assertTrue(repositories.size() > 0);
         assertTrue(
@@ -418,7 +418,7 @@ public class UserResourceIT extends BaseIT {
 
         // Update an entry
         Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
-        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId());
+        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
         Assert.assertTrue(refreshedWorkflow.getDescription().contains("To demonstrate the checker workflow proposal"));

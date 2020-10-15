@@ -324,7 +324,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public String getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+    public Optional<String> getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
 

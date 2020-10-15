@@ -83,7 +83,9 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -369,7 +371,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -398,9 +400,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
             if (ref != null) {
-                WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
-                    repository, null, versionName);
-                if (version != null) {
+                final String branchName = ref.getLeft();
+                final Date lastModified = ref.getMiddle();
+                final String commitId = ref.getRight();
+                if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+                    WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
+                            repository, null, versionName);
+                    if (version != null) {
+                        workflow.addWorkflowVersion(version);
+                    }
+                } else {
+                    // Version didn't change, but we don't want to delete
+                    // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+                    LOG.info(gitUsername + ": Skipping GitHub reference: " + ref.toString());
+                    WorkflowVersion version = new WorkflowVersion();
+                    version.setName(branchName);
+                    version.setReference(branchName);
+                    version.setLastModified(lastModified);
+                    version.setCommitID(SKIP_COMMIT_ID);
                     workflow.addWorkflowVersion(version);
                 }
             }
@@ -488,7 +505,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupWorkflowVersionsHelper(Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml, Optional<String> versionName) {
-        LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
+        LOG.info(gitUsername + ": Looking at GitHub reference: " + ref.toString());
         // Initialize the workflow version
         WorkflowVersion version = initializeWorkflowVersion(ref.getLeft(), existingWorkflow, existingDefaults);
         version.setLastModified(ref.getMiddle());
@@ -754,20 +771,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (CustomWebApplicationException ex) {
             throw new CustomWebApplicationException("Could not find repository " + repositoryId + ".", LAMBDA_FAILURE);
         }
-        String dockstoreYmlContent = this.readFileFromRepo(DOCKSTORE_YML_PATH, gitReference, repository);
-        if (dockstoreYmlContent != null) {
-            // Create file for .dockstore.yml
-            SourceFile dockstoreYml = new SourceFile();
-            dockstoreYml.setContent(dockstoreYmlContent);
-            dockstoreYml.setPath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setAbsolutePath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
+        String dockstoreYmlContent = null;
+        for (String dockstoreYmlPath : DOCKSTORE_YML_PATHS) {
+            dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
+            if (dockstoreYmlContent != null) {
+                // Create file for .dockstore.yml
+                SourceFile dockstoreYml = new SourceFile();
+                dockstoreYml.setContent(dockstoreYmlContent);
+                dockstoreYml.setPath(dockstoreYmlPath);
+                dockstoreYml.setAbsolutePath(dockstoreYmlPath);
+                dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
 
-            return dockstoreYml;
-        } else {
-            // TODO: https://github.com/dockstore/dockstore/issues/3239
-            throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
+                return dockstoreYml;
+            }
         }
+        // TODO: https://github.com/dockstore/dockstore/issues/3239
+        throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {

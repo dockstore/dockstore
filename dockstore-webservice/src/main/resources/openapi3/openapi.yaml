@@ -669,6 +669,7 @@ components:
           $ref: '#/components/schemas/Organization'
         role:
           enum:
+            - ADMIN
             - MAINTAINER
             - MEMBER
           type: string
@@ -1607,6 +1608,8 @@ components:
             - KUBERNETES
             - HELM
           type: string
+        synced:
+          type: boolean
         valid:
           type: boolean
         validations:
@@ -1651,7 +1654,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.1
+  version: 1.9.2-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -2418,7 +2421,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
       security:
         - bearer: []
@@ -4444,7 +4447,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
       security:
         - bearer: []
@@ -4572,7 +4575,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
       security:
         - bearer: []
@@ -5192,6 +5195,7 @@ paths:
           required: true
           schema:
             enum:
+              - ADMIN
               - MAINTAINER
               - MEMBER
             type: string
@@ -5231,6 +5235,7 @@ paths:
           required: true
           schema:
             enum:
+              - ADMIN
               - MAINTAINER
               - MEMBER
             type: string
@@ -6806,6 +6811,10 @@ paths:
           schema:
             default: false
             type: boolean
+        - in: query
+          name: versionName
+          schema:
+            type: string
       responses:
         default:
           content:
@@ -7320,6 +7329,11 @@ paths:
           schema:
             format: int64
             type: integer
+        - in: query
+          name: hardRefresh
+          schema:
+            default: true
+            type: boolean
       responses:
         default:
           content:
@@ -7347,6 +7361,11 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: hardRefresh
+          schema:
+            default: true
+            type: boolean
       responses:
         default:
           content:

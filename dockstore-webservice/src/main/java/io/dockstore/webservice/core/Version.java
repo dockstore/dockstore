@@ -73,7 +73,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 // Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id")
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -92,11 +93,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1)
-    protected String reference;
+    private String reference;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
-    protected String name;
+    private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parentid", nullable = false)
