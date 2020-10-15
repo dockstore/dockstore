@@ -3918,11 +3918,20 @@ paths:
           in: query
           name: toolClass
           schema:
+            enum:
+              - CommandLineTool
+              - Workflow
             type: string
         - description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
           in: query
           name: descriptorType
           schema:
+            enum:
+              - CWL
+              - WDL
+              - NFL
+              - SERVICE
+              - GALAXY
             type: string
         - description: The image registry that contains the image.
           in: query
@@ -4653,7 +4662,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
