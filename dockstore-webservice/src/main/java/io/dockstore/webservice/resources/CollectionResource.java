@@ -332,7 +332,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
         Collection collection = getAndCheckCollection(Optional.of(organizationId), collectionId, user);
 
-        // Check that user is a member of the organization
+        // Check that user is an admin or maintainer of the organization
         getOrganizationAndCheckModificationRights(user, collection);
         return new ImmutablePair<>(entry, collection);
     }
@@ -423,9 +423,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection to register.", required = true) @Parameter(description = "Collection to register.", name = "collection", required = true) Collection collection) {
 
-        // First check if the organization exists
-        boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.getId(), organizationDAO);
-        if (!doesOrgExist) {
+        // First check if the organization exists and that the user is an admin or maintainer
+        boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organizationId, user.getId(), organizationDAO);
+        if (!isUserAdminOrMaintainer) {
             String msg = "Organization not found.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
@@ -518,17 +518,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Collections's description in markdown.", required = true) @Parameter(description = "Collections's description in markdown.", name = "description", required = true) String description) {
-        Organization oldOrganization = organizationDAO.findById(organizationId);
-
-        // Ensure that the user is a member of the organization
-        OrganizationUser organizationUser = OrganizationResource.getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
-            String msg = "You do not have permissions to update the collection.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
-        }
-
         Collection oldCollection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
+        Organization oldOrganization = getOrganizationAndCheckModificationRights(user, oldCollection);
 
         // Update collection
         oldCollection.setDescription(description);
@@ -561,7 +552,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Check that the user has rights to the organization
         OrganizationUser organizationUser = OrganizationResource.getUserOrgRole(organization, user.getId());
-        if (organizationUser == null) {
+        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
             String msg = "User does not have rights to modify a collection from this organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);

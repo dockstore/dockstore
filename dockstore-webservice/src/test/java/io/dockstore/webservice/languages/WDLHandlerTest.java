@@ -139,11 +139,16 @@ public class WDLHandlerTest {
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
 
-        final String toolsStr = wdlHandler
+        final Optional<String> toolsStr = wdlHandler
                 .getContent(MAIN_WDL, content, new HashSet<SourceFile>(sourceFileMap.values()), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-        final Gson gson = new Gson();
-        final Object[] tools = gson.fromJson(toolsStr, Object[].class);
-        Assert.assertEquals("There should be 227 tools", 227, tools.length);
+        if (toolsStr.isPresent()) {
+            final Gson gson = new Gson();
+            final Object[] tools = gson.fromJson(toolsStr.get(), Object[].class);
+            Assert.assertEquals("There should be 227 tools", 227, tools.length);
+        } else {
+            Assert.fail("Should be able to get tool json");
+        }
+
     }
 
     private String getGatkSvMainDescriptorContent() throws IOException {
@@ -210,7 +215,7 @@ public class WDLHandlerTest {
 
         @Override
         public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
             return null;
         }
 
