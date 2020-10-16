@@ -281,7 +281,6 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Ensure that the user is a member of the organization
         boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(oldOrganization, user.getId());
-        OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
         if (!isUserAdminOrMaintainer) {
             String msg = "You do not have permissions to update the organization.";
             LOG.info(msg);
@@ -543,7 +542,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // Ensure that the user is an admin or maintainer of the organization
         OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER && (!user.isCurator() && !user.getIsAdmin())) {
+        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER || (!user.isCurator() && !user.getIsAdmin())) {
             String msg = "You do not have permissions to update the organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
