@@ -546,6 +546,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     }
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
+        services.forEach(service -> Hibernate.initialize(service.getWorkflowVersions()));
         EntryVersionHelper.stripContent(services, this.userDAO);
         return services;
     }

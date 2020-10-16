@@ -201,7 +201,7 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
                 .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
     }
 
@@ -242,14 +242,14 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
             .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
         // refresh individual workflow
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -273,7 +273,7 @@ public class BasicIT extends BaseIT {
 
         // refresh without github token
         try {
-            workflow = workflowsApi.refresh(workflow.getId());
+            workflow = workflowsApi.refresh(workflow.getId(), false);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("No GitHub or Google token found"));
         }

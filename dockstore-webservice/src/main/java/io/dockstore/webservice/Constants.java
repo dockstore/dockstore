@@ -28,6 +28,7 @@ public final class Constants {
             + " authentication can be provided for restricted workflows";
     public static final String DOCKSTORE_YML_PATH = "/.dockstore.yml";
     public static final List<String> DOCKSTORE_YML_PATHS = List.of(DOCKSTORE_YML_PATH, "/.github/.dockstore.yml");
+    public static final String SKIP_COMMIT_ID = "skip";
 
     private Constants() {
         // not called

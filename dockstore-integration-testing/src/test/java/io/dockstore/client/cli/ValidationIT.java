@@ -144,58 +144,58 @@ public class ValidationIT extends BaseIT {
         // Register a workflow
         Workflow workflow = workflowsApi
             .manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.wdl", "testname", "wdl", "/test.json");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
         // change to empty wdl - should be invalid
         workflow.setWorkflowPath("empty.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
 
         // change to missing import - should be invalid
         workflow.setWorkflowPath("/missingImport.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
 
         // change to missing workflow section - should be invalid
         workflow.setWorkflowPath("/missingWorkflowSection.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
 
         // change to valid tool - should be valid
         workflow.setWorkflowPath("/validTool.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
         // change back to valid workflow - should be valid
         workflow.setWorkflowPath("/validWorkflow.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
         // add invalid test json - should be invalid
         List<String> testParameterFiles = new ArrayList<>();
         testParameterFiles.add("/invalidJson.json");
         workflowsApi.addTestParameterFiles(workflow.getId(), testParameterFiles, "", "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
         workflowsApi.deleteTestParameterFiles(workflow.getId(), testParameterFiles, "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // add valid test json - should again be valid
         testParameterFiles = new ArrayList<>();
         testParameterFiles.add("/valid.json");
         workflowsApi.addTestParameterFiles(workflow.getId(), testParameterFiles, "", "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
     }
 
@@ -212,51 +212,51 @@ public class ValidationIT extends BaseIT {
         workflowsApi.getApiClient().setDebugging(true);
         Workflow workflow = workflowsApi
             .manualRegister("GitHub", "DockstoreTestUser2/TestEntryValidation", "/validWorkflow.cwl", "testname", "cwl", "/test.json");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
         // change to empty cwl - should be invalid
         workflow.setWorkflowPath("/empty.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
 
         // change to wrong version - should be invalid
         workflow.setWorkflowPath("/wrongVersion.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
 
         // change to tool - should be invalid
         workflow.setWorkflowPath("/validTool.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
 
         // change back to valid workflow - should be valid
         workflow.setWorkflowPath("/validWorkflow.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
         // add invalid test json - should be invalid
         List<String> testParameterFiles = new ArrayList<>();
         testParameterFiles.add("/invalidJson.json");
         workflowsApi.addTestParameterFiles(workflow.getId(), testParameterFiles, "", "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertFalse(isWorkflowVersionValid(workflow, "master"));
         workflowsApi.deleteTestParameterFiles(workflow.getId(), testParameterFiles, "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // add valid test json - should again be valid
         testParameterFiles = new ArrayList<>();
         testParameterFiles.add("/valid.json");
         workflowsApi.addTestParameterFiles(workflow.getId(), testParameterFiles, "", "master");
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
     }
 

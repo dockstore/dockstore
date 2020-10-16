@@ -684,6 +684,7 @@ components:
           $ref: '#/components/schemas/Organization'
         role:
           enum:
+            - ADMIN
             - MAINTAINER
             - MEMBER
           type: string
@@ -1744,6 +1745,8 @@ components:
             - KUBERNETES
             - HELM
           type: string
+        synced:
+          type: boolean
         valid:
           type: boolean
         validations:
@@ -4813,7 +4816,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Organization'
           description: default response
       security:
         - bearer: []
@@ -5423,6 +5426,7 @@ paths:
           required: true
           schema:
             enum:
+              - ADMIN
               - MAINTAINER
               - MEMBER
             type: string
@@ -5462,6 +5466,7 @@ paths:
           required: true
           schema:
             enum:
+              - ADMIN
               - MAINTAINER
               - MEMBER
             type: string
@@ -6969,6 +6974,10 @@ paths:
           schema:
             default: false
             type: boolean
+        - in: query
+          name: versionName
+          schema:
+            type: string
       responses:
         default:
           content:
@@ -7519,6 +7528,11 @@ paths:
           schema:
             format: int64
             type: integer
+        - in: query
+          name: hardRefresh
+          schema:
+            default: true
+            type: boolean
       responses:
         default:
           content:
@@ -7546,6 +7560,11 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: hardRefresh
+          schema:
+            default: true
+            type: boolean
       responses:
         default:
           content:
