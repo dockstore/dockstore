@@ -5,12 +5,15 @@ import java.io.IOException;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.LicenseInformation;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.RateLimitHandler;
 
+// Ignoring for now, see https://ucsc-cgl.atlassian.net/browse/SEAB-1855
+@Ignore
 public class GitHubHelperTest {
 
     private static final String CODE = "abcdefghijklmnop";
