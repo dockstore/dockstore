@@ -95,10 +95,13 @@ public class CacheConfigManager {
      */
     public void initCache() {
         final int maxSize = 100;
+        // GitHub token has a 1 hour expiration; leave a generous gap
+        // so we don't fetch a token that may expire as we use it
+        final int timeOutInMinutes = 58;
         if (installationAccessTokenCache == null) {
             installationAccessTokenCache = CacheBuilder.newBuilder()
                     .maximumSize(maxSize)
-                    .expireAfterWrite(1, TimeUnit.HOURS)
+                    .expireAfterWrite(timeOutInMinutes, TimeUnit.MINUTES)
                     .recordStats()
                     .build(new CacheLoader<>() {
                         @Override

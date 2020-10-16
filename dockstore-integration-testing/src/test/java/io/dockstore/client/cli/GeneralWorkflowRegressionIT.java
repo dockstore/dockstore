@@ -300,13 +300,13 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
                 "/test.json");
 
         // Publish github workflow
-        Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
+        Workflow workflow = workflowApi.refresh(githubWorkflow.getId(), false);
 
         Assert.assertTrue("Description should fall back to README file.", workflow.getDescription().contains("this is a readme file"));
         //update the default workflow path to be hello.cwl , the workflow path in workflow versions should also be changes
         workflow.setWorkflowPath("/hello.cwl");
         workflowApi.updateWorkflowPath(githubWorkflow.getId(), workflow);
-        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.refresh(githubWorkflow.getId(), false);
 
         // Set up DB
 

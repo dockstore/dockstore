@@ -63,7 +63,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
 
         // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+        Workflow refresh = workflowApi.refresh(githubWorkflow.getId(), false);
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
         Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
@@ -96,22 +96,26 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     @Test
     public void testWorkflowToolCWL() throws IOException, ApiException {
+        // https://github.com/DockstoreTestUser2/test_workflow_cwl
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
         // Test: normal cwl workflow DAG
-        // Return: JSON string with two tools, only one tool has a docker requirement
+        // Return: JSON string with two tools, in grep-and-count.cwl and arguments.cwl
 
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one tool with docker image, has " + countNode, 1, countNode);
+        Assert.assertEquals("JSON should have two tools with docker images, has " + countNode, 2, countNode);
         Assert.assertFalse("tool should not have untar since it has no docker image", strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
             "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","
                 + "\"link\":\"https://hub.docker.com/_/java\""));
+        Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
+                "\"id\":\"wrkflow\"," + "\"file\":\"grep-and-count.cwl\"," + "\"docker\":\"java:7\","
+                        + "\"link\":\"https://hub.docker.com/_/java\""));
 
     }
 
@@ -188,10 +192,10 @@ public class ToolsWorkflowTestIT extends BaseIT {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
-        // Test: "run: {import:.....}"
+        // Test: "run: {$import:.....}"
         // Return: JSON string contains the two tools, both have docker requirement
 
-        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "master");
+        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "update-to-valid-cwl");
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);

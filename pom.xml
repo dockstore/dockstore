@@ -58,7 +58,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.9.1</tag>
+        <tag>1.9.2</tag>
     </scm>
 
     <repositories>
