@@ -161,8 +161,8 @@ public class GalaxyPluginIT {
         Workflow galaxyWorkflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/galaxy-workflow-dockstore-example-1", "/Dockstore.gxwf.yml",
                         "", DescriptorLanguage.GXFORMAT2.getShortName(), "");
-        workflowApi.refresh(wdlWorkflow.getId());
-        workflowApi.refresh(galaxyWorkflow.getId());
+        workflowApi.refresh(wdlWorkflow.getId(), false);
+        workflowApi.refresh(galaxyWorkflow.getId(), false);
         workflowApi.publish(wdlWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
         workflowApi.publish(galaxyWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
 
