@@ -26,6 +26,8 @@ workflows:
     jobs:
       - build:
           filters:
+            tags:
+              only: /.*/
             branches:
               ignore:
                 - gh-pages           
@@ -242,6 +244,7 @@ jobs:
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
+<<<<<<< HEAD
 commands:
   setup_postgres:
     steps:    
@@ -315,4 +318,3 @@ commands:
           name: Wait for ES
           command: |
             wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true      
-
