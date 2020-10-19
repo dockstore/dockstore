@@ -98,6 +98,9 @@ jobs:
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             docker login -u=$QUAY_USERNAME -p=$QUAY_PASSWORD quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
+    tags:
+      only: /.*/
+      # when merging wth develop will need to move this to the top near workflows:
     branches:
       ignore:
         - gh-pages
