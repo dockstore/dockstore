@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.Comparator;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,7 +28,6 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -44,6 +44,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "fileformat")
 @NamedQuery(name = "io.dockstore.webservice.core.FileFormat.findByFileFormatValue", query = "SELECT l FROM FileFormat l WHERE l.value = :fileformatValue")
 public class FileFormat implements Comparable<FileFormat> {
+
+    private static final Comparator<String> NULL_SAFE_STRING_COMPARATOR = Comparator
+            .nullsFirst(String::compareToIgnoreCase);
+
+    private static final Comparator<FileFormat> FILE_FORMAT_COMPARATOR = Comparator
+            .comparing(FileFormat::getValue, NULL_SAFE_STRING_COMPARATOR)
+            .thenComparing(FileFormat::getValue, NULL_SAFE_STRING_COMPARATOR);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -90,6 +97,6 @@ public class FileFormat implements Comparable<FileFormat> {
 
     @Override
     public int compareTo(FileFormat that) {
-        return ComparisonChain.start().compare(this.value, that.value).result();
+        return FILE_FORMAT_COMPARATOR.compare(this, that);
     }
 }

@@ -118,7 +118,7 @@ public class ExtendedTRSIT extends BaseIT {
             workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
 
             // refresh and publish the workflow
-            final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+            final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
             workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         }
 
@@ -159,7 +159,7 @@ public class ExtendedTRSIT extends BaseIT {
             // refresh as the owner
             WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
             // refresh should not destroy verification data
-            workflowApi.refresh(workflowByPathGithub.getId());
+            workflowApi.refresh(workflowByPathGithub.getId(), false);
             Map<String, Object> stringObjectMap = extendedGa4GhApi
                 .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0",
                     "new metadata", true);

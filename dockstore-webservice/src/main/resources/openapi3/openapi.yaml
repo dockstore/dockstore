@@ -684,6 +684,7 @@ components:
           $ref: '#/components/schemas/Organization'
         role:
           enum:
+            - ADMIN
             - MAINTAINER
             - MEMBER
           type: string
@@ -1744,6 +1745,8 @@ components:
             - KUBERNETES
             - HELM
           type: string
+        synced:
+          type: boolean
         valid:
           type: boolean
         validations:
@@ -5423,6 +5426,7 @@ paths:
           required: true
           schema:
             enum:
+              - ADMIN
               - MAINTAINER
               - MEMBER
             type: string
@@ -5462,6 +5466,7 @@ paths:
           required: true
           schema:
             enum:
+              - ADMIN
               - MAINTAINER
               - MEMBER
             type: string
@@ -6382,102 +6387,6 @@ paths:
         - bearer: []
       tags:
         - users
-  /users/{userId}/tokens/dockstore:
-    get:
-      description: Get Dockstore tokens with user id.
-      operationId: getDockstoreUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/github.com:
-    get:
-      description: Get Github tokens with user id.
-      operationId: getGithubUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/gitlab.com:
-    get:
-      description: Get Gitlab tokens with user id.
-      operationId: getGitlabUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/quay.io:
-    get:
-      description: Get Quay tokens with user id.
-      operationId: getQuayUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
   /users/{userId}/workflows:
     get:
       description: List all workflows owned by the authenticated user.
@@ -7065,6 +6974,10 @@ paths:
           schema:
             default: false
             type: boolean
+        - in: query
+          name: versionName
+          schema:
+            type: string
       responses:
         default:
           content:
@@ -7615,6 +7528,11 @@ paths:
           schema:
             format: int64
             type: integer
+        - in: query
+          name: hardRefresh
+          schema:
+            default: true
+            type: boolean
       responses:
         default:
           content:
@@ -7642,6 +7560,11 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: hardRefresh
+          schema:
+            default: true
+            type: boolean
       responses:
         default:
           content:

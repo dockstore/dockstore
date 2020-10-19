@@ -3690,6 +3690,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       - name: "userId"
@@ -3726,6 +3727,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       - name: "userId"
@@ -4560,106 +4562,6 @@ paths:
               $ref: "#/definitions/Token"
       security:
       - BEARER: []
-  /users/{userId}/tokens/dockstore:
-    get:
-      tags:
-      - "users"
-      summary: "Get Dockstore tokens with user id."
-      description: ""
-      operationId: "getDockstoreUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
-  /users/{userId}/tokens/github.com:
-    get:
-      tags:
-      - "users"
-      summary: "Get Github tokens with user id."
-      description: ""
-      operationId: "getGithubUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
-  /users/{userId}/tokens/gitlab.com:
-    get:
-      tags:
-      - "users"
-      summary: "Get Gitlab tokens with user id."
-      description: ""
-      operationId: "getGitlabUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
-  /users/{userId}/tokens/quay.io:
-    get:
-      tags:
-      - "users"
-      summary: "Get Quay tokens with user id."
-      description: ""
-      operationId: "getQuayUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
   /users/{userId}/workflows:
     get:
       tags:
@@ -5289,6 +5191,11 @@ paths:
         required: false
         type: "boolean"
         default: false
+      - name: "versionName"
+        in: "query"
+        description: "Version name"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -5816,6 +5723,12 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "hardRefresh"
+        in: "query"
+        description: "completely refresh all versions, even if they have not changed"
+        required: false
+        type: "boolean"
+        default: true
       responses:
         200:
           description: "successful operation"
@@ -5844,6 +5757,12 @@ paths:
         description: "version"
         required: true
         type: "string"
+      - name: "hardRefresh"
+        in: "query"
+        description: "completely refresh version, even if it has not changed"
+        required: false
+        type: "boolean"
+        default: true
       responses:
         200:
           description: "successful operation"
@@ -7287,6 +7206,7 @@ definitions:
         type: "string"
         description: "The role of the user in the organization"
         enum:
+        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       user:
@@ -8640,6 +8560,11 @@ definitions:
         - "SWARM"
         - "KUBERNETES"
         - "HELM"
+      synced:
+        type: "boolean"
+        position: 105
+        description: "Whether or not the version has been refreshed since its last\
+          \ edit on Dockstore."
     description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"

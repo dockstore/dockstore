@@ -38,7 +38,7 @@ public class OrganizationUser implements Serializable {
     private Organization organization;
 
     public enum Role {
-        MAINTAINER, MEMBER
+        ADMIN, MAINTAINER, MEMBER
     }
 
     @Enumerated(EnumType.STRING)

@@ -67,7 +67,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
 
         // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+        Workflow refresh = workflowApi.refresh(githubWorkflow.getId(), false);
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
         Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
@@ -225,11 +225,11 @@ public class DAGWorkflowTestIT extends BaseIT {
     public void testDAGImportSyntax() throws ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
-        // Branch: master
+        // Branch: update-to-valid-cwl
         // Test: "run: {import:.....}"
         // Return: DAG with two nodes and an edge connecting it (nodes:{{rev},{sorted}}, edges:{rev->sorted})
 
-        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "master");
+        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "update-to-valid-cwl");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);

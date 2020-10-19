@@ -53,6 +53,8 @@ import org.apache.commons.io.FilenameUtils;
     "name" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
+        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastmodified DESC")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -78,6 +80,10 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Column(nullable = false, columnDefinition = "boolean default true")
     @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
     private boolean isLegacyVersion = true;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
+    private boolean synced = false;
 
     /**
      * In theory, this should be in a ServiceVersion.
@@ -126,6 +132,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         super.setReference(workflowVersion.getReference());
         workflowPath = workflowVersion.getWorkflowPath();
         lastModified = workflowVersion.getLastModified();
+        synced = workflowVersion.isSynced();
     }
 
     public void clone(WorkflowVersion tag) {
@@ -225,6 +232,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setToolTableJson(final String toolTableJson) {
         this.toolTableJson = toolTableJson;
+    }
+
+    public boolean isSynced() {
+        return synced;
+    }
+
+    public void setSynced(boolean synced) {
+        this.synced = synced;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "

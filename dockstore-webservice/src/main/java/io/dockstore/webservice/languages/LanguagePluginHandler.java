@@ -167,13 +167,13 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
+    public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
         ToolDAO dao) {
 
         if (type == Type.DAG && minimalLanguageInterface instanceof CompleteLanguageInterface) {
             final Map<String, Object> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
                 .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
-            return gson.toJson(maps);
+            return Optional.of(gson.toJson(maps));
         } else if (type == Type.TOOLS &&  minimalLanguageInterface instanceof CompleteLanguageInterface) {
             // TODO: hook up tools here for Galaxy
             final List<CompleteLanguageInterface.RowData> rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
@@ -186,8 +186,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 oldRow.put("link", row.link == null ? "" : row.link.toString());
                 return oldRow;
             }).collect(Collectors.toList());
-            return gson.toJson(collect);
+            return Optional.of(gson.toJson(collect));
         }
-        return "";
+        return Optional.empty();
     }
 }
