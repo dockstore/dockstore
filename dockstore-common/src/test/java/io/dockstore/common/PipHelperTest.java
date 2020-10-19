@@ -12,6 +12,10 @@ public class PipHelperTest {
     public void convertSemVerToAvailableVersion() {
         Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion(PipHelper.DEV_SEM_VER));
         Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion(null));
+        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("9000.9000.9000"));
+        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.10.0-snapshot"));
+        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.10.1"));
+        Assert.assertEquals("1.10.0", PipHelper.convertSemVerToAvailableVersion("1.10.0"));
         Assert.assertEquals("1.7.0", PipHelper.convertSemVerToAvailableVersion("1.7.0-snapshot"));
         Assert.assertEquals("1.7.0", PipHelper.convertSemVerToAvailableVersion("1.7.0"));
         Assert.assertEquals("1.6.0", PipHelper.convertSemVerToAvailableVersion("1.6.0-snapshot"));
