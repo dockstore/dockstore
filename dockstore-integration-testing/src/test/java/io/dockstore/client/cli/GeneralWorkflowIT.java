@@ -55,12 +55,11 @@ import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_F
 import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
 import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertFalse;
-
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * This test suite tests various workflow related processes.
@@ -516,6 +515,8 @@ public class GeneralWorkflowIT extends BaseIT {
         Workflow workflow = workflowsApi
                 .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl",
                         "/test.json");
+        SourceControl.GITHUB.getFriendlyName();
+        DescriptorLanguage.CWL.toString();
 
         //update the forumUrl to hello.com
         workflow.setForumUrl("hello.com");
