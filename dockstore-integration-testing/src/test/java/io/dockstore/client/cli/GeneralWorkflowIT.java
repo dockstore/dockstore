@@ -600,11 +600,10 @@ public class GeneralWorkflowIT extends BaseIT {
         usersApi.getUser();
 
         Workflow workflow = workflowsApi
-                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl",
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
+                        "test-update-workflow", DescriptorLanguage.CWL.toString(),
                         "/test.json");
-        SourceControl.GITHUB.getFriendlyName();
-        DescriptorLanguage.CWL.toString();
-
+        
         //update the forumUrl to hello.com
         workflow.setForumUrl("hello.com");
         workflowsApi.updateWorkflow(workflow.getId(), workflow);
