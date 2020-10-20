@@ -608,7 +608,7 @@ public class GeneralWorkflowIT extends BaseIT {
         //update the forumUrl to hello.com
         workflow.setForumUrl("hello.com");
         workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId());
+        workflowsApi.refresh(workflow.getId(), false);
 
         //check the workflow's forumUrl is hello.com
         final String updatedForumUrl = testingPostgres
