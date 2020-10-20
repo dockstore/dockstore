@@ -701,9 +701,10 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
-     * Tests that an Organization maintainer can request a user to join.
-     * The user can then join the Organization as a member.
-     * They can edit the Organization metadata.
+     * Tests that an Organization admin can request a user to join.
+     * The user can then join the Organization as a maintainer or member.
+     * Maintainers can edit the Organization metadata.
+     * Members cannot edit anything.
      * Change role to maintainer.
      * Then the user can be removed by the maintainer.
      */
@@ -736,7 +737,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals("Should have no memberships, has " + memberships.size(), 0, memberships.size());
 
         // Request that other user joins
-        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), userId, orgId, "");
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId, "");
 
         // There should be one ADD_USER_TO_ORG event
         final long count2 = testingPostgres.runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", long.class);
@@ -783,7 +784,7 @@ public class OrganizationIT extends BaseIT {
         final long count6 = testingPostgres.runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", long.class);
         assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count6, 1, count6);
 
-        // Maintainer should be able to change the members role to maintainer
+        // Admin should be able to change the members role to maintainer
         organizationsApiUser2.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId);
 
         // There should be one MODIFY_USER_ROLE_ORG event
@@ -810,8 +811,116 @@ public class OrganizationIT extends BaseIT {
         assertNull("Other user should not be able to update the Organization.", organization);
     }
 
+    @Test
+    public void testMembersArePowerless() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Setup other user
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
+        UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
+
+        // Create org, invite user as member, and accept invitation
+        Organization organization = createOrg(organizationsApiUser2);
+        long orgId = organization.getId();
+        long userId = 1;
+        long otherUserId = 2;
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), otherUserId, orgId, "");
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
+
+        // Should not be able to update organization information
+        String email = "hello@email.com";
+        organization.setEmail(email);
+        try {
+            organization = organizationsApiOtherUser.updateOrganization(organization, orgId);
+            Assert.fail("Should not be able to update organization information");
+        } catch (ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        // Should not be able to invite another user
+        long thirdUser = 3;
+        try {
+            organizationsApiOtherUser.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), thirdUser, orgId, "");
+            Assert.fail("Member should not be able to add a user to organization");
+        } catch (ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        // Should not be able to update another user's role
+        try {
+            organizationsApiOtherUser.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId);
+            Assert.fail(" Should not be able to update another user's role");
+        } catch (ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        // Should not be able to create a collection
+        Collection stubCollection = stubCollectionObject();
+        try {
+            Collection collection = organizationsApiOtherUser.createCollection(orgId, stubCollection);
+            Assert.fail("Member should not be able to add a user to organization");
+        } catch (ApiException ex) {
+            Assert.assertEquals("Organization not found.", ex.getMessage());
+        }
+
+        // Should not be able to update a collection
+        Collection collection = organizationsApiUser2.createCollection(orgId, stubCollection);
+        collection.setDescription("description");
+        try {
+            collection = organizationsApiOtherUser.updateCollection(collection, organization.getId(), collection.getId());
+            Assert.fail("Should not be able to update a collection");
+        } catch (ApiException ex) {
+            Assert.assertEquals("User does not have rights to modify a collection from this organization.", ex.getMessage());
+        }
+
+        try {
+            collection = organizationsApiOtherUser.updateCollectionDescription(organization.getId(), collection.getId(), "descriptin");
+            Assert.fail("Should not be able to update a collection");
+        } catch (ApiException ex) {
+            Assert.assertEquals("User does not have rights to modify a collection from this organization.", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testMaintainersCantAddOrUpdateUsers() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Setup other user
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiOtherUser = new OrganizationsApi(webClientOtherUser);
+        UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
+
+        // Create org, invite user as member, and accept invitation
+        Organization organization = createOrg(organizationsApiUser2);
+        long orgId = organization.getId();
+        long userId = 1;
+        long otherUserId = 2;
+        organizationsApiUser2.addUserToOrg(OrganizationUser.Role.MAINTAINER.toString(), otherUserId, orgId, "");
+        organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
+
+        // Should not be able to invite another user
+        long thirdUser = 3;
+        try {
+            organizationsApiOtherUser.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), thirdUser, orgId, "");
+            Assert.fail("Member should not be able to add a user to organization");
+        } catch (ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        // Should not be able to update another user's role
+        try {
+            organizationsApiOtherUser.updateUserRole(OrganizationUser.Role.MAINTAINER.toString(), userId, orgId);
+            Assert.fail(" Should not be able to update another user's role");
+        } catch (ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+    }
+
     /**
-     * Tests that an Organization maintainer can request a user to join.
+     * Tests that an Organization admin can request a user to join.
      * The user can disapprove.
      */
     @Test
