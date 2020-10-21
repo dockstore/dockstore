@@ -4,8 +4,6 @@ services:
 
 addons:
   postgresql: "11"
-  snaps:
-    - yq
 
 cache:
   directories:
@@ -90,6 +88,9 @@ before_install:
 - sudo apt-get install jq
 - wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
 - pyenv global 3.6.10
+- wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+- chmod a+x yq_linux_amd64
+- sudo mv yq_linux_amd64 /usr/bin/yq
 
 install:
 - docker version
