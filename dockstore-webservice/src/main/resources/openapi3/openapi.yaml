@@ -1571,6 +1571,10 @@ components:
           type: string
         email:
           type: string
+        forumUrl:
+          maxLength: 256
+          minLength: 0
+          type: string
         full_workflow_path:
           type: string
         gitUrl:
