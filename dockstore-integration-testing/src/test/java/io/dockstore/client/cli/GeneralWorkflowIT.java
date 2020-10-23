@@ -596,9 +596,6 @@ public class GeneralWorkflowIT extends BaseIT {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        UsersApi usersApi = new UsersApi(webClient);
-        usersApi.getUser();
-
         Workflow workflow = workflowsApi
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
                         "test-update-workflow", DescriptorLanguage.CWL.toString(),
