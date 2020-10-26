@@ -3,8 +3,8 @@
     "tool": {
       "properties": {
         "author": {
-          "index": "not_analyzed",
-          "type": "string"
+          "index": "false",
+          "type": "text"
         },
         "default_cwl_path": {
           "type": "text"
@@ -25,7 +25,7 @@
           "type": "text"
         },
         "gitUrl": {
-          "type": "string"
+          "type": "text"
         },
         "id": {
           "type": "long"
@@ -77,8 +77,8 @@
               "type": "text"
             },
             "verifiedSource": {
-              "index": "not_analyzed",
-              "type": "string"
+              "index": "false",
+              "type": "text"
             },
             "dirtyBit": {
               "type": "boolean"
@@ -93,17 +93,17 @@
               "type": "long"
             },
             "image_id": {
-              "type": "string"
+              "type": "text"
             },
             "last_modified": {
               "format": "epoch_millis",
               "type": "date"
             },
             "name": {
-              "type": "string"
+              "type": "text"
             },
             "reference": {
-              "type": "string"
+              "type": "text"
             },
             "size": {
               "type": "long"
@@ -119,10 +119,10 @@
                   "type": "long"
                 },
                 "path": {
-                  "type": "string"
+                  "type": "text"
                 },
                 "type": {
-                  "type": "string"
+                  "type": "text"
                 }
               },
               "type": "nested"
@@ -187,8 +187,8 @@
     "workflow": {
       "properties": {
         "author": {
-          "type": "string",
-          "index": "not_analyzed"
+          "type": "text",
+          "index": "false"
         },
         "defaultVersion": {
           "type": "keyword"
