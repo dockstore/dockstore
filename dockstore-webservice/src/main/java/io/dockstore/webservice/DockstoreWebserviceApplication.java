@@ -82,6 +82,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.resources.AdminPrivilegesFilter;
 import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
@@ -387,6 +388,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
+        environment.jersey().register(new AdminPrivilegesFilter());
 
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);
