@@ -746,7 +746,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         testFile.setContent(testFileContent);
 
                         // Only add test parameter file if it hasn't already been added
-                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testFile.getType());
+                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(testFile.getPath()) && sf.getType() == testFile.getType());
                         if (!hasDuplicate) {
                             version.getSourceFiles().add(testFile);
                         }
