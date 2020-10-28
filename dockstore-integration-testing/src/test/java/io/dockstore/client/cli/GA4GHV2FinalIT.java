@@ -159,7 +159,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
 
     @Test
     public void testToolsIdVersionsVersionIdFakeVersion() throws Exception {
-        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/master%25%27%20AND%20%28SELECT%209506%20FROM%20%28SELECT%28SLEEP%285%29%29%29yafC%29%23", HttpStatus.SC_BAD_REQUEST);
+        checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/master%25%27%20AND%20%28SELECT%209506%20FROM%20%28SELECT%28SLEEP%285%29%29%29yafC%29%23", HttpStatus.SC_BAD_REQUEST);
     }
 
     @Override
