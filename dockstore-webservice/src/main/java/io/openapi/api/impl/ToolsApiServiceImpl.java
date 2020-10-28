@@ -168,8 +168,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String newVersionId;
         try {
             newVersionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            Response.StatusType status = getExtendedStatus(Status.BAD_REQUEST, "Could not decode version");
+            return Response.status(status).build();
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, newVersionId, false);
