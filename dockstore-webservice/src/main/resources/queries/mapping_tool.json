@@ -50,7 +50,7 @@
       "properties": {
         "author": {
           "index": "false",
-          "type": "text"
+          "type": "keyword"
         },
         "default_cwl_path": {
           "type": "text"

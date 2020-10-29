@@ -49,7 +49,7 @@
     "_doc": {
       "properties": {
         "author": {
-          "type": "text",
+          "type": "keyword",
           "index": "false"
         },
         "defaultVersion": {
