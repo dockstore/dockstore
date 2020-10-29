@@ -13,7 +13,6 @@ import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.RateLimitHandler;
 
 // Ignoring for now, see https://ucsc-cgl.atlassian.net/browse/SEAB-1855
-@Ignore
 public class GitHubHelperTest {
 
     private static final String CODE = "abcdefghijklmnop";
