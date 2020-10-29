@@ -101,17 +101,17 @@ public class ElasticListener implements StateListenerInterface {
         String json;
         json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-            String entryType = entry instanceof Tool ? "tool" : "workflow";
+            String entryType = entry instanceof Tool ? "tools" : "workflows";
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
             Response post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
                 post = restClient
-                    .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
+                    .performRequest("POST", "/" + entryType + "/_doc/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
                 break;
             case DELETE:
-                post = restClient.performRequest("DELETE", "/entry/" + entryType + "/" + entry.getId(), Collections.emptyMap(), entity);
+                post = restClient.performRequest("DELETE", "/" + entryType + "/_doc/" + entry.getId(), Collections.emptyMap(), entity);
                 break;
             default:
                 throw new RuntimeException("Unknown index command: " + command);
@@ -158,19 +158,34 @@ public class ElasticListener implements StateListenerInterface {
         entries.forEach(this::eagerLoadEntry);
         entries = filterCheckerWorkflows(entries);
         // #2771 will need to disable this and properly create objects to get services into the index
-        entries = entries.stream().filter(entry -> !(entry instanceof Service)).collect(Collectors.toList());
+        // sort entries into workflows and tools
+        List<Entry> workflows = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
+        List<Entry> tools = entries.stream().filter(entry -> (entry instanceof Tool)).collect(Collectors.toList());
         if (entries.isEmpty()) {
             return;
         }
+        // upsert tools to tools index
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-            String newlineDJSON = getNDJSON(entries);
-            HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
-            Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
+            String toolsNewlineDJSON = getNDJSON(tools);
+            HttpEntity toolsBulkEntity = new NStringEntity(toolsNewlineDJSON, ContentType.APPLICATION_JSON);
+            Response post = restClient.performRequest("POST", "/tools/_doc/_bulk", Collections.emptyMap(), toolsBulkEntity);
             if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Could not submit tools index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (IOException e) {
-            LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
+            LOGGER.error("Could not submit tools index to elastic search. " + e.getMessage());
+        }
+
+        // upsert workflows to workflows index
+        try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
+            String workflowsNewlineDJSON = getNDJSON(workflows);
+            HttpEntity workflowsBulkEntity = new NStringEntity(workflowsNewlineDJSON, ContentType.APPLICATION_JSON);
+            Response post = restClient.performRequest("POST", "/workflows/_doc/_bulk", Collections.emptyMap(), workflowsBulkEntity);
+            if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new CustomWebApplicationException("Could not submit workflows index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Could not submit workflows index to elastic search. " + e.getMessage());
         }
     }
 
@@ -212,7 +227,7 @@ public class ElasticListener implements StateListenerInterface {
             Map<String, Map<String, String>> index = new HashMap<>();
             Map<String, String> internal = new HashMap<>();
             internal.put("_id", String.valueOf(entry.getId()));
-            internal.put("_type", entry instanceof Tool ? "tool" : "workflow");
+            //internal.put("_type", entry instanceof Tool ? "tool" : "workflow");
             index.put("index", internal);
             builder.append(gson.toJson(index));
             builder.append('\n');

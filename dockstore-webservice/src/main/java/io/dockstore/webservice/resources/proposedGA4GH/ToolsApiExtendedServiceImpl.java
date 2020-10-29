@@ -166,20 +166,31 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
                     .build()) {
 
-                // Delete index
+                // Delete indices
                 try {
-                    restClient.performRequest("DELETE", "/entry");
+                    restClient.performRequest("DELETE", "/tools");
                 } catch (Exception e) {
-                    LOG.warn("Could not delete previous elastic search index, not an issue if this is cold start", e);
+                    LOG.warn("Could not delete previous elastic search Tools index, not an issue if this is cold start", e);
+                }
+                try {
+                    restClient.performRequest("DELETE", "/workflows");
+                } catch (Exception e) {
+                    LOG.warn("Could not delete previous elastic search Workflows index, not an issue if this is cold start", e);
                 }
 
-                // Get index mapping
-                URL url = Resources.getResource("queries/mapping.json");
-                String text = Resources.toString(url, StandardCharsets.UTF_8);
-                HttpEntity mappingEntity = new NStringEntity(text, ContentType.APPLICATION_JSON);
+                // Get mapping for tools index
+                URL urlTools = Resources.getResource("queries/mapping_tool.json");
+                String textTools = Resources.toString(urlTools, StandardCharsets.UTF_8);
+                HttpEntity mappingEntityTools = new NStringEntity(textTools, ContentType.APPLICATION_JSON);
 
-                // Create index
-                restClient.performRequest("PUT", "/entry", Collections.emptyMap(), mappingEntity);
+                // Get mapping for workflows index
+                URL urlWorkflows = Resources.getResource("queries/mapping_workflow.json");
+                String textWorkflows = Resources.toString(urlWorkflows, StandardCharsets.UTF_8);
+                HttpEntity mappingEntityWorkflows = new NStringEntity(textWorkflows, ContentType.APPLICATION_JSON);
+
+                // Create indices
+                restClient.performRequest("PUT", "/tools", Collections.emptyMap(), mappingEntityTools);
+                restClient.performRequest("PUT", "/workflows", Collections.emptyMap(), mappingEntityWorkflows);
 
                 // Populate index
                 if (!published.isEmpty()) {
@@ -207,7 +218,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 if (queryParameters != null) {
                     queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
                 }
-                org.elasticsearch.client.Response get = restClient.performRequest("GET", "/entry/_search", parameters, entity);
+                org.elasticsearch.client.Response get = restClient.performRequest("GET", "/tools,workflows/_search", parameters, entity);
                 if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                     throw new CustomWebApplicationException("Could not submit index to elastic search",
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
