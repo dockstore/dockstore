@@ -98,7 +98,7 @@ public class ToolsExtendedApi {
     @POST
     @Path("/tools/index")
     @UnitOfWork
-    @RolesAllowed("admin")
+    @RolesAllowed({"curator", "admin"})
     @Produces({ MediaType.TEXT_PLAIN })
     @ApiOperation(value = ToolsIndexGet.SUMMARY, notes = ToolsIndexGet.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Integer.class)
