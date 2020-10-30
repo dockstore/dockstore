@@ -388,6 +388,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
+
+        // Filter used to log every request an admin user makes.
         environment.jersey().register(new AdminPrivilegesFilter());
 
         // Swagger providers
