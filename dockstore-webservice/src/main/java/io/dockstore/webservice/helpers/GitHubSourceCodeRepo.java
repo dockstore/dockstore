@@ -736,6 +736,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (testParameterPaths != null) {
                 List<String> missingParamFiles = new ArrayList<>();
                 for (String testParameterPath : testParameterPaths) {
+                    // Only add test parameter file if it hasn't already been added
+                    boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(testParameterPath) && sf.getType() == workflow.getDescriptorType().getTestParamType());
+                    if (hasDuplicate) {
+                        continue;
+                    }
                     String testFileContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
                     if (testFileContent != null) {
                         SourceFile testFile = new SourceFile();
@@ -744,12 +749,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         testFile.setPath(testParameterPath);
                         testFile.setAbsolutePath(testParameterPath);
                         testFile.setContent(testFileContent);
-
-                        // Only add test parameter file if it hasn't already been added
-                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(testFile.getPath()) && sf.getType() == testFile.getType());
-                        if (!hasDuplicate) {
-                            version.getSourceFiles().add(testFile);
-                        }
+                        version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
                     }
