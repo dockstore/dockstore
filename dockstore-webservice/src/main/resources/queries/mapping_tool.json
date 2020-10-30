@@ -49,8 +49,9 @@
     "_doc": {
       "properties": {
         "author": {
-          "index": "false",
-          "type": "keyword"
+          "type": "text",
+          "fielddata": true,
+          "analyzer": "text_analyzer"
         },
         "default_cwl_path": {
           "type": "text"

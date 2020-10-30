@@ -49,8 +49,9 @@
     "_doc": {
       "properties": {
         "author": {
-          "type": "keyword",
-          "index": "false"
+          "type": "text",
+          "fielddata": true,
+          "analyzer": "text_analyzer"
         },
         "defaultVersion": {
           "type": "keyword"
