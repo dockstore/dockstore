@@ -166,17 +166,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
                     .build()) {
 
-                // Delete indices
-                try {
-                    restClient.performRequest("DELETE", "/tools");
-                } catch (Exception e) {
-                    LOG.warn("Could not delete previous elastic search Tools index, not an issue if this is cold start", e);
-                }
-                try {
-                    restClient.performRequest("DELETE", "/workflows");
-                } catch (Exception e) {
-                    LOG.warn("Could not delete previous elastic search Workflows index, not an issue if this is cold start", e);
-                }
+                // Delete previous indices
+                deleteIndex(restClient, "tools");
+                deleteIndex(restClient, "workflows");
 
                 // Get mapping for tools index
                 URL urlTools = Resources.getResource("queries/mapping_tool.json");
@@ -289,5 +281,13 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
         }
         throw new CustomWebApplicationException("Could not submit verification information", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    private void deleteIndex(RestClient restClient, String index) {
+        try {
+            restClient.performRequest("DELETE", "/" + index);
+        } catch (Exception e) {
+            LOG.warn("Could not delete previous elastic search " + index + " index, not an issue if this is cold start", e);
+        }
     }
 }
