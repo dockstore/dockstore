@@ -199,7 +199,7 @@ public class ServiceIT extends BaseIT {
     public void testGitHubAppEndpoints() throws Exception {
 
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient("admin@admin.com", testingPostgres);
+        final ApiClient webClient = getWebClient("DockstoreTestUser2", testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         String serviceRepo = "DockstoreTestUser2/test-service";
