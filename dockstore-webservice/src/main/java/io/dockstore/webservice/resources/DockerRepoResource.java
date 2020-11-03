@@ -250,7 +250,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-        checkUser(user, tool);
+        checkUserOwnsEntry(user, tool);
         checkNotHosted(tool);
         // Update user data
         User dbUser = userDAO.findById(user.getId());
@@ -363,7 +363,7 @@ public class DockerRepoResource
         Tool foundTool = toolDAO.findById(containerId);
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkUser(user, foundTool);
+        checkUserOwnsEntry(user, foundTool);
 
         Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
@@ -453,7 +453,7 @@ public class DockerRepoResource
         //use helper to check the user and the entry
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkUser(user, foundTool);
+        checkUserOwnsEntry(user, foundTool);
 
         //update the tool path in all workflowVersions
         Set<Tag> tags = foundTool.getWorkflowVersions();
@@ -659,7 +659,7 @@ public class DockerRepoResource
     public Response deleteContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkUser(user, tool);
+        checkUserOwnsEntry(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
         deleteTool.setActualDefaultVersion(null);
@@ -688,7 +688,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        checkUser(user, tool);
+        checkUserOwnsEntry(user, tool);
 
         Workflow checker = tool.getCheckerWorkflow();
 

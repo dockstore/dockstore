@@ -168,7 +168,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Override
     public void checkUserCanUpdate(User user, Entry entry) {
         try {
-            checkUser(user, entry);
+            checkUserOwnsEntry(user, entry);
         } catch (CustomWebApplicationException ex) {
             if (entry instanceof Workflow) {
                 if (!permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE)) {
