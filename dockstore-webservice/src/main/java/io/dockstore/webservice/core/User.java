@@ -347,10 +347,6 @@ public class User implements Principal, Comparable<User>, Serializable {
         entries.add(entry);
     }
 
-    public boolean removeEntry(Entry entry) {
-        return entries.remove(entry);
-    }
-
     public Set<Entry> getStarredEntries() {
         return starredEntries;
     }

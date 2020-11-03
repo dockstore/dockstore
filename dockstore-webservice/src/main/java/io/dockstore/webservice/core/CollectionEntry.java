@@ -20,11 +20,7 @@ public class CollectionEntry implements Serializable {
     private String versionName;
 
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        setEntryType(entryTypeString);
-        setDbUpdateDate(dbUpdateDate);
-        setId(id);
-        setEntryPath(sourceControl.toString(), organization, repository, entryName);
-        setVersionName(null);
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -38,11 +34,7 @@ public class CollectionEntry implements Serializable {
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
-        setEntryType(entryTypeString);
-        setDbUpdateDate(dbUpdateDate);
-        setId(id);
-        setEntryPath(registry, organization, repository, entryName);
-        setVersionName(null);
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
