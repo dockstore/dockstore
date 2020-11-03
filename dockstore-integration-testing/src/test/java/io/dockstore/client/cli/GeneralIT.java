@@ -40,6 +40,8 @@ import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -68,6 +70,10 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.kohsuke.github.AbuseLimitHandler;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.RateLimitHandler;
 
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
@@ -119,6 +125,26 @@ public class GeneralIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
+    }
+
+    @Test
+    public void testGitHubLicense() throws IOException {
+        String githubToken = testingPostgres
+                .runSelectStatement("select content from token where username='DockstoreTestUser2' and tokensource='github.com'",
+                        String.class);
+        GitHub gitHub = new GitHubBuilder().withOAuthToken(githubToken).withRateLimitHandler(RateLimitHandler.FAIL).withAbuseLimitHandler(
+                AbuseLimitHandler.FAIL).build();
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/md5sum-checker");
+        Assert.assertEquals("Apache License 2.0", licenseInformation.getLicenseName());
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/galaxy-workflows");
+        Assert.assertEquals("MIT License", licenseInformation.getLicenseName());
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstoretestuser2/cwl-gene-prioritization");
+        Assert.assertEquals("Other", licenseInformation.getLicenseName());
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/silly-example");
+        Assert.assertNull(licenseInformation.getLicenseName());
     }
 
     /**
