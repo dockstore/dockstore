@@ -47,6 +47,7 @@
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
+        <skipSignatureCheck>true</skipSignatureCheck>
     </properties>
 
     <organization>
@@ -460,6 +461,7 @@
                 </executions>
                 <configuration>
                     <quiet>true</quiet>
+                    <skip>${skipSignatureCheck}</skip>
                 </configuration>
             </plugin>
             <plugin>
