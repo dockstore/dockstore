@@ -89,10 +89,6 @@ public class GalaxyPluginIT {
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
 
-    private final String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
-    private final String installationId = "1179416";
-    private FileDAO fileDAO;
-
     static {
         try {
             // stash a Galaxy plugin in the plugin directory
@@ -124,6 +120,10 @@ public class GalaxyPluginIT {
             System.out.println("Starting test: " + description.getMethodName());
         }
     };
+
+    private final String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
+    private final String installationId = "1179416";
+    private FileDAO fileDAO;
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
