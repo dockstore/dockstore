@@ -37,6 +37,8 @@ import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
@@ -44,8 +46,12 @@ import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DescriptorLanguageBean;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -82,6 +88,10 @@ public class GalaxyPluginIT {
             + GALAXY_PLUGIN_VERSION + "/" + GALAXY_PLUGIN_FILENAME;
 
     private static final String DROPWIZARD_CONFIGURATION_FILE_PATH = CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH;
+
+    private final String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
+    private final String installationId = "1179416";
+    private FileDAO fileDAO;
 
     static {
         try {
@@ -129,6 +139,14 @@ public class GalaxyPluginIT {
 
     @Before
     public void setup() throws Exception {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        this.fileDAO = new FileDAO(sessionFactory);
+
+        // used to allow us to use tokenDAO outside of the web service
+        Session session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
@@ -180,5 +198,16 @@ public class GalaxyPluginIT {
         assertEquals(1, allStuffGalaxy.size());
         assertEquals(1, allStuffWdl.size());
         assertTrue(allStuffCWL.isEmpty());
+    }
+
+    @Test
+    public void testTestParameterPaths() {
+        final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        List<Workflow> workflows = workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/tags/dockstore/3851", installationId);
+        WorkflowVersion version = workflows.get(0).getWorkflowVersions().get(0);
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
+        assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")).findFirst().isPresent());
     }
 }
