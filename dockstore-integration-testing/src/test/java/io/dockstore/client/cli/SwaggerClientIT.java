@@ -191,7 +191,7 @@ public class SwaggerClientIT extends BaseIT {
 
     @Test
     public void testWorkflowLabelling() throws ApiException {
-        // note db workflow seems to have no owner, so I need an admin user to label it
+
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
@@ -200,7 +200,15 @@ public class SwaggerClientIT extends BaseIT {
 
         long containerId = workflow.getId();
 
+        // Note db workflow seems to have no owner. Only owner should be able to update label, regardless of whether user is admin
+        thrown.expect(ApiException.class);
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
+
+        // make one user the owner to test updating label
+        testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 1 + ", " + workflow.getId() + ")");
+        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+
+        // updating label should fail since user is not owner
         workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
