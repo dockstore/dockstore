@@ -36,10 +36,6 @@ public class EntryVersion implements Serializable {
 
     }
 
-    public boolean equals(Long entryId, Long versionId) {
-        return this.getEntry().getId() == entryId && (this.getVersion() != null ? this.getVersion().getId() == versionId : null == versionId);
-    }
-
     public EntryVersion(Entry entry) {
         this.entry = entry;
     }
@@ -47,6 +43,10 @@ public class EntryVersion implements Serializable {
     public EntryVersion(Entry entry, Version version) {
         this.entry = entry;
         this.version = version;
+    }
+
+    public boolean equals(Long entryId, Long versionId) {
+        return this.getEntry().getId() == entryId && (this.getVersion() != null ? this.getVersion().getId() == versionId : null == versionId);
     }
 
     public Integer getId() {
