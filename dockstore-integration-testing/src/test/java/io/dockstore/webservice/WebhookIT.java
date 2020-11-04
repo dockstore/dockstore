@@ -421,6 +421,22 @@ public class WebhookIT extends BaseIT {
     }
 
     /**
+     * Test that a .dockstore.yml workflow has the expected path for its test parameter file.
+     */
+    @Test
+    public void testTestParameterPaths() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        WorkflowVersion version = workflow.getWorkflowVersions().get(0);
+        List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
+        assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().equals("/dockstore.wdl.json")).findFirst().isPresent());
+    }
+
+    /**
      * This tests the GitHub release with .dockstore.yml located in /.github/.dockstore.yml
      */
     @Test

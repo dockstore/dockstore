@@ -721,20 +721,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (testParameterPaths != null) {
                 List<String> missingParamFiles = new ArrayList<>();
                 for (String testParameterPath : testParameterPaths) {
-                    String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
-                    if (testJsonContent != null) {
-                        SourceFile testJson = new SourceFile();
-                        // find type from file type, then find matching test param type
-                        testJson.setType(workflow.getDescriptorType().getTestParamType());
-                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setContent(testJsonContent);
-
-                        // Only add test parameter file if it hasn't already been added
-                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
-                        if (!hasDuplicate) {
-                            version.getSourceFiles().add(testJson);
-                        }
+                    // Only add test parameter file if it hasn't already been added
+                    boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(testParameterPath) && sf.getType() == workflow.getDescriptorType().getTestParamType());
+                    if (hasDuplicate) {
+                        continue;
+                    }
+                    String testFileContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
+                    if (testFileContent != null) {
+                        SourceFile testFile = new SourceFile();
+                        // find type from file type
+                        testFile.setType(workflow.getDescriptorType().getTestParamType());
+                        testFile.setPath(testParameterPath);
+                        testFile.setAbsolutePath(testParameterPath);
+                        testFile.setContent(testFileContent);
+                        version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
                     }
