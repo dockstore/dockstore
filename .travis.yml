@@ -5,9 +5,8 @@ services:
 addons:
   postgresql: "11"
 branches:
-  only:
-    - "master"
-    - "develop"
+  except:
+    - /^feature.*$/
 cache:
   directories:
   - /tmp/localstack_install_dir
