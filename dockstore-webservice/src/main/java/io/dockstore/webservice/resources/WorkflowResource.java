@@ -456,7 +456,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version, boolean hardRefresh) {
         Workflow existingWorkflow = workflowDAO.findById(workflowId);
         checkEntry(existingWorkflow);
-        checkUser(user, existingWorkflow);
+        checkUserOwnsEntry(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
         checkNotService(existingWorkflow);
         // get a live user for the following
@@ -655,7 +655,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-        checkUser(user, workflow);
+        checkUserOwnsEntry(user, workflow);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -999,7 +999,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     private void checkCanWriteWorkflow(User user, Workflow workflow) {
         try {
-            checkUser(user, workflow);
+            checkUserOwnsEntry(user, workflow);
         } catch (CustomWebApplicationException ex) {
             if (!permissionsInterface.canDoAction(user, workflow, Role.Action.WRITE)) {
                 throw ex;
