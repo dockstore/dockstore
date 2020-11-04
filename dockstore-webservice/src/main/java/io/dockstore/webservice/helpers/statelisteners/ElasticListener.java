@@ -180,7 +180,7 @@ public class ElasticListener implements StateListenerInterface {
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
             Response post = restClient.performRequest("POST", endpoint, Collections.emptyMap(), bulkEntity);
             if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new CustomWebApplicationException("Could not submit tools index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (IOException e) {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
