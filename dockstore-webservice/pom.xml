@@ -623,9 +623,10 @@
             <groupId>com.github.jsonld-java</groupId>
             <artifactId>jsonld-java</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.elasticsearch.client/elasticsearch-rest-client -->
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
-            <artifactId>rest</artifactId>
+            <artifactId>elasticsearch-rest-client</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.api-client</groupId>

@@ -1047,11 +1047,13 @@ POM as their parent.
                 <artifactId>okio</artifactId>
                 <version>1.17.2</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/org.elasticsearch.client/elasticsearch-rest-client -->
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
-                <artifactId>rest</artifactId>
-                <version>5.4.1</version>
+                <artifactId>elasticsearch-rest-client</artifactId>
+                <version>6.8.3</version>
             </dependency>
+
 
             <!-- https://mvnrepository.com/artifact/org.kohsuke/github-api -->
             <dependency>
