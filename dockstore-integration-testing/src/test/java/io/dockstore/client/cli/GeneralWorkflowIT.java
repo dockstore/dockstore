@@ -591,6 +591,28 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testAddingWorkflowForumUrl() throws ApiException {
+        // Set up webservice
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        Workflow workflow = workflowsApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
+                        "test-update-workflow", DescriptorLanguage.CWL.toString(),
+                        "/test.json");
+        
+        //update the forumUrl to hello.com
+        workflow.setForumUrl("hello.com");
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflowsApi.refresh(workflow.getId(), false);
+
+        //check the workflow's forumUrl is hello.com
+        final String updatedForumUrl = testingPostgres
+                .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
+        assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
+    }
+
+    @Test
     public void testWorkflowFreezingWithNoFiles() {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -698,7 +720,7 @@ public class GeneralWorkflowIT extends BaseIT {
                     "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");
                 fail("Insert should have failed to do row-level security");
             } catch (Exception ex) {
-                Assert.assertTrue(ex.getMessage().contains("new row violates row-level"));
+                assertTrue(ex.getMessage().contains("new row violates row-level"));
             }
         });
 
@@ -727,7 +749,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Manually register workflow
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl",
                 SourceControl.GITHUB, "/Dockstore.cwl", true);
-        Assert.assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
+        assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
         Assert.assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
         workflow = workflowsApi.refresh(workflow.getId(), false);
@@ -766,7 +788,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count2);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals("testWDL", workflow.getDefaultVersion());
+        assertEquals("testWDL", workflow.getDefaultVersion());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
         // Update workflow with version with metadata
@@ -783,9 +805,9 @@ public class GeneralWorkflowIT extends BaseIT {
             long.class);
         assertEquals("The given workflow should have contact info", 1, count3);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals("testBoth", workflow.getDefaultVersion());
-        Assert.assertEquals("testAuthor", workflow.getAuthor());
-        Assert.assertEquals("testEmail", workflow.getEmail());
+        assertEquals("testBoth", workflow.getDefaultVersion());
+        assertEquals("testAuthor", workflow.getAuthor());
+        assertEquals("testEmail", workflow.getEmail());
         // Unpublish
         workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
@@ -1199,7 +1221,7 @@ public class GeneralWorkflowIT extends BaseIT {
         toDelete.add("notreal.cwl.json");
         try {
             workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
-            Assert.fail("Should've have thrown an error when deleting non-existent file");
+            fail("Should've have thrown an error when deleting non-existent file");
         } catch (ApiException e) {
             assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
         }

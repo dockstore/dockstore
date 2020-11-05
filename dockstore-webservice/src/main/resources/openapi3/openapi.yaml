@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: The checksum value and its type
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -459,7 +459,7 @@ components:
       properties:
         checksum:
           description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-          example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+          example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
           items:
             $ref: '#/components/schemas/Checksum'
           type: array
@@ -1571,6 +1571,10 @@ components:
           type: string
         email:
           type: string
+        forumUrl:
+          maxLength: 256
+          minLength: 0
+          type: string
         full_workflow_path:
           type: string
         gitUrl:
@@ -1793,7 +1797,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.10.0-alpha.2-SNAPSHOT
+  version: 1.10.0-alpha.3-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -1837,7 +1841,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -2530,12 +2534,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-          description: default response
+          description: Successfully created hosted entry
       security:
         - bearer: []
       tags:
@@ -2556,12 +2560,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
-          description: default response
+                $ref: '#/components/schemas/Entry'
+          description: Successfully deleted hosted entry version
       security:
         - bearer: []
       tags:
@@ -3770,12 +3774,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
-          description: default response
+                $ref: '#/components/schemas/Entry'
+          description: Successfully added alias to entry
       security:
         - bearer: []
       tags:
@@ -4661,12 +4665,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
-          description: default response
+                $ref: '#/components/schemas/Collection'
+          description: Successfully added alias to collection
       security:
         - bearer: []
       summary: Add aliases linked to a collection in Dockstore.
@@ -4812,12 +4816,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
-          description: default response
+          description: Successfully created organization alias
       security:
         - bearer: []
       summary: Add aliases linked to a listing in Dockstore.
@@ -6387,102 +6391,6 @@ paths:
         - bearer: []
       tags:
         - users
-  /users/{userId}/tokens/dockstore:
-    get:
-      description: Get Dockstore tokens with user id.
-      operationId: getDockstoreUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/github.com:
-    get:
-      description: Get Github tokens with user id.
-      operationId: getGithubUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/gitlab.com:
-    get:
-      description: Get Gitlab tokens with user id.
-      operationId: getGitlabUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/quay.io:
-    get:
-      description: Get Quay tokens with user id.
-      operationId: getQuayUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
   /users/{userId}/workflows:
     get:
       description: List all workflows owned by the authenticated user.
@@ -6687,12 +6595,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-          description: default response
+          description: Successfully created hosted entry
       security:
         - bearer: []
       tags:
@@ -6713,12 +6621,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-          description: default response
+          description: Successfully deleted hosted entry version
       security:
         - bearer: []
       tags:

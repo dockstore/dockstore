@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.10.0-alpha.2-SNAPSHOT</version>
+    <version>1.10.0-alpha.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -47,6 +47,7 @@
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
+        <skipSignatureCheck>true</skipSignatureCheck>
     </properties>
 
     <organization>
@@ -159,7 +160,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.10.0-alpha.2-SNAPSHOT</version>
+                 <version>1.10.0-alpha.3-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
@@ -460,6 +461,7 @@
                 </executions>
                 <configuration>
                     <quiet>true</quiet>
+                    <skip>${skipSignatureCheck}</skip>
                 </configuration>
             </plugin>
             <plugin>

@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.10.0-alpha.2-SNAPSHOT"
+  version: "1.10.0-alpha.3-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -4562,106 +4562,6 @@ paths:
               $ref: "#/definitions/Token"
       security:
       - BEARER: []
-  /users/{userId}/tokens/dockstore:
-    get:
-      tags:
-      - "users"
-      summary: "Get Dockstore tokens with user id."
-      description: ""
-      operationId: "getDockstoreUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
-  /users/{userId}/tokens/github.com:
-    get:
-      tags:
-      - "users"
-      summary: "Get Github tokens with user id."
-      description: ""
-      operationId: "getGithubUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
-  /users/{userId}/tokens/gitlab.com:
-    get:
-      tags:
-      - "users"
-      summary: "Get Gitlab tokens with user id."
-      description: ""
-      operationId: "getGitlabUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
-  /users/{userId}/tokens/quay.io:
-    get:
-      tags:
-      - "users"
-      summary: "Get Quay tokens with user id."
-      description: ""
-      operationId: "getQuayUserTokens"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User to return"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
   /users/{userId}/workflows:
     get:
       tags:
@@ -8304,6 +8204,11 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      forumUrl:
+        type: "string"
+        description: "This is a link to a forum or discussion board"
+        minLength: 0
+        maxLength: 256
       has_checker:
         type: "boolean"
         readOnly: true

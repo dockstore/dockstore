@@ -382,53 +382,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return tokenDAO.findByUserId(userId);
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/github.com")
-    @Operation(operationId = "getGithubUserTokens", description = "Get Github tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Github tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findGithubByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/gitlab.com")
-    @Operation(operationId = "getGitlabUserTokens", description = "Get Gitlab tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Gitlab tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findGitlabByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/quay.io")
-    @Operation(operationId = "getQuayUserTokens", description = "Get Quay tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Quay tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findQuayByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/dockstore")
-    @Operation(operationId = "getDockstoreUserTokens", description = "Get Dockstore tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Dockstore tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findQuayByUserId(userId);
-    }
 
     @GET
     @Timed

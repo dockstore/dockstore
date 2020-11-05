@@ -103,7 +103,7 @@ jobs:
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests) 
             keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit           
-            mvn -B clean install -Pnon-confidential-tests -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
+            mvn -B clean install -Pnon-confidential-tests -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -162,5 +162,5 @@ jobs:
             # Convert slashes to underscores, e.g., feature/seab-1675/pushtoquay to feature_seab-1675_pushtoquay
             export dockerVersion=${tagOrBranch//\//_}
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
-            docker login -u=$QUAY_USERNAME -p=$QUAY_PASSWORD quay.io
+            echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
