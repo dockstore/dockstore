@@ -147,7 +147,7 @@ public class SearchResourceIT extends BaseIT {
             metadataApi.checkElasticSearch();
             fail("Should fail even with index because there's no hits");
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Internal Server Error"));
+            assertTrue(ex.getMessage().contains("Internal Server Error"));
         }
 
         // Register and publish workflow
