@@ -90,9 +90,6 @@ public class SearchResourceIT extends BaseIT {
                     Thread.sleep(sleepTime);
                     waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1);
                 }
-            } else {
-                System.out.println(s);
-                System.out.println(hit);
             }
         } catch (Exception e) {
             Assert.fail("There were troubles sleeping: " + e.getMessage());
