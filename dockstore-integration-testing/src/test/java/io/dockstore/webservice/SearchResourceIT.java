@@ -80,7 +80,9 @@ public class SearchResourceIT extends BaseIT {
     private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
         try {
             String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
-            if (!s.contains("\"total\":" + hit)) {
+            // There's actually two "total", one for shards and one for hits.
+            // Need to only look at the hits one
+            if (!s.contains("hits\":{\"total\":" + hit + ",")) {
                 if (counter > 5) {
                     Assert.fail(s + " does not have the correct amount of hits");
                 } else {
@@ -88,6 +90,9 @@ public class SearchResourceIT extends BaseIT {
                     Thread.sleep(sleepTime);
                     waitForIndexRefresh(hit, extendedGa4GhApi, counter + 1);
                 }
+            } else {
+                System.out.println(s);
+                System.out.println(hit);
             }
         } catch (Exception e) {
             Assert.fail("There were troubles sleeping: " + e.getMessage());
@@ -141,11 +146,11 @@ public class SearchResourceIT extends BaseIT {
         // Update the search index
         extendedGa4GhApi.toolsIndexGet();
         waitForIndexRefresh(0, extendedGa4GhApi,  0);
-        // Should still fail even with index
         try {
             metadataApi.checkElasticSearch();
+            fail("Should fail even with index because there's no hits");
         } catch (ApiException ex) {
-            assertTrue("Should fail", true);
+            Assert.assertTrue(ex.getMessage().contains("Internal Server Error"));
         }
 
         // Register and publish workflow
