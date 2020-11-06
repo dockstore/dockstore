@@ -45,6 +45,10 @@ public class EntryVersion implements Serializable {
         this.version = version;
     }
 
+    public boolean equals(Long entryId, Long versionId) {
+        return this.getEntry().getId() == entryId && (this.getVersion() != null ? this.getVersion().getId() == versionId : null == versionId);
+    }
+
     public Integer getId() {
         return id;
     }
