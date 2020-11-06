@@ -11,7 +11,6 @@ executors:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
       - image: docker.elastic.co/elasticsearch/elasticsearch:6.8.3
-      - image: circleci/python:3.6.10
 workflows:
   version: 2
   everything:
@@ -69,6 +68,7 @@ jobs:
           root: .
           paths:
             - .
+            - ../.m2
       # - run:
       #     name: validate openapi
       #     command: |
@@ -233,11 +233,14 @@ commands:
             # sudo apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
             # pyenv install 3.6.10
             # pyenv global 3.6.10
-            sudo apt update -y
-            sudo apt-get install software-properties-common -y
-            sudo add-apt-repository ppa:deadsnakes/ppa -y
             sudo apt-get update -y
-            sudo apt-get install python3.6 -y
+            sudo apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl git -y
+            curl -O https://www.python.org/ftp/python/3.6.10/Python-3.6.10.tar.xz 
+            tar -xf Python-3.6.10.tar.xz
+            cd Python-3.6.10
+            ./configure --enable-optimizations
+            sudo make install
+            sudo make altinstall
       - run:
           name: Wait for db
           command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
