@@ -293,7 +293,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
         // Remove the entry from the organization
-        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft(), versionId);
+        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft().getId(), versionId);
 
         // Event for deletion
         Organization organization = organizationDAO.findById(organizationId);
