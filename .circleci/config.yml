@@ -64,11 +64,13 @@ jobs:
       - run:
           name: build
           command: mvn -B clean install -DskipTests
+      - run:
+          name: copy m2 manually
+          command: cp -r ~/.m2 .
       - persist_to_workspace:
           root: .
           paths:
             - .
-            - ../.m2
       # - run:
       #     name: validate openapi
       #     command: |
@@ -213,6 +215,9 @@ commands:
     steps:
       - attach_workspace:
           at: .
+      - run:
+          name: manually copy back .m2
+          command: cp -r .m2 ~/.m2
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
