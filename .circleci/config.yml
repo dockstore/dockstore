@@ -16,15 +16,19 @@ workflows:
   version: 2
   everything:
     jobs:
-      - unit_test:
+      # - unit_test:
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - gh-pages
+      - build:
           filters:
             branches:
               ignore:
                 - gh-pages
-#      - openapi_validation
       - integration_test_1:
           requires:
-            - unit_test
+            - build
 jobs:
   integration_test_1:
     executor: integration_test_exec
@@ -35,7 +39,7 @@ jobs:
       - run:
           name: run integration test
           command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
-  openapi_validation:
+  build:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
         environment:
@@ -45,11 +49,6 @@ jobs:
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
-      - run:
-          name: install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
       - run:
           name: Install yq
           command: |
@@ -64,14 +63,18 @@ jobs:
             cd git-secrets-1.3.0
             sudo make install
       - run:
-          name: run the actual tests
+          name: build
           command: mvn -B clean install -DskipTests
-      - run:
-          name: validate openapi
-          command: |
-            wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
-            java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
-            java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+      # - run:
+      #     name: validate openapi
+      #     command: |
+      #       wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
+      #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
+      #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
   unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
@@ -177,10 +180,6 @@ jobs:
           command: |
             cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
             cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
       - store_artifacts:
           path: /tmp/artifacts
       - setup_remote_docker
@@ -234,11 +233,11 @@ commands:
             # sudo apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
             # pyenv install 3.6.10
             # pyenv global 3.6.10
-            sudo apt update
-            sudo apt-get install software-properties-common
-            sudo add-apt-repository ppa:deadsnakes/ppa
-            sudo apt-get update
-            sudo apt-get install python3.6            
+            sudo apt update -y
+            sudo apt-get install software-properties-common -y
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt-get update -y
+            sudo apt-get install python3.6 -y
       - run:
           name: Wait for db
           command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
