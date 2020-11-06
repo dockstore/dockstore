@@ -16,7 +16,3 @@ if [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
 else
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.10.0/requirements3.txt
 fi
-
-# hook up integration tests with elastic search
-docker pull elasticsearch:5.6.3
-docker run -p 9200:9200 -d elasticsearch:5.6.3

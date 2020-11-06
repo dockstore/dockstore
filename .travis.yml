@@ -98,6 +98,11 @@ before_install:
 - wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
 - chmod a+x yq_linux_amd64
 - sudo mv yq_linux_amd64 /usr/bin/yq
+# alternate method for starting elastic search from https://docs.travis-ci.com/user/database-setup/#elasticsearch
+- curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.8.3.deb -o elasticsearch.deb
+- sudo dpkg -i --force-confnew elasticsearch.deb
+- sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
+- sudo service elasticsearch restart
 
 install:
 - docker version
