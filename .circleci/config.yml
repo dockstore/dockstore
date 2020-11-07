@@ -15,21 +15,62 @@ workflows:
   version: 2
   everything:
     jobs:
-      # - unit_test:
-      #     filters:
-      #       branches:
-      #         ignore:
-      #           - gh-pages
+      - unit_test:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
       - build:
           filters:
             branches:
               ignore:
                 - gh-pages
-      - integration_test_1:
+      - workflow-integration-tests:
           requires:
             - build
+      - tool-integration-tests:
+          requires:
+            - build      
+      - integration-tests:
+          requires:
+            - build
+      - regression-integration-tests:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
+          requires:
+            - build                              
 jobs:
-  integration_test_1:
+  regression-integration-tests:
+    executor: integration_test_exec
+    environment: 
+      TESTING_PROFILE: regression-integration-tests
+    steps:
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
+  integration-tests:
+    executor: integration_test_exec
+    environment: 
+      TESTING_PROFILE: integration-tests
+    steps:
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
+  tool-integration-tests:
+    executor: integration_test_exec
+    environment: 
+      TESTING_PROFILE: tool-integration-tests
+    steps:
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
+  workflow-integration-tests:
     executor: integration_test_exec
     environment: 
       TESTING_PROFILE: workflow-integration-tests
@@ -37,7 +78,7 @@ jobs:
       - setup_integration_test
       - run:
           name: run integration test
-          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
+          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE                              
   build:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
@@ -218,6 +259,7 @@ commands:
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
+          # Todo: make more specific
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
@@ -231,21 +273,14 @@ commands:
       - run:
           name: install python
           command: |
-            # curl https://pyenv.run | bash
-            # export PATH="/home/circleci/.pyenv/bin:$PATH"
-            # eval "$(pyenv init -)"
-            # eval "$(pyenv virtualenv-init -)"
-            # sudo apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
-            # pyenv install 3.6.10
-            # pyenv global 3.6.10
             sudo apt-get update -y
             sudo apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl git -y
             curl -O https://www.python.org/ftp/python/3.6.10/Python-3.6.10.tar.xz 
             tar -xf Python-3.6.10.tar.xz
             cd Python-3.6.10
-            ./configure --enable-optimizations
+            ./configure
             sudo make install
-            sudo make altinstall
+            # Todo: make this faster
       - run:
           name: Wait for db
           command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
