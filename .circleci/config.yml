@@ -49,36 +49,24 @@ jobs:
       TESTING_PROFILE: regression-integration-tests
     steps:
       - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
   integration-tests:
     executor: integration_test_exec
     environment: 
       TESTING_PROFILE: integration-tests
     steps:
-      - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
+      - setup_integration_test         
   tool-integration-tests:
     executor: integration_test_exec
     environment: 
       TESTING_PROFILE: tool-integration-tests
     steps:
-      - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE
+      - setup_integration_test        
   workflow-integration-tests:
     executor: integration_test_exec
     environment: 
       TESTING_PROFILE: workflow-integration-tests
     steps:
-      - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B failsafe:integration-test -P$TESTING_PROFILE                              
+      - setup_integration_test                 
   build:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
@@ -168,13 +156,13 @@ jobs:
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
       - run:
           name: run the actual tests
-          command: mvn -B clean install -Punit-tests -ntp
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
       - run:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests) 
             keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit           
-            mvn -B clean install -Pnon-confidential-tests -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
+            mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -261,15 +249,21 @@ commands:
             sudo apt install python3-distutils python3-dev
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
             python3 get-pip.py
+            # For debug purposes, a python3 version was installed in the image, pip is untagged
+            python3 --version
+            pip3 --version
       - run:
-          name: Wait for db
-          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
+          name: install pip dependencies
+          command: scripts/install-tests.sh            
       - run:
           name: Install postgresql client
           command: |
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
-            sudo apt install -y postgresql-client
+            sudo apt install -y postgresql-client          
+      - run:
+          name: Wait for db
+          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
       - run:
           name: setup postgres
           command: |
@@ -277,5 +271,8 @@ commands:
             psql -c "ALTER USER dockstore WITH superuser;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
       - run:
-          name: install pip dependencies
-          command: scripts/install-tests.sh
+          name: run integration test
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate failsafe:integration-test -P$TESTING_PROFILE,coverage
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"   
