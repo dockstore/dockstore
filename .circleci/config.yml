@@ -214,25 +214,33 @@ jobs:
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
 commands:
   setup_postgres:
-    - run:
-        name: Wait for db
-        command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
-    - run:
-        name: setup postgres
-        command: |
-          psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-          psql -c "ALTER USER dockstore WITH superuser;" -U postgres
-          psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+    steps:
+      - run:
+          name: Wait for db
+          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
+      - run:
+          name: setup postgres
+          command: |
+            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+            psql -c "ALTER USER dockstore WITH superuser;" -U postgres
+            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_test:
-    - attach_workspace:
-        at: .
-    - run:
-        name: manually copy back .m2
-        command: cp -r .m2 ~/.m2
-        # Todo: make more specific
-    - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
-        # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-        key: dockstore-java-{{ checksum "pom.xml" }}
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: manually copy back .m2
+          command: cp -r .m2 ~/.m2
+          # Todo: make more specific
+      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: dockstore-java-{{ checksum "pom.xml" }}
+      - run:
+          name: Install yq
+          command: |
+            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+            chmod a+x yq_linux_amd64
+            sudo mv yq_linux_amd64 /usr/bin/yq          
   setup_integration_test:
     steps:
       - run:
@@ -260,10 +268,10 @@ commands:
             bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid 
             sudo mkdir /home/travis
             sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
-      - setup_postgres
       - run:
           name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate failsafe:integration-test -P$TESTING_PROFILE,coverage
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
+      - setup_postgres
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
