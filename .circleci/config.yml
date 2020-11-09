@@ -16,10 +16,8 @@ workflows:
   everything:
     jobs:
       - unit_test:
-          filters:
-            branches:
-              ignore:
-                - gh-pages
+          requires:
+            - build
       - build:
           filters:
             branches:
@@ -48,25 +46,29 @@ jobs:
     environment: 
       TESTING_PROFILE: regression-integration-tests
     steps:
+      - setup_test
       - setup_integration_test
   integration-tests:
     executor: integration_test_exec
     environment: 
       TESTING_PROFILE: integration-tests
     steps:
-      - setup_integration_test         
+      - setup_test
+      - setup_integration_test    
   tool-integration-tests:
     executor: integration_test_exec
     environment: 
       TESTING_PROFILE: tool-integration-tests
     steps:
-      - setup_integration_test        
+      - setup_test
+      - setup_integration_test  
   workflow-integration-tests:
     executor: integration_test_exec
     environment: 
       TESTING_PROFILE: workflow-integration-tests
     steps:
-      - setup_integration_test                 
+      - setup_test
+      - setup_integration_test            
   build:
     docker: # run the steps with Docker
       - image: circleci/openjdk:11.0.4-jdk-stretch
@@ -91,16 +93,17 @@ jobs:
             cd git-secrets-1.3.0
             sudo make install
       - run:
+          name: decrypt
+          command: |
+            sudo apt install openssl -y
+            openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV >> test_data.zip
+            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid            
+      - run:
           name: build
           command: mvn -B clean install -DskipTests
       - run:
           name: copy m2 manually
           command: cp -r ~/.m2 .
-      - run:
-          name: decrypt
-          command: |
-            openssl aes-256-cbc -d -in circle_ci_secrets.tar.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV -pbkdf2 >> test_data.zip
-            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid
       - persist_to_workspace:
           root: .
           paths:
@@ -122,43 +125,21 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
     steps: # a collection of executable commands
-      - checkout # check out source code to working directory
-      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "pom.xml" }}
-      - run:
-          name: install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
-      - run: 
-          name: Install yq
-          command: |
-            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
-            chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq
+      - setup_test
       - run:
           name: Install git-secrets
           command: |
             wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
-            sudo make install
-      - run:
-          name: Wait for db
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+            sudo make install      
       - run:
           name: Install postgresql client
           command: |
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
             sudo apt install -y postgresql-client
-      - run:
-          name: setup postgres
-          command: |
-            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-            psql -c "ALTER USER dockstore WITH superuser;" -U postgres
-            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+      - setup_postgres
       - run:
           name: run the actual tests
           command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
@@ -232,8 +213,17 @@ jobs:
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
 commands:
-  setup_integration_test:
-    steps:
+  setup_postgres:
+      - run:
+          name: Wait for db
+          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true                
+      - run:
+          name: setup postgres
+          command: |
+            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+            psql -c "ALTER USER dockstore WITH superuser;" -U postgres
+            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+  setup_test:
       - attach_workspace:
           at: .
       - run:
@@ -242,14 +232,9 @@ commands:
           # Todo: make more specific
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "pom.xml" }}
-      - run:
-          name: Install git-secrets
-          command: |
-            wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
-            tar -zxf git-secrets-1.3.0.tar.gz
-            cd git-secrets-1.3.0
-            sudo make install
+          key: dockstore-java-{{ checksum "pom.xml" }}  
+  setup_integration_test:
+    steps:
       - run:
           name: install pip
           command: |
@@ -270,19 +255,12 @@ commands:
             sudo apt update
             sudo apt install -y postgresql-client          
       - run:
-          name: Wait for db
-          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
-      - run:
-          name: setup postgres
+          name: expand confidential data
           command: |
-            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-            psql -c "ALTER USER dockstore WITH superuser;" -U postgres
-            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
-      - run:
-          name: decrypt
-          command: |
-            openssl aes-256-cbc -d -in circle_ci_secrets.tar.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV -pbkdf2 >> test_data.zip
-            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid
+            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid 
+            sudo mkdir /home/travis
+            sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
+      - setup_postgres            
       - run:
           name: run integration test
           command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate failsafe:integration-test -P$TESTING_PROFILE,coverage
