@@ -394,6 +394,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
+
+        Optional<U> deleteVersion =  entry.getWorkflowVersions().stream().filter(v -> Objects.equals(v.getName(), version)).findFirst();
+        if (deleteVersion.isPresent() && deleteVersion.get().isFrozen()) {
+            throw new CustomWebApplicationException("Cannot delete a snapshotted version.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         // If the version that's about to be deleted is the default version, unset it
         if (entry.getActualDefaultVersion().getName().equals(version)) {
             Optional<U> max = entry.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), version))
