@@ -96,6 +96,11 @@ jobs:
       - run:
           name: copy m2 manually
           command: cp -r ~/.m2 .
+      - run:
+          name: decrypt
+          command: |
+            openssl aes-256-cbc -d -in circle_ci_secrets.tar.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV -pbkdf2 >> test_data.zip
+            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid
       - persist_to_workspace:
           root: .
           paths:
@@ -163,6 +168,9 @@ jobs:
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests) 
             keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit           
             mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"               
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -270,6 +278,11 @@ commands:
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c "ALTER USER dockstore WITH superuser;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+      - run:
+          name: decrypt
+          command: |
+            openssl aes-256-cbc -d -in circle_ci_secrets.tar.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV -pbkdf2 >> test_data.zip
+            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid
       - run:
           name: run integration test
           command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate failsafe:integration-test -P$TESTING_PROFILE,coverage
