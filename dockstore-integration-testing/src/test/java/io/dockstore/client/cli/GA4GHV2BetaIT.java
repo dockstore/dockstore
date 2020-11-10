@@ -33,7 +33,9 @@ import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.ToolVersion;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +48,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class GA4GHV2BetaIT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v2/";
-
+    @Rule
+    public final EnvironmentVariables environmentVariables
+            = new EnvironmentVariables();
     public String getApiVersion() {
         return API_VERSION;
     }
@@ -375,6 +379,8 @@ public class GA4GHV2BetaIT extends GA4GHIT {
      */
     @Test
     public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
+        // For some reason this test ends up looking at DOCKER_MACHINE_NAME which fails when ran on CircleCI if it's set
+        environmentVariables.clear("DOCKER_MACHINE_NAME");
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
         String command = "cwl-runner";
         String originalUrl =
