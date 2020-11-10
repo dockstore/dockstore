@@ -4,13 +4,14 @@ executors:
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.6
         environment:
-          JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:9.6.5-alpine-ram
+      - image: circleci/postgres:11.8
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
       - image: docker.elastic.co/elasticsearch/elasticsearch:6.8.3
+    resource_class: large      
 workflows:
   version: 2
   everything:
@@ -120,7 +121,7 @@ jobs:
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:9.6.5-alpine-ram
+      - image: circleci/postgres:11.8
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
@@ -275,6 +276,7 @@ commands:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install            
+      - setup_postgres
       - run:
           name: run integration test
           command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
