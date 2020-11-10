@@ -279,6 +279,9 @@ commands:
             cd git-secrets-1.3.0
             sudo make install            
       - setup_postgres
+      - setup_remote_docker:
+          version: 19.03.13
+          docker_layer_caching: true
       - run:
           name: run integration test
           command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
