@@ -1563,7 +1563,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             final Optional<String> toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
 
-            // Couldn't get content for the main descriptor
+            // Couldn't get content for the workflow
             if (toolTableJson.isEmpty()) {
                 throw new CustomWebApplicationException("Could not parse provided " + workflow.getDescriptorType() + " workflow", HttpStatus.SC_BAD_REQUEST);
             }
