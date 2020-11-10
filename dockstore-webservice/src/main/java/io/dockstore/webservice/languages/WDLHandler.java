@@ -427,10 +427,13 @@ public class WDLHandler implements LanguageHandlerInterface {
             // Iterate over each call, determine dependencies
             Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(tempMainDescriptor.getAbsolutePath(), mainDescName);
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
+
             // Get import files
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
-        } catch (IOException | NoSuchElementException | WdlParser.SyntaxError e) {
-            throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (WdlParser.SyntaxError e) {
+            return Optional.empty();
+        } catch (IOException | NoSuchElementException e) {
+            throw new CustomWebApplicationException("could not process request " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
