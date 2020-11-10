@@ -5,11 +5,12 @@ executors:
       - image: cimg/openjdk:11.0.6
         environment:
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:11.8
+      - image: circleci/postgres:11.6-alpine-ram
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_PASSWORD: postgres
       - image: docker.elastic.co/elasticsearch/elasticsearch:6.8.3
     resource_class: large      
 workflows:
@@ -121,10 +122,12 @@ jobs:
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:11.8
+      - image: circleci/postgres:11.6-alpine-ram
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_PASSWORD: postgres   
     steps: # a collection of executable commands
       - setup_test
       - run:
@@ -223,7 +226,6 @@ commands:
           name: setup postgres
           command: |
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-            psql -c "ALTER USER dockstore WITH superuser;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_test:
     steps:
@@ -280,7 +282,6 @@ commands:
       - run:
           name: run integration test
           command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
-      - setup_postgres
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
