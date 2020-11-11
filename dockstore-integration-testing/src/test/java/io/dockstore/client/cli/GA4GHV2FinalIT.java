@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.RequireDockerTest;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.Utilities;
 import io.dockstore.openapi.client.model.FileWrapper;
@@ -35,10 +36,10 @@ import io.openapi.model.Service;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.experimental.categories.Category;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static io.openapi.api.impl.ServiceInfoApiServiceImpl.getService;
@@ -50,6 +51,7 @@ import static org.junit.Assert.assertTrue;
  * @author dyuen
  * @since 1.9
  */
+@Category(RequireDockerTest.class)
 public class GA4GHV2FinalIT extends GA4GHIT {
     private static final String API_VERSION = "ga4gh/trs/v2/";
     @Rule
@@ -397,7 +399,6 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * This tests cwl-runner with a workflow from GA4GH V2 relative-path endpoint (without encoding) that contains 2 more additional files
      * that will reference the GA4GH V2 endpoint
      */
-    @Ignore("This test uses Docker")
     @Test
     public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
         // For some reason this test ends up looking at DOCKER_MACHINE_NAME which fails when ran on CircleCI if it's set
