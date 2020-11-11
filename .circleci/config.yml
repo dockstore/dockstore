@@ -24,14 +24,31 @@ workflows:
   version: 2
   everything:
     jobs:
-#      - unit_test         
-#      - workflow-integration-tests
-#      - tool-integration-tests         
+      - unit_test:         
+          filters:
+            branches:
+              ignore:
+                - gh-pages           
+      - workflow-integration-tests:
+          filters:
+            branches:
+              ignore:
+                - gh-pages           
+      - tool-integration-tests:         
+          filters:
+            branches:
+              ignore:
+                - gh-pages           
       - integration-tests:
           filters:
             branches:
               ignore:
-                - gh-pages      
+                - gh-pages  
+      - require-docker-tests:
+          filters:
+            branches:
+              ignore:
+                - gh-pages                            
       - regression-integration-tests:
           filters:
             branches:
@@ -43,15 +60,30 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
-    steps:
+    steps:  
       - setup_test
       - setup_integration_test
       - run:
           name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
+  require-docker-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: require-docker-tests
+    steps:
+      - setup_remote_docker:
+          version: 19.03.13      
+      - setup_test
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"                
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -61,7 +93,7 @@ jobs:
       - setup_integration_test
       - run:
           name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
@@ -74,7 +106,7 @@ jobs:
       - setup_integration_test
       - run:
           name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
@@ -87,7 +119,7 @@ jobs:
       - setup_integration_test
       - run:
           name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      

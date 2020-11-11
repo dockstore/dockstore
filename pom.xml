@@ -756,6 +756,14 @@
             </properties>
         </profile>
         <profile>
+            <id>require-docker-tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.RequireDockerTest</groups>
+            </properties>
+        </profile>
+        <profile>
             <id>non-confidential-tests</id>
             <properties>
                 <skipTests>true</skipTests>
