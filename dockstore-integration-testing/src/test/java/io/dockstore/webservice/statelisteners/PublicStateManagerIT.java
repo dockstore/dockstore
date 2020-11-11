@@ -25,6 +25,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.RequireDockerTest;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -44,9 +45,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
+@Category(RequireDockerTest.class)
 public class PublicStateManagerIT {
     private static PublicStateManager manager;
 

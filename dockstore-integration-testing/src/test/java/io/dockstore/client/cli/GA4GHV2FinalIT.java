@@ -35,6 +35,7 @@ import io.openapi.model.Service;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
@@ -396,6 +397,7 @@ public class GA4GHV2FinalIT extends GA4GHIT {
      * This tests cwl-runner with a workflow from GA4GH V2 relative-path endpoint (without encoding) that contains 2 more additional files
      * that will reference the GA4GH V2 endpoint
      */
+    @Ignore("This test uses Docker")
     @Test
     public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
         // For some reason this test ends up looking at DOCKER_MACHINE_NAME which fails when ran on CircleCI if it's set

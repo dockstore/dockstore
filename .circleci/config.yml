@@ -290,10 +290,17 @@ commands:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install            
+      - run:
+          name: install dockerize
+          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.6.1
+      - run:
+          name: Wait for db
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
       - setup_postgres  
       - run:
-          name: Wait for DB and ES
+          name: Wait for ES
           command: |
-            wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:5432 || true
             wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true      
 
