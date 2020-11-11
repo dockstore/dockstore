@@ -24,9 +24,9 @@ workflows:
   version: 2
   everything:
     jobs:
-      - unit_test         
-      - workflow-integration-tests
-      - tool-integration-tests         
+#      - unit_test         
+#      - workflow-integration-tests
+#      - tool-integration-tests         
       - integration-tests:
           filters:
             branches:

@@ -19,7 +19,7 @@ import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.RequireDockerTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.ApiResponse;
@@ -46,7 +46,7 @@ import static org.junit.Assert.fail;
 /**
  * @author dyuen
  */
-@Category(ConfidentialTest.class)
+@Category(RequireDockerTest.class)
 public class SearchResourceIT extends BaseIT {
 
     @Rule
