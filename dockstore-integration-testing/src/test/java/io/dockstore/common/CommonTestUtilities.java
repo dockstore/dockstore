@@ -194,6 +194,7 @@ public final class CommonTestUtilities {
     private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath)
         throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "locks", "-r", configPath);
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
 
         List<String> migrationList = Arrays
@@ -242,7 +243,6 @@ public final class CommonTestUtilities {
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
 
                 "1.7.0", "1.8.0", "1.9.0", "1.10.0");
-        application.run("db", "locks", "-r", configPath);
         runMigration(migrationList, application, configPath);
     }
 
@@ -288,6 +288,7 @@ public final class CommonTestUtilities {
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating samepaths migrations");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "locks", "-r", CONFIDENTIAL_CONFIG_PATH);
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         application
             .run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
@@ -305,6 +306,7 @@ public final class CommonTestUtilities {
     public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating testworkflow migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "locks", "-r", CONFIDENTIAL_CONFIG_PATH);
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         List<String> migrationList = Arrays
                 .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0",
