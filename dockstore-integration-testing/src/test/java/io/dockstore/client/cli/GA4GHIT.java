@@ -58,9 +58,9 @@ public abstract class GA4GHIT {
         ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     @Rule
