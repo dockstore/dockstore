@@ -169,7 +169,7 @@ public class WDLHandlerTest {
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(e.getResponse().getStatus(), 400);
-            Assert.assertTrue("Should contain parsing error statement, found " + e.errorMessage, e.errorMessage.contains(WDLHandler.WDL_PARSE_ERROR));
+            Assert.assertTrue("Should contain parsing error statement, found: " + e.errorMessage, e.errorMessage.contains(WDLHandler.WDL_PARSE_ERROR));
         }
     }
 
