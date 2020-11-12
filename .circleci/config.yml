@@ -24,31 +24,24 @@ workflows:
   version: 2
   everything:
     jobs:
+      - build:
+          filters:
+            branches:
+              ignore:
+                - gh-pages           
       - unit_test:         
-          filters:
-            branches:
-              ignore:
-                - gh-pages           
+          requires:
+            - build
+
       - workflow-integration-tests:
-          filters:
-            branches:
-              ignore:
-                - gh-pages           
+          requires:
+            - build
       - tool-integration-tests:         
-          filters:
-            branches:
-              ignore:
-                - gh-pages           
+          requires:
+            - build        
       - integration-tests:
-          filters:
-            branches:
-              ignore:
-                - gh-pages  
-      - require-docker-tests:
-          filters:
-            branches:
-              ignore:
-                - gh-pages                            
+          requires:
+            - build
       - regression-integration-tests:
           filters:
             branches:
@@ -69,26 +62,13 @@ jobs:
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
-  require-docker-tests:
-    executor: integration_test_exec
-    environment:
-      TESTING_PROFILE: require-docker-tests
-    steps:
-      - setup_remote_docker:
-          version: 19.03.13      
-      - setup_test
-      - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
-      - run:
-          name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"                
   integration-tests:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
     steps:
+      - setup_remote_docker:
+          version: 19.03.13            
       - setup_test
       - setup_integration_test
       - run:

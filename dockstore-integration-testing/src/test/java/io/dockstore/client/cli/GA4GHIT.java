@@ -43,6 +43,9 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,9 +61,15 @@ public abstract class GA4GHIT {
         ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     @Rule

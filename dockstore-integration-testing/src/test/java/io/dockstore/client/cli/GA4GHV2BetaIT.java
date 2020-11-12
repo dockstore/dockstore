@@ -22,7 +22,6 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.RequireDockerTest;
 import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.Tool;
@@ -30,10 +29,7 @@ import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.ToolVersion;
 import org.apache.http.HttpStatus;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.junit.experimental.categories.Category;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,12 +40,8 @@ import static org.junit.Assert.assertTrue;
  * @author gluu
  * @since 02/01/18
  */
-@Category(RequireDockerTest.class)
 public class GA4GHV2BetaIT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v2/";
-    @Rule
-    public final EnvironmentVariables environmentVariables
-            = new EnvironmentVariables();
     public String getApiVersion() {
         return API_VERSION;
     }

@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2020 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.dockstore.common;
 
 /**
- * Setting aside tests that require Docker and cwltool
+ * Setting aside tests that require Docker and cwltool where a workflow is actually launched
  */
 public interface RequireCwltoolTest {
 }
