@@ -86,6 +86,7 @@ public final class CommonTestUtilities {
         String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "locks", "-r", dropwizardConfigurationFile);
         application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
         application
             .run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,"
@@ -241,6 +242,7 @@ public final class CommonTestUtilities {
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
 
                 "1.7.0", "1.8.0", "1.9.0", "1.10.0");
+        application.run("db", "locks", "-r", configPath);
         runMigration(migrationList, application, configPath);
     }
 
@@ -271,6 +273,7 @@ public final class CommonTestUtilities {
         } else {
             application = support.getApplication();
         }
+        application.run("db", "locks", "-r", configPath);
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         return application;
     }
