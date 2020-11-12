@@ -65,6 +65,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
     public static final String ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT = "Error parsing workflow. You may have a recursive import.";
     public static final String ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT = "Recursive local import detected: ";
+    public static final String WDL_PARSE_ERROR = "Unable to parse WDL workflow, ";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
     public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
@@ -431,9 +432,9 @@ public class WDLHandler implements LanguageHandlerInterface {
             // Get import files
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
         } catch (WdlParser.SyntaxError e) {
-            throw new CustomWebApplicationException("Unable to parse WDL workflow " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(this.WDL_PARSE_ERROR + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
         } catch (IOException | NoSuchElementException e) {
-            throw new CustomWebApplicationException("Could not process request " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("Could not process request, " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
