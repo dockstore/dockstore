@@ -16,7 +16,7 @@
 package io.dockstore.common;
 
 /**
- * Setting aside tests that require Docker but not cwltool
+ * Setting aside tests that require Docker and cwltool
  */
-public interface RequireDockerTest {
+public interface RequireCwltoolTest {
 }

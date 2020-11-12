@@ -752,7 +752,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.RequireDockerTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.RequireDockerTest, io.dockstore.common.RequireCwltoolTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -761,6 +761,14 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.RequireDockerTest</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>require-cwltool-tests</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.RequireCwltoolTest</groups>
             </properties>
         </profile>
         <profile>
