@@ -72,6 +72,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public static final String CWL_PARSE_ERROR = "Unable to parse CWL workflow, ";
     public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with v1, detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
+    public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -391,8 +392,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
 
                     if (secondaryFile == null) {
-                        LOG.error("Syntax incorrect. Could not ($)import or ($)include secondary file for run command: " + run);
-                        return Optional.empty();
+                        throw new CustomWebApplicationException(this.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_BAD_REQUEST);
                     }
                 }
 

@@ -147,5 +147,16 @@ public class CWLHandlerTest {
             Assert.assertTrue("Should contain undefined cwlVersion error statement, found: " + e.errorMessage,
                 e.errorMessage.contains(CWLHandler.CWL_NO_VERSION_ERROR));
         }
+
+        // expect error based on invalid JSON $import/$include
+        cwlFile = new File(ResourceHelpers.resourceFilePath("invalidMapCWL.cwl"));
+        try {
+            cwlHandler.getContent("/invalidMapCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
+                LanguageHandlerInterface.Type.TOOLS, toolDAO);
+        } catch (CustomWebApplicationException e) {
+            Assert.assertEquals(e.getResponse().getStatus(), 400);
+            Assert.assertTrue("Should contain secondary file error, found: " + e.errorMessage,
+                e.errorMessage.contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR));
+        }
     }
 }
