@@ -60,6 +60,9 @@
         "default_wdl_path": {
           "type": "text"
         },
+        "descriptorType": {
+          "type": "keyword"
+        },
         "description": {
           "type": "text",
           "index": true,

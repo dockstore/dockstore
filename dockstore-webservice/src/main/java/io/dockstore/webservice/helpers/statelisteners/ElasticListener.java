@@ -271,6 +271,7 @@ public class ElasticListener implements StateListenerInterface {
             });
 
             // These are for facets
+            detachedTool.setDescriptorType(tool.getDescriptorType());
             detachedTool.setDefaultWdlPath(tool.getDefaultWdlPath());
             detachedTool.setDefaultCwlPath(tool.getDefaultCwlPath());
             detachedTool.setNamespace(tool.getNamespace());

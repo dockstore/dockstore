@@ -166,8 +166,8 @@ public class Collection implements Serializable, Aliasable {
         this.entries.add(new EntryVersion(entry, version));
     }
 
-    public void removeEntry(Entry entry, Long versionId) {
-        this.entries.removeIf(entryVersion -> entryVersion.getEntry().getId() == (entry.getId()) && ((entryVersion.getVersion() != null ? entryVersion.getVersion().getId() == versionId : null == versionId)));
+    public void removeEntry(Long entryId, Long versionId) {
+        this.entries.removeIf(entryVersion -> entryVersion.equals(entryId, versionId));
     }
 
     public Organization getOrganization() {
