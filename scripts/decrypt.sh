@@ -8,8 +8,6 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-if [[ "${TESTING_PROFILE}" == *"integration-tests"* ]] || [[ "${TESTING_PROFILE}" == "automated-review" ]]; then
-    openssl aes-256-cbc -K $encrypted_f3e772af0e32_key -iv $encrypted_f3e772af0e32_iv -in secrets.tar.enc -out secrets.tar -d
-    tar xvf secrets.tar
-    mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
-fi
+openssl aes-256-cbc -K $encrypted_f3e772af0e32_key -iv $encrypted_f3e772af0e32_iv -in secrets.tar.enc -out secrets.tar -d
+tar xvf secrets.tar
+mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
