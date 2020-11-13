@@ -159,7 +159,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response toolsIndexGet(SecurityContext securityContext) {
+    public Response entriesIndexGet(SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             List<Entry> published = getPublished();
             try (RestClient restClient = RestClient
@@ -198,40 +198,24 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
+    public Response entriesIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
+        final String index = "tools,workflows";
+        Response response = searchIndex(query, queryParameters, index);
+        return response;
+    }
+
+    @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
-        if (!config.getEsConfiguration().getHostname().isEmpty()) {
-            try (RestClient restClient = RestClient
-                    .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
-                    .build()) {
-                HttpEntity entity = query == null ? null : new NStringEntity(query, ContentType.APPLICATION_JSON);
-                Map<String, String> parameters = new HashMap<>();
-                // TODO: note that this is lossy if there are repeated parameters
-                // but it looks like the elastic search http client classes don't handle it
-                if (queryParameters != null) {
-                    queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
-                }
-                org.elasticsearch.client.Response get = restClient.performRequest("GET", "/tools,workflows/_search", parameters, entity);
-                if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                    throw new CustomWebApplicationException("Could not submit index to elastic search",
-                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
-                return Response.ok().entity(get.getEntity().getContent()).build();
-            } catch (ResponseException e) {
-                // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
-                int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
-                int statusCode = e.getResponse().getStatusLine().getStatusCode();
-                LOG.error("Could not use Elasticsearch search", e);
-                if (ArrayUtils.contains(codesToResurface, statusCode)) {
-                    throw new CustomWebApplicationException(e.getMessage(), statusCode);
-                } else {
-                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
-            } catch (IOException e2) {
-                LOG.error("Could not use Elasticsearch search", e2);
-                throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-        }
-        return Response.ok().entity(0).build();
+        final String index = "tools";
+        Response response = searchIndex(query, queryParameters, index);
+        return response;
+    }
+
+    @Override
+    public Response workflowsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
+        final String index = "workflows";
+        Response response = searchIndex(query, queryParameters, index);
+        return response;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -290,4 +274,41 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             LOG.warn("Could not delete previous elastic search " + index + " index, not an issue if this is cold start", e);
         }
     }
+
+    private Response searchIndex(String query, MultivaluedMap<String, String> queryParameters, String index) {
+        if (!config.getEsConfiguration().getHostname().isEmpty()) {
+            try (RestClient restClient = RestClient
+                    .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
+                    .build()) {
+                HttpEntity entity = query == null ? null : new NStringEntity(query, ContentType.APPLICATION_JSON);
+                Map<String, String> parameters = new HashMap<>();
+                // TODO: note that this is lossy if there are repeated parameters
+                // but it looks like the elastic search http client classes don't handle it
+                if (queryParameters != null) {
+                    queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
+                }
+                org.elasticsearch.client.Response get = restClient.performRequest("GET", "/" + index + "/_search", parameters, entity);
+                if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                    throw new CustomWebApplicationException("Could not submit " + index + "index to elastic search",
+                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+                return Response.ok().entity(get.getEntity().getContent()).build();
+            } catch (ResponseException e) {
+                // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
+                int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
+                int statusCode = e.getResponse().getStatusLine().getStatusCode();
+                LOG.error("Could not use Elasticsearch search", e);
+                if (ArrayUtils.contains(codesToResurface, statusCode)) {
+                    throw new CustomWebApplicationException(e.getMessage(), statusCode);
+                } else {
+                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            } catch (IOException e2) {
+                LOG.error("Could not use Elasticsearch search", e2);
+                throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        }
+        return Response.ok().entity(0).build();
+    }
+
 }

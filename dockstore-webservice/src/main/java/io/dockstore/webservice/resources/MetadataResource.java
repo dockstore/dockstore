@@ -386,7 +386,7 @@ public class MetadataResource {
     public Response checkElasticSearch() {
         Response elasticSearchResponse;
         try {
-            elasticSearchResponse = delegate.toolsIndexSearch(null, null, null);
+            elasticSearchResponse = delegate.entriesIndexSearch(null, null, null);
             String result = IOUtils.toString((InputStream)(elasticSearchResponse.getEntity()), StandardCharsets.UTF_8);
             JSONObject jsonObj = new JSONObject(result);
             JSONObject hitsHolder = jsonObj.getJSONObject("hits");

@@ -1841,7 +1841,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -2131,6 +2131,79 @@ paths:
       summary: List entries of an organization
       tags:
         - extendedGA4GH
+  /api/ga4gh/v2/extended/entries/all/_search:
+    post:
+      description: This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
+      operationId: entriesIndexSearch
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: An elastic search result.
+      summary: Search the tools and workflows indices
+      tags:
+        - extendedGA4GH
+  /api/ga4gh/v2/extended/entries/index:
+    post:
+      description: This endpoint updates the indices for all published tools and workflows.
+      operationId: Update the workflows and tools indices
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: integer
+          description: An array of Tools and an array of Workflows.
+      security:
+        - bearer: []
+      summary: Update the workflows and tools indices
+      tags:
+        - extendedGA4GH
+  /api/ga4gh/v2/extended/entries/tools/_search:
+    post:
+      description: This endpoint searches the index for all published tools. Used by utilities that expect to talk to an elastic search endpoint.
+      operationId: toolsIndexSearch
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: An elastic search result.
+      summary: Search the tools index
+      tags:
+        - extendedGA4GH
+  /api/ga4gh/v2/extended/entries/workflows/_search:
+    post:
+      description: This endpoint searches the index for all published workflows. Used by utilities that expect to talk to an elastic search endpoint.
+      operationId: workflowsIndexSearch
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: An elastic search result.
+      summary: Search the workflows index
+      tags:
+        - extendedGA4GH
   /api/ga4gh/v2/extended/organizations:
     get:
       description: This endpoint returns list of all organizations.
@@ -2145,41 +2218,6 @@ paths:
                 type: array
           description: An array of organizations' names.
       summary: List all organizations
-      tags:
-        - extendedGA4GH
-  /api/ga4gh/v2/extended/tools/entry/_search:
-    post:
-      description: This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
-      operationId: toolsIndexSearch
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: string
-          description: An elastic search result.
-      summary: Search the index of tools
-      tags:
-        - extendedGA4GH
-  /api/ga4gh/v2/extended/tools/index:
-    post:
-      description: This endpoint updates the index for all published tools and workflows.
-      operationId: Update the index of tools
-      responses:
-        "200":
-          content:
-            text/plain:
-              schema:
-                type: integer
-          description: An array of Tools of the input organization.
-      security:
-        - bearer: []
-      summary: Update the index of tools
       tags:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/{organization}:

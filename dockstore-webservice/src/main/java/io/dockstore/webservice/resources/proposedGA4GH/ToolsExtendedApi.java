@@ -83,32 +83,58 @@ public class ToolsExtendedApi {
     }
 
     @POST
-    @Path("/tools/entry/_search")
+    @Path("/entries/all/_search")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @ApiOperation(nickname = EntriesIndexSearch.OPERATION_ID, value = EntriesIndexSearch.SUMMARY, notes = EntriesIndexSearch.DESCRIPTION, response = String.class)
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = EntriesIndexSearch.OK_RESPONSE, response = String.class) })
+    @Operation(operationId = EntriesIndexSearch.OPERATION_ID, summary = EntriesIndexSearch.SUMMARY, description = EntriesIndexSearch.DESCRIPTION, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = EntriesIndexSearch.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class)))
+    })
+    public Response entriesIndexSearch(@ApiParam(value = "elastic search query", required = true) String query,
+        @Context UriInfo uriInfo, @Context SecurityContext securityContext) {
+        return delegate.entriesIndexSearch(query, uriInfo != null ? uriInfo.getQueryParameters() : null, securityContext);
+    }
+
+    @POST
+    @Path("/entries/tools/_search")
     @Produces({ MediaType.APPLICATION_JSON })
     @ApiOperation(nickname = ToolsIndexSearch.OPERATION_ID, value = ToolsIndexSearch.SUMMARY, notes = ToolsIndexSearch.DESCRIPTION, response = String.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexSearch.OK_RESPONSE, response = String.class) })
     @Operation(operationId = ToolsIndexSearch.OPERATION_ID, summary = ToolsIndexSearch.SUMMARY, description = ToolsIndexSearch.DESCRIPTION, responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsIndexSearch.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class)))
     })
-    public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query, @Context UriInfo uriInfo,
-        @Context SecurityContext securityContext) {
+    public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query,
+                                       @Context UriInfo uriInfo, @Context SecurityContext securityContext) {
         return delegate.toolsIndexSearch(query, uriInfo != null ? uriInfo.getQueryParameters() : null, securityContext);
     }
 
     @POST
-    @Path("/tools/index")
+    @Path("/entries/workflows/_search")
+    @Produces({ MediaType.APPLICATION_JSON })
+    @ApiOperation(nickname = WorkflowsIndexSearch.OPERATION_ID, value = WorkflowsIndexSearch.SUMMARY, notes = WorkflowsIndexSearch.DESCRIPTION, response = String.class)
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = WorkflowsIndexSearch.OK_RESPONSE, response = String.class) })
+    @Operation(operationId = WorkflowsIndexSearch.OPERATION_ID, summary = WorkflowsIndexSearch.SUMMARY, description = WorkflowsIndexSearch.DESCRIPTION, responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = WorkflowsIndexSearch.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class)))
+    })
+    public Response workflowsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query,
+                                     @Context UriInfo uriInfo, @Context SecurityContext securityContext) {
+        return delegate.workflowsIndexSearch(query, uriInfo != null ? uriInfo.getQueryParameters() : null, securityContext);
+    }
+
+    @POST
+    @Path("/entries/index")
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Produces({ MediaType.TEXT_PLAIN })
-    @ApiOperation(value = ToolsIndexGet.SUMMARY, notes = ToolsIndexGet.DESCRIPTION, authorizations = {
+    @ApiOperation(value = EntriesIndexGet.SUMMARY, notes = EntriesIndexGet.DESCRIPTION, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Integer.class)
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexGet.OK_RESPONSE) })
-    @Operation(operationId = ToolsIndexGet.SUMMARY, summary = ToolsIndexGet.SUMMARY, description = ToolsIndexGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsIndexGet.OK_RESPONSE, content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class)))
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = EntriesIndexGet.OK_RESPONSE) })
+    @Operation(operationId = EntriesIndexGet.SUMMARY, summary = EntriesIndexGet.SUMMARY, description = EntriesIndexGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = EntriesIndexGet.OK_RESPONSE, content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class)))
     })
-    public Response toolsIndexGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user, @Context SecurityContext securityContext)
+    public Response entriesIndexGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user, @Context SecurityContext securityContext)
         throws NotFoundException {
-        return delegate.toolsIndexGet(securityContext);
+        return delegate.entriesIndexGet(securityContext);
     }
 
     @GET
@@ -195,10 +221,10 @@ public class ToolsExtendedApi {
         public static final String NOT_FOUND_RESPONSE = "The tool test cannot be found to annotate.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
-    private static final class ToolsIndexGet {
-        public static final String SUMMARY = "Update the index of tools";
-        public static final String DESCRIPTION = "This endpoint updates the index for all published tools and workflows.";
-        public static final String OK_RESPONSE = "An array of Tools of the input organization.";
+    private static final class EntriesIndexGet {
+        public static final String SUMMARY = "Update the workflows and tools indices";
+        public static final String DESCRIPTION = "This endpoint updates the indices for all published tools and workflows.";
+        public static final String OK_RESPONSE = "An array of Tools and an array of Workflows.";
     }
     private static final class EntriesOrgsGet {
         public static final String OPERATION_ID = "entriesOrgsGet";
@@ -218,10 +244,22 @@ public class ToolsExtendedApi {
         public static final String DESCRIPTION = "This endpoint returns workflows of an organization.";
         public static final String OK_RESPONSE = "An array of Tools of the input organization.";
     }
+    private static final class EntriesIndexSearch {
+        public static final String OPERATION_ID = "entriesIndexSearch";
+        public static final String SUMMARY = "Search the tools and workflows indices";
+        public static final String DESCRIPTION = "This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.";
+        public static final String OK_RESPONSE = "An elastic search result.";
+    }
     private static final class ToolsIndexSearch {
         public static final String OPERATION_ID = "toolsIndexSearch";
-        public static final String SUMMARY = "Search the index of tools";
-        public static final String DESCRIPTION = "This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.";
+        public static final String SUMMARY = "Search the tools index";
+        public static final String DESCRIPTION = "This endpoint searches the index for all published tools. Used by utilities that expect to talk to an elastic search endpoint.";
+        public static final String OK_RESPONSE = "An elastic search result.";
+    }
+    private static final class WorkflowsIndexSearch {
+        public static final String OPERATION_ID = "workflowsIndexSearch";
+        public static final String SUMMARY = "Search the workflows index";
+        public static final String DESCRIPTION = "This endpoint searches the index for all published workflows. Used by utilities that expect to talk to an elastic search endpoint.";
         public static final String OK_RESPONSE = "An elastic search result.";
     }
     private static final class ToolsOrgGet {
