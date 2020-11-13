@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  * @since 02/01/18
  */
 @Category(RequireCwltoolTest.class)
-public class GA4GHV2Cwltool {
+public class GA4GHV2CwltoolIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
             ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
