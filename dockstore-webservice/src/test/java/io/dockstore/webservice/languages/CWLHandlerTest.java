@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
@@ -120,10 +121,11 @@ public class CWLHandlerTest {
         try {
             cwlHandler.getContent("/brokenCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(e.getResponse().getStatus(), 400);
-            Assert.assertTrue("Should contain parsing error statement, found: " + e.errorMessage,
-                e.errorMessage.contains(CWLHandler.CWL_PARSE_ERROR));
+            Assert.assertEquals(400, e.getResponse().getStatus());
+            assertThat(e.errorMessage).contains(CWLHandler.CWL_PARSE_ERROR);
+
         }
 
         // expect error based on invalid cwlVersion
@@ -131,10 +133,10 @@ public class CWLHandlerTest {
         try {
             cwlHandler.getContent("/badVersionCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected cwlVersion error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(e.getResponse().getStatus(), 400);
-            Assert.assertTrue("Should contain chosen cwlVersion error statement, found: " + e.errorMessage,
-                e.errorMessage.contains(CWLHandler.CWL_VERSION_ERROR));
+            Assert.assertEquals(400, e.getResponse().getStatus());
+            assertThat(e.errorMessage).contains(CWLHandler.CWL_VERSION_ERROR);
         }
 
         // expect error based on an undefined cwlVersion
@@ -142,10 +144,10 @@ public class CWLHandlerTest {
         try {
             cwlHandler.getContent("/noVersionCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected undefined cwlVersion error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(e.getResponse().getStatus(), 400);
-            Assert.assertTrue("Should contain undefined cwlVersion error statement, found: " + e.errorMessage,
-                e.errorMessage.contains(CWLHandler.CWL_NO_VERSION_ERROR));
+            Assert.assertEquals(400, e.getResponse().getStatus());
+            assertThat(e.errorMessage).contains(CWLHandler.CWL_NO_VERSION_ERROR);
         }
 
         // expect error based on invalid JSON $import/$include
@@ -153,10 +155,10 @@ public class CWLHandlerTest {
         try {
             cwlHandler.getContent("/invalidMapCWL.cwl", FileUtils.readFileToString(cwlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected ($)import/($)include error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(e.getResponse().getStatus(), 400);
-            Assert.assertTrue("Should contain secondary file error, found: " + e.errorMessage,
-                e.errorMessage.contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR));
+            Assert.assertEquals(400, e.getResponse().getStatus());
+            assertThat(e.errorMessage).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
         }
     }
 }

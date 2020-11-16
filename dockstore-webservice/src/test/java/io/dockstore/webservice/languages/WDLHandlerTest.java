@@ -33,6 +33,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.mockito.Mockito;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class WDLHandlerTest {
@@ -167,9 +168,10 @@ public class WDLHandlerTest {
         try {
             wdlHandler.getContent("/brokenWDL.wdl", FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8), emptySet,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(e.getResponse().getStatus(), 400);
-            Assert.assertTrue("Should contain parsing error statement, found: " + e.errorMessage, e.errorMessage.contains(WDLHandler.WDL_PARSE_ERROR));
+            Assert.assertEquals(400, e.getResponse().getStatus());
+            assertThat(e.errorMessage).contains(WDLHandler.WDL_PARSE_ERROR);
         }
     }
 

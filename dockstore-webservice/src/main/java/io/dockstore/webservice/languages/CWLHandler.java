@@ -68,9 +68,10 @@ import org.yaml.snakeyaml.error.YAMLException;
  * This class will eventually handle support for understanding CWL
  */
 public class CWLHandler extends AbstractLanguageHandler implements LanguageHandlerInterface {
+    public static final String CWL_VERSION_PREFIX = "v1";
     public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
     public static final String CWL_PARSE_ERROR = "Unable to parse CWL workflow, ";
-    public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with v1, detected version ";
+    public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with " + CWLHandler.CWL_VERSION_PREFIX + ", detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
     public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
 
@@ -271,13 +272,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
             if (cwlVersion != null) {
-                final boolean equals = cwlVersion.toString().startsWith("v1");
+                final boolean equals = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
                 if (!equals) {
-                    throw new CustomWebApplicationException(this.CWL_VERSION_ERROR
+                    LOG.error(CWLHandler.CWL_VERSION_ERROR + cwlVersion.toString());
+                    throw new CustomWebApplicationException(CWLHandler.CWL_VERSION_ERROR
                         + cwlVersion.toString(), HttpStatus.SC_BAD_REQUEST);
                 }
             } else {
-                throw new CustomWebApplicationException(this.CWL_NO_VERSION_ERROR, HttpStatus.SC_BAD_REQUEST);
+                LOG.error(CWLHandler.CWL_NO_VERSION_ERROR);
+                throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_BAD_REQUEST);
             }
 
             JSONObject cwlJson = new JSONObject(mapping);
@@ -392,7 +395,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
 
                     if (secondaryFile == null) {
-                        throw new CustomWebApplicationException(this.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_BAD_REQUEST);
+                        LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
+                        throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_BAD_REQUEST);
                     }
                 }
 
@@ -456,7 +460,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.of(getJSONTableToolContent(nodeDockerInfo));
             }
         } catch (ClassCastException | YAMLException | JsonParseException ex) {
-            throw new CustomWebApplicationException(this.CWL_PARSE_ERROR + ex.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_ERROR + ex.getMessage(), HttpStatus.SC_BAD_REQUEST, ex);
         }
     }
 
@@ -737,7 +741,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             final Object cwlVersion = mapping.get("cwlVersion");
 
             if (cwlVersion != null) {
-                final boolean equals = cwlVersion.toString().startsWith("v1");
+                final boolean equals = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
                 if (!equals) {
                     LOG.error("detected invalid version: " + cwlVersion.toString());
                 }
