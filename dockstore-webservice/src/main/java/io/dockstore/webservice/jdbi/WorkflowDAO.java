@@ -23,11 +23,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
@@ -173,6 +176,73 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             throw new CustomWebApplicationException("Entries with the same path exist", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
+    }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    public List<Workflow> filterTrsToolsGet(String descriptorType, String registry, String organization, String name, String toolname,
+            String description, String author, Boolean checker) {
+
+        SourceControlConverter converter = new SourceControlConverter();
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
+        Root<Workflow> entryRoot = q.from(Workflow.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.isTrue(entryRoot.get("isPublished")));
+        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
+
+        predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
+        predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
+        predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
+        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
+        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+        predicate = andEqualDescriptorType(cb, predicate, entryRoot.get("descriptorType"), Optional.ofNullable(descriptorType));
+
+        if (registry != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
+        }
+
+        if (checker != null) {
+            predicate = cb.and(predicate, cb.isTrue(entryRoot.get("isChecker")));
+        }
+
+        q.where(predicate);
+        TypedQuery<Workflow> query = currentSession().createQuery(q);
+
+        List<Workflow> workflows = query.getResultList();
+        return workflows;
+    }
+
+    private Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
+        return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
+                .orElse(existingPredicate);
+    }
+
+    private String wildcardLike(String value) {
+        return '%' + value + '%';
+    }
+
+    private Predicate andEqualDescriptorType(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
+        DescriptorLanguage descriptorLanguage;
+        if (value.isPresent()) {
+            String descriptorValue = value.get();
+            if ("galaxy".equalsIgnoreCase(descriptorValue)) {
+                descriptorLanguage = DescriptorLanguage.GXFORMAT2;
+            } else if (descriptorValue.equals(DescriptorLanguage.CWL.getShortName())) {
+                descriptorLanguage = DescriptorLanguage.CWL;
+            } else if (descriptorValue.equals(DescriptorLanguage.WDL.getShortName())) {
+                descriptorLanguage = DescriptorLanguage.WDL;
+            } else if (descriptorValue.equals(DescriptorLanguage.NEXTFLOW.getShortName())) {
+                descriptorLanguage = DescriptorLanguage.NEXTFLOW;
+            } else if (descriptorValue.equals(DescriptorLanguage.SERVICE.getShortName())) {
+                descriptorLanguage = DescriptorLanguage.SERVICE;
+            } else {
+                LOG.info("Cannot match descriptor type");
+                return existingPredicate;
+            }
+            return cb.and(existingPredicate, cb.equal(column, descriptorLanguage));
+        }
+        return existingPredicate;
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {

@@ -292,20 +292,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 all.addAll(toolDAO.findAllPublished());
             }
             if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
-                all.addAll(workflowDAO.findAllPublished());
+                // filter published workflows using criteria builder
+                all.addAll(workflowDAO.filterTrsToolsGet(descriptorType, registry, organization, name, toolname, description, author, checker));
             }
             all.sort(Comparator.comparing(Entry::getGitUrl));
         }
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
-        // Tricky case for GALAXY because it doesn't match the rules of the other languages
-        if ("galaxy".equalsIgnoreCase(descriptorType)) {
-            descriptorType = DescriptorLanguage.GXFORMAT2.getShortName();
-        }
-
         for (Entry<?, ?> c : all) {
-            // filters just for tools
+            // filter tools
             if (c instanceof Tool) {
                 Tool tool = (Tool)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
@@ -328,37 +324,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // tools are never checker workflows
                     continue;
                 }
-            }
-            // filters just for workflows
-            if (c instanceof Workflow) {
-                Workflow workflow = (Workflow)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && (workflow.getSourceControl() == null || !workflow.getSourceControl().toString().contains(registry))) {
+                // description and author exists for both tools and workflows, but workflows have already been filtered above.
+                if (description != null && (c.getDescription() == null || !c.getDescription().contains(description))) {
                     continue;
                 }
-                if (organization != null && (workflow.getOrganization() == null || !workflow.getOrganization().contains(organization))) {
-                    continue;
-                }
-                if (name != null && (workflow.getRepository() == null || !workflow.getRepository().contains(name))) {
-                    continue;
-                }
-                if (toolname != null && (workflow.getWorkflowName() == null || !workflow.getWorkflowName().contains(toolname))) {
-                    continue;
-                }
-                if (checker != null && workflow.isIsChecker() != checker) {
-                    continue;
-                }
-                if (descriptorType != null && !workflow.getDescriptorType().toString().equals(descriptorType)) {
+                if (author != null && (c.getAuthor() == null || !c.getAuthor().contains(author))) {
                     continue;
                 }
             }
-            // common filters between tools and workflows
-            if (description != null && (c.getDescription() == null || !c.getDescription().contains(description))) {
-                continue;
-            }
-            if (author != null && (c.getAuthor() == null || !c.getAuthor().contains(author))) {
-                continue;
-            }
+
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
