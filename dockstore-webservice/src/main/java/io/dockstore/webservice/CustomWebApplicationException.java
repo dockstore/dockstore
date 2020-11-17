@@ -31,11 +31,6 @@ public class CustomWebApplicationException extends WebApplicationException {
         this.errorMessage = message;
     }
 
-    public CustomWebApplicationException(String message, int status, Throwable ex) {
-        super(ex, Response.status(status).entity(message).type(MediaType.TEXT_PLAIN).build());
-        this.errorMessage = message;
-    }
-
     public String getErrorMessage() {
         return errorMessage;
     }

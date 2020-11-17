@@ -432,9 +432,13 @@ public class WDLHandler implements LanguageHandlerInterface {
             // Get import files
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
         } catch (WdlParser.SyntaxError ex) {
-            throw new CustomWebApplicationException(WDLHandler.WDL_PARSE_ERROR + ex.getMessage(), HttpStatus.SC_BAD_REQUEST, ex);
+            final String exMsg = WDLHandler.WDL_PARSE_ERROR + ex.getMessage();
+            LOG.error(exMsg, ex);
+            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
         } catch (IOException | NoSuchElementException ex) {
-            throw new CustomWebApplicationException("Could not process request, " + ex.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR, ex);
+            final String exMsg = "Could not process request, " + ex.getMessage();
+            LOG.error(exMsg, ex);
+            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }

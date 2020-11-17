@@ -272,8 +272,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
             if (cwlVersion != null) {
-                final boolean equals = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
-                if (!equals) {
+                final boolean startsWith = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
+                if (!startsWith) {
                     LOG.error(CWLHandler.CWL_VERSION_ERROR + cwlVersion.toString());
                     throw new CustomWebApplicationException(CWLHandler.CWL_VERSION_ERROR
                         + cwlVersion.toString(), HttpStatus.SC_BAD_REQUEST);
@@ -460,7 +460,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.of(getJSONTableToolContent(nodeDockerInfo));
             }
         } catch (ClassCastException | YAMLException | JsonParseException ex) {
-            throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_ERROR + ex.getMessage(), HttpStatus.SC_BAD_REQUEST, ex);
+            final String exMsg = CWLHandler.CWL_PARSE_ERROR + ex.getMessage();
+            LOG.error(exMsg, ex);
+            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -741,11 +743,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             final Object cwlVersion = mapping.get("cwlVersion");
 
             if (cwlVersion != null) {
-                final boolean equals = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
-                if (!equals) {
+                final boolean startsWith = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
+                if (!startsWith) {
                     LOG.error("detected invalid version: " + cwlVersion.toString());
                 }
-                return equals;
+                return startsWith;
             }
         } catch (ClassCastException | YAMLException e) {
             return false;
