@@ -22,17 +22,13 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.TestUtility;
-import io.dockstore.common.Utilities;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.TRSService;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.openapi.client.model.ToolFile;
 import io.dockstore.openapi.client.model.ToolVersion;
-import io.dropwizard.testing.ResourceHelpers;
 import io.openapi.model.Service;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
@@ -49,7 +45,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class GA4GHV2FinalIT extends GA4GHIT {
     private static final String API_VERSION = "ga4gh/trs/v2/";
-
     public String getApiVersion() {
         return API_VERSION;
     }
@@ -388,27 +383,6 @@ public class GA4GHV2FinalIT extends GA4GHIT {
         // test garbage source control value
         response = checkedResponse(baseURL + "tools/%23workflow%2Fgarbagio%2FfakeOrganization%2FfakeRepository%2FPotato", HttpStatus.SC_NOT_FOUND);
         assertThat(response == null);
-
-        // reset DB for other tests
-        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
-    }
-
-    /**
-     * This tests cwl-runner with a workflow from GA4GH V2 relative-path endpoint (without encoding) that contains 2 more additional files
-     * that will reference the GA4GH V2 endpoint
-     */
-    @Test
-    public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
-        CommonTestUtilities.setupTestWorkflow(SUPPORT);
-        String command = "cwl-runner";
-        String originalUrl =
-            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
-        String descriptorPath = TestUtility.mimicNginxRewrite(originalUrl, basePath);
-        String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
-        ImmutablePair<String, String> stringStringImmutablePair = Utilities
-            .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath, System.out, System.err);
-        assertTrue("failure message" + stringStringImmutablePair.left,
-            stringStringImmutablePair.getRight().contains("Final process status is success"));
 
         // reset DB for other tests
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);

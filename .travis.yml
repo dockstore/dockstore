@@ -4,9 +4,9 @@ services:
 
 addons:
   postgresql: "11"
-branches:
-  except:
-    - /^feature.*$/
+branches:       
+  except:       
+      - /^feature.*$/
 cache:
   directories:
   - /tmp/localstack_install_dir
@@ -19,45 +19,12 @@ dist: bionic
 language: java
 jdk: openjdk12
 
-env:
-  - TESTING_PROFILE=integration-tests
-
 jobs:
   include:
-    - stage: unit-tests
-      env:
-        - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE
-# moved to CircleCI (may move back if build speed improves)
-#    - stage: unit-tests
-#      jdk: openjdk11
-#      env:
-#      - TESTING_PROFILE=unit-tests
-#      script: mvn --batch-mode clean install -P$TESTING_PROFILE
-
-# moved to CircleCI (may move back if build speed improves)
-#    - stage: automated-review
-#      jdk: openjdk11
-#      env:
-#      - TESTING_PROFILE=automated-review
-#      script:
-#      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
-#      - scripts/check_migrations.sh
-
     - stage: coverage
+      script: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       env:
-        - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-    - stage: coverage
-      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=false
-    - stage: coverage
-      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-      env:
-        - TESTING_PROFILE=tool-integration-tests
-    - stage: coverage
-      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-      env:
-        - TESTING_PROFILE=workflow-integration-tests
+        - TESTING_PROFILE=require-cwltool-tests
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
 #    - stage: coverage
@@ -66,11 +33,6 @@ jobs:
 #      env:
 #        - TESTING_PROFILE=toil-integration-tests
 
-    - stage: coverage
-      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-      env:
-        - TESTING_PROFILE=regression-integration-tests
-      if: branch = master OR branch =~ /^release.*$/
         
 # build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
@@ -98,11 +60,6 @@ before_install:
 - wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
 - chmod a+x yq_linux_amd64
 - sudo mv yq_linux_amd64 /usr/bin/yq
-# alternate method for starting elastic search from https://docs.travis-ci.com/user/database-setup/#elasticsearch
-- curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.8.3.deb -o elasticsearch.deb
-- sudo dpkg -i --force-confnew elasticsearch.deb
-- sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
-- sudo service elasticsearch restart
 
 install:
 - docker version

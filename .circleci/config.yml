@@ -1,18 +1,111 @@
-version: 2
+version: 2.1
+executors:
+  integration_test_exec:
+    docker: # run the steps with Docker
+      - image: cimg/openjdk:11.0.8
+        environment:
+          PGHOST: 127.0.0.1
+      - image: circleci/postgres:11.6
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          PG_HOST: localhost
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_PASSWORD: postgres
+      - image: docker.elastic.co/elasticsearch/elasticsearch:6.8.3
+        environment:
+          - xpack.security.enabled: false
+          - transport.host: localhost
+          - network.host: 127.0.0.1
+          - http.port: 9200
+          - discovery.type: single-node
+    resource_class: xlarge      
 workflows:
   version: 2
   everything:
     jobs:
-      - unit_test:
+      - build:
           filters:
             branches:
               ignore:
-                - gh-pages
-#      - openapi_validation
+                - gh-pages           
+      - unit_test:         
+          requires:
+            - build
+
+      - workflow-integration-tests:
+          requires:
+            - build
+      - tool-integration-tests:         
+          requires:
+            - build        
+      - integration-tests:
+          requires:
+            - build
+      - regression-integration-tests:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
 jobs:
-  openapi_validation:
+  regression-integration-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: regression-integration-tests
+    steps:  
+      - setup_test
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
+  integration-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: integration-tests
+    steps:
+      - setup_remote_docker:
+          version: 19.03.13            
+      - setup_test
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
+  tool-integration-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: tool-integration-tests
+    steps:
+      - setup_test
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
+  workflow-integration-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: workflow-integration-tests
+    steps:
+      - setup_test
+      - setup_integration_test
+      - run:
+          name: run integration test
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
+  build:
     docker: # run the steps with Docker
-      - image: circleci/openjdk:11.0.4-jdk-stretch
+      - image: cimg/openjdk:11.0.8
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
     steps: # a collection of executable commands
@@ -20,11 +113,6 @@ jobs:
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
-      - run:
-          name: install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
       - run:
           name: Install yq
           command: |
@@ -39,40 +127,35 @@ jobs:
             cd git-secrets-1.3.0
             sudo make install
       - run:
-          name: run the actual tests
-          command: mvn -B clean install -DskipTests
-      - run:
-          name: validate openapi
+          name: decrypt
           command: |
-            wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
-            java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
-            java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+            sudo apt install openssl -y
+            openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV >> test_data.zip
+            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid
+      - run:
+          name: build
+          command: mvn -B clean install -DskipTests
+      # - run:
+      #     name: validate openapi
+      #     command: |
+      #       wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
+      #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
+      #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
   unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
-      - image: circleci/openjdk:11.0.4-jdk-stretch
+      - image: cimg/openjdk:11.0.8
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:9.6.5-alpine-ram
+      - image: circleci/postgres:9.6.19
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_PASSWORD: postgres   
     steps: # a collection of executable commands
-      - checkout # check out source code to working directory
-      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
-          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
-          key: dockstore-java-{{ checksum "pom.xml" }}
-      - run:
-          name: install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
-      - run: 
-          name: Install yq
-          command: |
-            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
-            chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq
+      - checkout    
+      - setup_test
       - run:
           name: Install git-secrets
           command: |
@@ -80,30 +163,25 @@ jobs:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install
-      - run:
-          name: Wait for db
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
       - run:
           name: Install postgresql client
           command: |
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
             sudo apt install -y postgresql-client
-      - run:
-          name: setup postgres
-          command: |
-            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-            psql -c "ALTER USER dockstore WITH superuser;" -U postgres
-            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+      - setup_postgres
       - run:
           name: run the actual tests
-          command: mvn -B clean install -Punit-tests -ntp
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
       - run:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests) 
-            keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit           
-            mvn -B clean install -Pnon-confidential-tests -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
+            /usr/local/jdk-11.0.8/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+            mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
       - run:
           name: check that JPA classes are consistent with migrations
           command: |
@@ -164,3 +242,77 @@ jobs:
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
+commands:
+  setup_postgres:
+    steps:    
+      - run:
+          name: setup postgres
+          command: |
+            psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+            psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+  setup_test:
+    steps:
+      - checkout
+      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: dockstore-java-{{ checksum "pom.xml" }}
+      - run:
+          name: Install yq
+          command: |
+            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+            chmod a+x yq_linux_amd64
+            sudo mv yq_linux_amd64 /usr/bin/yq          
+  setup_integration_test:
+    steps:
+      - run:
+          name: install pip
+          command: |
+            sudo apt update
+            sudo apt install python3-distutils python3-dev
+            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+            python3 get-pip.py
+            # For debug purposes, a python3 version was installed in the image, pip is untagged
+            python3 --version
+            pip3 --version
+      - run:
+          name: install pip dependencies
+          command: scripts/install-tests.sh
+      - run:
+          name: Install postgresql client
+          command: |
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo apt update
+            sudo apt install -y postgresql-client
+      - run:
+          name: decrypt
+          command: |
+            sudo apt install openssl -y
+            openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV >> test_data.zip
+            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid            
+      - run:
+          name: expand confidential data
+          command: |
+            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid 
+            sudo mkdir /home/travis
+            sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
+      - run:
+          name: Install git-secrets
+          command: |
+            wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
+            tar -zxf git-secrets-1.3.0.tar.gz
+            cd git-secrets-1.3.0
+            sudo make install            
+      - run:
+          name: install dockerize
+          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.6.1
+      - run:
+          name: Wait for db
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+      - setup_postgres  
+      - run:
+          name: Wait for ES
+          command: |
+            wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true      
+
