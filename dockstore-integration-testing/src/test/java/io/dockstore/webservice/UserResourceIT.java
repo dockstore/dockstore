@@ -89,7 +89,8 @@ public class UserResourceIT extends BaseIT {
     }
 
     @Test
-    public void testAddUserToOrgs() {
+    public void testAddUserToOrgs() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
@@ -99,13 +100,14 @@ public class UserResourceIT extends BaseIT {
                 DescriptorLanguage.WDL.getShortName(), "");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        Workflow workflow1 = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        Long id = workflow1.getId();
         List<io.dockstore.openapi.client.model.Workflow> workflows = userApi.addUserToDockstoreWorkflows(userApi.getUser().getId(), "");
 
 
         // Remove an association with an entry
         long numberOfWorkflows = workflows.size();
-        testingPostgres.runUpdateStatement("delete from user_entry where entryid = 951");
+        testingPostgres.runUpdateStatement("delete from user_entry where entryid = " + id);
         long newNumberOfWorkflows = userApi.userWorkflows((long)1).size();
         assertEquals("Should have one less workflow", numberOfWorkflows - 1, newNumberOfWorkflows);
 
@@ -593,7 +595,7 @@ public class UserResourceIT extends BaseIT {
 
         // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
         // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
-        userApi.updateUserMetadata();
+        adminApi.updateUserMetadata();
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
         assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
