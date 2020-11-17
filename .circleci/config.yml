@@ -265,13 +265,13 @@ commands:
           key: dockstore-java-{{ checksum "pom.xml" }}
       - run:
           name: manually copy back .m2
-          command: cp -r .m2 ~/.m2
+          command: cp -r .m2 ~/.m2    
       - run:
           name: Install yq
           command: |
             wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
             chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq          
+            sudo mv yq_linux_amd64 /usr/bin/yq            
   setup_integration_test:
     steps:
       - run:
@@ -292,13 +292,7 @@ commands:
           command: |
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
-            sudo apt install -y postgresql-client
-      - run:
-          name: decrypt
-          command: |
-            sudo apt install openssl -y
-            openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV >> test_data.zip
-            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid            
+            sudo apt install -y postgresql-client          
       - run:
           name: expand confidential data
           command: |
