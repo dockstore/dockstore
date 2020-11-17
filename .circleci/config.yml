@@ -5,7 +5,7 @@ executors:
       - image: cimg/openjdk:11.0.8
         environment:
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:11.6
+      - image: circleci/postgres:11.8
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
@@ -19,7 +19,7 @@ executors:
           - network.host: 127.0.0.1
           - http.port: 9200
           - discovery.type: single-node
-    resource_class: xlarge      
+    resource_class: large      
 workflows:
   version: 2
   everything:
@@ -32,7 +32,6 @@ workflows:
       - unit_test:         
           requires:
             - build
-
       - workflow-integration-tests:
           requires:
             - build
@@ -141,6 +140,11 @@ jobs:
       #       wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
       #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
       #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+      - run:
+          name: copy m2 manually
+          command: cp -r ~/.m2 .
+      - persist_to_workspace:
+          root: .
   unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.8
@@ -252,10 +256,14 @@ commands:
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_test:
     steps:
-      - checkout
+      - attach_workspace:
+          at: .    
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
+      - run:
+          name: manually copy back .m2
+          command: cp -r .m2 ~/.m2
       - run:
           name: Install yq
           command: |
