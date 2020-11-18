@@ -19,7 +19,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
-import io.swagger.client.model.Limits;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
