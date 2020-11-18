@@ -498,7 +498,24 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolV1"
-  /api/ga4gh/v2/extended/entries/all/_search:
+  /api/ga4gh/v2/extended/organizations:
+    get:
+      tags:
+      - "extendedGA4GH"
+      summary: "List all organizations"
+      description: "This endpoint returns list of all organizations."
+      operationId: "entriesOrgsGet"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "An array of organizations' names."
+          schema:
+            type: "array"
+            items:
+              type: "string"
+  /api/ga4gh/v2/extended/tools/entry/_search:
     post:
       tags:
       - "extendedGA4GH"
@@ -520,14 +537,14 @@ paths:
           description: "An elastic search result."
           schema:
             type: "string"
-  /api/ga4gh/v2/extended/entries/index:
+  /api/ga4gh/v2/extended/tools/index:
     post:
       tags:
       - "extendedGA4GH"
       summary: "Update the workflows and tools indices"
       description: "This endpoint updates the indices for all published tools and\
         \ workflows."
-      operationId: "entriesIndexGet"
+      operationId: "toolsIndexGet"
       produces:
       - "text/plain"
       parameters: []
@@ -536,67 +553,6 @@ paths:
           description: "An array of Tools and an array of Workflows."
       security:
       - BEARER: []
-  /api/ga4gh/v2/extended/entries/tools/_search:
-    post:
-      tags:
-      - "extendedGA4GH"
-      summary: "Search the tools index"
-      description: "This endpoint searches the index for all published tools. Used\
-        \ by utilities that expect to talk to an elastic search endpoint."
-      operationId: "toolsIndexSearch"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "elastic search query"
-        required: true
-        schema:
-          type: "string"
-      responses:
-        200:
-          description: "An elastic search result."
-          schema:
-            type: "string"
-  /api/ga4gh/v2/extended/entries/workflows/_search:
-    post:
-      tags:
-      - "extendedGA4GH"
-      summary: "Search the workflows index"
-      description: "This endpoint searches the index for all published workflows.\
-        \ Used by utilities that expect to talk to an elastic search endpoint."
-      operationId: "workflowsIndexSearch"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "elastic search query"
-        required: true
-        schema:
-          type: "string"
-      responses:
-        200:
-          description: "An elastic search result."
-          schema:
-            type: "string"
-  /api/ga4gh/v2/extended/organizations:
-    get:
-      tags:
-      - "extendedGA4GH"
-      summary: "List all organizations"
-      description: "This endpoint returns list of all organizations."
-      operationId: "entriesOrgsGet"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "An array of organizations' names."
-          schema:
-            type: "array"
-            items:
-              type: "string"
   /api/ga4gh/v2/extended/tools/{organization}:
     get:
       tags:

@@ -63,6 +63,9 @@ public class ElasticListener implements StateListenerInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
+    private static final String TOOLS_INDEX = "tools";
+    private static final String WORKFLOWS_INDEX = "workflows";
+    private static final String ALL_INDICES = "tools, workflows";
     private String hostname;
     private int port;
 
@@ -101,7 +104,7 @@ public class ElasticListener implements StateListenerInterface {
         String json;
         json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-            String entryType = entry instanceof Tool ? "tools" : "workflows";
+            String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
             String baseEndpoint = "/" + entryType + "/_doc/" + entry.getId();
             Response post;
@@ -166,10 +169,10 @@ public class ElasticListener implements StateListenerInterface {
         List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
         List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool)).collect(Collectors.toList());
         if (!workflowsEntryList.isEmpty()) {
-            postBulkUpdate("workflows", workflowsEntryList);
+            postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
         }
         if (!toolsEntryList.isEmpty()) {
-            postBulkUpdate("tools", toolsEntryList);
+            postBulkUpdate(TOOLS_INDEX, toolsEntryList);
         }
     }
 

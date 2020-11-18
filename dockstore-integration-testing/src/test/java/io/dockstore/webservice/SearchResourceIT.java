@@ -99,7 +99,7 @@ public class SearchResourceIT extends BaseIT {
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         EntriesApi entriesApi = new EntriesApi(webClient);
         // update the search index
-        ApiResponse<Void> voidApiResponse = extendedGa4GhApi.entriesIndexGetWithHttpInfo();
+        ApiResponse<Void> voidApiResponse = extendedGa4GhApi.toolsIndexGetWithHttpInfo();
         int statusCode = voidApiResponse.getStatusCode();
         Assert.assertEquals(200, statusCode);
         waitForIndexRefresh(0, extendedGa4GhApi, 0);
@@ -138,7 +138,7 @@ public class SearchResourceIT extends BaseIT {
         }
 
         // Update the search index
-        extendedGa4GhApi.entriesIndexGet();
+        extendedGa4GhApi.toolsIndexGet();
         waitForIndexRefresh(0, extendedGa4GhApi,  0);
         try {
             metadataApi.checkElasticSearch();

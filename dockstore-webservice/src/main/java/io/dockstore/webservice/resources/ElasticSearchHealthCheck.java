@@ -26,7 +26,7 @@ public class ElasticSearchHealthCheck extends HealthCheck {
         // If elastic search is up with a valid index this should return healthy
         Response response;
         try {
-            response = toolsExtendedApi.entriesIndexSearch(null, null, null);
+            response = toolsExtendedApi.toolsIndexSearch(null, null, null);
         } catch (CustomWebApplicationException ex) {
             LOG.info(baseMessage, ex);
             return Result.unhealthy(baseMessage + ": " + ex.getResponse().getEntity());

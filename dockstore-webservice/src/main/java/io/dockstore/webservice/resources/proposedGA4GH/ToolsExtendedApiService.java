@@ -32,11 +32,9 @@ public abstract class ToolsExtendedApiService {
     public abstract Response entriesOrgGet(String organization, SecurityContext securityContext) throws NotFoundException;
     public abstract Response organizationsGet(SecurityContext securityContext);
 
-    public abstract Response entriesIndexGet(SecurityContext securityContext) throws NotFoundException;
+    public abstract Response toolsIndexGet(SecurityContext securityContext) throws NotFoundException;
 
-    public abstract Response entriesIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext);
     public abstract Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext);
-    public abstract Response workflowsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext);
     @SuppressWarnings("checkstyle:parameternumber")
     public abstract Response setSourceFileMetadata(String type, String id, String versionId, String relativePath, String platform, String platformVersion, Boolean verified, String metadata);
 
