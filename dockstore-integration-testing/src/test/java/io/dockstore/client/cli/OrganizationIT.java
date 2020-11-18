@@ -270,7 +270,6 @@ public class OrganizationIT extends BaseIT {
         final long count3 = testingPostgres.runSelectStatement("select count(*) from event where type = 'APPROVE_ORG'", long.class);
         assertEquals("There should be 1 event of type APPROVE_ORG, there are " + count3, 1, count3);
 
-
         try {
             organization.setName("NameSquatting");
             organization.setDisplayName("DisplayNameSquatting");
@@ -1551,9 +1550,6 @@ public class OrganizationIT extends BaseIT {
 
         // demote self to test setting invalid aliases
         testingPostgres.runUpdateStatement("update enduser set  isadmin='f'");
-        // need to invalidate cached creds
-        UsersApi usersApi = new UsersApi(webClientUser2);
-        usersApi.setUserLimits(usersApi.getUser().getId(), new Limits());
 
         boolean throwsError = false;
         try {
@@ -1718,7 +1714,6 @@ public class OrganizationIT extends BaseIT {
 
         organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);
         assertEquals(0, organizationsApi.getStarredUsersForApprovedOrganization(organization.getId()).size());
-
         // Should not be able to unstar twice
         try {
             organizationsApi.starOrganization(organization.getId(), UNSTAR_REQUEST);

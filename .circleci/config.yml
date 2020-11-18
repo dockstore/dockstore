@@ -269,6 +269,8 @@ commands:
             bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid 
             sudo mkdir /home/travis
             sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
+            # Disable authentication cache. it causes flakey tests. Not updating the confidential bundle because I am lazy.
+            sed -i 's/expireAfterAccess=10m/expireAfterAccess=0s/g' dockstore-integration-testing/src/test/resources/dockstoreTest.yml
       - install-git-secrets
       - run:
           name: install dockerize
