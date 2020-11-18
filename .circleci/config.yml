@@ -271,6 +271,7 @@ commands:
             sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
             # Disable authentication cache. it causes flakey tests. Not updating the confidential bundle because I am lazy.
             sed -i 's/expireAfterAccess=10m/expireAfterAccess=0s/g' dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+            sed -i 's/1s/10s/g' dockstore-integration-testing/src/test/resources/dockstoreTest.yml
       - install-git-secrets
       - run:
           name: install dockerize
