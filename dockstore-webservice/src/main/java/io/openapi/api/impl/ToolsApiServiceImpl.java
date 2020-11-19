@@ -309,8 +309,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
             // Only WDL and CWL tools are supported on Dockstore.
-            if (descriptorLanguageFound && (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) &&
-                    (DescriptorLanguage.WDL.equals(descriptorLanguage) || DescriptorLanguage.CWL.equals(descriptorLanguage) || descriptorType == null)) {
+            if (descriptorLanguageFound && (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass))
+                    && (DescriptorLanguage.WDL.equals(descriptorLanguage) || DescriptorLanguage.CWL.equals(descriptorLanguage) || descriptorType == null)) {
                 all.addAll(toolDAO.findAllPublished());
             }
             if (descriptorLanguageFound && (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass))) {
