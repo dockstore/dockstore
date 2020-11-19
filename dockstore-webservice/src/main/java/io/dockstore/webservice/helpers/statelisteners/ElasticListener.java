@@ -105,16 +105,16 @@ public class ElasticListener implements StateListenerInterface {
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
             String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
-            String baseEndpoint = "/" + entryType + "/_doc/" + entry.getId();
+            String baseEndpoint = "/" + entryType;
             Response post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
                 post = restClient
-                    .performRequest("POST", baseEndpoint + "/_update", Collections.emptyMap(), entity);
+                    .performRequest("POST", baseEndpoint + "/_update/" + entry.getId(), Collections.emptyMap(), entity);
                 break;
             case DELETE:
-                post = restClient.performRequest("DELETE", baseEndpoint, Collections.emptyMap(), entity);
+                post = restClient.performRequest("DELETE", baseEndpoint + "/_doc/" + entry.getId(), Collections.emptyMap(), entity);
                 break;
             default:
                 throw new RuntimeException("Unknown index command: " + command);
@@ -178,7 +178,7 @@ public class ElasticListener implements StateListenerInterface {
     private void postBulkUpdate(String index, List<Entry> entries) {
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
-            String endpoint = "/" + index + "/_doc/_bulk";
+            String endpoint = "/" + index + "/_bulk";
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
             Response post = restClient.performRequest("POST", endpoint, Collections.emptyMap(), bulkEntity);
             if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
