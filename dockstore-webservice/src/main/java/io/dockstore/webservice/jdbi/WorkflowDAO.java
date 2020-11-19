@@ -179,25 +179,24 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public List<Workflow> filterTrsToolsGet(String descriptorType, String registry, String organization, String name, String toolname,
+    public List<Workflow> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
             String description, String author, Boolean checker) {
 
-        SourceControlConverter converter = new SourceControlConverter();
-        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
-        Root<Workflow> entryRoot = q.from(Workflow.class);
+        final SourceControlConverter converter = new SourceControlConverter();
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
+        final Root<Workflow> entryRoot = q.from(Workflow.class);
 
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.isTrue(entryRoot.get("isPublished")));
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
-
         predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
         predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
         predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
         predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
-        predicate = andEqualDescriptorType(cb, predicate, entryRoot.get("descriptorType"), Optional.ofNullable(descriptorType));
 
+        if (descriptorLanguage != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
+        }
         if (registry != null) {
             predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
         }
@@ -220,29 +219,6 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     private String wildcardLike(String value) {
         return '%' + value + '%';
-    }
-
-    private Predicate andEqualDescriptorType(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
-        DescriptorLanguage descriptorLanguage;
-        if (value.isPresent()) {
-            String descriptorValue = value.get();
-            if ("galaxy".equalsIgnoreCase(descriptorValue)) {
-                descriptorLanguage = DescriptorLanguage.GXFORMAT2;
-            } else if (descriptorValue.equals(DescriptorLanguage.CWL.getShortName())) {
-                descriptorLanguage = DescriptorLanguage.CWL;
-            } else if (descriptorValue.equals(DescriptorLanguage.WDL.getShortName())) {
-                descriptorLanguage = DescriptorLanguage.WDL;
-            } else if (descriptorValue.equals(DescriptorLanguage.NEXTFLOW.getShortName())) {
-                descriptorLanguage = DescriptorLanguage.NEXTFLOW;
-            } else if (descriptorValue.equals(DescriptorLanguage.SERVICE.getShortName())) {
-                descriptorLanguage = DescriptorLanguage.SERVICE;
-            } else {
-                LOG.info("Cannot match descriptor type");
-                return existingPredicate;
-            }
-            return cb.and(existingPredicate, cb.equal(column, descriptorLanguage));
-        }
-        return existingPredicate;
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {

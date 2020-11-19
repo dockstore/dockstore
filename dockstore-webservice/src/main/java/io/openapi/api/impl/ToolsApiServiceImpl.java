@@ -280,6 +280,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         final List<Entry<?, ?>> all = new ArrayList<>();
 
+
         // short circuit id and alias filters, these are a bit weird because they have a max of one result
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
@@ -288,12 +289,33 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } else if (alias != null) {
             all.add(toolDAO.getGenericEntryByAlias(alias));
         } else {
-            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+            // If there is no matching descriptor language, then do not add any tools or workflows.
+            DescriptorLanguage descriptorLanguage = null;
+            boolean descriptorLanguageFound = true;
+
+            // Tricky case for GALAXY because it doesn't match the rules of the other languages
+            if ("galaxy".equalsIgnoreCase(descriptorType)) {
+                descriptorType = DescriptorLanguage.GXFORMAT2.getShortName();
+            }
+
+            if (descriptorType != null) {
+                try {
+                    descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(descriptorType);
+                } catch (UnsupportedOperationException ex) {
+                    LOG.info(ex.getMessage());
+                    descriptorLanguageFound = false;
+                }
+            }
+
+            // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
+            // Only WDL and CWL tools are supported on Dockstore.
+            if (descriptorLanguageFound && (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) &&
+                    (DescriptorLanguage.WDL.equals(descriptorLanguage) || DescriptorLanguage.CWL.equals(descriptorLanguage) || descriptorType == null)) {
                 all.addAll(toolDAO.findAllPublished());
             }
-            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+            if (descriptorLanguageFound && (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass))) {
                 // filter published workflows using criteria builder
-                all.addAll(workflowDAO.filterTrsToolsGet(descriptorType, registry, organization, name, toolname, description, author, checker));
+                all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker));
             }
             all.sort(Comparator.comparing(Entry::getGitUrl));
         }
