@@ -31,15 +31,15 @@ workflows:
             branches:
               ignore:
                 - gh-pages
-      # - unit_test:
-      #     requires:
-      #       - build
-      # - workflow-integration-tests:
-      #     requires:
-      #       - build
-      # - tool-integration-tests:
-      #     requires:
-      #       - build
+      - unit_test:
+          requires:
+            - build
+      - workflow-integration-tests:
+          requires:
+            - build
+      - tool-integration-tests:
+          requires:
+            - build
       - integration-tests:
           requires:
             - build
