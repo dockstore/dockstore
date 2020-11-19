@@ -223,6 +223,7 @@ public final class CommonTestUtilities {
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
         throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
+
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
         // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
