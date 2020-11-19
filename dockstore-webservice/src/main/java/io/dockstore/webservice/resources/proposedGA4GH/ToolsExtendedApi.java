@@ -219,7 +219,7 @@ public class ToolsExtendedApi {
         public static final String OK_RESPONSE = "An array of Tools of the input organization.";
     }
     private static final class ToolsIndexSearch {
-        public static final String OPERATION_ID = "entriesIndexSearch";
+        public static final String OPERATION_ID = "toolsIndexSearch";
         public static final String SUMMARY = "Search the tools and workflows indices";
         public static final String DESCRIPTION = "This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.";
         public static final String OK_RESPONSE = "An elastic search result.";

@@ -65,7 +65,6 @@ public class ElasticListener implements StateListenerInterface {
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
     private static final String TOOLS_INDEX = "tools";
     private static final String WORKFLOWS_INDEX = "workflows";
-    private static final String ALL_INDICES = "tools, workflows";
     private String hostname;
     private int port;
 

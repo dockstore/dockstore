@@ -76,10 +76,10 @@ public class SearchResourceIT extends BaseIT {
      */
     private void waitForIndexRefresh(int hit, ExtendedGa4GhApi extendedGa4GhApi, int counter) {
         try {
-            String s = extendedGa4GhApi.entriesIndexSearch(exampleESQuery);
+            String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
             // There's actually two "total", one for shards and one for hits.
             // Need to only look at the hits one
-            if (!s.contains("hits\":{\"total\":" + hit + ",")) {
+            if (!s.contains("hits\":{\"total\":{\"value\":" + hit + ",")) {
                 if (counter > 5) {
                     Assert.fail(s + " does not have the correct amount of hits");
                 } else {
@@ -114,7 +114,7 @@ public class SearchResourceIT extends BaseIT {
         workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
         waitForIndexRefresh(1, extendedGa4GhApi,  0);
         // after publication index should include workflow
-        String s = extendedGa4GhApi.entriesIndexSearch(exampleESQuery);
+        String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
         assertTrue(s + " should've contained potatoAlias", s.contains("\"aliases\":{\"potatoAlias\":{}}"));
         assertFalse(s.contains("\"aliases\":null"));
         assertTrue(s.contains(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW));
