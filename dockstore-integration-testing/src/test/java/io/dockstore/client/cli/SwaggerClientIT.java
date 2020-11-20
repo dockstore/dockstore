@@ -863,7 +863,8 @@ public class SwaggerClientIT extends BaseIT {
             .editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
 
         // Deleting the version should not fail
-        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+        Workflow deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflow.getWorkflowVersions().get(0).getName());
+        assertTrue(deleteVersionFromWorkflow1.getWorkflowVersions().size() == 0);
 
         // Publishing the workflow should fail
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
@@ -877,7 +878,8 @@ public class SwaggerClientIT extends BaseIT {
         // Give Owner permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.OWNER);
 
-        // Should be able to publish
+        // Should be able to publish after adding a version
+        user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
         user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
         checkAnonymousUser(anonWorkflowsApi, hostedWorkflow1);
 
