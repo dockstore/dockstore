@@ -124,7 +124,7 @@ public class CWLHandlerTest {
             Assert.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(400, e.getResponse().getStatus());
-            assertThat(e.errorMessage).contains(CWLHandler.CWL_PARSE_ERROR);
+            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_ERROR);
 
         }
 
@@ -136,7 +136,7 @@ public class CWLHandlerTest {
             Assert.fail("Expected cwlVersion error");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(400, e.getResponse().getStatus());
-            assertThat(e.errorMessage).contains(CWLHandler.CWL_VERSION_ERROR);
+            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_VERSION_ERROR);
         }
 
         // expect error based on an undefined cwlVersion
@@ -147,7 +147,7 @@ public class CWLHandlerTest {
             Assert.fail("Expected undefined cwlVersion error");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(400, e.getResponse().getStatus());
-            assertThat(e.errorMessage).contains(CWLHandler.CWL_NO_VERSION_ERROR);
+            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_NO_VERSION_ERROR);
         }
 
         // expect error based on invalid JSON $import/$include
@@ -158,7 +158,7 @@ public class CWLHandlerTest {
             Assert.fail("Expected ($)import/($)include error");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(400, e.getResponse().getStatus());
-            assertThat(e.errorMessage).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
+            assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
         }
     }
 }

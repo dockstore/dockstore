@@ -171,7 +171,7 @@ public class WDLHandlerTest {
             Assert.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
             Assert.assertEquals(400, e.getResponse().getStatus());
-            assertThat(e.errorMessage).contains(WDLHandler.WDL_PARSE_ERROR);
+            assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
         }
     }
 
