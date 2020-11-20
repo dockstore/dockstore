@@ -26,6 +26,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
@@ -60,6 +61,7 @@ public abstract class GA4GHIT {
         DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,
         ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
+    protected static TestingPostgres testingPostgres;
     @Rule
     public final TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
@@ -83,6 +85,7 @@ public abstract class GA4GHIT {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, true);
         SUPPORT.before();
         client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass

@@ -278,47 +278,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return trsResponses.get().build();
         }
 
-        final List<Entry<?, ?>> all = new ArrayList<>();
-
-
-        // short circuit id and alias filters, these are a bit weird because they have a max of one result
-        if (id != null) {
-            ParsedRegistryID parsedID = new ParsedRegistryID(id);
-            Entry<?, ?> entry = getEntry(parsedID, user);
-            all.add(entry);
-        } else if (alias != null) {
-            all.add(toolDAO.getGenericEntryByAlias(alias));
-        } else {
-            // If there is no matching descriptor language, then do not add any tools or workflows.
-            DescriptorLanguage descriptorLanguage = null;
-            boolean descriptorLanguageFound = true;
-
-            // Tricky case for GALAXY because it doesn't match the rules of the other languages
-            if ("galaxy".equalsIgnoreCase(descriptorType)) {
-                descriptorType = DescriptorLanguage.GXFORMAT2.getShortName();
-            }
-
-            if (descriptorType != null) {
-                try {
-                    descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(descriptorType);
-                } catch (UnsupportedOperationException ex) {
-                    LOG.info(ex.getMessage());
-                    descriptorLanguageFound = false;
-                }
-            }
-
-            // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
-            // Only WDL and CWL tools are supported on Dockstore.
-            if (descriptorLanguageFound && (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass))
-                    && (DescriptorLanguage.WDL.equals(descriptorLanguage) || DescriptorLanguage.CWL.equals(descriptorLanguage) || descriptorType == null)) {
-                all.addAll(toolDAO.findAllPublished());
-            }
-            if (descriptorLanguageFound && (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass))) {
-                // filter published workflows using criteria builder
-                all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker));
-            }
-            all.sort(Comparator.comparing(Entry::getGitUrl));
-        }
+        final List<Entry<?, ?>> all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user);
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
@@ -410,6 +370,52 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         trsListener.loadTRSResponse(hashcode, responseBuilder);
         return responseBuilder.build();
+    }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    private List<Entry<?, ?>> getEntries(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
+            String description, String author, Boolean checker, Optional<User> user) {
+
+        final List<Entry<?, ?>> all = new ArrayList<>();
+
+        if (id != null) {
+            ParsedRegistryID parsedID = new ParsedRegistryID(id);
+            Entry<?, ?> entry = getEntry(parsedID, user);
+            all.add(entry);
+        } else if (alias != null) {
+            all.add(toolDAO.getGenericEntryByAlias(alias));
+        } else {
+            DescriptorLanguage descriptorLanguage = null;
+            if (descriptorType != null) {
+                try {
+                    // Tricky case for GALAXY because it doesn't match the rules of the other languages
+                    if ("galaxy".equalsIgnoreCase(descriptorType)) {
+                        descriptorType = DescriptorLanguage.GXFORMAT2.getShortName();
+                    }
+
+                    descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(descriptorType);
+                } catch (UnsupportedOperationException ex) {
+                    // If unable to match descriptor language, do not return any entries.
+                    LOG.info(ex.getMessage());
+                    return all;
+                }
+            }
+
+            // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
+            // Add tools if user didn't provide a tool class or the tool class provided matches to tools, AND
+            // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
+            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+                if (descriptorType == null  || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
+                    all.addAll(toolDAO.findAllPublished());
+                }
+
+            }
+            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+                // filter published workflows using criteria builder
+                all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker));
+            }
+        }
+        return all;
     }
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {
