@@ -136,7 +136,18 @@ jobs:
           POSTGRES_PASSWORD: postgres
     steps: # a collection of executable commands
       - checkout
-      - setup_test
+      - run:
+          name: Install yq
+          command: |
+            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+            chmod a+x yq_linux_amd64
+            sudo mv yq_linux_amd64 /usr/bin/yq
+      - run:
+          name: Install postgresql client
+          command: |
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo apt update
+            sudo apt install -y postgresql-client
       - install-git-secrets
       - setup_postgres
       - run:
