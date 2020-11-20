@@ -8,6 +8,7 @@ executors:
         environment:
           PGHOST: 127.0.0.1
       - image: circleci/postgres:11.8
+        command: postgres -c max_connections=200
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
