@@ -105,8 +105,7 @@ jobs:
           name: decrypt
           command: |
             sudo apt install openssl -y
-            openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV >> test_data.zip
-            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid
+            bash scripts/decrypt.sh
       - run:
           name: build
           command: mvn -B clean install -DskipTests
@@ -281,7 +280,6 @@ commands:
       - run:
           name: expand confidential data
           command: |
-            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid 
             sudo mkdir /home/travis
             sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
             # Disable authentication cache. it causes flakey tests. Not updating the confidential bundle because I am lazy.

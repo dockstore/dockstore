@@ -8,6 +8,6 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-openssl aes-256-cbc -K $encrypted_f3e772af0e32_key -iv $encrypted_f3e772af0e32_iv -in secrets.tar.enc -out secrets.tar -d
+openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV -out secrets.tar
 tar xvf secrets.tar
-mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
+#mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
