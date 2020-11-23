@@ -580,7 +580,7 @@ public class UserResourceIT extends BaseIT {
 
         // Should add a test above this to check that the API call should pass once the admin tokens are up to date
         // Testing that the updateLoggedInUserMetadata() should fail if GitHub tokens are expired or absent
-        testingPostgres.runUpdateStatement(String.format("DELETE FROM token WHERE userid = %d", admin.getId()));
+        testingPostgres.runUpdateStatement(String.format("DELETE FROM token WHERE userid = %d and tokensource = 'github.com'", admin.getId()));
         try {
             adminApi.updateLoggedInUserMetadata("github.com");
             fail("API call should fail and throw an error when no GitHub tokens are found or if tokens are out of date");

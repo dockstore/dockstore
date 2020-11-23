@@ -88,9 +88,9 @@ public class BaseIT {
 
     @AfterClass
     public static void afterClass() {
+        SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
     }
-
 
     protected static io.dockstore.openapi.client.ApiClient getOpenAPIWebClient(String username, TestingPostgres testingPostgresParameter) {
         return CommonTestUtilities.getOpenAPIWebClient(true, username, testingPostgresParameter);
