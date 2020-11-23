@@ -1,3 +1,7 @@
+#this file sets up elasticsearch, kibana, and postgres containers for running dockstore locally
+#dockstore works without elasticsearch but the search page requires elasticsearch to be running
+#kibana can be used alongside elasticsearch as a visual interface for the indices and send queries directly
+#this only brings up the postgres container, not the actual database
 version: '2.2'
 services:
   es01:
@@ -16,6 +20,8 @@ services:
       - xpack.graph.enabled=false
       - xpack.watcher.enabled=false
       - xpack.ml.enabled=false
+      - script.allowed_types= none
+      - script.allowed_contexts= none
     ulimits:
       memlock:
         soft: -1
