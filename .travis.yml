@@ -46,7 +46,6 @@ before_install:
 - rm -Rf $HOME/.m2/repository/.cache/download-maven-plugin/
 # decrypt migration before initial build
 - scripts/decrypt.sh
-- sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem 
 # turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
 #- scripts/check-swagger.sh
 - wget --user DockstoreTestUser --password $DOCKSTORE_TEST_ACCESS_TOKEN --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
