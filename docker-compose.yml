@@ -59,3 +59,4 @@ volumes:
 networks:
   elastic:
     driver: bridge
+
