@@ -52,6 +52,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
@@ -69,6 +70,9 @@ import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -83,7 +87,7 @@ import org.slf4j.LoggerFactory;
 @Api("hosted")
 @Produces(MediaType.APPLICATION_JSON)
 public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U extends Version<U>, W extends EntryDAO<T>, X extends VersionDAO<U>>
-        implements AuthenticatedResourceInterface {
+        implements AuthenticatedResourceInterface, EntryVersionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
     private final FileDAO fileDAO;
@@ -122,6 +126,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry")
     @Timed
     @UnitOfWork
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created hosted entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
     public T createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
         @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
@@ -163,7 +168,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Override
     public void checkUserCanUpdate(User user, Entry entry) {
         try {
-            checkUser(user, entry);
+            checkUserOwnsEntry(user, entry);
         } catch (CustomWebApplicationException ex) {
             if (entry instanceof Workflow) {
                 if (!permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE)) {
@@ -381,6 +386,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted hosted entry version", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
     public T deleteHostedVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
@@ -388,6 +394,16 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
+
+        Optional<U> deleteVersion =  entry.getWorkflowVersions().stream().filter(v -> Objects.equals(v.getName(), version)).findFirst();
+        if (deleteVersion.isEmpty()) {
+            throw new CustomWebApplicationException("Cannot find version: " + version + " to delete", HttpStatus.SC_NOT_FOUND);
+        }
+
+        if (deleteVersion.get().isFrozen()) {
+            throw new CustomWebApplicationException("Cannot delete a snapshotted version.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         // If the version that's about to be deleted is the default version, unset it
         if (entry.getActualDefaultVersion().getName().equals(version)) {
             Optional<U> max = entry.getWorkflowVersions().stream().filter(v -> !Objects.equals(v.getName(), version))

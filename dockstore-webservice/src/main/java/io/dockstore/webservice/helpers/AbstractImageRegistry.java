@@ -71,6 +71,8 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
+
 /**
  * Abstract class for registries of docker containers.
  * *
@@ -260,8 +262,6 @@ public abstract class AbstractImageRegistry {
         Tool tool = toolDAO.findById(toolId);
         List<Tool> apiTools = new ArrayList<>();
 
-        logToolRefresh(dashboardPrefix, tool);
-
         // Find a tool with the given tool's path and is not manual
         // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
         Tool duplicatePath = null;
@@ -326,11 +326,28 @@ public abstract class AbstractImageRegistry {
         updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         Tool updatedTool = newDBTools.get(0);
 
+        List<String> descriptorTypes = updatedTool.calculateDescriptorType();
+        updatedTool.setDescriptorType(descriptorTypes);
+        logToolRefresh(dashboardPrefix, tool);
+
         String repositoryId = sourceCodeRepoInterface.getRepositoryId(updatedTool);
+        String gitUrl = tool.getGitUrl();
+        String gitRepository = getGitRepositoryFromGitUrl(gitUrl);
+        sourceCodeRepoInterface.setLicenseInformation(updatedTool, gitRepository);
         sourceCodeRepoInterface.setDefaultBranchIfNotSet(updatedTool, repositoryId);
         updatedTool.syncMetadataWithDefault();
         // Return the updated tool
         return updatedTool;
+    }
+
+    public static String getGitRepositoryFromGitUrl(String gitUrl) {
+        Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
+        if (repoUrlMap == null) {
+            return null;
+        }
+        String username = repoUrlMap.get("Username");
+        String repository = repoUrlMap.get("Repository");
+        return username + '/' + repository;
     }
 
     /**

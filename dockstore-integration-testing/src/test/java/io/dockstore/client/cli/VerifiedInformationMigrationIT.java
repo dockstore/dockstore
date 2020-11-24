@@ -38,7 +38,8 @@ public class VerifiedInformationMigrationIT {
     };
 
     @BeforeClass
-    public static void dumpDBAndCreateSchema() {
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }

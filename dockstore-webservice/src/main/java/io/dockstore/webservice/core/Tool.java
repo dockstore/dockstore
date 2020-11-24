@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -137,8 +139,13 @@ public class Tool extends Entry<Tool, Tag> {
 
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last built. For automated builds: When refresh is hit, the last time the tool was built gets stored here. "
-            + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25)
+            + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25, dataType = "long")
     private Date lastBuild;
+
+    @Column(nullable = false, columnDefinition = "varchar default ''")
+    @Convert(converter = DescriptorTypeConverter.class)
+    @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    private List<String> descriptorType = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
@@ -267,19 +274,6 @@ public class Tool extends Entry<Tool, Tag> {
         return registry + '/' + namespace + '/' + name;
     }
 
-    /**
-     * Calculated property for demonstrating search by language, inefficient
-     *
-     * @return the languages that this tool supports
-     */
-    @JsonProperty
-    @ApiModelProperty(position = 28)
-    public List<String> getDescriptorType() {
-        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
-        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
-            .map(lang -> lang.toString().toUpperCase()).distinct().collect(Collectors.toList());
-    }
-
     @JsonProperty
     public Date getLastBuild() {
         return lastBuild;
@@ -301,6 +295,14 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setMode(ToolMode mode) {
         this.mode = mode;
+    }
+
+    public List<String> getDescriptorType() {
+        return this.descriptorType;
+    }
+
+    public void setDescriptorType(final List<String> descriptorType) {
+        this.descriptorType = descriptorType;
     }
 
     @JsonProperty("default_dockerfile_path")
@@ -455,5 +457,12 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
+    }
+
+    public List<String> calculateDescriptorType() {
+        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
+                Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> !(lang.toString().equals("cwl") || lang.toString().equals("wdl"))).filter(lang -> set.contains(lang.getFileType()))
+                .map(lang -> lang.toString()).distinct().collect(Collectors.toList());
     }
 }

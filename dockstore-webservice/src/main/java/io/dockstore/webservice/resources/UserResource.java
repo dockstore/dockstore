@@ -29,10 +29,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -46,20 +48,21 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
-import io.dockstore.common.EntryUpdateTime;
-import io.dockstore.common.OrganizationUpdateTime;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
+import io.dockstore.webservice.api.PrivilegeRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Token;
@@ -121,6 +124,8 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
+    private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
+    private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
@@ -238,10 +243,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Change username if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User changeUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
-        Pattern pattern = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
-        if (!pattern.asPredicate().test(username)) {
+        if (!VALID_USERNAME_PATTERN.asPredicate().test(username)) {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
+        restrictUsername(username);
+
         User user = userDAO.findById(authUser.getId());
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
@@ -260,6 +266,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             cachingAuthenticator.invalidate(dockstoreToken.get().getContent());
         }
         return userDAO.findById(user.getId());
+    }
+
+    public static void restrictUsername(String username) {
+        Matcher matcher = USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
+        if (matcher.find()) {
+            throw new CustomWebApplicationException("Cannot change username to " + username
+                    + " because it contains one or more of the following keywords: dockstore, admin, curator, system, or manager", HttpStatus.SC_BAD_REQUEST);
+        }
+
     }
 
     @DELETE
@@ -281,6 +296,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         // Delete entries for which this user is the only user
         deleteSelfFromEntries(user);
         invalidateTokensForUser(user);
+        deleteSelfFromLambdaEvents(user);
         return userDAO.delete(user);
     }
 
@@ -311,6 +327,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                     eventDAO.deleteEventByEntryID(entry.getId());
                     entryDAO.delete(entry);
                 });
+    }
+
+    // We don't delete the LambdaEvent because it is useful for other users
+    private void deleteSelfFromLambdaEvents(User user) {
+        lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
     @DELETE
@@ -361,53 +382,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return tokenDAO.findByUserId(userId);
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/github.com")
-    @Operation(operationId = "getGithubUserTokens", description = "Get Github tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Github tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findGithubByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/gitlab.com")
-    @Operation(operationId = "getGitlabUserTokens", description = "Get Gitlab tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Gitlab tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findGitlabByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/quay.io")
-    @Operation(operationId = "getQuayUserTokens", description = "Get Quay tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Quay tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findQuayByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/dockstore")
-    @Operation(operationId = "getDockstoreUserTokens", description = "Get Dockstore tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Dockstore tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findQuayByUserId(userId);
-    }
 
     @GET
     @Timed
@@ -444,6 +418,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return repositories;
     }
 
+    /**
+     *
+     * @param authUser
+     * @param userId
+     * @param organization
+     * @param dockerRegistry not really a registry the way we use it now (ex: quay.io), rename in 1.10 this is actually a repository
+     * @return
+     */
     @GET
     @Timed
     @UnitOfWork
@@ -453,17 +435,17 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = "Docker registry") @QueryParam("dockerRegistry") String dockerRegistry) {
+            @ApiParam(value = "Docker registry", required = true) @QueryParam("dockerRegistry") String dockerRegistry) {
 
         checkUser(authUser, userId);
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
-        if (dockerRegistry != null) {
-            dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
-        } else {
-            dockerRepoResource.refreshToolsForUser(userId, organization);
+        if (dockerRegistry == null) {
+            throw new CustomWebApplicationException("A repository is required", HttpStatus.SC_BAD_REQUEST);
         }
+        dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
+
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
@@ -704,7 +686,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
-            u.updateUserMetadata(tokenDAO);
+            u.updateUserMetadata(tokenDAO, false);
         }
 
         return userDAO.findAll();
@@ -727,7 +709,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
         }
-        dbuser.updateUserMetadata(tokenDAO, source);
+        dbuser.updateUserMetadata(tokenDAO, source, true);
         return dbuser;
     }
 
@@ -819,6 +801,42 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             });
         });
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({"admin", "curator"})
+    @Path("/{userId}/privileges")
+    @Consumes("application/json")
+    @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
+    public User setUserPrivilege(@Parameter(hidden = true, name = "user")@Auth User authUser,
+                                 @Parameter(name = "User ID", required = true) @PathParam("userId") Long userID,
+                                 @Parameter(name = "Set privilege for a user", required = true) PrivilegeRequest privilegeRequest) {
+        User user = userDAO.findById(userID);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+
+        // This ensures that the user cannot modify their own privileges.
+        if (authUser.getId() == user.getId()) {
+            throw new CustomWebApplicationException("You cannot modify your own privileges", HttpStatus.SC_FORBIDDEN);
+        }
+
+        // If the request's admin setting is different than the admin status of the user that is being modified, and the auth user is not an admin: Throw an error.
+        // This ensures that a curator cannot modify the admin status of any user.
+        if (privilegeRequest.isAdmin() != user.getIsAdmin() && !authUser.getIsAdmin()) {
+            throw new CustomWebApplicationException("You do not have privileges to modify administrative rights", HttpStatus.SC_FORBIDDEN);
+        }
+
+        // Else if the request's settings is different from the privileges of the user that is being modified: update the privileges with the request
+        if (privilegeRequest.isAdmin() != user.getIsAdmin() || privilegeRequest.isCurator() != user.isCurator()) {
+            user.setIsAdmin(privilegeRequest.isAdmin());
+            user.setCurator(privilegeRequest.isCurator());
+            tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        }
+        return user;
     }
 
     @GET

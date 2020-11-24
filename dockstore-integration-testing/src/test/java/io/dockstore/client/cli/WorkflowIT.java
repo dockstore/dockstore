@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -55,6 +54,7 @@ import io.dockstore.openapi.client.model.ToolVersion;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dropwizard.testing.ResourceHelpers;
@@ -71,6 +71,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.FileFormat;
 import io.swagger.client.model.FileWrapper;
+import io.swagger.client.model.ParsedInformation;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -98,6 +99,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -153,6 +155,7 @@ public class WorkflowIT extends BaseIT {
 
     private WorkflowDAO workflowDAO;
     private WorkflowVersionDAO workflowVersionDAO;
+    private FileDAO fileDAO;
 
     @Before
     public void setup() {
@@ -161,6 +164,7 @@ public class WorkflowIT extends BaseIT {
 
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
+        this.fileDAO = new FileDAO(sessionFactory);
 
         // used to allow us to use workflowDAO outside of the web service
         Session session = application.getHibernate().getSessionFactory().openSession();
@@ -205,6 +209,82 @@ public class WorkflowIT extends BaseIT {
         return workflow;
     }
 
+    // Tests 3 things:
+    // WDL workflow with local imports
+    // WDL workflow with HTTP imports
+    // WDL workflow with HTTP imports and local imports and nested
+    @Test
+    public void testWDLLanguageParsingInformation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow wdl = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.wdl", "WDL",
+                        DescriptorLanguage.WDL.toString(), "/test.json");
+        Long id = wdl.getId();
+        workflowApi.refresh(id, false);
+        Workflow workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithLocalImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
+        ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertFalse(parsedInformation.isHasHTTPImports());
+        WorkflowVersion workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertFalse(parsedInformationHTTP.isHasLocalImports());
+        Assert.assertTrue(parsedInformationHTTP.isHasHTTPImports());
+
+        Workflow wdlChecker = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/checker-workflow-wrapping-workflow.wdl", "WDLChecker",
+                        DescriptorLanguage.WDL.toString(), "/test.json");
+        id = wdlChecker.getId();
+        workflowApi.refresh(id, false);
+        workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithBothImports = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertTrue(parsedInformation.isHasHTTPImports());
+
+    }
+
+    // Tests 3 things:
+    // CWL workflow with local imports
+    // CWL workflow with HTTP imports
+    // CWL workflow with HTTP imports and local imports and nested
+    @Test
+    public void testCDLLanguageParsingInformation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow cwlWorkflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "CWL",
+                        DescriptorLanguage.CWL.toString(), "/test.json");
+        Long cwlId = cwlWorkflow.getId();
+        workflowApi.refresh(cwlId, false);
+        Workflow workflow = workflowApi.getWorkflow(cwlId, null);
+        WorkflowVersion workflowWithLocalImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithLocalImport")).findFirst().get();
+        ParsedInformation parsedInformation = workflowWithLocalImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertFalse(parsedInformation.isHasHTTPImports());
+        WorkflowVersion workflowWithHTTPImport = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        ParsedInformation parsedInformationHTTP = workflowWithHTTPImport.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertFalse(parsedInformationHTTP.isHasLocalImports());
+        Assert.assertTrue(parsedInformationHTTP.isHasHTTPImports());
+        Workflow cwlChecker = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/md5sum-checker", "/checker-workflow-wrapping-workflow.cwl", "CWLChecker",
+                        DescriptorLanguage.CWL.toString(), "/test.json");
+        Long id = cwlChecker.getId();
+        workflowApi.refresh(id, false);
+        workflow = workflowApi.getWorkflow(id, null);
+        WorkflowVersion workflowWithBothImports = workflow.getWorkflowVersions().stream()
+                .filter(version -> version.getName().equals("workflowWithHTTPImport")).findFirst().get();
+        parsedInformation = workflowWithBothImports.getVersionMetadata().getParsedInformationSet().get(0);
+        Assert.assertTrue(parsedInformation.isHasLocalImports());
+        Assert.assertTrue(parsedInformation.isHasHTTPImports());
+    }
+
     @Test
     public void testStubRefresh() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -215,7 +295,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
                 "/test.json");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
+                DescriptorLanguage.WDL.getShortName(), "");
 
         final List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
@@ -242,9 +322,9 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
         workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
-                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+                DescriptorLanguage.CWL.getShortName(), "/test.json");
         workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "",
-                DescriptorLanguage.CWL.getLowerShortName(), "/test.json");
+                DescriptorLanguage.CWL.getShortName(), "/test.json");
         List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
         for (Workflow workflow : workflows) {
@@ -267,8 +347,8 @@ public class WorkflowIT extends BaseIT {
         assertEquals("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), 4,
             refreshGithub.getWorkflowVersions().size());
         assertEquals("should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(), 2,
-            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count());
+                .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(), 2,
+            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
         assertEquals("should find two valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::isValid).count(), 2,
             refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
@@ -278,8 +358,8 @@ public class WorkflowIT extends BaseIT {
         assertEquals("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), 5,
             refreshBitbucket.getWorkflowVersions().size());
         assertEquals("should find 4 versions with files for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(), 4,
-            refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count());
+                .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(), 4,
+            refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
         assertEquals("should find 0 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::isValid).count(), 0,
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
@@ -346,6 +426,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow workflow = manualRegisterAndPublish(workflowApi, "DockstoreTestUser2/cwl-gene-prioritization", "", "cwl", SourceControl.GITHUB, "/Dockstore.cwl", true);
+        Assert.assertEquals("Other", workflow.getLicenseInformation().getLicenseName());
         WorkflowVersion branchVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("master")).findFirst().get();
         WorkflowVersion tagVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("test")).findFirst().get();
 
@@ -553,8 +634,9 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue(version.isPresent());
         final File tempFile = File.createTempFile("dockstore-test", ".zip");
         try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-            final Set<io.dockstore.webservice.core.SourceFile> sourceFiles = version.get().getSourceFiles();
-            new EntryVersionHelperImpl().writeStreamAsZip(sourceFiles, fos, Paths.get("/GATKSVPipelineClinical.wdl"));
+            final List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.get().getId());
+
+            new EntryVersionHelperImpl().writeStreamAsZip(sourceFiles.stream().collect(Collectors.toSet()), fos, Paths.get("/GATKSVPipelineClinical.wdl"));
             final ZipFile zipFile = new ZipFile(tempFile);
             final long wdlCount = zipFile.stream().filter(e -> e.getName().endsWith(".wdl")).count();
             Assert.assertEquals(sourceFiles.size(), wdlCount);
@@ -581,8 +663,8 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
         Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
         ownerWorkflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(true));
-        final List<SourceFile> sourceFiles = refresh.getWorkflowVersions().stream()
-                .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getSourceFiles();
+        final List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(refresh.getWorkflowVersions().stream()
+                .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getId());
         final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
         final List<ToolFile> files = ga4GhApi
                 .toolsIdVersionsVersionIdTypeFilesGet("WDL", "#workflow/" + refresh.getFullWorkflowPath(), GATK_SV_TAG);
@@ -670,16 +752,16 @@ public class WorkflowIT extends BaseIT {
         assertEquals("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), 12,
             refreshGithub.getWorkflowVersions().size());
         assertEquals("should find 12 versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(), 12,
-            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count());
+                .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(), 12,
+            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
         assertEquals("should find 12 valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::isValid).count(), 12,
             refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // nextflow version should have
         assertTrue("should find 2 files for each version for now: " + refreshGithub.getWorkflowVersions().stream()
-                .filter(workflowVersion -> workflowVersion.getSourceFiles().size() != 2).count(),
-            refreshGithub.getWorkflowVersions().stream().noneMatch(workflowVersion -> workflowVersion.getSourceFiles().size() != 2));
+                .filter(workflowVersion -> fileDAO.findSourceFilesByVersion(workflowVersion.getId()).size() != 2).count(),
+            refreshGithub.getWorkflowVersions().stream().noneMatch(workflowVersion -> fileDAO.findSourceFilesByVersion(workflowVersion.getId()).size() != 2));
 
         // check that container is properly parsed
         Optional<WorkflowVersion> nextflow = refreshGithub.getWorkflowVersions().stream()
@@ -709,8 +791,8 @@ public class WorkflowIT extends BaseIT {
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         assertEquals("workflow does not include expected config included files", 3,
-            refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("master")).findFirst().get()
-                .getSourceFiles().stream().filter(file -> file.getPath().startsWith("conf/")).count());
+            fileDAO.findSourceFilesByVersion(refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("master")).findFirst().get().getId())
+                    .stream().filter(file -> file.getPath().startsWith("conf/")).count());
     }
 
     @Test
@@ -791,14 +873,17 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("a workflow lacks a date", mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0);
         assertNotNull("Nextflow workflow not found after update", mtaNf);
         assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
-        int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> version.getSourceFiles().size()).sum();
+
+        int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> fileDAO.findSourceFilesByVersion(version.getId()).size()).sum();
         assertTrue("nextflow workflow should have at least two sourcefiles", numOfSourceFiles >= 2);
+
         long scriptCount = mtaNf.getWorkflowVersions().stream()
-            .mapToLong(version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW).count())
-            .sum();
-        long configCount = mtaNf.getWorkflowVersions().stream().mapToLong(
-            version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW_CONFIG).count())
-            .sum();
+                .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW).count())
+                .sum();
+
+        long configCount = mtaNf.getWorkflowVersions().stream()
+                .mapToLong(version -> fileDAO.findSourceFilesByVersion(version.getId()).stream().filter(file -> file.getType() == DescriptorLanguage.FileType.NEXTFLOW_CONFIG).count())
+                .sum();
         assertTrue("nextflow workflow should have at least one config file and one script file", scriptCount >= 1 && configCount >= 1);
 
         // check that we can pull down the nextflow workflow via the ga4gh TRS API
@@ -840,7 +925,7 @@ public class WorkflowIT extends BaseIT {
                 List<Repository> userOrganizationRepositories = openUsersApi.getUserOrganizationRepositories(control.name(), org);
                 for (Repository repo : userOrganizationRepositories) {
                     workflowApi.manualRegister(control.name(), repo.getPath(), "/Dockstore.cwl", "",
-                            DescriptorLanguage.CWL.getLowerShortName(), "");
+                            DescriptorLanguage.CWL.getShortName(), "");
                 }
             }
         }
@@ -997,6 +1082,72 @@ public class WorkflowIT extends BaseIT {
         verifyTRSImageConversion(versions, "1.0", 3);
     }
 
+    @Test
+    public void testHiddenAndDefaultVersions() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
+
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        WorkflowVersion version = workflowVersions.get(0);
+        version.setHidden(true);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+
+        try {
+            workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+
+        // Set the default version to a non-hidden version
+        version.setHidden(false);
+        workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+        workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), version.getName());
+
+        // Should not be able to hide a default version
+        version.setHidden(true);
+        try {
+            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
+            fail("Should not be able to hide a default version");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        // Test same for hosted workflows
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\n" + "class: Workflow");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
+        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+
+        WorkflowVersion hostedVersion = hostedWorkflow.getWorkflowVersions().get(0);
+        hostedVersion.setHidden(true);
+        try {
+            workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
+            fail("Shouldn't be able to hide the default version.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You cannot hide the default version.", ex.getMessage());
+        }
+
+        file.setContent("cwlVersion: v1.0\n\n" + "class: Workflow");
+        hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        hostedVersion = hostedWorkflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("1")).findFirst().get();
+        hostedVersion.setHidden(true);
+        workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
+
+        try {
+            workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), hostedVersion.getName());
+            fail("Shouldn't be able to set the default version to one that is hidden.");
+        } catch (ApiException ex) {
+            Assert.assertEquals("You can not set the default version to a hidden version.", ex.getMessage());
+        }
+    }
+
     /**
     * Tests the a checksum is calculated for workflow sourcefiles on refresh or snapshot. Also checks that trs endpoints convert correctly.
     * */
@@ -1007,7 +1158,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
-        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", "wdl", "/test.json");
+        Workflow workflow = workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "", DescriptorLanguage.WDL.toString(), "/test.json");
 
         workflow = workflowsApi.refresh(workflow.getId(), false);
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
@@ -1017,26 +1168,28 @@ public class WorkflowIT extends BaseIT {
         for (WorkflowVersion workflowVersion : workflowVersions) {
             if (workflowVersion.getName().equals("testBoth") || workflowVersion.getName().equals("testWDL")) {
                 testedWDL = true;
-                assertNotNull(workflowVersion.getSourceFiles());
-                verifySourcefileChecksumsSaved(workflowVersion);
-                workflowVersion.getSourceFiles().stream().forEach(sourceFile -> assertFalse("Source file should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
+                List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
+                assertNotNull(sourceFiles);
+                verifySourcefileChecksumsSaved(sourceFiles);
+                sourceFiles.stream().forEach(sourceFile -> assertFalse("Source file should have a checksum", sourceFile.getChecksums().get(0).toString().isEmpty()));
             }
         }
         assertTrue(testedWDL);
 
         // Test grabbing checksum on snapshot
-        Workflow workflow2 = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", "cwl", SourceControl.GITHUB, "/hello_world.cwl", true);
+        Workflow workflow2 = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorLanguage.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
         WorkflowVersion snapshotVersion = workflow2.getWorkflowVersions().stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
-        assertNotNull(snapshotVersion.getSourceFiles());
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(snapshotVersion.getId());
+        assertNotNull(sourceFiles);
         snapshotVersion.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflow2.getId(), Collections.singletonList(snapshotVersion));
-        verifySourcefileChecksumsSaved(snapshotVersion);
+        verifySourcefileChecksumsSaved(sourceFiles);
 
         // Make sure refresh does not error.
         workflowsApi.refresh(workflow2.getId(), false);
 
         // Test TRS conversion
-        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/github.com/dockstore-testing/hello_world", "1.0.1");
+        io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet(DescriptorLanguage.CWL.toString(), "#workflow/github.com/dockstore-testing/hello_world", "1.0.1");
         verifyTRSSourcefileConversion(fileWrapper);
 
     }
@@ -1049,9 +1202,9 @@ public class WorkflowIT extends BaseIT {
         });
     }
 
-    private void verifySourcefileChecksumsSaved(final WorkflowVersion snapshotVersion) {
-        assertTrue(snapshotVersion.getSourceFiles().size() >= 1);
-        snapshotVersion.getSourceFiles().stream().forEach(sourceFile -> {
+    private void verifySourcefileChecksumsSaved(final List<io.dockstore.webservice.core.SourceFile> sourceFiles) {
+        assertTrue(sourceFiles.size() >= 1);
+        sourceFiles.stream().forEach(sourceFile -> {
             assertFalse("Source File should have a checksum", sourceFile.getChecksums().isEmpty());
             assertTrue(sourceFile.getChecksums().size() >= 1);
             sourceFile.getChecksums().stream().forEach(checksum -> {
@@ -1225,7 +1378,7 @@ public class WorkflowIT extends BaseIT {
         Optional<WorkflowVersion> loopVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "infinite-loop"))
             .findFirst();
         if (loopVersion.isPresent()) {
-            assertEquals("There should be two sourcefiles", 2, loopVersion.get().getSourceFiles().size());
+            assertEquals("There should be two sourcefiles", 2, fileDAO.findSourceFilesByVersion(loopVersion.get().getId()).size());
         } else {
             fail("Could not find version infinite-loop");
         }
@@ -1233,7 +1386,7 @@ public class WorkflowIT extends BaseIT {
         Optional<WorkflowVersion> masterVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "master"))
             .findFirst();
         if (masterVersion.isPresent()) {
-            assertEquals("There should be three sourcefiles", 3, masterVersion.get().getSourceFiles().size());
+            assertEquals("There should be three sourcefiles", 3, fileDAO.findSourceFilesByVersion(masterVersion.get().getId()).size());
         } else {
             fail("Could not find version master");
         }
@@ -1252,6 +1405,7 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, null, false);
 
         workflowApi.refresh(workflowByPathGithub.getId(), false);
+        Assert.assertEquals("GNU General Public License v3.0", workflowByPathGithub.getLicenseInformation().getLicenseName());
         workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
 
         // check on URLs for workflows via ga4gh calls
@@ -1330,12 +1484,10 @@ public class WorkflowIT extends BaseIT {
 
         assertTrue("did not pick up description from $include",
             registeredTool.getDescription().contains("A Docker container for PCAP-core."));
-        assertEquals("did not import mixin and includes properly", 5,
-            registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get()
-                .getSourceFiles().size());
-        assertEquals("did not import symbolic links to folders properly", 5,
-            registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get()
-                .getSourceFiles().size());
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get().getId());
+        assertEquals("did not import mixin and includes properly", 5, sourceFiles.size());
+        sourceFiles = fileDAO.findSourceFilesByVersion(registeredTool.getWorkflowVersions().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getId());
+        assertEquals("did not import symbolic links to folders properly", 5, sourceFiles.size());
         // check that commit ids look properly recorded
         // check on commit ids for github
         boolean allHaveCommitIds = registeredTool.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
@@ -1667,22 +1819,22 @@ public class WorkflowIT extends BaseIT {
             Assert.fail("Missing the test release");
         }
 
-        List<SourceFile> sourceFiles = workflowVersion.get().getSourceFiles();
-        Optional<SourceFile> primarySourceFile = sourceFiles.stream().filter(
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.get().getId());
+        Optional<io.dockstore.webservice.core.SourceFile> primarySourceFile = sourceFiles.stream().filter(
             sourceFile -> Objects.equals(sourceFile.getPath(), "/workflows/dnaseq/transform.cwl") && Objects
                 .equals(sourceFile.getAbsolutePath(), "/workflows/dnaseq/transform.cwl")).findFirst();
         if (primarySourceFile.isEmpty()) {
             Assert.fail("Does not properly set the absolute path of the primary descriptor.");
         }
 
-        Optional<SourceFile> importedSourceFileOne = sourceFiles.stream().filter(
+        Optional<io.dockstore.webservice.core.SourceFile> importedSourceFileOne = sourceFiles.stream().filter(
             sourceFile -> Objects.equals(sourceFile.getPath(), "../../tools/bam_readgroup_to_json.cwl") && Objects
                 .equals(sourceFile.getAbsolutePath(), "/tools/bam_readgroup_to_json.cwl")).findFirst();
         if (importedSourceFileOne.isEmpty()) {
             Assert.fail("Does not properly set the absolute path of the imported file.");
         }
 
-        Optional<SourceFile> importedSourceFileTwo = sourceFiles.stream().filter(
+        Optional<io.dockstore.webservice.core.SourceFile> importedSourceFileTwo = sourceFiles.stream().filter(
             sourceFile -> Objects.equals(sourceFile.getPath(), "integrity.cwl") && Objects
                 .equals(sourceFile.getAbsolutePath(), "/workflows/dnaseq/integrity.cwl")).findFirst();
         if (importedSourceFileTwo.isEmpty()) {
@@ -1761,7 +1913,7 @@ public class WorkflowIT extends BaseIT {
             .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
         assertTrue(optionalWorkflowVersion.isPresent());
         WorkflowVersion workflowVersion = optionalWorkflowVersion.get();
-        List<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
         Assert.assertEquals(2, sourceFiles.size());
         Assert.assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/cat-job.json")));
         Assert.assertTrue(sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().equals("/cwl/v1.1/metadata.cwl")));
@@ -1946,7 +2098,6 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testGettingSourceFilesForWorkflowVersion() {
-
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -1982,15 +2133,28 @@ public class WorkflowIT extends BaseIT {
                         "test", "cwl", null);
         workflow2 = workflowsApi.refresh(workflow2.getId(), false);
         WorkflowVersion workflow2Version = workflow2.getWorkflowVersions().get(0);
-        boolean throwsError = false;
         try {
             sourceFiles = workflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflow2Version.getId(), null);
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            throwsError = true;
-        }
-        if (!throwsError) {
             fail("Should not be able to grab sourcefile for a version not belonging to a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Version " + workflow2Version.getId() + " does not exist for this entry", ex.getMessage());
         }
+
+        // check that sourcefiles can't be viewed by another user if entry isn't published
+        final io.dockstore.openapi.client.ApiClient user1OpenAPIWebClient = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi user1WorkflowsOpenApi = new io.dockstore.openapi.client.api.WorkflowsApi(user1OpenAPIWebClient);
+        try {
+            sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+            fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
+        }
+
+        // sourcefiles can be viewed by others once published
+        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(1, sourceFiles.size());
     }
 
     /**

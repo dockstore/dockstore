@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -235,6 +236,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        if (workflow.isIsChecker()) {
+            throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         checkNotHosted(workflow);
         checkCanWriteWorkflow(user, workflow);
 
@@ -413,7 +418,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "completely refresh all versions, even if they have not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
-        return refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     @GET
@@ -432,7 +439,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        return refreshWorkflow(user, workflowId, Optional.of(version), hardRefresh);
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.of(version), hardRefresh);
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     /**
@@ -447,7 +456,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version, boolean hardRefresh) {
         Workflow existingWorkflow = workflowDAO.findById(workflowId);
         checkEntry(existingWorkflow);
-        checkUser(user, existingWorkflow);
+        checkUserOwnsEntry(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
         checkNotService(existingWorkflow);
         // get a live user for the following
@@ -520,6 +529,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         Hibernate.initialize(workflow.getAliases());
+        // This should be removed once we have a workflows/{workflowId}/version/{versionId} endpoint
+        workflow.getWorkflowVersions().forEach(version -> Hibernate.initialize(version.getVersionMetadata().getParsedInformationSet()));
         initializeAdditionalFields(include, workflow);
         return workflow;
     }
@@ -599,6 +610,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
@@ -643,7 +655,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-        checkUser(user, workflow);
+        checkUserOwnsEntry(user, workflow);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -987,7 +999,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     private void checkCanWriteWorkflow(User user, Workflow workflow) {
         try {
-            checkUser(user, workflow);
+            checkUserOwnsEntry(user, workflow);
         } catch (CustomWebApplicationException ex) {
             if (!permissionsInterface.canDoAction(user, workflow, Role.Action.WRITE)) {
                 throw ex;
@@ -1191,7 +1203,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
         @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(workflowId, tag, fileType, user);
+        return getSourceFile(workflowId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -1206,7 +1218,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFileByPath(workflowId, tag, fileType, path, user);
+        return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
     }
 
     @GET
@@ -1220,7 +1232,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getAllSecondaryFiles(workflowId, tag, fileType, user);
+        return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
     }
 
 
@@ -1239,7 +1251,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         FileType testParameterType = workflow.getTestParameterType();
-        return getAllSourceFiles(workflowId, version, testParameterType, user);
+        return getAllSourceFiles(workflowId, version, testParameterType, user, fileDAO);
     }
 
     @PUT
@@ -1411,6 +1423,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         for (WorkflowVersion version : workflowVersions) {
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
+                if (w.getActualDefaultVersion() != null && w.getActualDefaultVersion().getId() == version.getId() && version.isHidden()) {
+                    throw new CustomWebApplicationException("You cannot hide the default version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 // remove existing copy and add the new one
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
 
@@ -1547,8 +1562,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             final Optional<String> toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            final String json = toolTableJson.orElseGet(null);
-            workflowVersion.setToolTableJson(json);
+
+            final String json = toolTableJson.orElse(null);
+
+            // Can't UPDATE workflowversion when frozen = true
+            if (workflowVersion.isFrozen()) {
+                LOG.warn("workflow version " + workflowVersionId + " is frozen without toolTableJson");
+            } else {
+                workflowVersion.setToolTableJson(json);
+            }
+
             return json;
         }
 
@@ -1642,20 +1665,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/unstar")
-    @Operation(operationId = "unstarEntry", description = "Unstar a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @Deprecated(since = "1.8.0")
-    public void unstarEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-    }
-
     @GET
     @Path("/{workflowId}/starredUsers")
     @Timed
@@ -1668,6 +1677,46 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
 
         return workflow.getStarredUsers();
+    }
+
+    /**
+     *
+     * @param user  The user the workflow belongs to
+     * @param workflowId    The ID of the workflow to change descriptor type
+     * @param descriptorLanguage    The descriptor type to change to
+     * @return  The modified workflow
+     */
+    @POST
+    @Path("/{workflowId}/descriptorType")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "updateDescriptorType", summary = "Changes the descriptor type of an unpublished, invalid workflow.", description = "Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "hidden", hidden = true)
+    public Workflow updateLanguage(
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "Descriptor type to update to", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkUser(user, workflow);
+        if (workflow.getIsPublished()) {
+            throw new CustomWebApplicationException("Cannot change descriptor type of a published workflow", Response.Status.BAD_REQUEST.getStatusCode());
+        } else {
+            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+            workflowVersions.forEach(workflowVersion -> {
+                if (workflowVersion.isValid()) {
+                    throw new CustomWebApplicationException("Cannot change descriptor type of a valid workflow", Response.Status.BAD_REQUEST.getStatusCode());
+                }
+            });
+            // If the language was wrong, then is any workflowVersion even worth keeping?
+            // If there's no workflowVersions, is the workflow even worth keeping? Maybe just delete the workflow? Maybe keep for events?
+            workflow.setWorkflowVersions(new HashSet<>());
+            if (descriptorLanguage == null) {
+                throw new CustomWebApplicationException("Descriptor type must be not be null", Response.Status.BAD_REQUEST.getStatusCode());
+            }
+            workflow.setDescriptorType(descriptorLanguage);
+            return workflow;
+        }
     }
 
     @POST
@@ -1781,7 +1830,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             } else if (workflow.getDescriptorType() == WDL) {
                 workflowName += WDL_CHECKER;
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getLowerShortName()
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getShortName()
                     + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {
@@ -1889,7 +1938,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
-        String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+        String fileName = EntryVersionHelper.generateZipFileName(workflow.getWorkflowPath(), workflowVersion.getName());
 
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();

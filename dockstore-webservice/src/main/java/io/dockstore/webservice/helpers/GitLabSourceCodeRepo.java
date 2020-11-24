@@ -75,7 +75,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, fileName, reference);
             return new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
         }
         return null;
     }
@@ -87,7 +87,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             List<GitlabRepositoryTree> repositoryTree = gitlabAPI.getRepositoryTree(project, pathToDirectory, reference, false);
             return repositoryTree.stream().map(GitlabRepositoryTree::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
         }
         return Lists.newArrayList();
     }
@@ -109,6 +109,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String getName() {
         return "GitLab";
+    }
+
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+
     }
 
     @Override

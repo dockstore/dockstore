@@ -99,6 +99,12 @@ public abstract class SourceCodeRepoInterface {
     public abstract String getName();
 
     /**
+     * Set the entry's license information based on the Git repository
+     * @param entry The entry whose license information should be set
+     * @param gitRepository The Git repository (e.g. dockstore/hello_world)
+     */
+    public abstract void setLicenseInformation(Entry entry, String gitRepository);
+    /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
      *
@@ -389,6 +395,10 @@ public abstract class SourceCodeRepoInterface {
                             String reference = workflowVersion.getReference();
                             return branch.equals(reference);
                         }).findFirst();
+                // if the main branch is set to hidden, get the latest, non hidden version instead
+                if (firstWorkflowVersion.isPresent() && firstWorkflowVersion.get().isHidden()) {
+                    firstWorkflowVersion = workflowVersions.stream().filter(version -> !version.isHidden()).max(Comparator.comparing(Version::getDate));
+                }
                 firstWorkflowVersion.ifPresentOrElse(version -> entry.checkAndSetDefaultVersion(version.getName()), () -> {
                     if (!workflowVersions.isEmpty()) {
                         Version newestVersion = Collections.max(workflowVersions, Comparator.comparingLong(s -> s.getDate().getTime()));
@@ -620,6 +630,15 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
+    /**
+     *
+     * @param repositoryId
+     * @param content   This is the contents of the main descriptor
+     * @param fileType
+     * @param version
+     * @param filepath
+     * @return
+     */
     public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version<?> version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);

@@ -102,7 +102,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": FOUND: {}", fileName);
             return fileContent;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": ApiException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": ApiException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         }
     }
@@ -129,7 +129,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return files;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         }
     }
@@ -161,6 +161,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return "Bitbucket";
     }
 
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+
+    }
 
     /**
      * Gets arbitrary URLs that Bitbucket seems to use for pagination
@@ -225,7 +229,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage());
+            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
 
@@ -244,7 +248,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage());
+            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
     }
@@ -354,7 +358,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (ApiException e) {
-            LOG.error("Could not find Bitbucket repository " + repositoryId + " for user.");
+            LOG.error("Could not find Bitbucket repository " + repositoryId + " for user.", e);
             throw new CustomWebApplicationException("Could not reach Bitbucket", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
         return workflow;
@@ -391,7 +395,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 Repository repository = api.repositoriesUsernameRepoSlugGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
                 return repository.getMainbranch().getName();
             } catch (ApiException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
                 return null;
             }
         }

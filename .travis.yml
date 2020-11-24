@@ -4,9 +4,9 @@ services:
 
 addons:
   postgresql: "11"
-  snaps:
-    - yq
-
+branches:       
+  except:       
+      - /^feature.*$/
 cache:
   directories:
   - /tmp/localstack_install_dir
@@ -19,58 +19,20 @@ dist: bionic
 language: java
 jdk: openjdk12
 
-env:
-  - TESTING_PROFILE=integration-tests
-
 jobs:
   include:
-    - stage: unit-tests
-      env:
-        - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE
-# moved to CircleCI (may move back if build speed improves)
-#    - stage: unit-tests
-#      jdk: openjdk11
-#      env:
-#      - TESTING_PROFILE=unit-tests
-#      script: mvn --batch-mode clean install -P$TESTING_PROFILE
-
-# moved to CircleCI (may move back if build speed improves)
-#    - stage: automated-review
-#      jdk: openjdk11
-#      env:
-#      - TESTING_PROFILE=automated-review
-#      script:
-#      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
-#      - scripts/check_migrations.sh
-
     - stage: coverage
+      script: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       env:
-        - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=false
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-      env:
-        - TESTING_PROFILE=tool-integration-tests
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-      env:
-        - TESTING_PROFILE=workflow-integration-tests
+        - TESTING_PROFILE=require-cwltool-tests
         
 # not feeling the bang-for-the-buck for these, running only in release branch         
 #    - stage: coverage
-#      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+#      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
 #      if: branch = master OR branch =~ /^release.*$/
 #      env:
 #        - TESTING_PROFILE=toil-integration-tests
 
-    - stage: coverage
-      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
-      env:
-        - TESTING_PROFILE=regression-integration-tests
-      if: branch = master OR branch =~ /^release.*$/
         
 # build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
@@ -86,10 +48,18 @@ before_install:
 - scripts/decrypt.sh
 # turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
 #- scripts/check-swagger.sh
-# codacy hookup
+- wget --user DockstoreTestUser --password $DOCKSTORE_TEST_ACCESS_TOKEN --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
+- tar -zxf git-secrets-1.3.0.tar.gz
+- cd git-secrets-1.3.0
+- sudo make install
+- cd ../
+# codacy hookup https://docs.codacy.com/coverage-reporter/alternative-ways-of-running-coverage-reporter/
 - sudo apt-get install jq
-- wget --no-verbose -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
+- curl -u DockstoreTestUser:$DOCKSTORE_TEST_ACCESS_TOKEN -LSs "$(curl -u DockstoreTestUser:$DOCKSTORE_TEST_ACCESS_TOKEN  -LSs https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | endswith(".jar"))) | .[0].browser_download_url')" -o codacy-coverage-reporter-assembly.jar
 - pyenv global 3.6.10
+- wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+- chmod a+x yq_linux_amd64
+- sudo mv yq_linux_amd64 /usr/bin/yq
 
 install:
 - docker version
@@ -109,7 +79,7 @@ before_cache:
 
 after_success:
 - bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
-- java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l Java -r reports/target/site/jacoco-aggregate/jacoco.xml 
+- java -jar codacy-coverage-reporter-assembly.jar report -l Java -r reports/target/site/jacoco-aggregate/jacoco.xml
   
 notifications:
   webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN

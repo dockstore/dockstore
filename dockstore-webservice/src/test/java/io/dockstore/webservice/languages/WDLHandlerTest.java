@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
@@ -32,6 +33,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.mockito.Mockito;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class WDLHandlerTest {
@@ -114,8 +116,9 @@ public class WDLHandlerTest {
     public void testRepeatedFilename() throws IOException {
         final String content = getGatkSvMainDescriptorContent();
         final WDLHandler wdlHandler = new WDLHandler();
+        Version emptyVersion = new WorkflowVersion();
         final Map<String, SourceFile> map = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+                .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
         // There are 9 Structs.wdl files, in gatk-sv-clinical, but the one in gncv is not imported
         final long structsWdlCount = map.keySet().stream().filter(key -> key.contains("Structs.wdl")).count();
         Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
@@ -128,9 +131,10 @@ public class WDLHandlerTest {
     @Test
     public void testGetToolsForComplexWorkflow() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
+        Version emptyVersion = new WorkflowVersion();
         final String content = getGatkSvMainDescriptorContent();
         final Map<String, SourceFile> sourceFileMap = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+                .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
 
         // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
         // up; just have it return null
@@ -147,6 +151,28 @@ public class WDLHandlerTest {
             Assert.fail("Should be able to get tool json");
         }
 
+    }
+
+    @Test
+    public void testGetContentWithSyntaxErrors() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final File wdlFile = new File(ResourceHelpers.resourceFilePath("brokenWDL.wdl"));
+        final Set<SourceFile> emptySet = Collections.emptySet();
+
+        // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
+        // up; just have it return null
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        // run test with a WDL descriptor with syntax errors
+        try {
+            wdlHandler.getContent("/brokenWDL.wdl", FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8), emptySet,
+                LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected parsing error");
+        } catch (CustomWebApplicationException e) {
+            Assert.assertEquals(400, e.getResponse().getStatus());
+            assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
+        }
     }
 
     private String getGatkSvMainDescriptorContent() throws IOException {
@@ -183,6 +209,11 @@ public class WDLHandlerTest {
         @Override
         public String getName() {
             return "gatk";
+        }
+
+        @Override
+        public void setLicenseInformation(Entry entry, String gitRepository) {
+
         }
 
         // From here on down these methods are not invoked in our tests

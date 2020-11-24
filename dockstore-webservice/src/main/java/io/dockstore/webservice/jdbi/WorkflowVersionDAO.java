@@ -32,7 +32,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     }
 
     public WorkflowVersion findByAlias(String alias) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
     }
 
     public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int size, int firstResult) {
@@ -45,7 +45,7 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     }
 
     public WorkflowVersion getWorkflowVersionByWorkflowIdAndVersionName(long workflowId, String name) {
-        Query<WorkflowVersion> query = namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName");
+        Query query = namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName");
         query.setParameter("id", workflowId);
         query.setParameter("name", name);
         return uniqueResult(query);

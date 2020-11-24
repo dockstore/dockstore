@@ -28,6 +28,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -36,9 +38,11 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.eclipse.jetty.http.HttpStatus;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -73,11 +77,27 @@ public class GeneralWorkflowIT extends BaseIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+    private FileDAO fileDAO;
+
+    @Before
+    public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+        this.fileDAO = new FileDAO(sessionFactory);
+
+        // used to allow us to use fileDAO outside of the web service
+        Session session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+    }
+
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
+
+
+
 
     /**
      * Manually register and publish a workflow with the given path and name
@@ -208,11 +228,13 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh all
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "",
-                DescriptorLanguage.CWL.getLowerShortName(), "");
+                DescriptorLanguage.CWL.getShortName(), "");
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
         workflow = workflowsApi.refresh(workflow.getId(), false);
+        Assert.assertNotNull("Should have a license object even if it's null name", workflow.getLicenseInformation());
+        Assert.assertNull("Should have no license name", workflow.getLicenseInformation().getLicenseName());
 
         // check that valid is valid and full
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
@@ -348,9 +370,9 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Update workflow
         Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
-            .filter(version -> Objects.equals(version.getName(), "master")).findFirst();
+            .filter(version -> Objects.equals(version.getName(), "testCWL")).findFirst();
         if (workflowVersion.isEmpty()) {
-            fail("Master version should exist");
+            fail("testCWL version should exist");
         }
 
         List<WorkflowVersion> workflowVersions = new ArrayList<>();
@@ -361,7 +383,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
 
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'master' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
+            "select count(*) from workflowversion wv, version_metadata vm where wv.name = 'testCWL' and vm.hidden = 't' and wv.workflowpath = '/Dockstore2.wdl' and wv.id = vm.id",
             long.class);
         assertEquals("there should be 1 matching workflow version, there is " + count, 1, count);
     }
@@ -493,7 +515,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh all
         workflowsApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getLowerShortName(), "");
+                DescriptorLanguage.WDL.getShortName(), "");
 
 
         // refresh individual that is valid
@@ -566,6 +588,28 @@ public class GeneralWorkflowIT extends BaseIT {
             .runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", String.class);
         assertEquals("master workflow path should be the same as default workflow path, it is " + masterpath, "/Dockstore.cwl", masterpath);
         assertEquals("test workflow path should be the same as default workflow path, it is " + testpath, "/Dockstore.cwl", testpath);
+    }
+
+    @Test
+    public void testAddingWorkflowForumUrl() throws ApiException {
+        // Set up webservice
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        Workflow workflow = workflowsApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
+                        "test-update-workflow", DescriptorLanguage.CWL.toString(),
+                        "/test.json");
+        
+        //update the forumUrl to hello.com
+        workflow.setForumUrl("hello.com");
+        workflowsApi.updateWorkflow(workflow.getId(), workflow);
+        workflowsApi.refresh(workflow.getId(), false);
+
+        //check the workflow's forumUrl is hello.com
+        final String updatedForumUrl = testingPostgres
+                .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
+        assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
     }
 
     @Test
@@ -644,8 +688,9 @@ public class GeneralWorkflowIT extends BaseIT {
         master = refresh.getWorkflowVersions().stream().filter(v -> v.getName().equals("master")).findFirst().get();
 
         // cannot modify sourcefiles for a frozen version
-        assertFalse(master.getSourceFiles().isEmpty());
-        master.getSourceFiles().forEach(s -> {
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(master.getId());
+        assertFalse(sourceFiles.isEmpty());
+        sourceFiles.forEach(s -> {
             assertTrue(s.isFrozen());
             testingPostgres.runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
             final String content = testingPostgres
@@ -654,14 +699,14 @@ public class GeneralWorkflowIT extends BaseIT {
         });
 
         // try deleting a row join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
             assertEquals(0, affected);
         });
 
         // try updating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
             assertEquals(0, affected);
@@ -669,13 +714,13 @@ public class GeneralWorkflowIT extends BaseIT {
 
         final Long versionId = master.getId();
         // try creating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             try {
                 testingPostgres.runUpdateStatement(
                     "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");
                 fail("Insert should have failed to do row-level security");
             } catch (Exception ex) {
-                Assert.assertTrue(ex.getMessage().contains("new row violates row-level"));
+                assertTrue(ex.getMessage().contains("new row violates row-level"));
             }
         });
 
@@ -704,7 +749,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Manually register workflow
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "", "cwl",
                 SourceControl.GITHUB, "/Dockstore.cwl", true);
-        Assert.assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
+        assertEquals("manualRegisterAndPublish does a refresh, it should automatically set the default version", "master", workflow.getDefaultVersion());
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testBoth");
         Assert.assertEquals("Should be able to overwrite previous default version", "testBoth", workflow.getDefaultVersion());
         workflow = workflowsApi.refresh(workflow.getId(), false);
@@ -743,7 +788,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 long.class);
         assertEquals("The given workflow shouldn't have any contact info", 1, count2);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals("testWDL", workflow.getDefaultVersion());
+        assertEquals("testWDL", workflow.getDefaultVersion());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
         // Update workflow with version with metadata
@@ -760,9 +805,9 @@ public class GeneralWorkflowIT extends BaseIT {
             long.class);
         assertEquals("The given workflow should have contact info", 1, count3);
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals("testBoth", workflow.getDefaultVersion());
-        Assert.assertEquals("testAuthor", workflow.getAuthor());
-        Assert.assertEquals("testEmail", workflow.getEmail());
+        assertEquals("testBoth", workflow.getDefaultVersion());
+        assertEquals("testAuthor", workflow.getAuthor());
+        assertEquals("testEmail", workflow.getEmail());
         // Unpublish
         workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
 
@@ -942,7 +987,6 @@ public class GeneralWorkflowIT extends BaseIT {
      * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
      */
     @Test
-    @Ignore("DOCK-3315")
     public void testGitlab() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -1001,7 +1045,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         final long count7 = testingPostgres.runSelectStatement(
-            "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
+            "select count(*) from workflow where actualdefaultversion = 952 and author is null and email is null and description is null",
             long.class);
         assertEquals("The given workflow should now have contact info and description", 0, count7);
 
@@ -1076,7 +1120,7 @@ public class GeneralWorkflowIT extends BaseIT {
             fail("wdl_import version should exist");
         }
         assertTrue(
-            version.get().getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
+            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
                 .findFirst().isPresent());
     }
 
@@ -1084,7 +1128,6 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests manually publishing a gitlab workflow
      */
     @Test
-    @Ignore("DOCK-3315")
     public void testManualPublishGitlab() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -1108,7 +1151,7 @@ public class GeneralWorkflowIT extends BaseIT {
             fail("master version should exist");
         }
         assertTrue(
-            version.get().getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
+            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
                 .findFirst().isPresent());
     }
 
@@ -1178,7 +1221,7 @@ public class GeneralWorkflowIT extends BaseIT {
         toDelete.add("notreal.cwl.json");
         try {
             workflowsApi.deleteTestParameterFiles(workflow.getId(), toDelete, "master");
-            Assert.fail("Should've have thrown an error when deleting non-existent file");
+            fail("Should've have thrown an error when deleting non-existent file");
         } catch (ApiException e) {
             assertEquals("Should have returned a 404 when deleting non-existent file", HttpStatus.NOT_FOUND_404, e.getCode());
         }

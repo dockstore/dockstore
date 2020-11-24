@@ -42,6 +42,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionOrganization;
+import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
@@ -50,6 +51,7 @@ import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Notification;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
+import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -70,6 +72,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.EventDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -79,6 +82,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.resources.AdminPrivilegesFilter;
 import io.dockstore.webservice.resources.AliasResource;
 import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
@@ -165,7 +169,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class,
-            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class) {
+            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
+            ParsedInformation.class, EntryVersion.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -215,7 +220,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 // https://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/cache/DiskLruCache.java#L82 looks promising
                 cacheDir = Files.createDirectories(Paths.get("/tmp/dockstore-web-cache")).toFile();
             } catch (IOException e) {
-                LOG.error("Could no create or re-use web cache");
+                LOG.error("Could no create or re-use web cache", e);
                 throw new RuntimeException(e);
             }
             cache = new Cache(cacheDir, cacheSize);
@@ -230,7 +235,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             if (factoryException.getMessage().contains("factory already defined")) {
                 LOG.debug("OkHttpClient already registered, skipping");
             } else {
-                LOG.error("Could no create web cache, factory exception");
+                LOG.error("Could no create web cache, factory exception", factoryException);
                 throw new RuntimeException(factoryException);
             }
         }
@@ -244,6 +249,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
         objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+        // To convert every Date we have to RFC 3339, we can use this
+        // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
     }
 
     public static File getFilePluginLocation(DockstoreWebserviceConfiguration configuration) {
@@ -285,6 +292,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
+        final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
@@ -299,7 +307,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 configuration.getAuthenticationCachePolicy());
         environment.jersey().register(new AuthDynamicFeature(
                 new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(cachingAuthenticator).setAuthorizer(new SimpleAuthorizer())
-                        .setPrefix("Bearer").setRealm("SUPER SECRET STUFF").buildAuthFilter()));
+                        .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
 
@@ -307,7 +315,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(toolDAO, configuration);
+        final EntryResource entryResource = new EntryResource(toolDAO, versionDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
@@ -347,6 +355,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
+        ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         ToolsApiServiceImpl.setTrsListener(trsListener);
 
@@ -367,6 +376,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new io.openapi.api.ToolClassesApi(null));
+        environment.jersey().register(new io.openapi.api.ServiceInfoApi(null));
         environment.jersey().register(new MetadataApi(null));
         environment.jersey().register(new ToolClassesApi(null));
         environment.jersey().register(new PersistenceExceptionMapper());
@@ -378,6 +388,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
+
+        // Filter used to log every request an admin user makes.
+        environment.jersey().register(new AdminPrivilegesFilter());
 
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);

@@ -24,8 +24,8 @@ components:
           type: object
       type: object
     Checksum:
-      description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-      example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+      description: The checksum value and its type
+      example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
       properties:
         checksum:
           description: 'The hex-string encoded checksum for the data. '
@@ -45,11 +45,11 @@ components:
             $ref: '#/components/schemas/Alias'
           type: object
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           description: Description of the collection
           type: string
@@ -89,8 +89,8 @@ components:
     CollectionEntry:
       properties:
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         entryPath:
           type: string
         entryType:
@@ -98,6 +98,8 @@ components:
         id:
           format: int64
           type: integer
+        versionName:
+          type: string
       type: object
     CollectionOrganization:
       properties:
@@ -126,7 +128,11 @@ components:
           type: string
         bitBucketClientId:
           type: string
+        composeSetupVersion:
+          type: string
         cwlVisualizerUri:
+          type: string
+        deployVersion:
           type: string
         discourseUrl:
           type: string
@@ -214,11 +220,11 @@ components:
         conceptDoi:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         defaultVersion:
           type: string
         description:
@@ -245,14 +251,16 @@ components:
           type: array
           uniqueItems: true
         lastUpdated:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         last_modified:
           format: int32
           type: integer
         last_modified_date:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
+        licenseInformation:
+          $ref: '#/components/schemas/LicenseInformation'
         metadataFromEntry:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
@@ -295,11 +303,11 @@ components:
         conceptDoi:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         defaultVersion:
           type: string
         description:
@@ -326,14 +334,16 @@ components:
           type: array
           uniqueItems: true
         lastUpdated:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         last_modified:
           format: int32
           type: integer
         last_modified_date:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
+        licenseInformation:
+          $ref: '#/components/schemas/LicenseInformation'
         metadataFromEntry:
           type: object
           writeOnly: true
@@ -372,8 +382,8 @@ components:
             - SERVICE
           type: string
         lastUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         path:
           type: string
         prettyPath:
@@ -394,11 +404,11 @@ components:
         collection:
           $ref: '#/components/schemas/Collection'
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           format: int64
           type: integer
@@ -449,7 +459,7 @@ components:
       properties:
         checksum:
           description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-          example: '[{checksum=ea2a5db69bd20a42976838790bc29294df3af02b, type=sha1}]'
+          example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
           items:
             $ref: '#/components/schemas/Checksum'
           type: array
@@ -525,8 +535,8 @@ components:
     LambdaEvent:
       properties:
         eventDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         githubUsername:
           type: string
         id:
@@ -549,6 +559,11 @@ components:
             - INSTALL
           type: string
       type: object
+    LicenseInformation:
+      properties:
+        licenseName:
+          type: string
+      type: object
     Limits:
       properties:
         hostedEntryCountLimit:
@@ -561,19 +576,19 @@ components:
     Notification:
       properties:
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         expiration:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           format: int64
           type: integer
         message:
-          maxLength: 280
+          maxLength: 1024
           minLength: 0
           type: string
         priority:
@@ -598,11 +613,11 @@ components:
           pattern: ([^\s]+)(\.jpg|\.jpeg|\.png|\.gif)
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         displayName:
@@ -648,8 +663,8 @@ components:
         displayName:
           type: string
         lastUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         name:
           type: string
       type: object
@@ -658,11 +673,11 @@ components:
         accepted:
           type: boolean
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           $ref: '#/components/schemas/OrganizationUserId'
         organization:
@@ -685,6 +700,24 @@ components:
           format: int64
           type: integer
       type: object
+    ParsedInformation:
+      properties:
+        descriptorLanguage:
+          enum:
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+            
+            
+          type: string
+        hasHTTPImports:
+          type: boolean
+        hasLocalImports:
+          type: boolean
+      type: object
     Permission:
       properties:
         email:
@@ -695,6 +728,13 @@ components:
             - WRITER
             - READER
           type: string
+      type: object
+    PrivilegeRequest:
+      properties:
+        admin:
+          type: boolean
+        curator:
+          type: boolean
       type: object
     Profile:
       properties:
@@ -757,6 +797,26 @@ components:
       allOf:
         - $ref: '#/components/schemas/Workflow'
       type: object
+    ServiceType:
+      description: Type of a GA4GH service
+      properties:
+        artifact:
+          description: Name of the API or GA4GH specification implemented. Official GA4GH types should be assigned as part of standards approval process. Custom artifacts are supported.
+          example: beacon
+          type: string
+        group:
+          description: Namespace in reverse domain name format. Use `org.ga4gh` for implementations compliant with official GA4GH specifications. For services with custom APIs not standardized by GA4GH, or implementations diverging from official GA4GH specifications, use a different namespace (e.g. your organization's reverse domain name).
+          example: org.ga4gh
+          type: string
+        version:
+          description: Version of the API or specification. GA4GH specifications use semantic versioning.
+          example: 1.0.0
+          type: string
+      required:
+        - artifact
+        - group
+        - version
+      type: object
     SharedWorkflows:
       properties:
         role:
@@ -780,6 +840,7 @@ components:
     SourceFile:
       properties:
         absolutePath:
+          description: Absolute path of sourcefile in git repo
           type: string
         checksums:
           items:
@@ -793,8 +854,10 @@ components:
           format: int64
           type: integer
         path:
+          description: Path to sourcefile relative to its parent
           type: string
         type:
+          description: Enumerates the type of file
           enum:
             - DOCKSTORE_CWL
             - DOCKSTORE_WDL
@@ -817,11 +880,68 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/VerificationInformation'
           type: object
+      required:
+        - absolutePath
+        - path
+        - type
       type: object
     StarRequest:
       properties:
         star:
           type: boolean
+      type: object
+    TRSService:
+      description: GA4GH service
+      properties:
+        contactUrl:
+          description: URL of the contact for the provider of this service, e.g. a link to a contact form (RFC 3986 format), or an email (RFC 2368 format).
+          example: mailto:support@example.com
+          type: string
+        createdAt:
+          description: Timestamp describing when the service was first deployed and available (RFC 3339 format)
+          example: "2019-06-04T12:58:19Z"
+          format: date-time
+          type: string
+        description:
+          description: Description of the service. Should be human readable and provide information about the service.
+          example: This service provides...
+          type: string
+        documentationUrl:
+          description: URL of the documentation of this service (RFC 3986 format). This should help someone learn how to use your service, including any specifics required to access data, e.g. authentication.
+          example: https://docs.myservice.example.com
+          type: string
+        environment:
+          description: Environment the service is running in. Use this to distinguish between production, development and testing/staging deployments. Suggested values are prod, test, dev, staging. However this is advised and not enforced.
+          example: test
+          type: string
+        id:
+          description: Unique ID of this service. Reverse domain name notation is recommended, though not required. The identifier should attempt to be globally unique so it can be used in downstream aggregator services e.g. Service Registry.
+          example: org.ga4gh.myservice
+          type: string
+        name:
+          description: Name of this service. Should be human readable.
+          example: My project
+          type: string
+        organization:
+          description: Organization providing the service
+          type: object
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        updatedAt:
+          description: Timestamp describing when the service was last updated (RFC 3339 format)
+          example: "2019-06-04T12:58:19Z"
+          format: date-time
+          type: string
+        version:
+          description: Version of the service being described. Semantic versioning is recommended, but other identifiers, such as dates or commit hashes, are also allowed. The version should be changed whenever the service is updated.
+          example: 1.0.0
+          type: string
+      required:
+        - id
+        - name
+        - organization
+        - type
+        - version
       type: object
     Tag:
       properties:
@@ -834,8 +954,8 @@ components:
         cwl_path:
           type: string
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         descriptionSource:
@@ -877,8 +997,8 @@ components:
           type: array
           uniqueItems: true
         last_built:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         name:
           type: string
         output_file_formats:
@@ -901,11 +1021,6 @@ components:
         size:
           format: int64
           type: integer
-        sourceFiles:
-          items:
-            $ref: '#/components/schemas/SourceFile'
-          type: array
-          uniqueItems: true
         valid:
           type: boolean
         validations:
@@ -923,6 +1038,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         wdl_path:
           type: string
         workingDirectory:
@@ -933,11 +1050,11 @@ components:
         content:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         id:
           format: int64
           type: integer
@@ -1233,21 +1350,21 @@ components:
             - PRIVACY_POLICY_VERSION_2_5
           type: string
         privacyPolicyVersionAcceptanceDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         setupComplete:
           type: boolean
         tosacceptanceDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         tosversion:
           enum:
             - NONE
             - TOS_VERSION_1
           type: string
         tosversionAcceptanceDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
           writeOnly: true
         userProfiles:
           additionalProperties:
@@ -1301,8 +1418,8 @@ components:
         commitID:
           type: string
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         descriptionSource:
@@ -1358,11 +1475,6 @@ components:
             - NOT_APPLICABLE
             - UNSET
           type: string
-        sourceFiles:
-          items:
-            $ref: '#/components/schemas/SourceFile'
-          type: array
-          uniqueItems: true
         valid:
           type: boolean
         validations:
@@ -1380,8 +1492,36 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workingDirectory:
           type: string
+      type: object
+    VersionMetadata:
+      properties:
+        id:
+          format: int64
+          type: integer
+        parsedInformationSet:
+          items:
+            $ref: '#/components/schemas/ParsedInformation'
+          type: array
+      type: object
+    VersionVerifiedPlatform:
+      properties:
+        metadata:
+          type: string
+        path:
+          type: string
+        platformVersion:
+          type: string
+        source:
+          type: string
+        verified:
+          type: boolean
+        versionId:
+          format: int64
+          type: integer
       type: object
     Workflow:
       discriminator:
@@ -1399,11 +1539,11 @@ components:
         conceptDoi:
           type: string
         dbCreateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         defaultTestParameterFilePath:
           type: string
         defaultVersion:
@@ -1431,6 +1571,10 @@ components:
           type: string
         email:
           type: string
+        forumUrl:
+          maxLength: 256
+          minLength: 0
+          type: string
         full_workflow_path:
           type: string
         gitUrl:
@@ -1455,14 +1599,16 @@ components:
           type: array
           uniqueItems: true
         lastUpdated:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         last_modified:
           format: int32
           type: integer
         last_modified_date:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
+        licenseInformation:
+          $ref: '#/components/schemas/LicenseInformation'
         metadataFromEntry:
           $ref: '#/components/schemas/Workflow'
         metadataFromVersion:
@@ -1534,8 +1680,8 @@ components:
         commitID:
           type: string
         dbUpdateDate:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         description:
           type: string
         descriptionSource:
@@ -1573,8 +1719,8 @@ components:
           type: array
           uniqueItems: true
         last_modified:
-          format: date-time
-          type: string
+          format: int64
+          type: integer
         legacyVersion:
           type: boolean
         name:
@@ -1596,11 +1742,6 @@ components:
             - NOT_APPLICABLE
             - UNSET
           type: string
-        sourceFiles:
-          items:
-            $ref: '#/components/schemas/SourceFile'
-          type: array
-          uniqueItems: true
         subClass:
           enum:
             - DOCKER_COMPOSE
@@ -1627,6 +1768,8 @@ components:
           type: array
         versionEditor:
           $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
         workflow_path:
           type: string
         workingDirectory:
@@ -1654,7 +1797,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.9.2-SNAPSHOT
+  version: 1.10.0-alpha.3-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -1698,7 +1841,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -2391,12 +2534,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
-          description: default response
+                $ref: '#/components/schemas/Entry'
+          description: Successfully created hosted entry
       security:
         - bearer: []
       tags:
@@ -2417,12 +2560,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
-          description: default response
+                $ref: '#/components/schemas/Entry'
+          description: Successfully deleted hosted entry version
       security:
         - bearer: []
       tags:
@@ -3335,26 +3478,6 @@ paths:
         - bearer: []
       tags:
         - containers
-  /containers/{containerId}/unstar:
-    delete:
-      description: Unstar a tool.
-      operationId: unstarEntry
-      parameters:
-        - in: path
-          name: containerId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - containers
   /containers/{containerId}/updateTagPaths:
     put:
       description: Change the tool paths.
@@ -3479,9 +3602,11 @@ paths:
       operationId: createNotification
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Notification'
+        description: Notification to create
+        required: true
       responses:
         default:
           content:
@@ -3558,6 +3683,81 @@ paths:
         - bearer: []
       tags:
         - curation
+  /entries/{entryId}/verifiedPlatforms:
+    get:
+      description: Get the verified platforms for each version of an entry.
+      operationId: getVerifiedPlatforms
+      parameters:
+        - description: id of the entry
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VersionVerifiedPlatform'
+                type: array
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - entries
+  /entries/{entryId}/versions/{versionId}/fileTypes:
+    get:
+      description: Retrieve the unique file types of a version's sourcefile
+      operationId: getVersionsFileTypes
+      parameters:
+        - description: Entry to retrieve the version from
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Version to retrieve the sourcefile types from
+          in: path
+          name: versionId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  enum:
+                    - DOCKSTORE_CWL
+                    - DOCKSTORE_WDL
+                    - DOCKERFILE
+                    - CWL_TEST_JSON
+                    - WDL_TEST_JSON
+                    - NEXTFLOW
+                    - NEXTFLOW_CONFIG
+                    - NEXTFLOW_TEST_PARAMS
+                    - DOCKSTORE_YML
+                    - DOCKSTORE_SERVICE_YML
+                    - DOCKSTORE_SERVICE_TEST_JSON
+                    - DOCKSTORE_SERVICE_OTHER
+                    - DOCKSTORE_GXFORMAT2
+                    - GXFORMAT2_TEST_FILE
+                    - DOCKSTORE_SWL
+                    - SWL_TEST_JSON
+                  type: string
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - entries
   /entries/{id}/aliases:
     post:
       description: Add aliases linked to a entry in Dockstore.
@@ -3574,12 +3774,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-          description: default response
+          description: Successfully added alias to entry
       security:
         - bearer: []
       tags:
@@ -3670,6 +3870,19 @@ paths:
       summary: Get events based on filters.
       tags:
         - events
+  /ga4gh/trs/v2/service-info:
+    get:
+      operationId: getServiceInfo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TRSService'
+          description: A successful operation to request the service information about this running service.'
+      summary: Show information about this service. It is assumed that removing this endpoint from a URL will result in a valid URL to query against
+      tags:
+        - GA4GHV20
   /ga4gh/trs/v2/toolClasses:
     get:
       description: 'This endpoint returns all tool-classes available. '
@@ -3712,11 +3925,20 @@ paths:
           in: query
           name: toolClass
           schema:
+            enum:
+              - CommandLineTool
+              - Workflow
             type: string
         - description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
           in: query
           name: descriptorType
           schema:
+            enum:
+              - CWL
+              - WDL
+              - NFL
+              - SERVICE
+              - GALAXY
             type: string
         - description: The image registry that contains the image.
           in: query
@@ -4356,7 +4578,7 @@ paths:
       operationId: createOrganization
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Organization'
         description: Organization to register.
@@ -4443,12 +4665,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-          description: default response
+          description: Successfully added alias to collection
       security:
         - bearer: []
       summary: Add aliases linked to a collection in Dockstore.
@@ -4499,6 +4721,29 @@ paths:
       tags:
         - organizations
   /organizations/{organizationId}:
+    delete:
+      description: Delete pending or rejected organization
+      operationId: deleteRejectedOrPendingOrganization
+      parameters:
+        - description: Organization ID.
+          in: path
+          name: organizationId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "204":
+          description: NO CONTENT
+        "400":
+          description: BAD REQUEST
+        "403":
+          description: FORBIDDEN
+      security:
+        - bearer: []
+      summary: Delete pending or rejected organization
+      tags:
+        - organizations
     get:
       description: Retrieve an organization by ID. Supports optional authentication.
       operationId: getOrganizationById
@@ -4571,12 +4816,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
-          description: default response
+          description: Successfully created organization alias
       security:
         - bearer: []
       summary: Add aliases linked to a listing in Dockstore.
@@ -4830,6 +5075,12 @@ paths:
           schema:
             format: int64
             type: integer
+        - description: Version ID.
+          in: query
+          name: versionId
+          schema:
+            format: int64
+            type: integer
       responses:
         default:
           content:
@@ -4864,6 +5115,12 @@ paths:
           in: query
           name: entryId
           required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Version ID.
+          in: query
+          name: versionId
           schema:
             format: int64
             type: integer
@@ -5132,28 +5389,6 @@ paths:
                 uniqueItems: true
           description: default response
       summary: Return list of users who starred the given approved organization.
-      tags:
-        - organizations
-  /organizations/{organizationId}/unstar:
-    delete:
-      description: Unstar an organization.
-      operationId: unstarOrganization
-      parameters:
-        - description: Organization ID.
-          in: path
-          name: organizationId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
-      security:
-        - bearer: []
-      summary: Unstar an organization.
       tags:
         - organizations
   /organizations/{organizationId}/user:
@@ -6080,6 +6315,34 @@ paths:
         - bearer: []
       tags:
         - users
+  /users/{userId}/privileges:
+    put:
+      description: Updates the provided userID to admin or curator status, ADMIN or CURATOR only
+      operationId: setUserPrivileges
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivilegeRequest'
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
   /users/{userId}/services:
     get:
       description: List all services owned by the authenticated user.
@@ -6108,102 +6371,6 @@ paths:
     get:
       description: Get tokens with user id.
       operationId: getUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/dockstore:
-    get:
-      description: Get Dockstore tokens with user id.
-      operationId: getDockstoreUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/github.com:
-    get:
-      description: Get Github tokens with user id.
-      operationId: getGithubUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/gitlab.com:
-    get:
-      description: Get Gitlab tokens with user id.
-      operationId: getGitlabUserTokens
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Token'
-                type: array
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - users
-  /users/{userId}/tokens/quay.io:
-    get:
-      description: Get Quay tokens with user id.
-      operationId: getQuayUserTokens
       parameters:
         - in: path
           name: userId
@@ -6428,12 +6595,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
-          description: default response
+                $ref: '#/components/schemas/Entry'
+          description: Successfully created hosted entry
       security:
         - bearer: []
       tags:
@@ -6454,12 +6621,12 @@ paths:
           schema:
             type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
-          description: default response
+                $ref: '#/components/schemas/Entry'
+          description: Successfully deleted hosted entry version
       security:
         - bearer: []
       tags:
@@ -7230,6 +7397,42 @@ paths:
         - bearer: []
       tags:
         - workflows
+  /workflows/{workflowId}/descriptorType:
+    post:
+      description: Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.
+      operationId: updateDescriptorType
+      parameters:
+        - in: path
+          name: workflowId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - in: query
+          name: descriptorType
+          schema:
+            enum:
+              - CWL
+              - WDL
+              - gxformat2
+              - SWL
+              - NFL
+              - service
+              
+              
+            type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+      security:
+        - bearer: []
+      summary: Changes the descriptor type of an unpublished, invalid workflow.
+      tags:
+        - workflows
   /workflows/{workflowId}/labels:
     put:
       description: Update the labels linked to a workflow.
@@ -7667,26 +7870,6 @@ paths:
             application/json:
               schema:
                 type: string
-          description: default response
-      security:
-        - bearer: []
-      tags:
-        - workflows
-  /workflows/{workflowId}/unstar:
-    delete:
-      description: Unstar a workflow.
-      operationId: unstarEntry_1
-      parameters:
-        - in: path
-          name: workflowId
-          required: true
-          schema:
-            format: int64
-            type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
           description: default response
       security:
         - bearer: []

@@ -15,7 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -23,13 +22,19 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -56,6 +61,20 @@ public class ExtendedNextflowIT extends BaseIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    private FileDAO fileDAO;
+
+    @Before
+    public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+
+        this.fileDAO = new FileDAO(sessionFactory);
+
+        // used to allow us to use fileDAO outside of the web service
+        Session session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+    }
+
     @Test
     public void testNextflowSecondaryFiles() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
@@ -66,7 +85,7 @@ public class ExtendedNextflowIT extends BaseIT {
         User user = usersApi.getUser();
 
         Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+                DescriptorLanguage.NEXTFLOW.getShortName(), "");
         assertNotSame("", workflow.getWorkflowName());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
@@ -80,9 +99,7 @@ public class ExtendedNextflowIT extends BaseIT {
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         // Tests that nf-core nextflow.config files can be parsed
-        List<SourceFile> sourceFileList = new ArrayList<>(
-            refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("nfcore")).findFirst().get()
-                .getSourceFiles());
+        List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("nfcore")).findFirst().get().getId());
         Assert.assertEquals(4, sourceFileList.size());
         Assert.assertTrue("files are not what we expected",
             sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/AMPA-BIGTABLE.pl")) && sourceFileList.stream()
@@ -102,7 +119,7 @@ public class ExtendedNextflowIT extends BaseIT {
         User user = usersApi.getUser();
         // get workflow stubs
         Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getLowerShortName(), "/foo.json");
+                DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
@@ -128,9 +145,7 @@ public class ExtendedNextflowIT extends BaseIT {
         // This tests if it can fix outdated metadata
         testWorkflowVersionMetadata(refreshedBitbucketWorkflow);
         testWorkflowVersionMetadata(byPathWorkflow);
-        List<SourceFile> sourceFileList = new ArrayList<>(
-            bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get()
-                .getSourceFiles());
+        List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get().getId());
         Assert.assertEquals(4, sourceFileList.size());
     }
 
@@ -171,7 +186,7 @@ public class ExtendedNextflowIT extends BaseIT {
 
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/kallisto-nf", "/nextflow.config", "",
-                        DescriptorLanguage.NEXTFLOW.getLowerShortName(), "/foo.json");
+                        DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
         workflowApi.refresh(workflow.getId(), false);
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
@@ -184,9 +199,7 @@ public class ExtendedNextflowIT extends BaseIT {
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, false);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         Assert.assertTrue("Should have gotten the description from README", bitbucketWorkflow.getDescription().contains("A Nextflow implementation of Kallisto & Sleuth RNA-Seq Tools"));
-        List<SourceFile> sourceFileList = new ArrayList<>(
-            bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v1.0")).findFirst().get()
-                .getSourceFiles());
+        List<SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v1.0")).findFirst().get().getId());
         Assert.assertEquals(6, sourceFileList.size());
         // two of the files should essentially be blanked
         Assert.assertEquals("two files have our one-line warning", 2, sourceFileList.stream()

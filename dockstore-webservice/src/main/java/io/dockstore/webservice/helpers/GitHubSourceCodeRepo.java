@@ -47,6 +47,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
@@ -67,6 +68,7 @@ import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHEmail;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRateLimit;
@@ -134,7 +136,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
             return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         }
     }
@@ -170,7 +172,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                 } catch (IOException e) {
                     // move on if a file is not found
-                    LOG.warn("Could not find " + partialPath + " at " + reference);
+                    LOG.warn("Could not find " + partialPath + " at " + reference, e);
                 }
             }
             fileName = Joiner.on("/").join(folders);
@@ -182,11 +184,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return decodedContentAndMetadata.getRight();
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage());
+            LOG.warn(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         } finally {
             GHRateLimit endRateLimit = getGhRateLimitQuietly();
             reportOnRateLimit("readFileFromRepo", startRateLimit, endRateLimit);
+        }
+    }
+
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+        if (gitRepository != null) {
+            LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, gitRepository);
+            entry.setLicenseInformation(licenseInformation);
         }
     }
 
@@ -224,7 +234,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             try {
                 return Pair.of(fileContent, fileContent.getContent());
             } catch (NullPointerException ex) {
-                LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?");
+                LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?", ex);
                 // seems to be thrown on submodules with the new library
                 return null;
             }
@@ -298,6 +308,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            setLicenseInformation(workflow, workflow.getOrganization() + '/' + workflow.getRepository());
+
             // Why is the path not set here?
         } catch (GHFileNotFoundException e) {
             LOG.info(gitUsername + ": GitHub reports file not found: " + e.getCause().getLocalizedMessage(), e);
@@ -326,7 +338,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
-
+        this.setLicenseInformation(service, repositoryId);
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
+        service.setLicenseInformation(licenseInformation);
         // Validate subclass
         if (subclass != null) {
             DescriptorLanguageSubclass descriptorLanguageSubclass;
@@ -358,6 +372,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
         workflow.setWorkflowName(workflowName);
+        this.setLicenseInformation(workflow, repositoryId);
         DescriptorLanguage descriptorLanguage;
         try {
             descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
@@ -391,9 +406,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
-            LOG.debug("repo had no releases or tags: " + repositoryId);
+            LOG.debug("repo had no releases or tags: " + repositoryId, e);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -484,7 +499,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     branchDate = epochStart;
                 }
             } catch (IOException e) {
-                LOG.error("unable to retrieve commit date for branch " + refName);
+                LOG.error("unable to retrieve commit date for branch " + refName, e);
             }
             return Triple.of(refName, branchDate, sha);
         } else {
@@ -721,20 +736,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (testParameterPaths != null) {
                 List<String> missingParamFiles = new ArrayList<>();
                 for (String testParameterPath : testParameterPaths) {
-                    String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
-                    if (testJsonContent != null) {
-                        SourceFile testJson = new SourceFile();
-                        // find type from file type, then find matching test param type
-                        testJson.setType(workflow.getDescriptorType().getTestParamType());
-                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setContent(testJsonContent);
-
-                        // Only add test parameter file if it hasn't already been added
-                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
-                        if (!hasDuplicate) {
-                            version.getSourceFiles().add(testJson);
-                        }
+                    // Only add test parameter file if it hasn't already been added
+                    boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(testParameterPath) && sf.getType() == workflow.getDescriptorType().getTestParamType());
+                    if (hasDuplicate) {
+                        continue;
+                    }
+                    String testFileContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
+                    if (testFileContent != null) {
+                        SourceFile testFile = new SourceFile();
+                        // find type from file type
+                        testFile.setType(workflow.getDescriptorType().getTestParamType());
+                        testFile.setPath(testParameterPath);
+                        testFile.setAbsolutePath(testParameterPath);
+                        testFile.setContent(testFileContent);
+                        version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
                     }
@@ -805,7 +820,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             startRateLimit = github.rateLimit();
         } catch (IOException e) {
-            LOG.error("unable to retrieve rate limit, weird");
+            LOG.error("unable to retrieve rate limit, weird", e);
         }
         return startRateLimit;
     }
@@ -838,7 +853,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Determine the default branch on Github
                 mainBranch = repository.getDefaultBranch();
             } catch (IOException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
                 return null;
             }
         }
@@ -879,7 +894,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
     }
@@ -898,8 +913,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage(), e);
             // this is not so critical to warrant a http error code
+        }
+        return null;
+    }
+
+    private String getEmail(GHMyself myself) throws IOException {
+        for (GHEmail email: myself.getEmails2()) {
+            if (email.isPrimary()) {
+                return email.getEmail();
+            }
         }
         return null;
     }
@@ -914,7 +938,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHMyself myself = github.getMyself();
             User.Profile profile = new User.Profile();
             profile.name = myself.getName();
-            profile.email = myself.getEmail();
+            profile.email = getEmail(myself);
             profile.avatarURL = myself.getAvatarUrl();
             profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
             profile.location = myself.getLocation();

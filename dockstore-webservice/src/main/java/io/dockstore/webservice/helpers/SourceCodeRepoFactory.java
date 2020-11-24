@@ -102,6 +102,33 @@ public final class SourceCodeRepoFactory {
     }
 
     /**
+     * Gets source code repo corresponding to the Git URL. Only checks if a token is found for that source code repo, no additional checks.
+     * @param gitUrl    Git URL to identify which SourceCodeRepo to return
+     * @param bitbucketTokenContent The user's Bitbucket token if it exists, null otherwise
+     * @param gitlabTokenContent    The user's GitLab token if it exists, null otherwise
+     * @param githubTokenContent    The user's GitHub token if it exists, null otherwise
+     * @return  a SourceCode repo if a token exists, null otherwise
+     */
+    public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, String bitbucketTokenContent,
+            String gitlabTokenContent, String githubTokenContent) {
+        Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
+        if (repoUrlMap == null) {
+            return null;
+        }
+        String source = repoUrlMap.get("Source");
+        String gitUsername = repoUrlMap.get("Username");
+        if (SourceControl.GITHUB.toString().equals(source)) {
+            return githubTokenContent != null ? new GitHubSourceCodeRepo(gitUsername, githubTokenContent) : null;
+        } else if (SourceControl.BITBUCKET.toString().equals(source)) {
+            return bitbucketTokenContent != null ? new BitBucketSourceCodeRepo(gitUsername, bitbucketTokenContent) : null;
+        } else if (SourceControl.GITLAB.toString().equals(source)) {
+            return (gitlabTokenContent != null ? new GitLabSourceCodeRepo(gitUsername, gitlabTokenContent) : null);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Parse Git URL to retrieve source, username and repository name.
      *
      * @param url

@@ -48,6 +48,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -56,6 +57,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+import org.kohsuke.github.GHLicense;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,10 +82,38 @@ public final class GitHubHelper {
         try {
             TokenResponse tokenResponse = flow.newTokenRequest(code)
                     .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-            return tokenResponse.getAccessToken();
+            if (tokenResponse.getAccessToken() != null) {
+                return tokenResponse.getAccessToken();
+            } else {
+                LOG.error("Retrieving accessToken was unsuccessful");
+                throw new CustomWebApplicationException("Could not retrieve github.com token", HttpStatus.SC_BAD_REQUEST);
+            }
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+        }
+
+    }
+
+    /**
+     * Get license for a specific GitHub repository
+     * @param gitHub    The GitHub API
+     * @param repositoryName    Name of the GitHub repository (e.g. dockstore/lambda)
+     * @return  The LicenseInformation associated with the repository
+     */
+    public static LicenseInformation getLicenseInformation(GitHub gitHub, String repositoryName) {
+        try {
+            GHRepository repository = gitHub.getRepository(repositoryName);
+            GHLicense license = repository.getLicense();
+            if (license == null) {
+                return new LicenseInformation();
+            }
+            LicenseInformation licenseInformation = new LicenseInformation();
+            licenseInformation.setLicenseName(license.getName());
+            return licenseInformation;
+        } catch (IOException e) {
+            LOG.info("Could not get license information from GitHub for repository: " + repositoryName, e);
+            return new LicenseInformation();
         }
     }
 

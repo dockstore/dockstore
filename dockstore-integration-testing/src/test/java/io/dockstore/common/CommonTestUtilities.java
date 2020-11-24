@@ -86,10 +86,11 @@ public final class CommonTestUtilities {
         String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "locks", "-r", dropwizardConfigurationFile);
         application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
         application
             .run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,"
-                    + "1.6.0,1.7.0,1.8.0,1.9.0");
+                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0");
     }
 
     /**
@@ -106,16 +107,28 @@ public final class CommonTestUtilities {
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
         String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        Application<DockstoreWebserviceConfiguration> application;
-        if (isNewApplication) {
-            application = support.newApplication();
-        } else {
-            application = support.getApplication();
-        }
-        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
+                isNewApplication);
 
         List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0");
+            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0");
+        runMigration(migrationList, application, dropwizardConfigurationFile);
+    }
+
+    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
+    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
+            throws Exception {
+        dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
+    }
+
+    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+            String dropwizardConfigurationFile) throws Exception {
+        LOG.info("Dropping and Recreating the database with non-confidential test data");
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
+                isNewApplication);
+
+        List<String> migrationList = Arrays
+                .asList("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0");
         runMigration(migrationList, application, dropwizardConfigurationFile);
     }
 
@@ -181,11 +194,12 @@ public final class CommonTestUtilities {
     private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath)
         throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "locks", "-r", configPath);
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
 
         List<String> migrationList = Arrays
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0");
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -223,18 +237,45 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
         boolean isNewApplication) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
+
+        List<String> migrationList = Arrays
+            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
+
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0");
+        runMigration(migrationList, application, configPath);
+    }
+
+    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
+    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
+            throws Exception {
+        LOG.info("Dropping and Recreating the database with confidential 2 test data and additonal tools");
+        addAdditionalToolsWithPrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
+    }
+
+    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+            boolean isNewApplication) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
+
+        List<String> migrationList = Arrays
+                .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "add_test_tools", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
+
+                        "1.7.0", "1.8.0", "1.9.0", "1.10.0");
+        runMigration(migrationList, application, configPath);
+    }
+
+    public static Application<DockstoreWebserviceConfiguration> getApplicationAndDropDB(
+            final DropwizardTestSupport<DockstoreWebserviceConfiguration> support, final String configPath, final boolean isNewApplication)
+            throws Exception {
         Application<DockstoreWebserviceConfiguration> application;
         if (isNewApplication) {
             application = support.newApplication();
         } else {
             application = support.getApplication();
         }
+        application.run("db", "locks", "-r", configPath);
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0");
-        runMigration(migrationList, application, configPath);
+        return application;
     }
 
     /**
@@ -247,10 +288,11 @@ public final class CommonTestUtilities {
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating samepaths migrations");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "locks", "-r", CONFIDENTIAL_CONFIG_PATH);
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         application
             .run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0");
 
     }
 
@@ -264,9 +306,11 @@ public final class CommonTestUtilities {
     public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating testworkflow migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "locks", "-r", CONFIDENTIAL_CONFIG_PATH);
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0");
+                .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0",
+                        "1.8.0", "1.9.0", "1.10.0");
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 
@@ -297,7 +341,7 @@ public final class CommonTestUtilities {
         try {
             executor.execute(commandLine);
         } catch (IOException e) {
-            LOG.error("Could not execute command. " + e.getMessage());
+            LOG.error("Could not execute command. " + e.getMessage(), e);
             e.printStackTrace();
         }
     }

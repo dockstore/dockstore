@@ -56,6 +56,7 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
@@ -74,6 +75,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 // Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
+        @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
+                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "
+                        + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
+                        + "version.parent.id = :entryId"
+        ),
         @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
@@ -119,7 +125,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private ReferenceType referenceType = ReferenceType.UNSET;
 
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JsonIgnore
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
@@ -135,8 +142,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "True if user has altered the tag", position = 8)
     private boolean dirtyBit = false;
 
-    @JsonIgnore
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent")
+    // Warning: this is eagerly loaded because of two reasons:
+    // the 4 @ApiModelProperty that uses version metadata
+    // This OneToOne
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "parent", orphanRemoval = true)
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private VersionMetadata versionMetadata = new VersionMetadata();
@@ -148,13 +157,15 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // database timestamps
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
-    @ApiModelProperty(position = 10)
+    @ApiModelProperty(position = 10, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
-    @ApiModelProperty(position = 11)
+    @ApiModelProperty(position = 11, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -380,6 +391,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return versionMetadata.doiStatus;
     }
 
+    // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
         return this.getVersionMetadata().author;
@@ -504,6 +516,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.setAuthor(newVersionMetadata.author);
         this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
+        this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
 
     public void setParent(Entry<?, ?> parent) {

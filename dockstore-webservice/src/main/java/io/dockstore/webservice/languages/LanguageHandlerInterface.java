@@ -41,6 +41,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -176,6 +177,19 @@ public interface LanguageHandlerInterface {
         }
     }
 
+    default ParsedInformation getParsedInformation(Version version, DescriptorLanguage descriptorLanguage) {
+        Optional<ParsedInformation> foundParsedInformation = version.getVersionMetadata().getParsedInformationSet().stream()
+                .filter(parsedInformation -> parsedInformation.getDescriptorLanguage() == descriptorLanguage).findFirst();
+        if (foundParsedInformation.isPresent()) {
+            return foundParsedInformation.get();
+        } else {
+            ParsedInformation parsedInformation = new ParsedInformation();
+            parsedInformation.setDescriptorLanguage(descriptorLanguage);
+            version.getVersionMetadata().getParsedInformationSet().add(parsedInformation);
+            return parsedInformation;
+        }
+    }
+
     /**
      * Removes any sourcefiles of some file types from a set
      * @param sourcefiles
@@ -307,7 +321,7 @@ public interface LanguageHandlerInterface {
      * @param dockerEntry has the docker name
      * @return URL
      */
-    // TODO: Don't assume that it's dockerhub when it's not Quay. Potentially add support for other registries and add message that the registry is unsupported
+    // TODO: Potentially add support for other registries and add message that the registry is unsupported
     default String getURLFromEntry(String dockerEntry, ToolDAO toolDAO) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
@@ -324,9 +338,16 @@ public interface LanguageHandlerInterface {
             dockerEntry = m.group(1);
         }
 
+        if (dockerEntry.isEmpty()) {
+            return null;
+        }
+
+        // Regex for determining registry requires a tag; add a fake "0" tag
+        Optional<Registry> registry = determineImageRegistry(dockerEntry + ":0");
+
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
-        if (dockerEntry.startsWith("quay.io/")) {
+        if (registry.isPresent() && registry.get().equals(Registry.QUAY_IO)) {
             List<Tool> byPath = toolDAO.findAllByPath(dockerEntry, true);
             if (byPath == null || byPath.isEmpty()) {
                 // when we cannot find a published tool on Dockstore, link to quay.io
@@ -335,7 +356,10 @@ public interface LanguageHandlerInterface {
                 // when we found a published tool, link to the tool on Dockstore
                 url = dockstorePath + dockerEntry;
             }
-        } else {
+        } else if (registry.isEmpty() || !registry.get().equals(Registry.DOCKER_HUB)) {
+            // if the registry is neither Quay nor Docker Hub, return the entry as the url
+            url = "https://" + dockerEntry;
+        } else {  // DOCKER_HUB
             String[] parts = dockerEntry.split("/");
             if (parts.length == 2) {
                 // if the path looks like pancancer/pcawg-oxog-tools
@@ -350,10 +374,6 @@ public interface LanguageHandlerInterface {
             } else {
                 // if the path looks like debian:8 or debian
                 url = dockerHubPathUnderscore + dockerEntry;
-
-                if (url.equals(dockerHubPathUnderscore)) {
-                    url = null;
-                }
             }
 
         }
@@ -462,7 +482,7 @@ public interface LanguageHandlerInterface {
                 URL url = new URL(repoUrl);
                 response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
             } catch (IOException ex) {
-                LOG.error("Unable to get DockerHub response for " + repo);
+                LOG.error("Unable to get DockerHub response for " + repo, ex);
                 response = Optional.empty();
             }
 
