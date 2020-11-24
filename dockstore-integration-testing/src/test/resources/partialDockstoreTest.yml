@@ -1,3 +1,7 @@
+# This is the non-confidential portion of the confidential dockstoreTest.yml
+# This file can/should be checked into Git
+# Ensure no overlapping properties between this and dockstoreTest.yml. The files are merged before testing.
+
 template: Hello, %s!
 
 gitHubAppPrivateKeyFile: /home/travis/dstesting_pcks8.pem
