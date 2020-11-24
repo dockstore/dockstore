@@ -13,4 +13,5 @@ tar xvf secrets.tar
 sudo mkdir -p /home/travis
 sudo cp dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
 cat dockstore-integration-testing/src/test/resources/partialDockstoreTest.yml >> dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+rm secrets.tar
 
