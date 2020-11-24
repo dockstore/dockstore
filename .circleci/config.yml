@@ -1,11 +1,14 @@
 version: 2.1
+orbs:
+  build-tools: circleci/build-tools@2.7.0
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.8
         environment:
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:11.6
+      - image: circleci/postgres:11.8
+        command: postgres -c max_connections=200
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
@@ -19,7 +22,7 @@ executors:
           - network.host: 127.0.0.1
           - http.port: 9200
           - discovery.type: single-node
-    resource_class: xlarge      
+    resource_class: medium+
 workflows:
   version: 2
   everything:
@@ -30,17 +33,16 @@ workflows:
               only: /.*/
             branches:
               ignore:
-                - gh-pages           
-      - unit_test:         
+                - gh-pages
+      - unit_test:
           requires:
             - build
-
       - workflow-integration-tests:
           requires:
             - build
-      - tool-integration-tests:         
+      - tool-integration-tests:
           requires:
-            - build        
+            - build
       - integration-tests:
           requires:
             - build
@@ -55,30 +57,18 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
-    steps:  
+    steps:
       - setup_test
       - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
-      - run:
-          name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
   integration-tests:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
     steps:
       - setup_remote_docker:
-          version: 19.03.13            
+          version: 19.03.13
       - setup_test
       - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
-      - run:
-          name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
   tool-integration-tests:
     executor: integration_test_exec
     environment:
@@ -86,12 +76,6 @@ jobs:
     steps:
       - setup_test
       - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
-      - run:
-          name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
   workflow-integration-tests:
     executor: integration_test_exec
     environment:
@@ -99,12 +83,6 @@ jobs:
     steps:
       - setup_test
       - setup_integration_test
-      - run:
-          name: run integration test
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
-      - run:
-          name: send coverage
-          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"      
   build:
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.8
@@ -112,6 +90,7 @@ jobs:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
+      - build-tools/merge-with-parent
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
@@ -121,13 +100,7 @@ jobs:
             wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
             chmod a+x yq_linux_amd64
             sudo mv yq_linux_amd64 /usr/bin/yq
-      - run:
-          name: Install git-secrets
-          command: |
-            wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
-            tar -zxf git-secrets-1.3.0.tar.gz
-            cd git-secrets-1.3.0
-            sudo make install
+      - install-git-secrets
       - run:
           name: decrypt
           command: |
@@ -143,6 +116,13 @@ jobs:
       #       wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
       #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
       #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+      - run:
+          name: copy m2 manually
+          command: cp -r ~/.m2 .
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
   unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.8
@@ -154,23 +134,22 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
-          POSTGRES_PASSWORD: postgres   
+          POSTGRES_PASSWORD: postgres
     steps: # a collection of executable commands
-      - checkout    
-      - setup_test
+      - checkout
       - run:
-          name: Install git-secrets
+          name: Install yq
           command: |
-            wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
-            tar -zxf git-secrets-1.3.0.tar.gz
-            cd git-secrets-1.3.0
-            sudo make install
+            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
+            chmod a+x yq_linux_amd64
+            sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
           name: Install postgresql client
           command: |
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
             sudo apt install -y postgresql-client
+      - install-git-secrets
       - setup_postgres
       - run:
           name: run the actual tests
@@ -180,7 +159,8 @@ jobs:
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests) 
             /usr/local/jdk-11.0.8/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
-            mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
+            # mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=false -ntp
+            mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
@@ -245,8 +225,17 @@ jobs:
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
 commands:
+  install-git-secrets:
+    steps:
+      - run:
+          name: Install git-secrets
+          command: |
+            wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
+            tar -zxf git-secrets-1.3.0.tar.gz
+            cd git-secrets-1.3.0
+            sudo make install
   setup_postgres:
-    steps:    
+    steps:
       - run:
           name: setup postgres
           command: |
@@ -254,16 +243,26 @@ commands:
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_test:
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
+      - run:
+          name: manually copy back .m2
+          command: cp -r .m2 ~/.m2
       - run:
           name: Install yq
           command: |
             wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
             chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq          
+            sudo mv yq_linux_amd64 /usr/bin/yq
+      - run:
+          name: Install postgresql client
+          command: |
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo apt update
+            sudo apt install -y postgresql-client
   setup_integration_test:
     steps:
       - run:
@@ -280,30 +279,14 @@ commands:
           name: install pip dependencies
           command: scripts/install-tests.sh
       - run:
-          name: Install postgresql client
-          command: |
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo apt update
-            sudo apt install -y postgresql-client
-      - run:
-          name: decrypt
-          command: |
-            sudo apt install openssl -y
-            openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k $CIRCLE_CI_KEY -iv $CIRCLE_CI_IV >> test_data.zip
-            bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid            
-      - run:
           name: expand confidential data
           command: |
             bash expand_confidential_bundle.sh test_data.zip abandonDatabaseConnectionsWithOrcid 
             sudo mkdir /home/travis
             sudo mv dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /home/travis/dstesting_pcks8.pem
-      - run:
-          name: Install git-secrets
-          command: |
-            wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
-            tar -zxf git-secrets-1.3.0.tar.gz
-            cd git-secrets-1.3.0
-            sudo make install            
+            # Disable authentication cache. it causes flakey tests. Not updating the confidential bundle because I am lazy.
+            sed -i 's/expireAfterAccess=10m/expireAfterAccess=0s/g' dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+      - install-git-secrets
       - run:
           name: install dockerize
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
@@ -312,8 +295,14 @@ commands:
       - run:
           name: Wait for db
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
-      - setup_postgres  
+      - setup_postgres
       - run:
           name: Wait for ES
           command: |
-            wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true      
+            wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true
+      - run:
+          name: run integration test
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
+      - run:
+          name: send coverage
+          command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
