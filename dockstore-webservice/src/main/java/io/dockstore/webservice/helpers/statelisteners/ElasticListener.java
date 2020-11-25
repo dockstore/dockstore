@@ -123,7 +123,7 @@ public class ElasticListener implements StateListenerInterface {
             if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED) {
                 LOGGER.info("Successful " + command + ".");
             } else {
-                LOGGER.error("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
+                LOGGER.error("Could not submit index to elastic search " + post.getStatusLine().getReasonPhrase());
             }
         } catch (Exception e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
