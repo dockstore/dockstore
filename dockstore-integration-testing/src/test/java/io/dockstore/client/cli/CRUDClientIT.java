@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +48,7 @@ import org.apache.commons.io.FileUtils;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -317,6 +319,30 @@ public class CRUDClientIT extends BaseIT {
         Optional<io.dockstore.webservice.core.SourceFile> msf = fileDAO.findSourceFilesByVersion(first.get().getId()).stream().filter(sf -> absPathTest.equals(sf.getPath())).findFirst();
         String absolutePath = msf.get().getAbsolutePath();
         assertEquals(absPathTest, absolutePath);
+    }
+
+    @Test
+    public void testDeletingFrozenVersion() throws IOException {
+        HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME, testingPostgres));
+        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME, testingPostgres));
+        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, CWL.getShortName(), null, null);
+        SourceFile file = new SourceFile();
+        file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
+        hostedWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+
+        WorkflowVersion frozenVersion = hostedWorkflow.getWorkflowVersions().get(0);
+        frozenVersion.setFrozen(true);
+        workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(frozenVersion));
+
+        try {
+            api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), hostedWorkflow.getWorkflowVersions().get(0).getName());
+            Assert.fail("Should not be able to delete a frozen version");
+        } catch (ApiException ex) {
+            assertEquals(ex.getMessage(), "Cannot delete a snapshotted version.");
+        }
     }
 
     @Test

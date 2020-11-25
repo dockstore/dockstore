@@ -77,6 +77,17 @@ public class GA4GHV2FinalIT extends GA4GHIT {
         toolsIdWorkflow();
     }
 
+    @Test
+    public void testOnlyPublishedWorkflowsAreReturned() throws Exception {
+        long count = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished = 't'", long.class);
+        count = count + testingPostgres.runSelectStatement("select count(*) from tool where ispublished = 't'", long.class);
+        Response response = checkedResponse(baseURL + "tools");
+        List<Tool> responseObject = response.readEntity(new GenericType<>() {
+        });
+
+        Assert.assertEquals(count, responseObject.size());
+    }
+
     /**
      * TODO: Test organization
      */
