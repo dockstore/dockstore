@@ -23,27 +23,36 @@ executors:
           - http.port: 9200
           - discovery.type: single-node
     resource_class: medium+
+
+common_filters: &common_filters
+  filters:
+    tags:
+      only: /.*/
+    branches:
+      ignore:
+        - gh-pages
+
+    
 workflows:
   version: 2
   everything:
     jobs:
       - build:
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore:
-                - gh-pages
+          <<: *common_filters
       - unit_test:
+          <<: *common_filters
           requires:
             - build
       - workflow-integration-tests:
+          <<: *common_filters
           requires:
             - build
       - tool-integration-tests:
+          <<: *common_filters
           requires:
             - build
       - integration-tests:
+          <<: *common_filters
           requires:
             - build
       - regression-integration-tests:

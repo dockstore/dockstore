@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
@@ -32,6 +33,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.mockito.Mockito;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class WDLHandlerTest {
@@ -149,6 +151,28 @@ public class WDLHandlerTest {
             Assert.fail("Should be able to get tool json");
         }
 
+    }
+
+    @Test
+    public void testGetContentWithSyntaxErrors() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final File wdlFile = new File(ResourceHelpers.resourceFilePath("brokenWDL.wdl"));
+        final Set<SourceFile> emptySet = Collections.emptySet();
+
+        // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
+        // up; just have it return null
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        // run test with a WDL descriptor with syntax errors
+        try {
+            wdlHandler.getContent("/brokenWDL.wdl", FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8), emptySet,
+                LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected parsing error");
+        } catch (CustomWebApplicationException e) {
+            Assert.assertEquals(400, e.getResponse().getStatus());
+            assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
+        }
     }
 
     private String getGatkSvMainDescriptorContent() throws IOException {
