@@ -69,6 +69,7 @@ jobs:
     steps:
       - setup_test
       - setup_integration_test
+      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -78,6 +79,7 @@ jobs:
           version: 19.03.13
       - setup_test
       - setup_integration_test
+      - save_test_results
   tool-integration-tests:
     executor: integration_test_exec
     environment:
@@ -85,6 +87,7 @@ jobs:
     steps:
       - setup_test
       - setup_integration_test
+      - save_test_results
   workflow-integration-tests:
     executor: integration_test_exec
     environment:
@@ -92,6 +95,7 @@ jobs:
     steps:
       - setup_test
       - setup_integration_test
+      - save_test_results
   build:
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.8
@@ -204,7 +208,7 @@ jobs:
           name: Save test results
           command: |
             mkdir -p ~/junit/
-            find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/junit/ \;
+            find . -type f -regex ".*/target/*-reports/.*xml" -exec cp {} ~/junit/ \;
           when: always
       - store_test_results:
           path: ~/junit
@@ -315,3 +319,13 @@ commands:
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+  save_test_results:
+    steps:
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/test-results/junit/
+            find . -type f -regex ".*/target/*-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/test-results
