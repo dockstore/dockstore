@@ -1,5 +1,5 @@
 #this file sets up elasticsearch, kibana, and postgres containers for running dockstore locally
-#dockstore works without elasticsearch but the search page requires elasticsearch to be running
+#dockstore can run  without elasticsearch but the search page requires elasticsearch to be running
 #kibana can be used alongside elasticsearch as a visual interface for the indices and send queries directly
 #this only brings up the postgres container, not the actual database
 version: '2.2'
