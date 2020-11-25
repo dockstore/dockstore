@@ -26,7 +26,7 @@ Lists of 346 third-party dependencies.
      (The Apache Software License, Version 2.0) Apache Groovy (org.codehaus.groovy:groovy:2.5.5 - http://groovy-lang.org)
      (The Apache Software License, Version 2.0) Apache HTTP transport for the Google HTTP Client Library for Java. (com.google.http-client:google-http-client-apache:2.0.0 - https://github.com/googleapis/google-http-java-client/google-http-client-apache)
      (Apache License, Version 2.0) Apache HttpAsyncClient (org.apache.httpcomponents:httpasyncclient:4.1.2 - http://hc.apache.org/httpcomponents-asyncclient)
-     (Apache License, Version 2.0) Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.12 - http://hc.apache.org/httpcomponents-client)
+     (Apache License, Version 2.0) Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.13 - http://hc.apache.org/httpcomponents-client)
      (Apache License, Version 2.0) Apache HttpClient Cache (org.apache.httpcomponents:httpclient-cache:4.5.2 - http://hc.apache.org/httpcomponents-client)
      (Apache License, Version 2.0) Apache HttpClient Fluent API (org.apache.httpcomponents:fluent-hc:4.5.2 - http://hc.apache.org/httpcomponents-client)
      (Apache License, Version 2.0) Apache HttpClient Mime (org.apache.httpcomponents:httpmime:4.5.2 - http://hc.apache.org/httpcomponents-client)
