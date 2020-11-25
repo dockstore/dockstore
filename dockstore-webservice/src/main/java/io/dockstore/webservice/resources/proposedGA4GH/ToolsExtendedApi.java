@@ -198,7 +198,7 @@ public class ToolsExtendedApi {
     private static final class ToolsIndexGet {
         public static final String SUMMARY = "Update the workflows and tools indices";
         public static final String DESCRIPTION = "This endpoint updates the indices for all published tools and workflows.";
-        public static final String OK_RESPONSE = "An array of Tools and an array of Workflows.";
+        public static final String OK_RESPONSE = "Workflows and tools indices populated with entries.";
     }
     private static final class EntriesOrgsGet {
         public static final String OPERATION_ID = "entriesOrgsGet";

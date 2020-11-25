@@ -1797,7 +1797,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.10.0-alpha.3-SNAPSHOT
+  version: 1.11.0-alpha.0-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -1841,7 +1841,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -2163,7 +2163,7 @@ paths:
               schema:
                 type: string
           description: An elastic search result.
-      summary: Search the tools and workflows indices
+      summary: Search the tools and workflows indices.
       tags:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/index:
@@ -2176,7 +2176,7 @@ paths:
             text/plain:
               schema:
                 type: integer
-          description: An array of Tools and an array of Workflows.
+          description: Workflows and tools indices populated with entries.
       security:
         - bearer: []
       summary: Update the workflows and tools indices

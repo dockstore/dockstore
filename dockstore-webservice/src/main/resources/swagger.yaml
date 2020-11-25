@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.10.0-alpha.3-SNAPSHOT"
+  version: "1.11.0-alpha.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -519,7 +519,7 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Search the tools and workflows indices"
+      summary: "Search the tools and workflows indices."
       description: "This endpoint searches the indices for all published tools and\
         \ workflows. Used by utilities that expect to talk to an elastic search endpoint."
       operationId: "toolsIndexSearch"
@@ -550,7 +550,7 @@ paths:
       parameters: []
       responses:
         200:
-          description: "An array of Tools and an array of Workflows."
+          description: "Workflows and tools indices populated with entries."
       security:
       - BEARER: []
   /api/ga4gh/v2/extended/tools/{organization}:

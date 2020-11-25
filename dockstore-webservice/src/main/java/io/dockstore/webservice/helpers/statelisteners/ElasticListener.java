@@ -60,11 +60,12 @@ import org.slf4j.LoggerFactory;
  */
 public class ElasticListener implements StateListenerInterface {
     public static DockstoreWebserviceConfiguration config;
+    public static final String TOOLS_INDEX = "tools";
+    public static final String WORKFLOWS_INDEX = "workflows";
+    public static final String ALL_INDICES = "tools,workflows";
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
-    private static final String TOOLS_INDEX = "tools";
-    private static final String WORKFLOWS_INDEX = "workflows";
     private String hostname;
     private int port;
 

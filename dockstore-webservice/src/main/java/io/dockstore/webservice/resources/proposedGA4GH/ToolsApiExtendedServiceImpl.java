@@ -44,6 +44,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
@@ -68,9 +69,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
 
-    private static final String TOOLS_INDEX = "tools";
-    private static final String WORKFLOWS_INDEX = "workflows";
-    private static final String ALL_INDICES = "tools,workflows";
+    private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
+    private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
+    private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
