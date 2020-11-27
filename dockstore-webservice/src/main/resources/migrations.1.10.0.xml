@@ -119,4 +119,9 @@
         <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="service"/>
         <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="workflow"/>
     </changeSet>
+    <changeSet author="nzhao (generated)" id="toolForumUrl">
+        <addColumn tableName="tool">
+            <column name="forumurl" type="varchar(256 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
