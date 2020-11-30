@@ -1320,6 +1320,7 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testUpdateToolForumUrl() throws ApiException {
+        final String forumUrl = "hello.com"
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -1327,13 +1328,13 @@ public class GeneralIT extends BaseIT {
         toolsApi.refresh(toolTest.getId());
 
         //change the forumurl
-        toolTest.setForumUrl("hello.com");
+        toolTest.setForumUrl(forumUrl);
         toolsApi.updateContainer(toolTest.getId(), toolTest);
         toolsApi.refresh(toolTest.getId());
 
         //check the tool's forumurl is updated in the database
         final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
-        assertEquals("the forumurl should be hello.com", "hello.com", updatedForumUrl);
+        assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
     }
 
     /**
