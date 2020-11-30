@@ -1320,7 +1320,7 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void testUpdateToolForumUrl() throws ApiException {
-        final String forumUrl = "hello.com"
+        final String forumUrl = "hello.com";
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
