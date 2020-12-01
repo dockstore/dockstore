@@ -121,8 +121,6 @@ public class GalaxyPluginIT {
         }
     };
 
-    private final String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
-    private final String installationId = "1179416";
     private FileDAO fileDAO;
 
     @BeforeClass
@@ -206,9 +204,13 @@ public class GalaxyPluginIT {
         final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        List<Workflow> workflows = workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/tags/dockstore/3851", installationId);
+        String galaxyWorkflowRepo = "DockstoreTestUser2/workflow-testing-repo";
+        String installationId = "1179416";
+        List<Workflow> workflows = workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/tags/dockstore/3851",
+                installationId);
         WorkflowVersion version = workflows.get(0).getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
-        assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")).findFirst().isPresent());
+        assertTrue("Test file should have the expected path",
+                sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")));
     }
 }
