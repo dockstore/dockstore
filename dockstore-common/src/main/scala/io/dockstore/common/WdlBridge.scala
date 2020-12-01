@@ -21,7 +21,9 @@ import shapeless.Inl
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import wdl.draft3.parser.WdlParser
-import wom.callable.{CallableTaskDefinition, ExecutableCallable, WorkflowDefinition}
+import wom.ResolvedImportRecord
+import wom.callable.MetaValueElement.MetaValueElementString
+import wom.callable.{CallableTaskDefinition, ExecutableCallable, MetaValueElement, WorkflowDefinition}
 import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph._
@@ -101,13 +103,15 @@ class WdlBridge {
     bundle.allCallables.foreach(callable => {
       callable._2 match {
         case w: WorkflowDefinition => {
-          val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[WorkflowDefinition].meta)
+          val before = callable._2.asInstanceOf[WorkflowDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
+          val metadata = JavaConverters.mapAsJavaMap(before)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
         }
         case c: CallableTaskDefinition => {
-          val metadata = JavaConverters.mapAsJavaMap(callable._2.asInstanceOf[CallableTaskDefinition].meta)
+          val before = callable._2.asInstanceOf[CallableTaskDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
+          val metadata = JavaConverters.mapAsJavaMap(before)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
@@ -330,7 +334,7 @@ class WdlBridge {
     lazy val importResolvers: List[ImportResolver] =
       DirectoryResolver.localFilesystemResolvers(Some(filePathObj)) :+ HttpResolver(relativeTo = None) :+ mapResolver
     try {
-      val bundle = factory.getWomBundle(content, "{}", importResolvers, List(factory))
+      val bundle = factory.getWomBundle(content, workflowSourceOrigin = None,  "{}", importResolvers, List(factory))
       if (bundle.isRight) {
         bundle.getOrElse(null)
       } else {
@@ -391,10 +395,12 @@ case class MapResolver(filePath: String) extends ImportResolver {
     val content = secondaryWdlFiles.get(absolutePath)
     val mapResolver = MapResolver(absolutePath)
     mapResolver.setSecondaryFiles(this.secondaryWdlFiles)
-    if (content == null) InvalidCheck(s"Not found $path for resolver with path $this.filePath").invalidNelCheck else ResolvedImportBundle(content, List(mapResolver)).validNelCheck
+    if (content == null) InvalidCheck(s"Not found $path for resolver with path $this.filePath").invalidNelCheck else ResolvedImportBundle(content, List(mapResolver), ResolvedImportRecord(absolutePath.toString)).validNelCheck
   }
 
   override def cleanupIfNecessary(): ErrorOr[Unit] = ().validNel
+
+  override def hashKey: ErrorOr[String] = ().hashCode().toString.validNel
 }
 
 object WdlBridgeShutDown {
