@@ -284,10 +284,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public boolean checkSourceCodeValidity() {
         try {
-            GHRateLimit ghRateLimit = github.rateLimit();
-            if (ghRateLimit.remaining == 0) {
-                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.reset.getTime()).atZone(ZoneId.systemDefault());
-                throw new CustomWebApplicationException("Out of rate limit, please wait till " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
+            GHRateLimit ghRateLimit = github.getRateLimit();
+            if (ghRateLimit.getRemaining() == 0) {
+                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
+                throw new CustomWebApplicationException("Out of GitHub rate limit, please wait till " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
         } catch (IOException e) {
