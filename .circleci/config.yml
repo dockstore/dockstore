@@ -54,11 +54,8 @@ workflows:
           requires:
             - build
       - regression-integration-tests:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release.*$/
+          requires:
+            - build
 jobs:
   regression-integration-tests:
     executor: integration_test_exec
