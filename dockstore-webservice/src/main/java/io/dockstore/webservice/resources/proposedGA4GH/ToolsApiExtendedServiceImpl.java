@@ -44,6 +44,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
@@ -67,6 +68,10 @@ import org.slf4j.LoggerFactory;
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiExtendedServiceImpl.class);
+
+    private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
+    private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
+    private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -167,8 +172,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     .build()) {
 
                 // Delete previous indices
-                deleteIndex(restClient, "tools");
-                deleteIndex(restClient, "workflows");
+                deleteIndex(restClient, TOOLS_INDEX);
+                deleteIndex(restClient, WORKFLOWS_INDEX);
 
                 // Get mapping for tools index
                 URL urlTools = Resources.getResource("queries/mapping_tool.json");
@@ -181,8 +186,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 HttpEntity mappingEntityWorkflows = new NStringEntity(textWorkflows, ContentType.APPLICATION_JSON);
 
                 // Create indices
-                restClient.performRequest("PUT", "/tools", Collections.emptyMap(), mappingEntityTools);
-                restClient.performRequest("PUT", "/workflows", Collections.emptyMap(), mappingEntityWorkflows);
+                restClient.performRequest("PUT", "/" + TOOLS_INDEX, Collections.emptyMap(), mappingEntityTools);
+                restClient.performRequest("PUT", "/" + WORKFLOWS_INDEX, Collections.emptyMap(), mappingEntityWorkflows);
 
                 // Populate index
                 if (!published.isEmpty()) {
@@ -210,9 +215,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 if (queryParameters != null) {
                     queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
                 }
-                org.elasticsearch.client.Response get = restClient.performRequest("GET", "/tools,workflows/_search", parameters, entity);
+                org.elasticsearch.client.Response get = restClient.performRequest("GET", "/" + ALL_INDICES + "/_search", parameters, entity);
                 if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                    throw new CustomWebApplicationException("Could not submit index to elastic search",
+                    throw new CustomWebApplicationException("Could not search " + ALL_INDICES + "index",
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
