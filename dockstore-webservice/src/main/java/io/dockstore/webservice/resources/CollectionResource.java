@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -30,7 +31,6 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -251,6 +251,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // Add the entry to the collection
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null);
         } else {
+            // TODO: Need to check that the version belongs to the entry
             Version version = versionDAO.findById(versionId);
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
         }
@@ -295,9 +296,13 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Long versionId = null;
         if (versionName != null) {
-            Optional<WorkflowVersion> first = entryAndCollection.getLeft().getWorkflowVersions().stream().filter(version -> versionName.equals(((WorkflowVersion) version).getName())).findFirst();
+            Set workflowVersions = entryAndCollection.getLeft().getWorkflowVersions();
+
+            Optional<Version> first = workflowVersions.stream().filter(version -> ((Version)version).getName().equals(versionName)).findFirst();
             if (first.isPresent()) {
                 versionId = first.get().getId();
+            } else {
+                throw new CustomWebApplicationException("Version not found", HttpStatus.SC_NOT_FOUND);
             }
         }
 

@@ -1419,24 +1419,44 @@ public class OrganizationIT extends BaseIT {
             fail("Was able to reject an approved collection");
         }
 
-        // version 8 and 9 belong to entryId 2
-        long versionId = 9L;
+        // versionId 8 and 9 belong to entryId 2
+        // versionId 1, 2, 3 belong to entryId 1
+        long versionId = 3L;
+        // The version name for the above version
+        String versionName = "latest";
 
         // Add tool and specific version to collection
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId);
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, null);
 
-        // There should now be two entries for collection with ID 1 (one with version, one without), 3 entries in total
+        // There should now be 3 entries
+        // entry id 1, version id 3
+        // entry id 1, no version
+        // entry id 2, no version
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
         assertEquals(3, collectionById.getEntries().size());
-        assertTrue("Collection has the version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> "latest"
+        assertTrue("Collection has the version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> versionName
                 .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
         assertTrue("Collection still has the non-version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
 
-        organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, "latest");
+        // When there's a matching entryId that has a version, but versionName parameter is something else, there should not be NPE
+        try {
+            organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, "doesNotExistVersionName");
+            Assert.fail("Can't delete a version that doesn't exist");
+        } catch (ApiException e) {
+            Assert.assertEquals("Version not found", e.getMessage());
+            Assert.assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
+        }
+        organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, versionName);
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
         assertEquals("Two entry remains in collection", 2, collectionById.getEntries().size());
         assertTrue("Collection has the non-version-specific entry even after deleting the version-specific one", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
+
+        // When there's a matching entryId that has a version, but versionName parameter is null, there should not be NPE
+        organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, null);
+
+        collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
+        assertEquals("Two entry remains in collection", 1, collectionById.getEntries().size());
 
     }
 
