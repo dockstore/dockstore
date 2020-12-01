@@ -1435,7 +1435,7 @@ public class OrganizationIT extends BaseIT {
                 .equals(entry.getVersionName()) && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
         assertTrue("Collection still has the non-version-specific entry", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null  && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));
 
-        organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, versionId);
+        organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, "latest");
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
         assertEquals("Two entry remains in collection", 2, collectionById.getEntries().size());
         assertTrue("Collection has the non-version-specific entry even after deleting the version-specific one", collectionById.getEntries().stream().anyMatch(entry -> entry.getVersionName() == null && entry.getEntryPath().equals("quay.io/dockstore2/testrepo2")));

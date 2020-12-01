@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -288,11 +289,20 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
-            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId) {
+            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
-        // Remove the entry from the organization
+        Long versionId = null;
+        if (versionName != null) {
+            Optional<WorkflowVersion> first = entryAndCollection.getLeft().getWorkflowVersions().stream().filter(version -> versionName.equals(((WorkflowVersion) version).getName())).findFirst();
+            if (first.isPresent()) {
+                versionId = first.get().getId();
+            }
+        }
+
+        // Remove the entry from the organization,
+        // This silently fails if the user somehow manages to give a non-existent entryId and versionId pair
         entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft().getId(), versionId);
 
         // Event for deletion
