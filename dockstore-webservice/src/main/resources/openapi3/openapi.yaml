@@ -1797,7 +1797,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.10.0-alpha.3-SNAPSHOT
+  version: 1.11.0-alpha.0-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -1841,7 +1841,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -2149,7 +2149,7 @@ paths:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/entry/_search:
     post:
-      description: This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
+      description: This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
       operationId: toolsIndexSearch
       requestBody:
         content:
@@ -2163,23 +2163,23 @@ paths:
               schema:
                 type: string
           description: An elastic search result.
-      summary: Search the index of tools
+      summary: Search the tools and workflows indices.
       tags:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/index:
     post:
-      description: This endpoint updates the index for all published tools and workflows.
-      operationId: Update the index of tools
+      description: This endpoint updates the indices for all published tools and workflows.
+      operationId: Update the workflows and tools indices
       responses:
         "200":
           content:
             text/plain:
               schema:
                 type: integer
-          description: An array of Tools of the input organization.
+          description: Workflows and tools indices populated with entries.
       security:
         - bearer: []
-      summary: Update the index of tools
+      summary: Update the workflows and tools indices
       tags:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/{organization}:

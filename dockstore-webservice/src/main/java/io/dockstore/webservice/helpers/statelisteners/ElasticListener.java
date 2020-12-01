@@ -60,6 +60,9 @@ import org.slf4j.LoggerFactory;
  */
 public class ElasticListener implements StateListenerInterface {
     public static DockstoreWebserviceConfiguration config;
+    public static final String TOOLS_INDEX = "tools";
+    public static final String WORKFLOWS_INDEX = "workflows";
+    public static final String ALL_INDICES = "tools,workflows";
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
@@ -101,18 +104,18 @@ public class ElasticListener implements StateListenerInterface {
         String json;
         json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-            String entryType = entry instanceof Tool ? "tools" : "workflows";
+            String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
-            String baseEndpoint = "/" + entryType + "/_doc/" + entry.getId();
+            String baseEndpoint = "/" + entryType;
             Response post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
                 post = restClient
-                    .performRequest("POST", baseEndpoint + "/_update", Collections.emptyMap(), entity);
+                    .performRequest("POST", baseEndpoint + "/_update/" + entry.getId(), Collections.emptyMap(), entity);
                 break;
             case DELETE:
-                post = restClient.performRequest("DELETE", baseEndpoint, Collections.emptyMap(), entity);
+                post = restClient.performRequest("DELETE", baseEndpoint + "/_doc/" + entry.getId(), Collections.emptyMap(), entity);
                 break;
             default:
                 throw new RuntimeException("Unknown index command: " + command);
@@ -121,7 +124,7 @@ public class ElasticListener implements StateListenerInterface {
             if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED) {
                 LOGGER.info("Successful " + command + ".");
             } else {
-                LOGGER.error("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
+                LOGGER.error("Could not submit index to elastic search " + post.getStatusLine().getReasonPhrase());
             }
         } catch (Exception e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
@@ -166,17 +169,17 @@ public class ElasticListener implements StateListenerInterface {
         List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
         List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool)).collect(Collectors.toList());
         if (!workflowsEntryList.isEmpty()) {
-            postBulkUpdate("workflows", workflowsEntryList);
+            postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
         }
         if (!toolsEntryList.isEmpty()) {
-            postBulkUpdate("tools", toolsEntryList);
+            postBulkUpdate(TOOLS_INDEX, toolsEntryList);
         }
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
         try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
-            String endpoint = "/" + index + "/_doc/_bulk";
+            String endpoint = "/" + index + "/_bulk";
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
             Response post = restClient.performRequest("POST", endpoint, Collections.emptyMap(), bulkEntity);
             if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
