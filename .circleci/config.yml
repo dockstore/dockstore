@@ -53,12 +53,6 @@ workflows:
           <<: *common_filters
           requires:
             - build
-      - regression-integration-tests:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release.*$/
 jobs:
   regression-integration-tests:
     executor: integration_test_exec
