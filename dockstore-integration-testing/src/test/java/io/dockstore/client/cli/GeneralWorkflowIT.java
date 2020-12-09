@@ -779,7 +779,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.updateWorkflowDefaultVersion(workflow.getId(), "testWDL");
 
         // Assert default version is updated and no author or email is found
-        long defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where id = '951'", long.class);
+        long defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where organization = 'DockstoreTestUser2' and repository = 'hello-dockstore-workflow'", long.class);
         String defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
         assertEquals("the default version should be for the testWDL branch, but is for the branch " + defaultVersionName, "testWDL", defaultVersionName);
 
@@ -796,7 +796,7 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Assert default version is updated and author and email are set
-        defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where id = '951'", long.class);
+        defaultVersionNumber = testingPostgres.runSelectStatement("select actualdefaultversion from workflow where organization = 'DockstoreTestUser2' and repository = 'hello-dockstore-workflow'", long.class);
         defaultVersionName = testingPostgres.runSelectStatement("select name from workflowversion where id = '" + defaultVersionNumber + "'", String.class);
         assertEquals("the default version should be for the testBoth branch, but is for the branch " + defaultVersionName, "testBoth", defaultVersionName);
 
