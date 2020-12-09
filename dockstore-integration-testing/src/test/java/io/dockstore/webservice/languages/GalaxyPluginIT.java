@@ -134,6 +134,7 @@ public class GalaxyPluginIT {
 
     @AfterClass
     public static void afterClass() {
+        SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
     }
 
