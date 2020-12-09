@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -250,6 +251,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // Add the entry to the collection
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null);
         } else {
+            // TODO: Need to check that the version belongs to the entry
             Version version = versionDAO.findById(versionId);
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
         }
@@ -288,11 +290,24 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
-            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId) {
+            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
-        // Remove the entry from the organization
+        Long versionId = null;
+        if (versionName != null) {
+            Set<Version> workflowVersions = entryAndCollection.getLeft().getWorkflowVersions();
+
+            Optional<Version> first = workflowVersions.stream().filter(version -> version.getName().equals(versionName)).findFirst();
+            if (first.isPresent()) {
+                versionId = first.get().getId();
+            } else {
+                throw new CustomWebApplicationException("Version not found", HttpStatus.SC_NOT_FOUND);
+            }
+        }
+
+        // Remove the entry from the organization,
+        // This silently fails if the user somehow manages to give a non-existent entryId and versionId pair
         entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft().getId(), versionId);
 
         // Event for deletion
