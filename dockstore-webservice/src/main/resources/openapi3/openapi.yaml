@@ -1797,7 +1797,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.10.0-alpha.3-SNAPSHOT
+  version: 1.11.0-alpha.0-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -5079,8 +5079,7 @@ paths:
           in: query
           name: versionId
           schema:
-            format: int64
-            type: integer
+            type: string
       responses:
         default:
           content:
