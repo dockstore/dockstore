@@ -302,7 +302,6 @@ Lists of 348 third-party dependencies.
      (Apache License, Version 2.0) Netty/Transport/Native/Unix/Common (io.netty:netty-transport-native-unix-common:4.1.36.Final - http://netty.io/netty-transport-native-unix-common/)
      (Apache 2) Objenesis (org.objenesis:objenesis:3.0.1 - http://objenesis.org)
      (Apache 2.0) OkHttp (com.squareup.okhttp3:okhttp:3.14.2 - https://github.com/square/okhttp/okhttp)
-     (Apache 2.0) Okio (com.squareup.okio:okio:1.17.2 - https://github.com/square/okio/okio)
      (The Apache License, Version 2.0) OpenCensus (io.opencensus:opencensus-api:0.24.0 - https://github.com/census-instrumentation/opencensus-java)
      (EPL 2.0) (GPL2 w/ CPE) OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
      (MIT) parser (org.typelevel:jawn-parser_2.12:1.0.0 - http://github.com/typelevel/jawn)
