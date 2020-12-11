@@ -373,18 +373,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.eluder.coveralls</groupId>
-                    <artifactId>coveralls-maven-plugin</artifactId>
-                    <version>4.3.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>javax.xml.bind</groupId>
-                            <artifactId>jaxb-api</artifactId>
-                            <version>2.3.1</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <version>1.4.1</version>
@@ -610,15 +598,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.eluder.coveralls</groupId>
-                <artifactId>coveralls-maven-plugin</artifactId>
-                <configuration>
-                    <jacocoReports>
-                        <param>${project.basedir}/reports/target/site/jacoco-aggregate/jacoco.xml</param>
-                    </jacocoReports>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
