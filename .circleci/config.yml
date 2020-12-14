@@ -141,8 +141,7 @@ jobs:
     steps: # a collection of executable commands
       - checkout
       - restore_cache:
-          keys:
-            - dockstore-web-cache-unit-test
+          key: dockstore-web-cache-unit-test
       - run:
           name: Install yq
           command: |
@@ -198,9 +197,9 @@ jobs:
             - ~/.m2
           key: dockstore-java-{{ checksum "pom.xml" }}
       - save_cache:
-        key: dockstore-web-cache-unit-test
-        paths:
-          - /tmp/dockstore-web-cache
+          key: dockstore-web-cache-unit-test
+          paths:
+            - /tmp/dockstore-web-cache
       - run:
           name: Save test results
           command: |
@@ -274,8 +273,7 @@ commands:
             sudo apt update
             sudo apt install -y postgresql-client
       - restore_cache:
-          keys:
-            - dockstore-web-cache-{{ .Environment.TESTING_PROFILE }}
+          key: dockstore-web-cache-{{ .Environment.TESTING_PROFILE }}
   setup_integration_test:
     steps:
       - run:
