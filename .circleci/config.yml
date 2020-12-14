@@ -140,6 +140,9 @@ jobs:
           POSTGRES_PASSWORD: postgres
     steps: # a collection of executable commands
       - checkout
+      - restore_cache:
+          keys:
+            - dockstore-web-cache-unit-test
       - run:
           name: Install yq
           command: |
@@ -194,6 +197,10 @@ jobs:
           paths:
             - ~/.m2
           key: dockstore-java-{{ checksum "pom.xml" }}
+      - save_cache:
+        key: dockstore-web-cache-unit-test
+        paths:
+          - /tmp/dockstore-web-cache
       - run:
           name: Save test results
           command: |
@@ -266,6 +273,9 @@ commands:
             sudo rm -rf /var/lib/apt/lists/*
             sudo apt update
             sudo apt install -y postgresql-client
+      - restore_cache:
+          keys:
+            - dockstore-web-cache-{{ .Environment.TESTING_PROFILE }}
   setup_integration_test:
     steps:
       - run:
@@ -308,6 +318,10 @@ commands:
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
   save_test_results:
     steps:
+      - save_cache:
+          key: dockstore-web-cache-{{ .Environment.TESTING_PROFILE }}
+          paths:
+            - /tmp/dockstore-web-cache
       - run:
           name: Save test results
           command: |
