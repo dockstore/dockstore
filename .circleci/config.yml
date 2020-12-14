@@ -273,7 +273,7 @@ commands:
             sudo apt update
             sudo apt install -y postgresql-client
       - restore_cache:
-          key: dockstore-web-cache-{{ .Environment.TESTING_PROFILE }}
+          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}
   setup_integration_test:
     steps:
       - run:
@@ -317,7 +317,7 @@ commands:
   save_test_results:
     steps:
       - save_cache:
-          key: dockstore-web-cache-{{ .Environment.TESTING_PROFILE }}
+          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /tmp/dockstore-web-cache
       - run:
