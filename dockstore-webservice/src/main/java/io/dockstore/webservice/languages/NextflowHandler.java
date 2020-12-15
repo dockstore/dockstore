@@ -409,7 +409,15 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             defaultContainer = configuration.getString("process.container");
         }
 
-        Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);
+        Map<String, String> callToDockerMap = new HashMap<>();
+        String finalDefaultContainer = defaultContainer;
+
+        // Add all DockerMap from each secondary sourcefile
+        secondarySourceFiles.forEach(sourceFile -> {
+            callToDockerMap.putAll(this.getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer));
+        });
+
+        callToDockerMap.putAll(this.getCallsToDockerMap(mainDescriptor, defaultContainer));
         // Iterate over each call, determine dependencies
         // Mapping of stepId -> array of dependencies for the step
         Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
