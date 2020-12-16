@@ -279,10 +279,14 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      * Given an AST for a process, returns the name of the process
      *
      * @param processAST AST of a process
-     * @return Process name
+     * @return Process name or null if there isn't one
      */
     private String getProcessValue(GroovySourceAST processAST) {
-        return processAST == null ? null : processAST.getNextSibling().getFirstChild().getFirstChild().getText();
+        try {
+            return processAST == null ? null : processAST.getNextSibling().getFirstChild().getFirstChild().getText();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     /**
@@ -413,9 +417,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         String finalDefaultContainer = defaultContainer;
 
         // Add all DockerMap from each secondary sourcefile
-        secondarySourceFiles.forEach(sourceFile -> {
-            callToDockerMap.putAll(this.getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer));
-        });
+        if (!secondarySourceFiles.isEmpty()) {
+            secondarySourceFiles.forEach(sourceFile -> callToDockerMap.putAll(this.getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer)));
+        }
 
         callToDockerMap.putAll(this.getCallsToDockerMap(mainDescriptor, defaultContainer));
         // Iterate over each call, determine dependencies
@@ -550,7 +554,12 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
 
             for (GroovySourceAST processAST : processList) {
-                String processName = getProcessValue(processAST);
+                String processName;
+                try {
+                    processName = getProcessValue(processAST);
+                } catch (NullPointerException e) {
+                    continue;
+                }
                 GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
                 String containerName;
                 if (containerAST != null) {
