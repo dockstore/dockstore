@@ -554,10 +554,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
 
             for (GroovySourceAST processAST : processList) {
-                String processName;
-                try {
-                    processName = getProcessValue(processAST);
-                } catch (NullPointerException e) {
+                String processName = getProcessValue(processAST);
+                if (processName == null) {
                     continue;
                 }
                 GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
