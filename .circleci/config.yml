@@ -23,7 +23,7 @@ executors:
     resource_class: medium+
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM
-      image: ubuntu-1604:202010-01
+      image: ubuntu-2004:202010-01
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
@@ -245,6 +245,18 @@ commands:
           command: |
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+  old_python:
+    steps:
+      - run:
+          name: Install & use Python 3.6
+          command: |
+            sudo add-apt-repository ppa:deadsnakes/ppa
+            sudo apt-get update
+            sudo apt-get install python3.6 python3-virtualenv
+            virtualenv -p /usr/bin/python3.6 venv
+            source venv/bin/activate
+            which python3
+            which python
   setup_machine:
     steps:
       - attach_workspace:
