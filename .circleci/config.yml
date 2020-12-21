@@ -252,8 +252,8 @@ commands:
       - run:
           name: Install Java 11 & Maven
           command: |
-            sudo apt install openjdk-11-jdk
-            sudo apt install maven=3.6.3
+            java -version
+            mvn -v
       - run:
           name: Initialize postgres
           command: |
