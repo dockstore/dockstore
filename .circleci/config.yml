@@ -21,6 +21,16 @@ executors:
           - http.port: 9200
           - discovery.type: single-node
     resource_class: medium+
+  machine_integration_test_exec:
+    machine: # run the steps with Ubuntu VM
+      image: ubuntu-2004:202010-01
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      PG_HOST: localhost
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: postgres
+    resource_class: medium
 
 common_filters: &common_filters
   filters:
@@ -30,38 +40,25 @@ common_filters: &common_filters
       ignore:
         - gh-pages
 
-    
+
 workflows:
   version: 2
   everything:
     jobs:
       - build:
           <<: *common_filters
-      - unit_test:
-          <<: *common_filters
-          requires:
-            - build
-      - workflow-integration-tests:
-          <<: *common_filters
-          requires:
-            - build
-      - tool-integration-tests:
-          <<: *common_filters
-          requires:
-            - build
-      - integration-tests:
+      - regression-integration-tests:
           <<: *common_filters
           requires:
             - build
 jobs:
   regression-integration-tests:
-    executor: integration_test_exec
+    executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
     steps:
+      - setup_machine
       - setup_test
-      - setup_integration_test
-      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -250,6 +247,18 @@ commands:
           command: |
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+  setup_machine:
+    steps:
+      - run:
+          name: Install Java 11 & Maven
+          command: |
+            sudo apt install openjdk-11-jdk
+            sudo apt install maven=3.6.3
+      - run:
+          name: Initialize postgres
+          command: |
+            postgres --version
+            postgres -c max_connections=200
   setup_test:
     steps:
       - attach_workspace:
