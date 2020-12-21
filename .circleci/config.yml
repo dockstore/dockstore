@@ -256,8 +256,6 @@ commands:
             sudo apt-get install python3.6 python3-virtualenv
             virtualenv -p /usr/bin/python3.6 venv
             echo 'source venv/bin/activate' >> ~/.bashrc
-            source venv/bin/activate
-            python3 -V
   setup_machine:
     steps:
       - attach_workspace:
