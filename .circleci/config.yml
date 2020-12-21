@@ -250,15 +250,10 @@ commands:
   setup_machine:
     steps:
       - run:
-          name: Install Java 11 & Maven
-          command: |
-            java -version
-            mvn -v
-      - run:
           name: Initialize postgres
           command: |
-            postgres --version
-            postgres -c max_connections=200
+            psql --version
+            psql -c max_connections=200
   setup_test:
     steps:
       - attach_workspace:
