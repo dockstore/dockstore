@@ -268,7 +268,10 @@ commands:
             python3 -V
       - run:
           name: Docker-Compose
-          command: docker-compose up -d
+          command: |
+            docker-compose up -d
+            docker ps
+            docker inspect postgres1
   setup_test:
     steps:
       - attach_workspace:
