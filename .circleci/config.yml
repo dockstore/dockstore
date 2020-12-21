@@ -25,11 +25,7 @@ executors:
     machine: # run the steps with Ubuntu VM
       image: ubuntu-2004:202010-01
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: postgres
-      PG_HOST: localhost
-      POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_PASSWORD: postgres
+      PGHOST: 127.0.0.1
     resource_class: medium
 
 common_filters: &common_filters
@@ -59,6 +55,8 @@ jobs:
     steps:
       - setup_machine
       - setup_test
+      - setup_integration_test
+      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -249,11 +247,11 @@ commands:
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
   setup_machine:
     steps:
+      - attach_workspace:
+          at: .
       - run:
-          name: Initialize postgres
-          command: |
-            psql --version
-            psql -c max_connections=200
+          name: Docker-Compose
+          command: docker-compose up -d
   setup_test:
     steps:
       - attach_workspace:
