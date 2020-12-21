@@ -53,6 +53,7 @@ jobs:
     environment:
       TESTING_PROFILE: regression-integration-tests
     steps:
+      - old_python
       - setup_machine
       - setup_test
       - setup_integration_test
