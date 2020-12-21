@@ -23,7 +23,7 @@ executors:
     resource_class: medium+
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM
-      image: ubuntu-2004:202010-01
+      image: ubuntu-1604:202010-01
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
@@ -249,6 +249,12 @@ commands:
     steps:
       - attach_workspace:
           at: .
+      - run:
+          name: Java/Maven/Python versions
+          command: |
+            java -version
+            mvn -v
+            python3 -V
       - run:
           name: Docker-Compose
           command: docker-compose up -d
