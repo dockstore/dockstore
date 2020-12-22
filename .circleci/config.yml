@@ -323,6 +323,7 @@ commands:
           name: Wait for db
           command: |
             docker ps
+            docker logs -f postgres1 --tail 10
             dockerize -wait tcp://localhost:5432 -timeout 1m
       - setup_postgres
       - run:
