@@ -60,7 +60,11 @@ workflows:
           requires:
             - build
       - regression-integration-tests:
-          <<: *common_filters
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
           requires:
             - build
 jobs:
