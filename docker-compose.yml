@@ -31,8 +31,8 @@ services:
     ports:
       - 9200:9200
     networks:
-      - elastic 
-  # uncomment to run a kibana instance 
+      - elastic
+  # uncomment to run a kibana instance
   # kib01:
     # image: docker.elastic.co/kibana/kibana:6.8.3
     # container_name: kib01
@@ -61,4 +61,3 @@ volumes:
 networks:
   elastic:
     driver: bridge
-
