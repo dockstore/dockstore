@@ -269,13 +269,6 @@ commands:
       - run:
           name: Docker-Compose
           command: docker-compose up -d
-      - run:
-          name: Configure iptables
-          command: |
-            sysctl net.ipv4.ip_forward=1
-            iptables -t nat -A PREROUTING -p tcp --dport 5432 -j DNAT --to-destination 0.0.0.0:5432
-            iptables -t nat -A PREROUTING -p tcp --dport 9200 -j DNAT --to-destination 0.0.0.0:9200
-            iptables -t nat -A POSTROUTING -j MASQUERADE
   setup_test:
     steps:
       - attach_workspace:
