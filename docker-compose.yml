@@ -44,7 +44,7 @@ services:
     # networks:
       # - elastic
   postgres_db:
-    image: postgres:11.8
+    image: postgres:11.10
     container_name: postgres1
     ports:
       - "5432:5432"
