@@ -25,13 +25,8 @@ jobs:
       script: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       env:
         - TESTING_PROFILE=require-cwltool-tests
-    - stage: coverage   
-      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage
-      env:      
-        - TESTING_PROFILE=regression-integration-tests  
-      if: branch = master OR branch =~ /^release.*$/
-        
-# not feeling the bang-for-the-buck for these, running only in release branch         
+
+# not feeling the bang-for-the-buck for these, running only in release branch
 #    - stage: coverage
 #      script: mvn --batch-mode clean install org.jacoco:jacoco-maven-plugin:report-integration org.jacoco:jacoco-maven-plugin:report-aggregate -P$TESTING_PROFILE,coverage -DskipClientITs=true
 #      if: branch = master OR branch =~ /^release.*$/
