@@ -131,7 +131,7 @@ public class ToolsImplCommonTest {
         tag.setReference("sampleReference");
         tag.setValid(true);
         List<Checksum> checksums = Collections.singletonList(new Checksum("SHA-1", "fakeChecksum"));
-        Set<Image> image = Collections.singleton(new Image(checksums, "sampleRepo", "sampleTag", "SampleImageId", Registry.QUAY_IO));
+        Set<Image> image = Collections.singleton(new Image(checksums, "sampleRepo", "sampleTag", "SampleImageId", Registry.QUAY_IO, null, null));
         tag.setImages(image);
         Tag hiddenTag = new Tag();
         hiddenTag.setImageId("hiddenImageId");
