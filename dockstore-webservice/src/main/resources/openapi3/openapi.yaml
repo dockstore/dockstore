@@ -478,6 +478,9 @@ components:
           items:
             $ref: '#/components/schemas/Checksum'
           type: array
+        dbUpdateDate:
+          format: date-time
+          type: string
         imageID:
           type: string
         imageRegistry:
@@ -488,10 +491,15 @@ components:
             - AMAZON_ECR
             - SEVEN_BRIDGES
           type: string
+        imageUpdateDate:
+          type: string
         os:
           type: string
         repository:
           type: string
+        size:
+          format: int64
+          type: integer
         tag:
           type: string
       type: object
@@ -518,7 +526,7 @@ components:
           type: string
         size:
           description: Size of the container in bytes.
-          format: int32
+          format: int64
           type: integer
         updated:
           description: Last time the container was updated.
@@ -710,8 +718,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         hasHTTPImports:
           type: boolean
@@ -1558,8 +1566,8 @@ components:
             - SWL
             - NFL
             - service
-            - cwl
-            - wdl
+            
+            
           type: string
         descriptorTypeSubclass:
           enum:
@@ -1841,7 +1849,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -7418,8 +7426,8 @@ paths:
               - SWL
               - NFL
               - service
-              - cwl
-              - wdl
+              
+              
             type: string
       responses:
         default:

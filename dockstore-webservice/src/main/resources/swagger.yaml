@@ -6894,6 +6894,17 @@ definitions:
   Image:
     type: "object"
     properties:
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      imageUpdateDate:
+        type: "string"
+        description: "The date the image was updated (not to be confused with when\
+          \ it's updated in Dockstore)"
+      size:
+        type: "integer"
+        format: "int64"
+        description: "The size of the image in bytes"
       checksums:
         type: "array"
         position: 1
