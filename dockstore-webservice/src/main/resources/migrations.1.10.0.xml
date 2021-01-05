@@ -119,12 +119,4 @@
         <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="service"/>
         <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="workflow"/>
     </changeSet>
-    <changeSet author="gluu (generated)" id="moveThisTo1.11.0!">
-        <addColumn tableName="image">
-            <column name="imageupdatedate" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="image">
-            <column name="size" type="int8"/>
-        </addColumn>
-    </changeSet>
 </databaseChangeLog>

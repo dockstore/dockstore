@@ -18,4 +18,12 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
                    context="1.11.0">
+    <changeSet author="gluu (generated)" id="addImageSizeAndUpdateDate">
+        <addColumn tableName="image">
+            <column name="imageupdatedate" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="image">
+            <column name="size" type="int8"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
