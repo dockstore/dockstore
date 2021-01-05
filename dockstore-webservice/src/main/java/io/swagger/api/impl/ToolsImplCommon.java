@@ -246,7 +246,6 @@ public final class ToolsImplCommon {
             imageData.setRegistryHost(image.getImageRegistry().getDockerPath());
             imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
             imageData.setUpdated(image.getImageUpdateDate());
-            // ImageData is an Integer when it should probably be Long
             imageData.setSize(image.getSize());
             List<Checksum> trsChecksums = new ArrayList<>();
             List<io.dockstore.webservice.core.Checksum> checksumList = image.getChecksums();
