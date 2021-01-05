@@ -247,7 +247,7 @@ public final class ToolsImplCommon {
             imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
             imageData.setUpdated(image.getImageUpdateDate());
             // ImageData is an Integer when it should probably be Long
-            imageData.setSize(Math.toIntExact(image.getSize()));
+            imageData.setSize(image.getSize());
             List<Checksum> trsChecksums = new ArrayList<>();
             List<io.dockstore.webservice.core.Checksum> checksumList = image.getChecksums();
 
@@ -290,7 +290,7 @@ public final class ToolsImplCommon {
         //TODO: for now, all container images are Docker based
         data.setImageType(ImageType.DOCKER);
         //TODO: hook up proper size
-        data.setSize(0);
+        data.setSize(0L);
         //TODO: hook up proper date
         data.setUpdated(new Date().toString());
         data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
