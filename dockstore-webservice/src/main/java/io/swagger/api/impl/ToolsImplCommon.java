@@ -272,7 +272,7 @@ public final class ToolsImplCommon {
         ToolVersion toolVersion) {
         ImageData data = new ImageData();
         List<Checksum> trsChecksums = new ArrayList<>();
-        if (version.getImages() != null) {
+        if (version.getImages() != null && !version.getImages().isEmpty()) {
             version.getImages().forEach(image -> {
                 image.getChecksums().forEach(checksum -> {
                     Checksum trsChecksum = new Checksum();
