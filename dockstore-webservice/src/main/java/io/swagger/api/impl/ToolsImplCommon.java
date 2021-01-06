@@ -280,6 +280,10 @@ public final class ToolsImplCommon {
                     trsChecksum.setChecksum(checksum.getChecksum());
                     trsChecksums.add(trsChecksum);
                 });
+                //TODO: hook up proper size
+                data.setSize(image.getSize());
+                //TODO: hook up proper date
+                data.setUpdated(image.getImageUpdateDate());
             });
             data.setChecksum(trsChecksums);
         } else {
@@ -288,10 +292,6 @@ public final class ToolsImplCommon {
         }
         //TODO: for now, all container images are Docker based
         data.setImageType(ImageType.DOCKER);
-        //TODO: hook up proper size
-        data.setSize(0L);
-        //TODO: hook up proper date
-        data.setUpdated(new Date().toString());
         data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
         data.setRegistryHost(castedContainer.getRegistry());
         toolVersion.getImages().add(data);
