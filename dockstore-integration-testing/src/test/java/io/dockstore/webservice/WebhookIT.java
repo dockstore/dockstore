@@ -247,6 +247,7 @@ public class WebhookIT extends BaseIT {
 
         masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertEquals("Should have author set", "Test User", masterVersion.get().getAuthor());
+        assertTrue("Should be valid", masterVersion.get().isValid());
         assertEquals("Should have email set", "test@dockstore.org", masterVersion.get().getEmail());
         assertEquals("Should have email set", "This is a description", masterVersion.get().getDescription());
 
@@ -310,7 +311,24 @@ public class WebhookIT extends BaseIT {
         workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
 
         assertTrue("Should have emptytestparameter version that is valid", workflow2.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "emptytestparameter")).findFirst().get().isValid());
+        testValidationUpdate(client);
+    }
 
+    /**
+     * This tests that when a version was invalid, a new GitHub release will retrigger the validation
+     * @param client    WorkflowsApi
+     */
+    private void testValidationUpdate(io.dockstore.openapi.client.api.WorkflowsApi client) {
+        testingPostgres.runUpdateStatement("update workflowversion set valid='f'");
+
+        io.dockstore.openapi.client.model.Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
+        Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
+        assertFalse("Master version should be invalid because it was manually changed", masterVersion.get().isValid());
+
+        client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "", false);
+        masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
+        assertTrue("Master version should be valid after GitHub App triggered again", masterVersion.get().isValid());
     }
 
     /**
