@@ -280,21 +280,37 @@ public final class ToolsImplCommon {
                     trsChecksum.setChecksum(checksum.getChecksum());
                     trsChecksums.add(trsChecksum);
                 });
-                //TODO: hook up proper size
+                //TODO: for now, all container images are Docker based
+                data.setImageType(ImageType.DOCKER);
                 data.setSize(image.getSize());
-                //TODO: hook up proper date
-                data.setUpdated(image.getImageUpdateDate());
+                data.setUpdated(new Date().toString());
+                data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
+                data.setRegistryHost(castedContainer.getRegistry());
+                data.setChecksum(trsChecksums);
+                toolVersion.getImages().add(data);
             });
-            data.setChecksum(trsChecksums);
         } else {
-            //tools without images?
-            data.setChecksum(MoreObjects.firstNonNull(data.getChecksum(), Lists.newArrayList()));
+            toolVersion.getImages().add(createDummyImageData(castedContainer));
         }
+    }
+
+    /**
+     * This is a workaround used when the version.getImages() has nothing in it
+     * @param castedContainer
+     * @return
+     */
+    private static ImageData createDummyImageData(io.dockstore.webservice.core.Tool castedContainer) {
+        ImageData data = new ImageData();
         //TODO: for now, all container images are Docker based
         data.setImageType(ImageType.DOCKER);
+        // Not a proper size because we don't have that information stored in version.getImages()
+        data.setSize(0L);
+        // Not a proper date because we don't have that information stored in version.getImages()
+        data.setUpdated(new Date().toString());
         data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
         data.setRegistryHost(castedContainer.getRegistry());
-        toolVersion.getImages().add(data);
+        data.setChecksum(Lists.newArrayList());
+        return data;
     }
 
     /**
