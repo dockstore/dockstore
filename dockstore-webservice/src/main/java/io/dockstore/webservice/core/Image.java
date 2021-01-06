@@ -82,7 +82,7 @@ public class Image {
     private Long size;
 
     @Column()
-    @ApiModelProperty(value = "The date the image was updated (not to be confused with when it's updated in Dockstore)")
+    @ApiModelProperty(value = "The date the image was updated in the Docker repository")
     private String imageUpdateDate;
 
     @Column(updatable = false)
@@ -167,11 +167,11 @@ public class Image {
         return dbUpdateDate;
     }
 
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 
