@@ -20,6 +20,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -283,7 +286,7 @@ public final class ToolsImplCommon {
                 //TODO: for now, all container images are Docker based
                 data.setImageType(ImageType.DOCKER);
                 data.setSize(image.getSize());
-                data.setUpdated(new Date().toString());
+                data.setUpdated(image.getImageUpdateDate());
                 data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
                 data.setRegistryHost(castedContainer.getRegistry());
                 data.setChecksum(trsChecksums);
@@ -306,7 +309,9 @@ public final class ToolsImplCommon {
         // Not a proper size because we don't have that information stored in version.getImages()
         data.setSize(0L);
         // Not a proper date because we don't have that information stored in version.getImages()
-        data.setUpdated(new Date().toString());
+        OffsetDateTime now = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+        data.setUpdated(formatter.format(now));
         data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
         data.setRegistryHost(castedContainer.getRegistry());
         data.setChecksum(Lists.newArrayList());
