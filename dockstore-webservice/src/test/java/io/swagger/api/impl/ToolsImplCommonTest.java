@@ -534,6 +534,8 @@ public class ToolsImplCommonTest {
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
         Assert.assertEquals("There should be the same amount of images as the Tag", 2, toolVersion.getImages().size());
+        Assert.assertEquals(Long.valueOf(1L), toolVersion.getImages().get(0).getSize());
+        Assert.assertEquals(Long.valueOf(2L), toolVersion.getImages().get(1).getSize());
         toolVersion = new io.openapi.model.ToolVersion();
         tag.setImages(new HashSet<>());
         tool = new io.dockstore.webservice.core.Tool();
@@ -541,5 +543,6 @@ public class ToolsImplCommonTest {
         toolVersion.setImages(new ArrayList<>());
         ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
         Assert.assertEquals("There should be one default image when the Tag has none", 1, toolVersion.getImages().size());
+        Assert.assertEquals(Long.valueOf(0L), toolVersion.getImages().get(0).getSize());
     }
 }
