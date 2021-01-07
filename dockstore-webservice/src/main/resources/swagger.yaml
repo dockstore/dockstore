@@ -6899,8 +6899,7 @@ definitions:
         format: "date-time"
       imageUpdateDate:
         type: "string"
-        description: "The date the image was updated (not to be confused with when\
-          \ it's updated in Dockstore)"
+        description: "The date the image was updated in the Docker repository"
       size:
         type: "integer"
         format: "int64"
