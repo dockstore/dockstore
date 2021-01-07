@@ -268,12 +268,12 @@ public final class ToolsImplCommon {
      * @param version tag for Dockstore tool
      * @param toolVersion toolVersion to return in TRS
      */
-    private static void processImageDataForToolVersion(io.dockstore.webservice.core.Tool castedContainer, Tag version,
+    public static void processImageDataForToolVersion(io.dockstore.webservice.core.Tool castedContainer, Tag version,
         ToolVersion toolVersion) {
-        ImageData data = new ImageData();
         List<Checksum> trsChecksums = new ArrayList<>();
         if (version.getImages() != null && !version.getImages().isEmpty()) {
             version.getImages().forEach(image -> {
+                ImageData data = new ImageData();
                 image.getChecksums().forEach(checksum -> {
                     Checksum trsChecksum = new Checksum();
                     trsChecksum.setType(DOCKER_IMAGE_SHA_TYPE_FOR_TRS);

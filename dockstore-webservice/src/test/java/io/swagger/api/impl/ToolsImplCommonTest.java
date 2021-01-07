@@ -518,4 +518,28 @@ public class ToolsImplCommonTest {
         expectedToolTests.setUrl("/test.cwl.json");
         assertEquals(expectedToolTests, actualToolTests);
     }
+
+    @Test
+    public void processImageDataForToolVersionTest() {
+        io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
+        Tag tag = new Tag();
+        Image image = new Image(new ArrayList<>(), "dummy", "dummy", "a", Registry.QUAY_IO, 1L, "now");
+        Image image2 = new Image(new ArrayList<>(), "dummy", "dummy", "b", Registry.QUAY_IO, 2L, "now");
+        Set<Image> images = new HashSet<>();
+        images.add(image);
+        images.add(image2);
+        tag.setImages(images);
+        tool.addWorkflowVersion(tag);
+        io.openapi.model.ToolVersion toolVersion = new io.openapi.model.ToolVersion();
+        toolVersion.setImages(new ArrayList<>());
+        ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
+        Assert.assertEquals("There should be the same amount of images as the Tag", 2, toolVersion.getImages().size());
+        toolVersion = new io.openapi.model.ToolVersion();
+        tag.setImages(new HashSet<>());
+        tool = new io.dockstore.webservice.core.Tool();
+        tool.addWorkflowVersion(tag);
+        toolVersion.setImages(new ArrayList<>());
+        ToolsImplCommon.processImageDataForToolVersion(tool, tag, toolVersion);
+        Assert.assertEquals("There should be one default image when the Tag has none", 1, toolVersion.getImages().size());
+    }
 }
