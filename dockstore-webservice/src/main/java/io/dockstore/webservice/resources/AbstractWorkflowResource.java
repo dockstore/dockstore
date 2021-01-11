@@ -524,6 +524,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.get().setDagJson(null);
                 existingWorkflowVersion.get().setToolTableJson(null);
                 existingWorkflowVersion.get().setReferenceType(remoteWorkflowVersion.getReferenceType());
+                existingWorkflowVersion.get().setValid(remoteWorkflowVersion.isValid());
 
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion.get(), remoteWorkflowVersion);
             } else {
