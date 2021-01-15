@@ -65,7 +65,6 @@ import org.junit.rules.ExpectedException;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -164,7 +163,8 @@ public class ServiceIT extends BaseIT {
 
         // did it happen?
         final io.swagger.client.model.Workflow workflow = client.getWorkflow(invoke.getServiceID(), "");
-        assertFalse(workflow.getStarredUsers().isEmpty());
+        final long count = testingPostgres.runSelectStatement("select count(*) from starred where entryid = " + workflow.getId(), long.class);
+        assertEquals(1, count);
         assertTrue(workflow.getLabels().stream().anyMatch(label -> "batman".equals(label.getValue())));
     }
 

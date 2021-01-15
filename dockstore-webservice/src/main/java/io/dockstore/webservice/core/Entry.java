@@ -435,6 +435,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return starredUsers;
     }
 
+    public void setStarredUsers(SortedSet<User> starredUsers) {
+        this.starredUsers = starredUsers;
+    }
+
     public void addStarredUser(User user) {
         starredUsers.add(user);
     }
