@@ -6469,14 +6469,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
-      starredUsers:
-        type: "array"
-        position: 5
-        description: "This indicates the users that have starred this entry, dockstore\
-          \ specific"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
       email:
         type: "string"
         position: 6
@@ -6704,14 +6696,6 @@ definitions:
         position: 4
         description: "This indicates the users that have control over this entry,\
           \ dockstore specific"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      starredUsers:
-        type: "array"
-        position: 5
-        description: "This indicates the users that have starred this entry, dockstore\
-          \ specific"
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
@@ -8263,14 +8247,6 @@ definitions:
         position: 4
         description: "This indicates the users that have control over this entry,\
           \ dockstore specific"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      starredUsers:
-        type: "array"
-        position: 5
-        description: "This indicates the users that have starred this entry, dockstore\
-          \ specific"
         uniqueItems: true
         items:
           $ref: "#/definitions/User"

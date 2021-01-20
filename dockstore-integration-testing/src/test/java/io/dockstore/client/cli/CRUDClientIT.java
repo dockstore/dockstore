@@ -122,12 +122,8 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
-        // Creating a hosted tool will load the starred users even though it is lazy
-        hostedTool.setStarredUsers(null);
         assertEquals(container, hostedTool);
         assertNull(container.getUsers());
-        // Getting the tool should not return the starred users.
-        assertNull(container.getStarredUsers());
     }
 
     @Test
@@ -222,12 +218,8 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
-        // Creating hosted workflow loads starred users
-        hostedTool.setStarredUsers(null);
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
-        // Getting the workflow should lazy load starred users
-        assertNull(container.getStarredUsers());
         assertEquals(container, hostedTool);
     }
 
