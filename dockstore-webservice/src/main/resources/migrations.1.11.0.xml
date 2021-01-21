@@ -26,4 +26,9 @@
             <column name="size" type="int8"/>
         </addColumn>
     </changeSet>
+    <changeSet author="nzhao (generated)" id="toolForumUrl">
+        <addColumn tableName="tool">
+            <column name="forumurl" type="varchar(256 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
