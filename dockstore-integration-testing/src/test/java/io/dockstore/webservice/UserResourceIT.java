@@ -599,7 +599,7 @@ public class UserResourceIT extends BaseIT {
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
         assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
-        assertEquals("https://avatars1.githubusercontent.com/u/17859829?v=4", userProfile.getAvatarURL());
+        assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("Toronto", userProfile.getLocation());
     }
 
