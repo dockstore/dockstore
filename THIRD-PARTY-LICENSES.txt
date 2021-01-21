@@ -23,7 +23,7 @@ Lists of 348 third-party dependencies.
      (Apache License, Version 2.0) Apache Commons Text (org.apache.commons:commons-text:1.9 - https://commons.apache.org/proper/commons-text)
      (Apache License, Version 2.0) Apache Commons Validator (commons-validator:commons-validator:1.6 - http://commons.apache.org/proper/commons-validator/)
      (Apache License, Version 2.0) Apache Commons VFS (org.apache.commons:commons-vfs2:2.3 - http://commons.apache.org/proper/commons-vfs/)
-     (The Apache Software License, Version 2.0) Apache Groovy (org.codehaus.groovy:groovy:2.5.5 - http://groovy-lang.org)
+     (The Apache Software License, Version 2.0) Apache Groovy (org.codehaus.groovy:groovy:2.5.14 - http://groovy-lang.org)
      (Apache License, Version 2.0) Apache HttpAsyncClient (org.apache.httpcomponents:httpasyncclient:4.1.2 - http://hc.apache.org/httpcomponents-asyncclient)
      (Apache License, Version 2.0) Apache HttpClient (org.apache.httpcomponents:httpclient:4.5.13 - http://hc.apache.org/httpcomponents-client)
      (Apache License, Version 2.0) Apache HttpClient Cache (org.apache.httpcomponents:httpclient-cache:4.5.2 - http://hc.apache.org/httpcomponents-client)
