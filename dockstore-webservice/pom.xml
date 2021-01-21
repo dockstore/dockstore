@@ -542,10 +542,6 @@
             <artifactId>okhttp</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.squareup.okio</groupId>
-            <artifactId>okio</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
@@ -916,10 +912,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.eluder.coveralls</groupId>
-                <artifactId>coveralls-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <executions>
@@ -1103,7 +1095,7 @@
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
                     <!--  Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.3_GALAXY/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.4_GALAXY/openapi/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
                         <dateLibrary>legacy</dateLibrary>

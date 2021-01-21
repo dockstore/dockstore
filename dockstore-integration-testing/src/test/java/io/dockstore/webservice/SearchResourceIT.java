@@ -79,7 +79,7 @@ public class SearchResourceIT extends BaseIT {
             String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
             // There's actually two "total", one for shards and one for hits.
             // Need to only look at the hits one
-            if (!s.contains("hits\":{\"total\":" + hit + ",")) {
+            if (!s.contains("hits\":{\"total\":{\"value\":" + hit + ",")) {
                 if (counter > 5) {
                     Assert.fail(s + " does not have the correct amount of hits");
                 } else {

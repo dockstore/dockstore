@@ -511,7 +511,9 @@ public interface LanguageHandlerInterface {
                             final String manifestDigest = dockerHubImage.getDigest();
                             Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
                             List<Checksum> checksums = Collections.singletonList(checksum);
-                            Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB);
+                            // Docker Hub appears to return null for all the "last_pushed" properties of their images.
+                            // Using the result's "last_pushed" as a workaround
+                            Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB, dockerHubImage.getSize(), r.getLastUpdated());
 
                             String osInfo = formatDockerHubInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
                             String archInfo = formatDockerHubInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
@@ -557,7 +559,7 @@ public interface LanguageHandlerInterface {
             final String digest = tag.getManifestDigest();
             final String imageID = tag.getImageId();
             List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-            quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
+            quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO, tag.getSize(), tag.getLastModified()));
         } catch (ApiException ex) {
             LOG.error("Could not read from " + repo, ex);
         }
