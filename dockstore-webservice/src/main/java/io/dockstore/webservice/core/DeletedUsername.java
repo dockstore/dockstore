@@ -26,7 +26,6 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
@@ -41,7 +40,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel(value = "DeletedUsername", description = "End users for Dockstore")
 @Entity
-@Table(name = "deletedusername", uniqueConstraints = @UniqueConstraint(columnNames = { "username" }))
+@Table(name = "deletedusername")
 @NamedQueries({ @NamedQuery (name = "io.dockstore.webservice.core.DeletedUsername.findByUsername", query = "SELECT u FROM DeletedUsername u WHERE u.username = :username"),
         @NamedQuery (name = "io.dockstore.webservice.core.DeletedUsername.findNonReusableUsername", query = "SELECT u FROM DeletedUsername u WHERE u.username = :username AND u.dbCreateDate > :timestamp")})
 public class DeletedUsername {
