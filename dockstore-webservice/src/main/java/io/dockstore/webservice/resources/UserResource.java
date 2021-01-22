@@ -57,6 +57,7 @@ import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.api.PrivilegeRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
@@ -73,12 +74,14 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.MyWorkflows;
+import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
+import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
@@ -138,6 +141,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
+    private final DeletedUsernameDAO deletedUsernameDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
@@ -158,6 +162,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
+        this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
@@ -252,6 +257,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
+
+        if (userDAO.findByUsername(username) != null || DeletedUserHelper.deletedUserFound(username, deletedUsernameDAO)) {
+            throw new CustomWebApplicationException("Cannot change user to " + username + " because it is already in use", HttpStatus.SC_BAD_REQUEST);
+        }
+
+
         user.setUsername(username);
         user.setSetupComplete(true);
         userDAO.clearCache();
@@ -290,6 +301,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
+
         // Remove dangling sharing artifacts before getting rid of tokens
         this.authorizer.selfDestruct(user);
 
@@ -297,7 +309,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         deleteSelfFromEntries(user);
         invalidateTokensForUser(user);
         deleteSelfFromLambdaEvents(user);
-        return userDAO.delete(user);
+        boolean isDeleted =  userDAO.delete(user);
+        if (isDeleted) {
+            DeletedUsername deletedUsername = new DeletedUsername(user.getUsername());
+            deletedUsernameDAO.create(deletedUsername);
+        }
+        return isDeleted;
     }
 
     private void invalidateTokensForUser(User user) {
@@ -367,7 +384,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                    @ApiParam("User name to check") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
         User foundUser = userDAO.findByUsername(username);
-        return foundUser != null;
+        if (foundUser == null && !DeletedUserHelper.deletedUserFound(username, deletedUsernameDAO)) {
+            return false;
+        }
+        return true;
     }
 
     @GET
