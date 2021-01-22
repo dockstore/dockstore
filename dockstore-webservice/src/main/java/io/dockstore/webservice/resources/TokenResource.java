@@ -392,7 +392,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 int count = 1;
 
                 while (userDAO.findByUsername(username) != null || DeletedUserHelper.deletedUserFound(username, deletedUsernameDAO)) {
-                    username = username + count++;
+                    username = googleLogin + count++;
                 }
 
                 user = new User();
