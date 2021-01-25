@@ -391,7 +391,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 String username = googleLogin;
                 int count = 1;
 
-                while (userDAO.findByUsername(username) != null || DeletedUserHelper.deletedUserFound(username, deletedUsernameDAO)) {
+                while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
                     username = googleLogin + count++;
                 }
 
@@ -526,7 +526,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // check that there was no previous user, but by default use the github login
             String username = githubLogin;
             int count = 1;
-            while (userDAO.findByUsername(username) != null || DeletedUserHelper.deletedUserFound(username, deletedUsernameDAO)) {
+            while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
                 username = githubLogin + count++;
             }
 

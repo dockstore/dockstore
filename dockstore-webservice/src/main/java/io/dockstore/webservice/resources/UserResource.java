@@ -258,7 +258,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (userDAO.findByUsername(username) != null || DeletedUserHelper.deletedUserFound(username, deletedUsernameDAO)) {
+        if (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
             throw new CustomWebApplicationException("Cannot change user to " + username + " because it is already in use", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -384,7 +384,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                    @ApiParam("User name to check") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
         User foundUser = userDAO.findByUsername(username);
-        if (foundUser == null && !DeletedUserHelper.deletedUserFound(username, deletedUsernameDAO)) {
+        if (foundUser == null && !DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
             return false;
         }
         return true;
