@@ -259,7 +259,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         if (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
-            throw new CustomWebApplicationException("Cannot change user to " + username + " because it is already in use", HttpStatus.SC_BAD_REQUEST);
+            String errorMsg = "Cannot change user to " + username + " because it is already in use";
+            LOG.error(errorMsg);
+            throw new CustomWebApplicationException(errorMsg, HttpStatus.SC_BAD_REQUEST);
         }
 
 
