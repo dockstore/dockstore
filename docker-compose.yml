@@ -2,12 +2,12 @@
 #dockstore can run  without elasticsearch but the search page requires elasticsearch to be running
 #kibana can be used alongside elasticsearch as a visual interface for the indices and send queries directly
 #this only brings up the postgres container, not the actual database
+#For detailed instructions on how to set up dockstore locally, refer to:
+#https://wiki.oicr.on.ca/display/DOC/Setting+Up+Dockstore+Locally#SettingUpDockstoreLocally-SettingupElasticsearch
 version: '2.2'
 services:
   es01:
-    #uncomment after elasticsearch upgrade
-    #image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.3
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
     container_name: es01
     environment:
       - node.name=es01
