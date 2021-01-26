@@ -42,6 +42,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionOrganization;
+import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.EntryVersion;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
@@ -70,6 +71,7 @@ import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
+import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -170,7 +172,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class,
             Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
-            ParsedInformation.class, EntryVersion.class) {
+            ParsedInformation.class, EntryVersion.class, DeletedUsername.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -291,6 +293,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
+        final DeletedUsernameDAO deletedUsernameDAO = new DeletedUsernameDAO(hibernate.getSessionFactory());
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
         final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
@@ -328,7 +331,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO, versionDAO));
-        environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
+        environment.jersey().register(new TokenResource(tokenDAO, userDAO, deletedUsernameDAO, httpClient, cachingAuthenticator, configuration));
 
         environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
 
@@ -410,7 +413,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
-
     }
 
     private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager) {

@@ -317,6 +317,43 @@ public class UserResourceIT extends BaseIT {
         assertTrue(expectedFailToGetInfo);
     }
 
+    @Test
+    public void testDeletedUsernameReuse() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        UsersApi adminUserApi = new UsersApi(adminWebClient);
+
+        User user = userApi.getUser();
+
+        // Test that deleting a user creates a deleteduser entry
+        long count = testingPostgres.runSelectStatement("select count(*) from deletedusername", long.class);
+        assertEquals(0, count);
+        String altUsername = "notTheNameOfTheSite";
+        assertFalse(userApi.checkUserExists(altUsername));
+        userApi.changeUsername(altUsername);
+        userApi.selfDestruct();
+        count = testingPostgres.runSelectStatement("select count(*) from deletedusername", long.class);
+        assertEquals(1, count);
+
+        // Check that the deleted user comes up
+        assertTrue(adminUserApi.checkUserExists(altUsername));
+
+        try {
+            adminUserApi.changeUsername(altUsername);
+            fail("User should not be able to change username to a deleted username for 3 years");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertTrue(ex.getMessage().contains("because it is already in use"));
+        }
+
+
+        // Test that a deleteduser entry older than 3 years doesn't prevent another user from using the username.
+        testingPostgres.runUpdateStatement("UPDATE deletedusername SET dbcreatedate = '2018-01-20 09:34:24.674000' WHERE username = '" + altUsername + "'");
+        assertFalse(adminUserApi.checkUserExists(altUsername));
+        adminUserApi.changeUsername(altUsername);
+    }
+
     /**
      * Tests that the endpoints for the wizard registration work
      * @throws ApiException

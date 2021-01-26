@@ -31,4 +31,16 @@
             <column name="forumurl" type="varchar(256 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet author="natalieperez (generated)" id="deletedUsernameTable">
+        <createTable tableName="deletedusername">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="deletedusername_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>
