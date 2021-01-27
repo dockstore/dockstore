@@ -59,10 +59,12 @@ import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -120,6 +122,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
+    private final DeletedUsernameDAO deletedUsernameDAO;
 
     private final String githubClientID;
     private final String githubClientSecret;
@@ -143,10 +146,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String orcidSummary = "Add a new orcid.org token";
     private final String orcidDescription = "Using OAuth code from ORCID, request and store tokens from ORCID API";
 
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, DeletedUsernameDAO deletedUsernameDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
             DockstoreWebserviceConfiguration configuration) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
+        this.deletedUsernameDAO = deletedUsernameDAO;
         this.githubClientID = configuration.getGithubClientID();
         this.githubClientSecret = configuration.getGithubClientSecret();
         this.bitbucketClientID = configuration.getBitbucketClientID();
@@ -383,9 +387,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         if (registerUser && authUser.isEmpty()) {
             if (user == null) {
+                String googleLogin = userinfo.getEmail();
+                String username = googleLogin;
+                int count = 1;
+
+                while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
+                    username = googleLogin + count++;
+                }
+
                 user = new User();
-                // Pull user information from Google
-                user.setUsername(userinfo.getEmail());
+                user.setUsername(username);
                 userID = userDAO.create(user);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
@@ -515,7 +526,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // check that there was no previous user, but by default use the github login
             String username = githubLogin;
             int count = 1;
-            while (userDAO.findByUsername(username) != null) {
+            while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
                 username = githubLogin + count++;
             }
 
@@ -570,8 +581,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
         return dockstoreToken;
     }
-
-
 
     private Token createDockstoreToken(long userID, String githubLogin) {
         Token dockstoreToken;

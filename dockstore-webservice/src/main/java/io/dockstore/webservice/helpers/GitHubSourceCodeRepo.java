@@ -79,7 +79,7 @@ import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.RateLimitHandler;
-import org.kohsuke.github.extras.ImpatientHttpConnector;
+import org.kohsuke.github.extras.okhttp3.OkHttpConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,9 +99,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
-        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
-            new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
-        HttpConnector okHttp3Connector =  new ImpatientHttpConnector(obsoleteUrlFactory::open);
+        HttpConnector okHttp3Connector = new OkHttpConnector(
+                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {

@@ -1229,6 +1229,8 @@ public class WorkflowIT extends BaseIT {
                         assertEquals(checksum.getType(), DOCKER_IMAGE_SHA_TYPE_FOR_TRS);
                         assertFalse(checksum.getChecksum().isEmpty());
                     });
+                    assertNotNull(imageData.getSize());
+                    assertNotNull(imageData.getUpdated());
                     assertNotNull(imageData.getRegistryHost());
                 }
             } else {
