@@ -172,7 +172,7 @@
                 <plugin>
                     <groupId>org.simplify4u.plugins</groupId>
                     <artifactId>pgpverify-maven-plugin</artifactId>
-                    <version>1.9.0</version>
+                    <version>1.10.0</version>
                 </plugin>
                 <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
@@ -371,18 +371,6 @@
                             </configuration>
                         </execution>
                     </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.eluder.coveralls</groupId>
-                    <artifactId>coveralls-maven-plugin</artifactId>
-                    <version>4.3.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>javax.xml.bind</groupId>
-                            <artifactId>jaxb-api</artifactId>
-                            <version>2.3.1</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -610,15 +598,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.eluder.coveralls</groupId>
-                <artifactId>coveralls-maven-plugin</artifactId>
-                <configuration>
-                    <jacocoReports>
-                        <param>${project.basedir}/reports/target/site/jacoco-aggregate/jacoco.xml</param>
-                    </jacocoReports>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

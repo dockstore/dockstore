@@ -478,6 +478,9 @@ components:
           items:
             $ref: '#/components/schemas/Checksum'
           type: array
+        dbUpdateDate:
+          format: date-time
+          type: string
         imageID:
           type: string
         imageRegistry:
@@ -488,10 +491,15 @@ components:
             - AMAZON_ECR
             - SEVEN_BRIDGES
           type: string
+        imageUpdateDate:
+          type: string
         os:
           type: string
         repository:
           type: string
+        size:
+          format: int64
+          type: integer
         tag:
           type: string
       type: object
@@ -518,7 +526,7 @@ components:
           type: string
         size:
           description: Size of the container in bytes.
-          format: int32
+          format: int64
           type: integer
         updated:
           description: Last time the container was updated.
@@ -1841,7 +1849,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -2149,7 +2157,7 @@ paths:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/entry/_search:
     post:
-      description: This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
+      description: This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
       operationId: toolsIndexSearch
       requestBody:
         content:
@@ -2163,23 +2171,23 @@ paths:
               schema:
                 type: string
           description: An elastic search result.
-      summary: Search the index of tools
+      summary: Search the tools and workflows indices.
       tags:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/index:
     post:
-      description: This endpoint updates the index for all published tools and workflows.
-      operationId: Update the index of tools
+      description: This endpoint updates the indices for all published tools and workflows.
+      operationId: Update the workflows and tools indices
       responses:
         "200":
           content:
             text/plain:
               schema:
                 type: integer
-          description: An array of Tools of the input organization.
+          description: Workflows and tools indices populated with entries.
       security:
         - bearer: []
-      summary: Update the index of tools
+      summary: Update the workflows and tools indices
       tags:
         - extendedGA4GH
   /api/ga4gh/v2/extended/tools/{organization}:
@@ -4916,7 +4924,7 @@ paths:
   /organizations/{organizationId}/collections/{collectionId}:
     get:
       description: Retrieve a collection by ID. Supports optional authentication.
-      operationId: getCollectionById
+      operationId: getCollectionById_1
       parameters:
         - description: Organization ID.
           in: path
@@ -5548,7 +5556,7 @@ paths:
   /organizations/{organizationName}/collections/{collectionName}/name:
     get:
       description: Retrieve a collection by name. Supports optional authentication.
-      operationId: getCollectionById_1
+      operationId: getCollectionById
       parameters:
         - description: Organization name.
           in: path

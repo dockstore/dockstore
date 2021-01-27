@@ -519,9 +519,9 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Search the index of tools"
-      description: "This endpoint searches the index for all published tools and workflows.\
-        \ Used by utilities that expect to talk to an elastic search endpoint."
+      summary: "Search the tools and workflows indices."
+      description: "This endpoint searches the indices for all published tools and\
+        \ workflows. Used by utilities that expect to talk to an elastic search endpoint."
       operationId: "toolsIndexSearch"
       produces:
       - "application/json"
@@ -541,15 +541,16 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Update the index of tools"
-      description: "This endpoint updates the index for all published tools and workflows."
+      summary: "Update the workflows and tools indices"
+      description: "This endpoint updates the indices for all published tools and\
+        \ workflows."
       operationId: "toolsIndexGet"
       produces:
       - "text/plain"
       parameters: []
       responses:
         200:
-          description: "An array of Tools of the input organization."
+          description: "Workflows and tools indices populated with entries."
       security:
       - BEARER: []
   /api/ga4gh/v2/extended/tools/{organization}:
@@ -6410,6 +6411,11 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      forumUrl:
+        type: "string"
+        description: "This is a link to a forum or discussion board"
+        minLength: 0
+        maxLength: 256
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6892,6 +6898,16 @@ definitions:
   Image:
     type: "object"
     properties:
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      imageUpdateDate:
+        type: "string"
+        description: "The date the image was updated in the Docker repository"
+      size:
+        type: "integer"
+        format: "int64"
+        description: "The size of the image in bytes"
       checksums:
         type: "array"
         position: 1

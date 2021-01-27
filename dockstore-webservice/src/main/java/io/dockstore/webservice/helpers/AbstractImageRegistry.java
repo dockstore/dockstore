@@ -399,7 +399,7 @@ public abstract class AbstractImageRegistry {
                     for (DockerHubImage i : dockerHubImages) {
                         final String manifestDigest = i.getDigest();
                         checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-                        Image image = new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB);
+                        Image image = new Image(checksums, repo, tag.getName(), r.getImageID(), Registry.DOCKER_HUB, i.getSize(), i.getLastPushed());
                         image.setArchitecture(i.getArchitecture());
                         tag.getImages().add(image);
                     }
@@ -420,9 +420,12 @@ public abstract class AbstractImageRegistry {
 
     private Optional<String> getDockerHubToolAsString(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
+        return getDockerHubToolAsString(repo);
+    }
+
+    public static Optional<String> getDockerHubToolAsString(String repo) {
         final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
         Optional<String> response;
-
         try {
             URL url = new URL(repoUrl);
             response = Optional.of(IOUtils.toString(url, StandardCharsets.UTF_8));
@@ -666,7 +669,7 @@ public abstract class AbstractImageRegistry {
                                 List<Checksum> checksums = new ArrayList<>();
 
                                 checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
-                                tag.getImages().add(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null, Registry.GITLAB));
+                                tag.getImages().add(new Image(checksums, tool.getNamespace() + '/' + tool.getName(), tag.getName(), null, Registry.GITLAB, gitLabTag.getTotalSize(), gitLabTag.getCreatedAt()));
                                 tags.add(tag);
                             }
                         }

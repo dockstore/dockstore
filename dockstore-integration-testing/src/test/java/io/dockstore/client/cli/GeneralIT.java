@@ -1314,6 +1314,30 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
+     * Test to update the tool's forum and it should change the in the database
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void testUpdateToolForumUrl() throws ApiException {
+        final String forumUrl = "hello.com";
+        //setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
+        toolsApi.refresh(toolTest.getId());
+
+        //change the forumurl
+        toolTest.setForumUrl(forumUrl);
+        toolsApi.updateContainer(toolTest.getId(), toolTest);
+        toolsApi.refresh(toolTest.getId());
+
+        //check the tool's forumurl is updated in the database
+        final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
+        assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
+    }
+
+    /**
      * Creates a basic Manual Tool with Quay
      *
      * @param gitUrl

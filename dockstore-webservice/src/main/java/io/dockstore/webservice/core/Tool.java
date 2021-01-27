@@ -40,6 +40,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -146,6 +147,11 @@ public class Tool extends Entry<Tool, Tag> {
     @Convert(converter = DescriptorTypeConverter.class)
     @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
     private List<String> descriptorType = new ArrayList<>();
+
+    @Column
+    @Size(max = 256)
+    @ApiModelProperty(value = "This is a link to a forum or discussion board")
+    private String forumUrl;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
@@ -333,6 +339,14 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setDefaultWdlPath(String defaultWdlPath) {
         getDefaultPaths().put(DescriptorLanguage.FileType.DOCKSTORE_WDL, defaultWdlPath);
+    }
+
+    @JsonProperty
+    public String getForumUrl() {
+        return forumUrl;
+    }
+    public void setForumUrl(String forumUrl) {
+        this.forumUrl = forumUrl;
     }
 
     @JsonProperty
