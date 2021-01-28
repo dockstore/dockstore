@@ -5087,8 +5087,7 @@ paths:
           in: query
           name: versionId
           schema:
-            format: int64
-            type: integer
+            type: string
       responses:
         default:
           content:

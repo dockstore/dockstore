@@ -50,25 +50,6 @@ server-url = https://www.dockstore.org/api
 
 1. Ensure that you are using Java 11. Java 8 (both Open and Oracle) will not work.
 
-### Migration to Dockstore 1.3
-
-1. Ensure that your Java 8 version is newer than update 101. 
-
-### Migration to Dockstore 1.2
-
-This keeps track of breaking changes when migrating from Dockstore 1.1 to beta releases of 1.2 on the client side. 
-
-1. Paths for input files are standardized to paths like `s3://test.bucket/test`, `icgc://1234-efg`, `https://file.org/test.txt`. This means paths like `icgc:1234-efg` will no longer work
-2. A new version of cwltool 
-3. The syntax for launching tools has been simplified. `--local-entry` is no longer a flag, but is an alternative to `--entry`.
-
-### Migration to Dockstore 1.2.5
-
-Unfortunately, new unique indexes enforcing better data consistency require a clean-up of unpublished workflows. Published content should remain unaffected. 
-```
-delete from workflow_workflowversion ww where ww.workflowid in (select id from workflow where ispublished='f');
-delete from workflow where ispublished='f';
-```
 
 ### File Provisioning
 
