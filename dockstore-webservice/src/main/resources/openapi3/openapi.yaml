@@ -1805,7 +1805,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.11.0-alpha.0-SNAPSHOT
+  version: 1.11.0-alpha.1-SNAPSHOT
 openapi: 3.0.1
 paths:
   /aliases/workflow-versions/{alias}:
@@ -4924,7 +4924,7 @@ paths:
   /organizations/{organizationId}/collections/{collectionId}:
     get:
       description: Retrieve a collection by ID. Supports optional authentication.
-      operationId: getCollectionById_1
+      operationId: getCollectionById
       parameters:
         - description: Organization ID.
           in: path
@@ -5556,7 +5556,7 @@ paths:
   /organizations/{organizationName}/collections/{collectionName}/name:
     get:
       description: Retrieve a collection by name. Supports optional authentication.
-      operationId: getCollectionById
+      operationId: getCollectionById_1
       parameters:
         - description: Organization name.
           in: path

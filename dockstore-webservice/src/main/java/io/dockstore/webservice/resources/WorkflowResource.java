@@ -497,6 +497,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
         FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
+        existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
+        String repositoryId = sourceCodeRepo.getRepositoryId(existingWorkflow);
+        sourceCodeRepo.setDefaultBranchIfNotSet(existingWorkflow, repositoryId);
+        existingWorkflow.syncMetadataWithDefault();
+
         // Refresh checker workflow
         if (!existingWorkflow.isIsChecker() && existingWorkflow.getCheckerWorkflow() != null) {
             if (version.isEmpty()) {
@@ -505,10 +510,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get(), hardRefresh);
             }
         }
-        existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
-        String repositoryId = sourceCodeRepo.getRepositoryId(existingWorkflow);
-        sourceCodeRepo.setDefaultBranchIfNotSet(existingWorkflow, repositoryId);
-        existingWorkflow.syncMetadataWithDefault();
 
         PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow, StateManagerMode.UPDATE);
         return existingWorkflow;
