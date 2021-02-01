@@ -1,4 +1,4 @@
-FROM openjdk:11.0.6-jdk
+FROM openjdk:11.0.9.1-jdk
 
 # Update the APT cache
 # prepare for Java download
