@@ -2,7 +2,7 @@ version: 2.1
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9.1
+      - image: cimg/openjdk:11.0.9
         environment:
           PGHOST: 127.0.0.1
       - image: circleci/postgres:11.8
@@ -106,7 +106,7 @@ jobs:
       - save_test_results
   build:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9.1
+      - image: cimg/openjdk:11.0.9
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
     steps: # a collection of executable commands
@@ -144,7 +144,7 @@ jobs:
             - .
   unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9.1
+      - image: cimg/openjdk:11.0.9
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
           PGHOST: 127.0.0.1
