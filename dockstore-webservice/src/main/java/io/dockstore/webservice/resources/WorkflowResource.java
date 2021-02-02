@@ -497,6 +497,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
         FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
 
+        // Keep this code that updates the existing workflow BEFORE refreshing its checker workflow below. Refreshing the checker workflow will eventually call
+        // EntryVersionHelper.removeSourceFilesFromEntry() which performs a session.flush and commits to the db. It's important the parent workflow is updated completely before committing to the db..
         existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
         String repositoryId = sourceCodeRepo.getRepositoryId(existingWorkflow);
         sourceCodeRepo.setDefaultBranchIfNotSet(existingWorkflow, repositoryId);
