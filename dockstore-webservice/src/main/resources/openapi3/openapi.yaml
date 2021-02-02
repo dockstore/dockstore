@@ -1849,7 +1849,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -5556,7 +5556,7 @@ paths:
   /organizations/{organizationName}/collections/{collectionName}/name:
     get:
       description: Retrieve a collection by name. Supports optional authentication.
-      operationId: getCollectionById_1
+      operationId: getCollectionByName
       parameters:
         - description: Organization name.
           in: path
