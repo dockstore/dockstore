@@ -1,9 +1,6 @@
 package io.dockstore.common
 
 
-import java.nio.file.{Files, Paths}
-import java.util
-
 import cats.syntax.validated._
 import com.typesafe.config.ConfigFactory
 import common.Checked
@@ -21,14 +18,18 @@ import shapeless.Inl
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import wdl.draft3.parser.WdlParser
+import wdl.model.draft3.elements.ExpressionElement.StringLiteral
+import wdl.transforms.base.wdlom2wom.expression.WdlomWomExpression
 import wom.ResolvedImportRecord
 import wom.callable.MetaValueElement.MetaValueElementString
-import wom.callable.{CallableTaskDefinition, ExecutableCallable, MetaValueElement, WorkflowDefinition}
+import wom.callable.{CallableTaskDefinition, ExecutableCallable, WorkflowDefinition}
 import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph._
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
 
+import java.nio.file.{Files, Paths}
+import java.util
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -244,16 +245,23 @@ class WdlBridge {
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getCallsToDockerMap(filePath: String, sourceFilePath: String): util.LinkedHashMap[String, String] = {
-    val callsToDockerMap = new util.LinkedHashMap[String, String]()
     val executableCallable = convertFilePathToExecutableCallable(filePath, sourceFilePath)
+    getCallsToDockerMap(executableCallable)
+  }
+
+
+  def getCallsToDockerMap(executableCallable: ExecutableCallable) = {
+    val callsToDockerMap = new util.LinkedHashMap[String, String]()
     executableCallable.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
-        val callName = "dockstore_" + call.identifier.localName.value
-        var dockerString = ""
-        if (dockerAttribute.isDefined) {
-          dockerString = dockerAttribute.get.sourceString.replaceAll("\"", "")
+        dockerAttribute match {
+          case Some(WdlomWomExpression(s: StringLiteral, _)) => false
+          case None => throw new WdlParser.SyntaxError(call.identifier.localName + " requires an associated docker container to make this a valid Dockstore tool.")
+          case _ => true
         }
+        val callName = "dockstore_" + call.identifier.localName.value
+        val dockerString = dockerAttribute.map(_.sourceString.replaceAll("\"", "")).getOrElse("")
         callsToDockerMap.put(callName, dockerString)
       })
     callsToDockerMap
@@ -261,6 +269,7 @@ class WdlBridge {
 
   /**
     * Get a parameter file as a string
+    *
     * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
     * @return stub parameter file for the workflow
@@ -280,6 +289,10 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   private def convertFilePathToExecutableCallable(filePath: String, sourceFilePath: String): ExecutableCallable = {
     val bundle = getBundle(filePath, sourceFilePath)
+    convertBundleToExecutableCallable(bundle)
+  }
+
+  def convertBundleToExecutableCallable(bundle: WomBundle) = {
     val executableCallable = bundle.toExecutableCallable.right.getOrElse(null)
     if (executableCallable == null) {
       throw new WdlParser.SyntaxError("Error parsing WDL file")
