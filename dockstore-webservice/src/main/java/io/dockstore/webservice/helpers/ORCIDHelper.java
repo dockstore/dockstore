@@ -11,10 +11,8 @@ import org.orcid.jaxb.model.common.Relationship;
 import org.orcid.jaxb.model.common.WorkType;
 
 import org.orcid.jaxb.model.v3.release.common.*;
-import org.orcid.jaxb.model.v3.release.record.ExternalID;
-import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
-import org.orcid.jaxb.model.v3.release.record.Work;
-import org.orcid.jaxb.model.v3.release.record.WorkTitle;
+import org.orcid.jaxb.model.v3.release.common.CreditName;
+import org.orcid.jaxb.model.v3.release.record.*;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -29,9 +27,12 @@ import java.util.GregorianCalendar;
 import java.util.Optional;
 
 public class ORCIDHelper {
+    // TODO: Change to non-sandbox for Dockstore use while using sandbox for test
+    private static final String OrcidBaseURL = "https://api.sandbox.orcid.org/v3.0/";
     /**
      * Construct the XML for an ORCID work so that it can be posted using the ORCID API
-     * Current populated fields are Title, Subtitle, Last Modified, CreatedDate, DOI link, Short description
+     * Current populated fields are Title, Subtitle, Last Modified, CreatedDate, DOI URL, DOI value, Short description
+     * External ID value must be unique, everything else can be the same (title, subtitle, etc)
      * An entry (and an optional version) in Dockstore can sent to ORCID
      * @param e The entry to be sent to ORCID
      * @param optionalVersion   Optional version of the entry to send to ORCID
@@ -43,21 +44,25 @@ public class ORCIDHelper {
         Work work = new Work();
         WorkTitle workTitle = new WorkTitle();
         Title title = new Title();
-        Subtitle subtitle = new Subtitle("Dockstore Workf");
+        Subtitle subtitle = new Subtitle("Dockstore Workflow");
         ExternalIDs externalIDs = new ExternalIDs();
         ExternalID externalID = new ExternalID();
         externalID.setType("doi");
-        externalID.setValue("potato");
         if (optionalVersion.isPresent()) {
             Version v = optionalVersion.get();
             Url url = new Url(v.getDoiURL());
             externalID.setUrl(url);
+            externalID.setValue(v.getDoiURL());
             title.setContent(e.getEntryPath() + ":" + v.getName());
         } else {
             Url url = new Url(e.getConceptDoi());
             externalID.setUrl(url);
+            externalID.setValue(e.getConceptDoi());
             title.setContent(e.getEntryPath());
         }
+        Title journalTitle = new Title();
+        journalTitle.setContent("Dockstore");
+        work.setJournalTitle(journalTitle);
         workTitle.setTitle(title);
         workTitle.setSubtitle(subtitle);
         work.setWorkTitle(workTitle);
@@ -89,7 +94,7 @@ public class ORCIDHelper {
     }
 
     public static HttpResponse postWorkString(String id, String workString, String token) throws IOException {
-        HttpPost postRequest = new HttpPost("https://api.sandbox.orcid.org/v3.0/" + id + "/work");
+        HttpPost postRequest = new HttpPost(OrcidBaseURL + id + "/work");
         postRequest.addHeader("content-type", "application/vnd.orcid+xml");
         postRequest.addHeader("Authorization", "Bearer " + token);
         StringEntity workEntity = new StringEntity(workString);
