@@ -172,7 +172,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork(readOnly = true)
     @Path("{organizationName}/collections/{collectionName}/name")
     @ApiOperation(value = "Retrieve a collection by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
-    @Operation(operationId = "getCollectionById", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getCollectionByName", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public Collection getCollectionByName(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization name.", required = true) @Parameter(description = "Organization name.", name = "organizationName", in = ParameterIn.PATH, required = true) @PathParam("organizationName") String organizationName,
             @ApiParam(value = "Collection name.", required = true) @Parameter(description = "Collection name.", name = "collectionName", in = ParameterIn.PATH, required = true) @PathParam("collectionName") String collectionName) {
