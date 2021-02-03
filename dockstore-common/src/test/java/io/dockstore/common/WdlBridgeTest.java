@@ -1,6 +1,6 @@
 package io.dockstore.common;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import io.dropwizard.testing.FixtureHelpers;
 import org.junit.Test;
@@ -17,7 +17,7 @@ public class WdlBridgeTest {
         final String filePath = "/dockerImages.wdl"; // Doesn't really matter
         final WomBundle bundleFromContent = wdlBridge.getBundleFromContent(DOCKER_IMAGES_WDL, filePath, filePath);
         final ExecutableCallable executableCallable = wdlBridge.convertBundleToExecutableCallable(bundleFromContent);
-        final LinkedHashMap<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(executableCallable);
+        final Map<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(executableCallable);
         System.out.println(callsToDockerMap.toString());
     }
 }
