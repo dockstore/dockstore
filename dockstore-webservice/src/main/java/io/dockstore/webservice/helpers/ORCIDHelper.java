@@ -1,5 +1,18 @@
 package io.dockstore.webservice.helpers;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Optional;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
 import org.apache.http.HttpResponse;
@@ -9,31 +22,30 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.orcid.jaxb.model.common.Relationship;
 import org.orcid.jaxb.model.common.WorkType;
+import org.orcid.jaxb.model.v3.release.common.CreatedDate;
+import org.orcid.jaxb.model.v3.release.common.LastModifiedDate;
+import org.orcid.jaxb.model.v3.release.common.Subtitle;
+import org.orcid.jaxb.model.v3.release.common.Title;
+import org.orcid.jaxb.model.v3.release.common.Url;
+import org.orcid.jaxb.model.v3.release.record.ExternalID;
+import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
+import org.orcid.jaxb.model.v3.release.record.Work;
+import org.orcid.jaxb.model.v3.release.record.WorkTitle;
 
-import org.orcid.jaxb.model.v3.release.common.*;
-import org.orcid.jaxb.model.v3.release.common.CreditName;
-import org.orcid.jaxb.model.v3.release.record.*;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Optional;
-
-public class ORCIDHelper {
+public final class ORCIDHelper {
     // TODO: Change to non-sandbox for Dockstore use while using sandbox for test
-    private static final String OrcidBaseURL = "https://api.sandbox.orcid.org/v3.0/";
+    private static final String ORCID_SANDBOX_BASE_URL = "https://api.sandbox.orcid.org/v3.0/";
+    private static final String ORCID_BASE_URL = "https://api.orcid.org/v3.0/";
+
+    private ORCIDHelper() {
+    }
+
     /**
      * Construct the XML for an ORCID work so that it can be posted using the ORCID API
      * Current populated fields are Title, Subtitle, Last Modified, CreatedDate, DOI URL, DOI value, Short description
      * External ID value must be unique, everything else can be the same (title, subtitle, etc)
      * An entry (and an optional version) in Dockstore can sent to ORCID
+     * A DOI for the entry or version is required
      * @param e The entry to be sent to ORCID
      * @param optionalVersion   Optional version of the entry to send to ORCID
      * @return An ORCID Work to be sent to ORCID
@@ -84,7 +96,16 @@ public class ORCIDHelper {
         return transformWork(work);
     }
 
-    static String transformWork(Work work) throws JAXBException {
+    public static HttpResponse postSandboxWorkString(String id, String workString, String token) throws IOException {
+        return postWorkString(ORCID_SANDBOX_BASE_URL, id, workString, token);
+    }
+
+    public static HttpResponse postProdWorkString(String id, String workString, String token) throws IOException {
+        return postWorkString(ORCID_BASE_URL, id, workString, token);
+    }
+
+
+    private static String transformWork(Work work) throws JAXBException {
         JAXBContext context = JAXBContext.newInstance(Work.class);
         StringWriter writer = new StringWriter();
         Marshaller marshaller = context.createMarshaller();
@@ -93,8 +114,8 @@ public class ORCIDHelper {
         return writer.getBuffer().toString();
     }
 
-    public static HttpResponse postWorkString(String id, String workString, String token) throws IOException {
-        HttpPost postRequest = new HttpPost(OrcidBaseURL + id + "/work");
+    private static HttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
+        HttpPost postRequest = new HttpPost(baseURL + id + "/work");
         postRequest.addHeader("content-type", "application/vnd.orcid+xml");
         postRequest.addHeader("Authorization", "Bearer " + token);
         StringEntity workEntity = new StringEntity(workString);

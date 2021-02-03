@@ -1,5 +1,12 @@
 package io.dockstore.webservice.helpers;
 
+import java.io.IOException;
+import java.util.Date;
+import java.util.Optional;
+
+import javax.xml.bind.JAXBException;
+import javax.xml.datatype.DatatypeConfigurationException;
+
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Version;
@@ -9,12 +16,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
-
-import javax.xml.bind.JAXBException;
-import javax.xml.datatype.DatatypeConfigurationException;
-import java.io.IOException;
-import java.util.Date;
-import java.util.Optional;
 
 public class ORCIDHelperTest {
 
@@ -34,7 +35,7 @@ public class ORCIDHelperTest {
         version.setDoiURL("https://doi.org/10.1038/s41586-020-1969-6");
         Optional<Version> optionalVersion = Optional.of(version);
         String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion);
-        HttpResponse response = ORCIDHelper.postWorkString(id, orcidWorkString, "fakeToken");
+        HttpResponse response = ORCIDHelper.postSandboxWorkString(id, orcidWorkString, "fakeToken");
         Assert.assertEquals("Should fail because of fake token", HttpStatus.SC_UNAUTHORIZED, response.getStatusLine().getStatusCode());
     }
 }
