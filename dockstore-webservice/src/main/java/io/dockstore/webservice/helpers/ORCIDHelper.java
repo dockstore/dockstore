@@ -120,8 +120,11 @@ public final class ORCIDHelper {
         postRequest.addHeader("Authorization", "Bearer " + token);
         StringEntity workEntity = new StringEntity(workString);
         postRequest.setEntity(workEntity);
-        CloseableHttpClient build = HttpClientBuilder.create().build();
-        HttpResponse response = build.execute(postRequest);
-        return response;
+        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+        try {
+            return httpClient.execute(postRequest);
+        } finally {
+            httpClient.close();
+        }
     }
 }
