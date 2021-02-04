@@ -266,6 +266,10 @@
             <artifactId>cromwell-wdl-model-draft3_2.12</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell-wdl-model-draft2_2.12</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.chuusai</groupId>
             <artifactId>shapeless_2.12</artifactId>
         </dependency>
