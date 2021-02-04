@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 import shapeless.Inl
 import spray.json.DefaultJsonProtocol._
 import spray.json._
+import wdl.draft2.model.WdlWomExpression
 import wdl.draft3.parser.WdlParser
 import wdl.model.draft3.elements.ExpressionElement.StringLiteral
 import wdl.transforms.base.wdlom2wom.expression.WdlomWomExpression
@@ -252,13 +253,30 @@ class WdlBridge {
   def getCallsToDockerMap(executableCallable: ExecutableCallable) = {
     val callsToDockerMap = new util.LinkedHashMap[String, DockerParameter]()
 
-    def isLiteral(call: CommandCallNode, dockerAttribute: Option[WomExpression]) = {
+    def imageReference(call: CommandCallNode, dockerAttribute: Option[WomExpression]) = {
       dockerAttribute match {
-          // We only get WdlomWomExpression for 1.x
-        case Some(WdlomWomExpression(s: StringLiteral, _)) =>  true
-        case Some(WdlomWomExpression(_, _)) => false
+        // We get WdlomWomExpression for 1.x
+        case Some(WdlomWomExpression(s: StringLiteral, _)) =>  DockerImageReference.LITERAL
+        case Some(WdlomWomExpression(_, _)) =>  DockerImageReference.DYNAMIC
+
+        // This is for WDL pre-1.0
+        case Some(WdlWomExpression(wdlExpression, _)) => {
+          wdlExpression.ast match {
+            case t: wdl.draft2.parser.WdlParser.Terminal =>
+              if ("string" == t.terminal_str) DockerImageReference.LITERAL // t.terminal_str is "identifier" if it's not a literal string
+              else DockerImageReference.DYNAMIC
+            case _ => {
+              WdlBridge.logger.warn(s"Unexpected ast: ${wdlExpression.ast.toPrettyString}")
+              DockerImageReference.UNKNOWN
+            }
+          }
+
+        }
+        case Some(_) => {
+          WdlBridge.logger.error(s"Unexpected dockerAttribute ${dockerAttribute.mkString}")
+          DockerImageReference.UNKNOWN
+        }
         case None => throw new WdlParser.SyntaxError(call.identifier.localName + " requires an associated docker container to make this a valid Dockstore tool.")
-        case _ => false
       }
     }
 
@@ -267,7 +285,7 @@ class WdlBridge {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
         val callName = "dockstore_" + call.identifier.localName.value
         val dockerString = dockerAttribute.map(_.sourceString.replaceAll("\"", "")).getOrElse("")
-        callsToDockerMap.put(callName, DockerParameter(dockerString, isLiteral(call, dockerAttribute)))
+        callsToDockerMap.put(callName, DockerParameter(dockerString, imageReference(call, dockerAttribute)))
       })
     callsToDockerMap
   }
@@ -420,7 +438,7 @@ case class MapResolver(filePath: String) extends ImportResolver {
 
   override def hashKey: ErrorOr[String] = ().hashCode().toString.validNel
 }
-case class DockerParameter(name: String, literal: Boolean)
+case class DockerParameter(imageName: String, imageReference: DockerImageReference)
 
 object WdlBridgeShutDown {
   def shutdownSTTP(): Unit = {

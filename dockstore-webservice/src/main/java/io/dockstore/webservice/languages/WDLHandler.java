@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
 import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
@@ -450,13 +451,12 @@ public class WDLHandler implements LanguageHandlerInterface {
     /**
      * Convenience function to convert old map with values of Docker image names to values of DockerParameter
      *
-     * TODO: Don't default to false, default to unknown
      * @param callsToDockerMap
      * @return
      */
     static Map<String, DockerParameter> convertToDockerParameter(Map<String, String> callsToDockerMap) {
         return callsToDockerMap.entrySet().stream().collect(
-                Collectors.toMap(Map.Entry::getKey, v -> new DockerParameter(v.getValue(), false), (x, y) -> y, LinkedHashMap::new));
+                Collectors.toMap(Map.Entry::getKey, v -> new DockerParameter(v.getValue(), DockerImageReference.UNKNOWN), (x, y) -> y, LinkedHashMap::new));
     }
 
     /**
@@ -470,9 +470,9 @@ public class WDLHandler implements LanguageHandlerInterface {
         toolInfoMap = new HashMap<>();
         callsToDockerMap.forEach((toolName, containerName) -> toolInfoMap.compute(toolName, (key, value) -> {
             if (value == null) {
-                return new ToolInfo(containerName.name(), new ArrayList<>());
+                return new ToolInfo(containerName.imageName(), new ArrayList<>());
             } else {
-                value.dockerContainer = containerName.name();
+                value.dockerContainer = containerName.imageName();
                 return value;
             }
         }));
