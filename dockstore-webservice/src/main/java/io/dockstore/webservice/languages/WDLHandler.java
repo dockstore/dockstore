@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerParameter;
 import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
@@ -423,7 +425,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             wdlBridge.setSecondaryFiles(new HashMap<>(pathToContentMap));
 
             // Iterate over each call, grab docker containers
-            Map<String, String> callsToDockerMap = wdlBridge.getCallsToDockerMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
+            Map<String, DockerParameter> callsToDockerMap = wdlBridge.getCallsToDockerMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
 
             // Iterate over each call, determine dependencies
             Map<String, List<String>> callsToDependencies = wdlBridge.getCallsToDependencies(tempMainDescriptor.getAbsolutePath(), mainDescName);
@@ -446,19 +448,31 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     /**
+     * Convenience function to convert old map with values of Docker image names to values of DockerParameter
+     *
+     * TODO: Don't default to false, default to unknown
+     * @param callsToDockerMap
+     * @return
+     */
+    static Map<String, DockerParameter> convertToDockerParameter(Map<String, String> callsToDockerMap) {
+        return callsToDockerMap.entrySet().stream().collect(
+                Collectors.toMap(Map.Entry::getKey, v -> new DockerParameter(v.getValue(), false), (x, y) -> y, LinkedHashMap::new));
+    }
+
+    /**
      * For existing code, converts from maps of untyped data to ToolInfo
      * @param callsToDockerMap map from names of tools to Docker containers
      * @param callsToDependencies map from names of tools to names of their parent tools (dependencies)
      * @return
      */
-    static Map<String, ToolInfo> mapConverterToToolInfo(Map<String, String> callsToDockerMap, Map<String, List<String>> callsToDependencies) {
+    static Map<String, ToolInfo> mapConverterToToolInfo(Map<String, DockerParameter> callsToDockerMap, Map<String, List<String>> callsToDependencies) {
         Map<String, ToolInfo> toolInfoMap;
         toolInfoMap = new HashMap<>();
         callsToDockerMap.forEach((toolName, containerName) -> toolInfoMap.compute(toolName, (key, value) -> {
             if (value == null) {
-                return new ToolInfo(containerName, new ArrayList<>());
+                return new ToolInfo(containerName.name(), new ArrayList<>());
             } else {
-                value.dockerContainer = containerName;
+                value.dockerContainer = containerName.name();
                 return value;
             }
         }));

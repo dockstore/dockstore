@@ -237,32 +237,37 @@ class WdlBridge {
     dependencyMap
   }
 
-
   /**
     * Create a mapping of calls to docker images
     * @param filePath absolute path to file
     * @return mapping of call names to docker
     */
   @throws(classOf[WdlParser.SyntaxError])
-  def getCallsToDockerMap(filePath: String, sourceFilePath: String): util.LinkedHashMap[String, String] = {
+  def getCallsToDockerMap(filePath: String, sourceFilePath: String): util.LinkedHashMap[String, DockerParameter] = {
     val executableCallable = convertFilePathToExecutableCallable(filePath, sourceFilePath)
     getCallsToDockerMap(executableCallable)
   }
 
 
   def getCallsToDockerMap(executableCallable: ExecutableCallable) = {
-    val callsToDockerMap = new util.LinkedHashMap[String, String]()
+    val callsToDockerMap = new util.LinkedHashMap[String, DockerParameter]()
+
+    def isLiteral(call: CommandCallNode, dockerAttribute: Option[WomExpression]) = {
+      dockerAttribute match {
+          // We only get WdlomWomExpression for 1.x
+        case Some(WdlomWomExpression(s: StringLiteral, _)) =>  true
+        case Some(WdlomWomExpression(_, _)) => false
+        case None => throw new WdlParser.SyntaxError(call.identifier.localName + " requires an associated docker container to make this a valid Dockstore tool.")
+        case _ => false
+      }
+    }
+
     executableCallable.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
-        dockerAttribute match {
-          case Some(WdlomWomExpression(s: StringLiteral, _)) => false
-          case None => throw new WdlParser.SyntaxError(call.identifier.localName + " requires an associated docker container to make this a valid Dockstore tool.")
-          case _ => true
-        }
         val callName = "dockstore_" + call.identifier.localName.value
         val dockerString = dockerAttribute.map(_.sourceString.replaceAll("\"", "")).getOrElse("")
-        callsToDockerMap.put(callName, dockerString)
+        callsToDockerMap.put(callName, DockerParameter(dockerString, isLiteral(call, dockerAttribute)))
       })
     callsToDockerMap
   }
@@ -415,6 +420,7 @@ case class MapResolver(filePath: String) extends ImportResolver {
 
   override def hashKey: ErrorOr[String] = ().hashCode().toString.validNel
 }
+case class DockerParameter(name: String, literal: Boolean)
 
 object WdlBridgeShutDown {
   def shutdownSTTP(): Unit = {
