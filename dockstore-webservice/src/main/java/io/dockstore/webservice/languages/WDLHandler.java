@@ -467,7 +467,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      */
     static Map<String, ToolInfo> mapConverterToToolInfo(Map<String, DockerParameter> callsToDockerMap, Map<String, List<String>> callsToDependencies) {
         Map<String, ToolInfo> toolInfoMap;
-        toolInfoMap = new HashMap<>();
+        toolInfoMap = new LinkedHashMap<>();
         callsToDockerMap.forEach((toolName, containerName) -> toolInfoMap.compute(toolName, (key, value) -> {
             if (value == null) {
                 return new ToolInfo(containerName.imageName(), new ArrayList<>());

@@ -251,7 +251,6 @@ class WdlBridge {
 
 
   def getCallsToDockerMap(executableCallable: ExecutableCallable) = {
-    val callsToDockerMap = new util.LinkedHashMap[String, DockerParameter]()
 
     def imageReference(call: CommandCallNode, dockerAttribute: Option[WomExpression]) = {
       dockerAttribute match {
@@ -276,10 +275,11 @@ class WdlBridge {
           WdlBridge.logger.error(s"Unexpected dockerAttribute ${dockerAttribute.mkString}")
           DockerImageReference.UNKNOWN
         }
-        case None => throw new WdlParser.SyntaxError(call.identifier.localName + " requires an associated docker container to make this a valid Dockstore tool.")
+        case None => DockerImageReference.UNKNOWN // not applicable really
       }
     }
 
+    val callsToDockerMap = new util.LinkedHashMap[String, DockerParameter]()
     executableCallable.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
