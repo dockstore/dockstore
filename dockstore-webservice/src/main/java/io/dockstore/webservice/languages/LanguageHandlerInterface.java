@@ -85,18 +85,17 @@ public interface LanguageHandlerInterface {
     /**
      * Parses the content of the primary descriptor to get author, email, and description
      *
-     * @param filepath    path to file
-     * @param content     a descriptor language document
+     * @param filepath path to file
+     * @param content a descriptor language document
      * @param sourceFiles
-     * @param version     the version to modify
+     * @param version the version to modify
      * @return
      */
     Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version);
 
     /**
      * Validates a workflow set for the workflow described by with primaryDescriptorFilePath
-     *
-     * @param sourcefiles               Set of sourcefiles
+     * @param sourcefiles Set of sourcefiles
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid workflow set, error message
      */
@@ -104,8 +103,7 @@ public interface LanguageHandlerInterface {
 
     /**
      * Validates a tool set for the workflow described by with primaryDescriptorFilePath
-     *
-     * @param sourcefiles               Set of sourcefiles
+     * @param sourcefiles Set of sourcefiles
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid tool set, error message
      */
@@ -113,7 +111,6 @@ public interface LanguageHandlerInterface {
 
     /**
      * Validates a test parameter set
-     *
      * @param sourceFiles Set of sourcefiles
      * @return Are all test parameter files valid, collection of error messages
      */
@@ -130,7 +127,7 @@ public interface LanguageHandlerInterface {
      * @return map of file paths to SourceFile objects
      */
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-            SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
+        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
 
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation
@@ -143,15 +140,13 @@ public interface LanguageHandlerInterface {
      * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
-    Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
-            ToolDAO dao);
+    Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao);
 
     /**
      * Checks that the test parameter files are valid JSON or YAML
      * Note: If even one is invalid, return invalid. Also merges all validation messages into one.
-     *
      * @param sourcefiles Set of sourcefiles
-     * @param fileType    Test parameter file type
+     * @param fileType Test parameter file type
      * @return Pair of isValid and validationMessage
      */
     default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, DescriptorLanguage.FileType fileType) {
@@ -171,8 +166,7 @@ public interface LanguageHandlerInterface {
         return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
-    default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type,
-            ToolDAO dao) {
+    default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         Optional<String> content = getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao);
         if (content.isPresent()) {
             return DAGHelper.cleanDAG(content.get());
@@ -196,13 +190,14 @@ public interface LanguageHandlerInterface {
 
     /**
      * Removes any sourcefiles of some file types from a set
-     *
      * @param sourcefiles
      * @param fileTypes
      * @return Filtered sourcefile set
      */
     default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<DescriptorLanguage.FileType> fileTypes) {
-        return sourcefiles.stream().filter(sourcefile -> fileTypes.contains(sourcefile.getType())).collect(Collectors.toSet());
+        return sourcefiles.stream()
+                .filter(sourcefile -> fileTypes.contains(sourcefile.getType()))
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -406,8 +401,7 @@ public interface LanguageHandlerInterface {
         dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
 
         // Eliminate duplicate docker strings
-        Set<String> dockerStrings = dockerTools.stream().map(dockertool -> dockertool.get("docker")).filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        Set<String> dockerStrings = dockerTools.stream().map(dockertool -> dockertool.get("docker")).filter(Objects::nonNull).collect(Collectors.toSet());
 
         Set<Image> dockerImages = new HashSet<>();
 
@@ -571,8 +565,7 @@ public interface LanguageHandlerInterface {
 
     /**
      * Resolves a relative path based on an absolute parent path
-     *
-     * @param parentPath   Absolute path to parent file
+     * @param parentPath Absolute path to parent file
      * @param relativePath Relative path the parent file
      * @return Absolute version of relative path
      */
@@ -594,7 +587,7 @@ public interface LanguageHandlerInterface {
      * @return the actual JSON output of either a DAG or tool listing
      */
     default Optional<String> convertMapsToContent(final String mainDescName, final Type type, ToolDAO dao, final String callType,
-            final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
+        final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
 
         // Initialize data structures for DAG
         List<Pair<String, String>> nodePairs = new ArrayList<>();
