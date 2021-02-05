@@ -431,9 +431,9 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Organization organization = organizationDAO.findById(organizationId);
         OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
 
-        // If the user does not belong to the organization or if the user is not a maintainer of the organization
+        // If the user does not belong to the organization or if the user is not an admin of the organization
         // and if the user is neither an admin nor curator, then throw an error
-        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.MAINTAINER) && (!user.isCurator() && !user.getIsAdmin())) {
+        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.ADMIN) && (!user.isCurator() && !user.getIsAdmin())) {
             throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
         }
 
