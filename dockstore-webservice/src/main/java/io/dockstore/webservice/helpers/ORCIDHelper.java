@@ -34,6 +34,7 @@ import org.orcid.jaxb.model.v3.release.record.WorkTitle;
 
 public final class ORCIDHelper {
     // TODO: Change to non-sandbox for Dockstore use while using sandbox for test
+    // Swagger-ui available here: https://api.orcid.org/v3.0/#!/Development_Member_API_v3.0/
     private static final String ORCID_SANDBOX_BASE_URL = "https://api.sandbox.orcid.org/v3.0/";
     private static final String ORCID_BASE_URL = "https://api.orcid.org/v3.0/";
 
@@ -56,7 +57,6 @@ public final class ORCIDHelper {
         Work work = new Work();
         WorkTitle workTitle = new WorkTitle();
         Title title = new Title();
-        Subtitle subtitle = new Subtitle("Dockstore Workflow");
         ExternalIDs externalIDs = new ExternalIDs();
         ExternalID externalID = new ExternalID();
         externalID.setType("doi");
@@ -76,7 +76,6 @@ public final class ORCIDHelper {
         journalTitle.setContent("Dockstore");
         work.setJournalTitle(journalTitle);
         workTitle.setTitle(title);
-        workTitle.setSubtitle(subtitle);
         work.setWorkTitle(workTitle);
         work.setShortDescription("A workflow exported from Dockstore");
         work.setWorkType(WorkType.SOFTWARE);
