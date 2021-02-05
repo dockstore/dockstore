@@ -278,11 +278,11 @@ public interface LanguageHandlerInterface {
             String key = entry.getKey();
             DockerInfo value = entry.getValue();
             //get the idName and fileName
-            String fileName = value.getDockerImage();
+            String fileName = value.getRunPath();
 
             //get the docker requirement
             String dockerPullName = value.getDockerImage();
-            String dockerLink = value.getRunPath();
+            String dockerLink = value.getDockerUrl();
 
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
