@@ -46,6 +46,7 @@ public final class ORCIDHelper {
      * External ID value must be unique, everything else can be the same (title, subtitle, etc)
      * An entry (and an optional version) in Dockstore can sent to ORCID
      * A DOI for the entry or version is required
+     * TODO: The implementation of short description needs work to ensure it's not too long
      * @param e The entry to be sent to ORCID
      * @param optionalVersion   Optional version of the entry to send to ORCID
      * @return An ORCID Work to be sent to ORCID
@@ -65,18 +66,19 @@ public final class ORCIDHelper {
             externalID.setUrl(url);
             externalID.setValue(v.getDoiURL());
             title.setContent(e.getEntryPath() + ":" + v.getName());
+            work.setShortDescription(v.getDescription());
         } else {
             Url url = new Url(e.getConceptDoi());
             externalID.setUrl(url);
             externalID.setValue(e.getConceptDoi());
             title.setContent(e.getEntryPath());
+            work.setShortDescription(e.getDescription());
         }
         Title journalTitle = new Title();
         journalTitle.setContent("Dockstore");
         work.setJournalTitle(journalTitle);
         workTitle.setTitle(title);
         work.setWorkTitle(workTitle);
-        work.setShortDescription("A workflow exported from Dockstore");
         work.setWorkType(WorkType.SOFTWARE);
         externalID.setRelationship(Relationship.SELF);
         externalIDs.getExternalIdentifier().add(externalID);
