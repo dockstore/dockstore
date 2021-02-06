@@ -44,7 +44,7 @@ task versionedDocker {
         echo "hello world"
     }
     runtime {
-        docker: "pkrusche/hap.py:latest"
+        docker: "pkrusche/hap.py:v1.0"
     }
 }
 
@@ -53,6 +53,6 @@ task digestDocker {
         echo "hello world"
     }
     runtime {
-        docker: "pkrusche/hap.py:latest"
+        docker: "pkrusche/hap.py@sha256:f63e020c4062e0be8d081a50de16562f2ba161166e896655868efdb5527a8640"
     }
 }
