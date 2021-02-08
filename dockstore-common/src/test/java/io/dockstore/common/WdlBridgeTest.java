@@ -3,10 +3,11 @@ package io.dockstore.common;
 import java.util.Map;
 
 import io.dropwizard.testing.FixtureHelpers;
-import org.junit.Assert;
 import org.junit.Test;
 import wom.callable.ExecutableCallable;
 import wom.executable.WomBundle;
+
+import static org.junit.Assert.assertEquals;
 
 public class WdlBridgeTest {
 
@@ -15,30 +16,23 @@ public class WdlBridgeTest {
 
     @Test
     public void testGetCallsToDockerMapWdl10() {
-        final Map<String, DockerParameter> callsToDockerMap = getDockerParameterMap(DOCKER_IMAGES_WDL_10);
-        // See docker images in dockerImages10.wdl
-        callsToDockerMap.entrySet().stream().forEach(entry -> {
-            if ("dockstore_parmeterizedDocker".equals(entry.getKey())) {
-                Assert.assertEquals(DockerImageReference.DYNAMIC, entry.getValue().imageReference());
-            } else {
-                Assert.assertEquals(DockerImageReference.LITERAL, entry.getValue().imageReference());
-            }
-        });
+        checkDockerImageReferences(getDockerParameterMap(DOCKER_IMAGES_WDL_10));
     }
 
     @Test
     public void testGetCallsToDockerMapWdlPre10() {
-        final Map<String, DockerParameter> callsToDockerMap = getDockerParameterMap(DOCKER_IMAGES_WDL_PRE_10);
-        // See docker images in dockerImages10.wdl
+        checkDockerImageReferences(getDockerParameterMap(DOCKER_IMAGES_WDL_PRE_10));
+    }
+
+    private void checkDockerImageReferences(final Map<String, DockerParameter> callsToDockerMap) {
         callsToDockerMap.entrySet().stream().forEach(entry -> {
             if ("dockstore_parmeterizedDocker".equals(entry.getKey())) {
-                Assert.assertEquals(DockerImageReference.DYNAMIC, entry.getValue().imageReference());
+                assertEquals(DockerImageReference.DYNAMIC, entry.getValue().imageReference());
             } else {
-                Assert.assertEquals(DockerImageReference.LITERAL, entry.getValue().imageReference());
+                assertEquals(DockerImageReference.LITERAL, entry.getValue().imageReference());
             }
         });
     }
-
 
     private Map<String, DockerParameter> getDockerParameterMap(String filePath) {
         final WdlBridge wdlBridge = new WdlBridge();

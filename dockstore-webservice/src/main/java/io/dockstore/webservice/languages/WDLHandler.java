@@ -454,7 +454,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @param callsToDockerMap
      * @return
      */
-    static Map<String, DockerParameter> convertToDockerParameter(Map<String, String> callsToDockerMap) {
+    protected static Map<String, DockerParameter> convertToDockerParameter(Map<String, String> callsToDockerMap) {
         return callsToDockerMap.entrySet().stream().collect(
                 Collectors.toMap(Map.Entry::getKey, v -> new DockerParameter(v.getValue(), DockerImageReference.UNKNOWN), (x, y) -> y, LinkedHashMap::new));
     }
@@ -465,7 +465,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @param callsToDependencies map from names of tools to names of their parent tools (dependencies)
      * @return
      */
-    static Map<String, ToolInfo> mapConverterToToolInfo(Map<String, DockerParameter> callsToDockerMap, Map<String, List<String>> callsToDependencies) {
+    protected static Map<String, ToolInfo> mapConverterToToolInfo(Map<String, DockerParameter> callsToDockerMap, Map<String, List<String>> callsToDependencies) {
         Map<String, ToolInfo> toolInfoMap;
         toolInfoMap = new HashMap<>();
         callsToDockerMap.forEach((toolName, dockerParameter) -> toolInfoMap.compute(toolName, (key, value) -> {

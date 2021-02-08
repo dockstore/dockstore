@@ -687,6 +687,8 @@ public interface LanguageHandlerInterface {
 
     class ToolInfo {
 
+        protected final DockerSpecifier dockerSpecifier;
+
         /**
          * Currently, the id of a docker container as used by docker pull.
          * Due to some confusion, this is used by nfl and wdl, but not cwl.
@@ -696,7 +698,6 @@ public interface LanguageHandlerInterface {
          * A list if ids for tools, processes that had to come before
          */
         List<String> toolDependencyList;
-        final DockerSpecifier dockerSpecifier;
 
         ToolInfo(String dockerContainer, List<String> toolDependencyList) {
             this(dockerContainer, toolDependencyList, null);
