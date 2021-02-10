@@ -132,6 +132,21 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>org.broadinstitute</groupId>
+                <artifactId>cromwell-wdl-transforms-new-base_2.12</artifactId>
+                <version>${cromwell.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.broadinstitute</groupId>
+                <artifactId>cromwell-wdl-model-draft3_2.12</artifactId>
+                <version>${cromwell.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.broadinstitute</groupId>
+                <artifactId>cromwell-wdl-model-draft2_2.12</artifactId>
+                <version>${cromwell.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.broadinstitute</groupId>
                 <artifactId>wdl-biscayne_2.12</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
