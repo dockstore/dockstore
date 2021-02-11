@@ -234,9 +234,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private void checkIfAccountHasBeenLinked(String username, TokenType tokenType) {
         Token existingToken = tokenDAO.findTokenByUserNameAndTokenSource(username, tokenType);
         if (existingToken != null) {
-            String msg = "The '" + tokenType.toString() + "' token you've provided is already linked to another Dockstore account with the name '"
-                + username + "'. For more details, see " +
-                "https://docs.dockstore.org/en/develop/faq.html#what-is-the-difference-between-logging-in-with-github-or-logging-in-with-google.";
+            User dockstoreUser = userDAO.findById(existingToken.getId());
+            String msg = "The '" + tokenType.toString() + "' account '" + username
+                + "' is already linked to another Dockstore account with the name '"
+                + dockstoreUser.getName() + "'. ";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_CONFLICT);
         }
