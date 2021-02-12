@@ -63,6 +63,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 
 @NamedNativeQueries({
+        // This is native query since I couldn't figure out how to do a delete with a join in HQL
         @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.deletedEntryVersionsByCollectionId", query =
                 "DELETE FROM collection_entry_version WHERE collection_id = :collectionId")
 })

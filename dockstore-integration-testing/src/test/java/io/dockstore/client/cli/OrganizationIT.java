@@ -1230,7 +1230,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void TestDeletingPendingOrgWithCollection() {
+    public void testDeletingPendingOrgWithCollection() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
