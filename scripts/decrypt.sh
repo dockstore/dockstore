@@ -14,8 +14,8 @@ set -o xtrace
 
 openssl aes-256-cbc -d -in circle_ci_test_data.zip.enc -k "$CIRCLE_CI_KEY" -iv "$CIRCLE_CI_IV" -out secrets.tar
 tar xvf secrets.tar
-sudo mkdir -p /usr/local/travis
-sudo cp dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /usr/local/travis/dstesting_pcks8.pem
+sudo mkdir -p /usr/local/ci
+sudo cp dockstore-integration-testing/src/test/resources/dstesting_pcks8.pem /usr/local/ci/dstesting_pcks8.pem
 cat dockstore-integration-testing/src/test/resources/partialDockstoreTest.yml >> dockstore-integration-testing/src/test/resources/dockstoreTest.yml
 rm secrets.tar
 
