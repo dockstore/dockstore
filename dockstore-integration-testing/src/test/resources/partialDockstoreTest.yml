@@ -4,7 +4,7 @@
 
 template: Hello, %s!
 
-gitHubAppPrivateKeyFile: /travis/dstesting_pcks8.pem
+gitHubAppPrivateKeyFile: /usr/local/travis/dstesting_pcks8.pem
 
 
 googleClientID: <fill me in>
