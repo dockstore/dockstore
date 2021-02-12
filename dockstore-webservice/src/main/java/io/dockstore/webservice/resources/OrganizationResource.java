@@ -23,11 +23,13 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.StarRequest;
+import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -84,11 +86,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
+    private final CollectionDAO collectionDAO;
 
     public OrganizationResource(SessionFactory sessionFactory) {
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
+        this.collectionDAO = new CollectionDAO(sessionFactory);
         this.sessionFactory = sessionFactory;
     }
 
@@ -439,7 +443,11 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         // If the organization to be deleted is pending or has been rejected, then delete the organization
         if (organization.getStatus() == Organization.ApplicationState.PENDING || organization.getStatus() == Organization.ApplicationState.REJECTED) {
+            // To delete an org, you need to delete its associated events, entryversions, and collections (in this order) first.
             eventDAO.deleteEventByOrganizationID(organizationId);
+            List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
+            collections.stream().forEach(collection -> collectionDAO.deleteEntryVersionByCollectionId(collection.getId()));
+            collectionDAO.deleteCollectionByOrgId(organizationId);
             organizationDAO.delete(organization);
         } else { // else if the organization is not pending nor rejected, then throw an error
             throw new CustomWebApplicationException("You can only delete organizations that are pending or have been rejected", HttpStatus.SC_BAD_REQUEST);

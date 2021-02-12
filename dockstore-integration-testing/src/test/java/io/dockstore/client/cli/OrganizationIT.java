@@ -1229,6 +1229,24 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
+    @Test
+    public void TestDeletingPendingOrgWithCollection() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsOpenApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOpenApiUser);
+
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        long collectionId = collection.getId();
+        testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = 2");
+
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
+        organizationsOpenApi.deleteRejectedOrPendingOrganization(organization.getId());
+
+    }
+
     /**
      * This tests that you can add a collection to an Organization and tests conditions for when it is visible
      */
