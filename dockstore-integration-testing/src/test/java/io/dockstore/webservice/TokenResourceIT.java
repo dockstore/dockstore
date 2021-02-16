@@ -398,7 +398,7 @@ public class TokenResourceIT {
             fail();
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
-            Assert.assertTrue(e.getMessage().contains("already exists"));
+            Assert.assertTrue(e.getMessage().contains("is already linked"));
             // Call should fail
         }
     }
