@@ -447,7 +447,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             eventDAO.deleteEventByOrganizationID(organizationId);
             List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
             collections.stream().forEach(collection -> collectionDAO.deleteEntryVersionByCollectionId(collection.getId()));
-            collectionDAO.deleteCollectionByOrgId(organizationId);
+            collectionDAO.deleteCollectionsByOrgId(organizationId);
             organizationDAO.delete(organization);
         } else { // else if the organization is not pending nor rejected, then throw an error
             throw new CustomWebApplicationException("You can only delete organizations that are pending or have been rejected", HttpStatus.SC_BAD_REQUEST);

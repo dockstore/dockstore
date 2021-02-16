@@ -1243,8 +1243,18 @@ public class OrganizationIT extends BaseIT {
         testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = 2");
 
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
+        long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
+        assertEquals(1, collectionCount);
+
         organizationsOpenApi.deleteRejectedOrPendingOrganization(organization.getId());
 
+        // Test collection is gone
+        collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
+        assertEquals(0, collectionCount);
+
+        // Test tool is still there
+        long tool = testingPostgres.runSelectStatement("select count(*) from tool where id = 2", long.class);
+        assertEquals(1, tool);
     }
 
     /**

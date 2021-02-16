@@ -44,20 +44,15 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return uniqueResult(query);
     }
 
-    public void deleteCollectionByOrgId(long organizationId) {
-        currentSession().flush();
+    public void deleteCollectionsByOrgId(long organizationId) {
         Query query = namedQuery("io.dockstore.webservice.core.Collection.deleteByOrgId")
                 .setParameter("organizationId", organizationId);
         query.executeUpdate();
-        currentSession().flush();
     }
 
     public void deleteEntryVersionByCollectionId(long collectionId) {
-        currentSession().flush();
-        Query query = namedQuery("io.dockstore.webservice.core.Collection.deletedEntryVersionsByCollectionId").setParameter("collectionId", collectionId);
+        Query query = namedQuery("io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId").setParameter("collectionId", collectionId);
         query.executeUpdate();
-        currentSession().flush();
-
     }
 
     public Collection getByAlias(String alias) {
