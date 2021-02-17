@@ -16,7 +16,6 @@
 package io.dockstore.webservice.helpers.statelisteners;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,13 +43,18 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
-import org.apache.http.entity.ContentType;
-import org.apache.http.nio.entity.NStringEntity;
-import org.elasticsearch.client.Response;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,28 +107,30 @@ public class ElasticListener implements StateListenerInterface {
         }
         String json;
         json = getDocumentValueFromEntry(entry);
-        try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
+        try (RestHighLevelClient client = new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost(hostname, port, "http")))) {
             String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
-            HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
-            String baseEndpoint = "/" + entryType;
-            Response post;
+            DocWriteResponse post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
-                post = restClient
-                    .performRequest("POST", baseEndpoint + "/_update/" + entry.getId(), Collections.emptyMap(), entity);
+                UpdateRequest updateRequest = new UpdateRequest(entryType, String.valueOf(entry.getId()));
+                updateRequest.doc(json, XContentType.JSON);
+                post = client.update(updateRequest, RequestOptions.DEFAULT);
                 break;
             case DELETE:
-                post = restClient.performRequest("DELETE", baseEndpoint + "/_doc/" + entry.getId(), Collections.emptyMap(), entity);
+                DeleteRequest deleteRequest = new DeleteRequest(entryType, String.valueOf(entry.getId()));
+                post  = client.delete(deleteRequest, RequestOptions.DEFAULT);
                 break;
             default:
                 throw new RuntimeException("Unknown index command: " + command);
             }
-            int statusCode = post.getStatusLine().getStatusCode();
+            int statusCode = post.status().getStatus();
             if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED) {
                 LOGGER.info("Successful " + command + ".");
             } else {
-                LOGGER.error("Could not submit index to elastic search " + post.getStatusLine().getReasonPhrase());
+                LOGGER.error("Could not submit index to elastic search " + post.status());
             }
         } catch (Exception e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
@@ -177,12 +183,20 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
-        try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-            String newlineDJSON = getNDJSON(entries);
-            String endpoint = "/" + index + "/_bulk";
-            HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
-            Response post = restClient.performRequest("POST", endpoint, Collections.emptyMap(), bulkEntity);
-            if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+        BulkRequest bulkRequest = new BulkRequest(index);
+        entries.forEach(entry -> {
+            try {
+                String s = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
+                bulkRequest.add(new IndexRequest(index).id(String.valueOf(entry.getId())).source(s, XContentType.JSON));
+            } catch (IOException e) {
+                throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        });
+        try (RestHighLevelClient client = new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost(hostname, port, "http")))) {
+            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+            if (bulkResponse.hasFailures()) {
                 throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (IOException e) {

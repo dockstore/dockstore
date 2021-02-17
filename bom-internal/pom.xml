@@ -1064,8 +1064,18 @@ POM as their parent.
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
-                <artifactId>rest</artifactId>
-                <version>5.4.1</version>
+                <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                <version>7.10.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>7.10.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-client</artifactId>
+                <version>7.10.0</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/org.kohsuke/github-api -->
