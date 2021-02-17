@@ -48,6 +48,7 @@ POM as their parent.
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <dropwizard.version>2.0.19</dropwizard.version>
         <dropwizard-annotations.version>4.1.17</dropwizard-annotations.version>
+        <elasticsearch-version>7.10.0</elasticsearch-version>
         <swagger-annotations-version>1.6.2</swagger-annotations-version>
         <openapi-annotations-version>2.1.1</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
@@ -1065,17 +1066,27 @@ POM as their parent.
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-high-level-client</artifactId>
-                <version>7.10.0</version>
+                <version>${elasticsearch-version}</version>
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch</groupId>
                 <artifactId>elasticsearch</artifactId>
-                <version>7.10.0</version>
+                <version>${elasticsearch-version}</version>
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
                 <artifactId>elasticsearch-rest-client</artifactId>
-                <version>7.10.0</version>
+                <version>${elasticsearch-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch-x-content</artifactId>
+                <version>${elasticsearch-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch-core</artifactId>
+                <version>${elasticsearch-version}</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/org.kohsuke/github-api -->

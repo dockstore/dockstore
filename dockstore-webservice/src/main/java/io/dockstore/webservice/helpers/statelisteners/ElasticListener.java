@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,6 +47,7 @@ import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -183,21 +185,57 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
-        BulkRequest bulkRequest = new BulkRequest(index);
-        entries.forEach(entry -> {
-            try {
-                String s = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
-                bulkRequest.add(new IndexRequest(index).id(String.valueOf(entry.getId())).source(s, XContentType.JSON));
-            } catch (IOException e) {
-                throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        BulkProcessor.Listener listener = new BulkProcessor.Listener() {
+            @Override
+            public void beforeBulk(long executionId, BulkRequest request) {
+                int numberOfActions = request.numberOfActions();
+                LOGGER.info("Executing bulk [{}] with {} requests",
+                        executionId, numberOfActions);
             }
-        });
+
+            @Override
+            public void afterBulk(long executionId, BulkRequest request,
+                    BulkResponse response) {
+                if (response.hasFailures()) {
+                    LOGGER.info("Bulk [{}] executed with failures", executionId);
+                } else {
+                    LOGGER.info("Bulk [{}] completed in {} milliseconds",
+                            executionId, response.getTook().getMillis());
+                }
+            }
+
+            @Override
+            public void afterBulk(long executionId, BulkRequest request,
+                    Throwable failure) {
+                LOGGER.error("Failed to execute bulk", failure);
+            }
+        };
+
         try (RestHighLevelClient client = new RestHighLevelClient(
                 RestClient.builder(
                         new HttpHost(hostname, port, "http")))) {
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            if (bulkResponse.hasFailures()) {
-                throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            BulkProcessor.Builder builder = BulkProcessor.builder(
+                (request, bulkListener) ->
+                        client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
+                listener);
+            // Set size of actions with `builder.setBulkSize()`, defaults to 5 MB
+            BulkProcessor bulkProcessor = builder.build();
+            entries.forEach(entry -> {
+                try {
+                    String s = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
+                    bulkProcessor.add(new IndexRequest(index).id(String.valueOf(entry.getId())).source(s, XContentType.JSON));
+
+                } catch (IOException e) {
+                    throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            });
+            try {
+                boolean terminated = bulkProcessor.awaitClose(1L, TimeUnit.MINUTES);
+                if (!terminated) {
+                    LOGGER.error("Could not submit " + index + " index to elastic search in time");
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
             }
         } catch (IOException e) {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
