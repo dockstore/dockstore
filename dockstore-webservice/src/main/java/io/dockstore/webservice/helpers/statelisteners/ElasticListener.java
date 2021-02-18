@@ -16,7 +16,6 @@
 package io.dockstore.webservice.helpers.statelisteners;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -242,57 +240,6 @@ public class ElasticListener implements StateListenerInterface {
         } catch (IOException e) {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * This converts the entry into a document for elastic search to use
-     *
-     * @param entry The entry that needs updating
-     * @return The entry converted into a json string
-     */
-    private String getDocumentValueFromEntry(Entry<?, ?> entry) {
-        ObjectMapper mapper = Jackson.newObjectMapper();
-        StringBuilder builder = new StringBuilder();
-        Map<String, Object> doc = new HashMap<>();
-        try {
-            JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
-            doc.put("doc", jsonNode);
-            doc.put("doc_as_upsert", true);
-            builder.append(mapper.writeValueAsString(doc));
-        } catch (IOException e) {
-            throw new CustomWebApplicationException(MAPPER_ERROR,
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return builder.toString();
-    }
-
-    /**
-     * Gets the json used for bulk insert
-     *
-     * @param publishedEntries A list of published entries
-     * @return The json used for bulk insert
-     */
-    private String getNDJSON(List<Entry> publishedEntries) {
-        Gson gson = new GsonBuilder().create();
-        StringBuilder builder = new StringBuilder();
-        publishedEntries.forEach(entry -> {
-            entry.getWorkflowVersions().forEach(entryVersion -> {
-                ((Version)entryVersion).updateVerified();
-            });
-            Map<String, Map<String, String>> index = new HashMap<>();
-            Map<String, String> internal = new HashMap<>();
-            internal.put("_id", String.valueOf(entry.getId()));
-            index.put("index", internal);
-            builder.append(gson.toJson(index));
-            builder.append('\n');
-            try {
-                builder.append(MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry)));
-            } catch (IOException e) {
-                throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-            builder.append('\n');
-        });
-        return builder.toString();
     }
 
     /**
