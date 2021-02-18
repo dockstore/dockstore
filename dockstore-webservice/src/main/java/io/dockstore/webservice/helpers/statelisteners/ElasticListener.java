@@ -107,8 +107,6 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
-        String json;
-        json = getDocumentValueFromEntry(entry);
         try (RestHighLevelClient client = new RestHighLevelClient(
                 RestClient.builder(
                         new HttpHost(hostname, port, "http")))) {
@@ -118,7 +116,11 @@ public class ElasticListener implements StateListenerInterface {
             case PUBLISH:
             case UPDATE:
                 UpdateRequest updateRequest = new UpdateRequest(entryType, String.valueOf(entry.getId()));
+                String json = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
+                // The below should've worked but it doesn't, the 2 lines after are used instead
+                // updateRequest.upsert(json, XContentType.JSON);
                 updateRequest.doc(json, XContentType.JSON);
+                updateRequest.docAsUpsert(true);
                 post = client.update(updateRequest, RequestOptions.DEFAULT);
                 break;
             case DELETE:
@@ -383,7 +385,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
-        Set<Version> detatchedVersions = new HashSet<>();
+        Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
             Version detatchedVersion = workflowVersion.createEmptyVersion();
             detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
@@ -399,9 +401,9 @@ public class ElasticListener implements StateListenerInterface {
                 detatchedVersion.addSourceFile(detachedSourceFile);
             });
             detatchedVersion.updateVerified();
-            detatchedVersions.add(detatchedVersion);
+            detachedVersions.add(detatchedVersion);
         });
-        return detatchedVersions;
+        return detachedVersions;
     }
 
 
