@@ -433,6 +433,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             @Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         Organization organization = organizationDAO.findById(organizationId);
+        throwExceptionForNullOrganization(organization);
         OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
 
         // If the user does not belong to the organization or if the user is not an admin of the organization
