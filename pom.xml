@@ -119,11 +119,6 @@
             <name>mockito</name>
             <url>https://dl.bintray.com/mockito/maven/</url>
         </repository>
-        <repository>
-            <id>es-snapshots</id>
-            <name>elasticsearch snapshot repo</name>
-            <url>https://snapshots.elastic.co/maven/</url>
-        </repository>
     </repositories>
 
     <licenses>
