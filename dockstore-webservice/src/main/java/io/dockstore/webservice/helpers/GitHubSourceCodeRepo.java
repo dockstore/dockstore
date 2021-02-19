@@ -214,8 +214,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
 
-        GHRef[] branches = repo.getRefs("refs/heads/");
-        GHRef[] tags = repo.getRefs("refs/tags/");
+        GHRef[] branches = {};
+        GHRef[] tags = {};
+
+        try {
+            branches = repo.getRefs("refs/heads/");
+        } catch (IOException ex) {
+            LOG.debug("No branches found for " + repo.getName(), ex);
+        }
+        try {
+            tags = repo.getRefs("refs/tags/");
+        } catch (IOException ex) {
+            LOG.debug("No tags found for " + repo.getName(), ex);
+        }
+
         if (Lists.newArrayList(branches).stream().noneMatch(ref -> ref.getRef().contains(reference)) && Lists.newArrayList(tags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
