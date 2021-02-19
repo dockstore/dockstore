@@ -354,7 +354,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.2.1</version>
+                    <version>3.2.4</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -362,6 +362,7 @@
                                 <goal>shade</goal>
                             </goals>
                             <configuration>
+                                <minimizeJar>true</minimizeJar>
                                 <transformers>
                                     <!-- Akka used by Cromwell expects a consistant reference.conf file.  Also order matters, so keep it first in the list of transformers -->
                                     <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
