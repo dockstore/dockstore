@@ -237,12 +237,15 @@ public class ElasticListener implements StateListenerInterface {
                 boolean terminated = bulkProcessor.awaitClose(bulkProcessorWaitTimeInMinutes, TimeUnit.MINUTES);
                 if (!terminated) {
                     LOGGER.error("Could not submit " + index + " index to elastic search in time");
+                    throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search in time", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } catch (InterruptedException e) {
                 LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
+                throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (IOException e) {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
