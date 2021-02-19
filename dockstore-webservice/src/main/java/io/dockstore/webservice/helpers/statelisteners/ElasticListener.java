@@ -233,8 +233,8 @@ public class ElasticListener implements StateListenerInterface {
             try {
                 // When doing a bulk index, this is the max amount of time the bulk listener should wait before considering the
                 // bulk request as failed. 1 minute appears to be more than enough time to index all the current Dockstore entries
-                final long BULK_PROCESSOR_WAIT_TIME_IN_MINUTES = 1L;
-                boolean terminated = bulkProcessor.awaitClose(BULK_PROCESSOR_WAIT_TIME_IN_MINUTES, TimeUnit.MINUTES);
+                final long bulkProcessorWaitTimeInMinutes = 1L;
+                boolean terminated = bulkProcessor.awaitClose(bulkProcessorWaitTimeInMinutes, TimeUnit.MINUTES);
                 if (!terminated) {
                     LOGGER.error("Could not submit " + index + " index to elastic search in time");
                 }
