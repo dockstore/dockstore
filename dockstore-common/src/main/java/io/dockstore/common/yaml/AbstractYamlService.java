@@ -29,9 +29,14 @@ public abstract class AbstractYamlService {
      */
     private String name;
     /**
-     * The service's author
+     * (DEPRECATED) Replaced by authors
      */
+    @Deprecated
     private String author;
+    /**
+     * The service's authors
+     */
+    private List<Author> authors;
     /**
      * The service's description
      */
@@ -63,6 +68,14 @@ public abstract class AbstractYamlService {
 
     public void setAuthor(final String author) {
         this.author = author;
+    }
+
+    public List<Author> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(final List<Author> authors) {
+        this.authors = authors;
     }
 
     public String getName() {

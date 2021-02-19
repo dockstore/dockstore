@@ -42,6 +42,8 @@ public class YamlWorkflow {
 
     private Filters filters = new Filters();
 
+    private List<Author> authors = new ArrayList<>();
+
     private List<String> testParameterFiles = new ArrayList<>();
 
 
@@ -78,6 +80,14 @@ public class YamlWorkflow {
 
     public void setFilters(final Filters filters) {
         this.filters = filters;
+    }
+
+    public List<Author> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(final List<Author> authors) {
+        this.authors = authors;
     }
 
     public List<String> getTestParameterFiles() {

@@ -83,6 +83,7 @@ public class DockstoreYamlTest {
     @Test
     public void testReadDockstoreYaml12() throws DockstoreYamlHelper.DockstoreYamlException {
         final DockstoreYaml12 dockstoreYaml = (DockstoreYaml12)DockstoreYamlHelper.readDockstoreYaml(DOCKSTORE12_YAML);
+
         final List<YamlWorkflow> workflows = dockstoreYaml.getWorkflows();
         assertEquals(3, workflows.size());
         final Optional<YamlWorkflow> workflowFoobar = workflows.stream().filter(w -> "foobar".equals(w.getName())).findFirst();
@@ -102,8 +103,16 @@ public class DockstoreYamlTest {
         final List<String> tags = filters.getTags();
         assertEquals(1, tags.size());
         assertEquals("gwas*", tags.get(0));
+        List<Author> authors = workflow.getAuthors();
+        assertEquals(2, authors.size());
+        assertEquals("OICR", authors.get(0).getName());
+        assertEquals("UCSC", authors.get(1).getAffiliation());
+
         final Service12 service = dockstoreYaml.getService();
         assertNotNull(service);
+        authors = service.getAuthors();
+        assertEquals(1, authors.size());
+        assertEquals("Institute", authors.get(0).getRole());
     }
 
     @Test
