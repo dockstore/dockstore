@@ -624,10 +624,10 @@
             <artifactId>elasticsearch</artifactId>
             <exclusions>
                 <!-- Excluding lucene saves 2 MB, everything else combined saves 1 MB -->
-                <exclusion>
-                    <groupId>com.carrotsearch</groupId>
-                    <artifactId>hppc</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>com.carrotsearch</groupId>-->
+<!--                    <artifactId>hppc</artifactId>-->
+<!--                </exclusion>-->
                 <exclusion>
                     <groupId>com.tdunning</groupId>
                     <artifactId>t-digest</artifactId>
@@ -636,15 +636,18 @@
                     <groupId>joda-time</groupId>
                     <artifactId>joda-time</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>org.apache.logging.log4j</groupId>-->
+<!--                    <artifactId>log4j-api</artifactId>-->
+<!--                </exclusion>-->
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>log4j-core</artifactId>
                 </exclusion>
-                <!-- org.apache.lucene » lucene-core is the one and only Elasticsearch transitive dependency not removed -->
+<!--                <exclusion>-->
+<!--                    <groupId>org.apache.lucene</groupId>-->
+<!--                    <artifactId>lucene-core</artifactId>-->
+<!--                </exclusion>-->
                 <exclusion>
                     <groupId>org.apache.lucene</groupId>
                     <artifactId>lucene-analyzers-common</artifactId>
@@ -752,18 +755,18 @@
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpcore</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpasyncclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpcore-nio</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>org.apache.httpcomponents</groupId>-->
+<!--                    <artifactId>httpcore</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.apache.httpcomponents</groupId>-->
+<!--                    <artifactId>httpasyncclient</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.apache.httpcomponents</groupId>-->
+<!--                    <artifactId>httpcore-nio</artifactId>-->
+<!--                </exclusion>-->
             </exclusions>
         </dependency>
         <dependency>
@@ -786,14 +789,14 @@
                     <groupId>org.elasticsearch.plugin</groupId>
                     <artifactId>aggs-matrix-stats-client</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch.plugin</groupId>
-                    <artifactId>rank-eval-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch.plugin</groupId>
-                    <artifactId>lang-mustache-client</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>org.elasticsearch.plugin</groupId>-->
+<!--                    <artifactId>rank-eval-client</artifactId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.elasticsearch.plugin</groupId>-->
+<!--                    <artifactId>lang-mustache-client</artifactId>-->
+<!--                </exclusion>-->
             </exclusions>
         </dependency>
         <dependency>
