@@ -51,6 +51,7 @@ import io.swagger.annotations.Api;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
+import org.kohsuke.github.GHRateLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -324,7 +325,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
 
+        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        GHRateLimit endRateLimit;
+        boolean isSuccessful = false;
         try {
+
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
@@ -333,12 +338,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference,
                     gitHubSourceCodeRepo, user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
-                    gitHubSourceCodeRepo, user, dockstoreYml));
+                    (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId)), user, dockstoreYml));
 
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
+            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            isSuccessful = true;
+            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
             return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
+            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
@@ -350,6 +360,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         } catch (Exception ex) {
+            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
             sessionFactory.getCurrentSession().clear();

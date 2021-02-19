@@ -213,8 +213,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
-        GHRef[] refs = repo.getRefs();
-        if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+
+        GHRef[] branches = repo.getRefs("refs/heads/");
+        GHRef[] tags = repo.getRefs("refs/tags/");
+        if (Lists.newArrayList(branches).stream().noneMatch(ref -> ref.getRef().contains(reference)) && Lists.newArrayList(tags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
         // only look at github if the reference exists
@@ -815,7 +817,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    private GHRateLimit getGhRateLimitQuietly() {
+    public void reportOnGitHubRelease(GHRateLimit startRateLimit, GHRateLimit endRateLimit, String repository, String username, String gitReference, boolean isSuccessful) {
+        String gitHubRepoInfo = "Performing GitHub release for repository: " + repository + ", user: " + username + ", and git reference: " + gitReference;
+        String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
+        if (isSuccessful) {
+            LOG.info(gitHubRepoInfo + " succeeded and" + gitHubRateLimitInfo);
+        } else {
+            LOG.info(gitHubRepoInfo + " failed. Attempt" + gitHubRateLimitInfo);
+        }
+
+    }
+
+    public GHRateLimit getGhRateLimitQuietly() {
         GHRateLimit startRateLimit = null;
         try {
             startRateLimit = github.rateLimit();
