@@ -644,6 +644,7 @@
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>log4j-core</artifactId>
                 </exclusion>
+                <!-- org.apache.lucene » lucene-core is the one and only Elasticsearch transitive dependency not removed -->
                 <exclusion>
                     <groupId>org.apache.lucene</groupId>
                     <artifactId>lucene-analyzers-common</artifactId>

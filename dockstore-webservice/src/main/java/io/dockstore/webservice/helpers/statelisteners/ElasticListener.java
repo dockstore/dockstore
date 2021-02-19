@@ -197,7 +197,7 @@ public class ElasticListener implements StateListenerInterface {
             public void afterBulk(long executionId, BulkRequest request,
                     BulkResponse response) {
                 if (response.hasFailures()) {
-                    LOGGER.info("Bulk [{}] executed with failures", executionId);
+                    LOGGER.error("Bulk [{}] executed with failures", executionId);
                 } else {
                     LOGGER.info("Bulk [{}] completed in {} milliseconds",
                             executionId, response.getTook().getMillis());
@@ -226,11 +226,15 @@ public class ElasticListener implements StateListenerInterface {
                     bulkProcessor.add(new IndexRequest(index).id(String.valueOf(entry.getId())).source(s, XContentType.JSON));
 
                 } catch (IOException e) {
+                    LOGGER.error(MAPPER_ERROR, e);
                     throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             });
             try {
-                boolean terminated = bulkProcessor.awaitClose(1L, TimeUnit.MINUTES);
+                // When doing a bulk index, this is the max amount of time the bulk listener should wait before considering the
+                // bulk request as failed. 1 minute appears to be more than enough time to index all the current Dockstore entries
+                final long BULK_PROCESSOR_WAIT_TIME_IN_MINUTES = 1L;
+                boolean terminated = bulkProcessor.awaitClose(BULK_PROCESSOR_WAIT_TIME_IN_MINUTES, TimeUnit.MINUTES);
                 if (!terminated) {
                     LOGGER.error("Could not submit " + index + " index to elastic search in time");
                 }
