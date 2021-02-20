@@ -60,6 +60,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -214,21 +215,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
 
-        GHRef[] branches = {};
-        GHRef[] tags = {};
-
-        try {
-            branches = repo.getRefs("refs/heads/");
-        } catch (IOException ex) {
-            LOG.debug("No branches found for " + repo.getName(), ex);
-        }
-        try {
-            tags = repo.getRefs("refs/tags/");
-        } catch (IOException ex) {
-            LOG.debug("No tags found for " + repo.getName(), ex);
-        }
-
-        if (Lists.newArrayList(branches).stream().noneMatch(ref -> ref.getRef().contains(reference)) && Lists.newArrayList(tags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+        GHRef[] branchesAndTags = getBranchesAndTags(repo);
+        if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
         // only look at github if the reference exists
@@ -408,23 +396,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Triple<String, Date, String>> references = new ArrayList<>();
-        try {
-            GHRef[] refs = repository.getRefs();
-            for (GHRef ref : refs) {
-                Triple<String, Date, String> referenceTriple = getRef(ref, repository);
-                if (referenceTriple != null) {
-                    if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
-                        references.add(referenceTriple);
-                    }
+
+        GHRef[] refs = getBranchesAndTags(repository);
+        for (GHRef ref : refs) {
+            Triple<String, Date, String> referenceTriple = getRef(ref, repository);
+            if (referenceTriple != null) {
+                if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
+                    references.add(referenceTriple);
                 }
             }
-        } catch (GHFileNotFoundException e) {
-            // seems to legitimately do this when the repo has no tags or releases
-            LOG.debug("repo had no releases or tags: " + repositoryId, e);
-        } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
-            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
+
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
@@ -850,6 +832,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return startRateLimit;
     }
 
+    private GHRef[] getBranchesAndTags(GHRepository repo) {
+        GHRef[] branches = {};
+        GHRef[] tags = {};
+
+        try {
+            branches = repo.getRefs("refs/heads/");
+        } catch (IOException ex) {
+            LOG.debug("No branches found for " + repo.getName(), ex);
+        }
+        try {
+            tags = repo.getRefs("refs/tags/");
+        } catch (IOException ex) {
+            LOG.debug("No tags found for " + repo.getName(), ex);
+        }
+
+        return ArrayUtils.addAll(branches, tags);
+    }
+
     @Override
     public String getRepositoryId(Entry entry) {
         if (entry.getClass().equals(Tool.class)) {
@@ -903,8 +903,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
-            GHRef[] refs = repo.getRefs();
-
+            GHRef[] refs = getBranchesAndTags(repo);
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
                 if (reference.equals(version.getReference())) {
@@ -929,7 +928,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
-            GHRef[] refs = repo.getRefs();
+            GHRef[] refs = getBranchesAndTags(repo);
 
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");

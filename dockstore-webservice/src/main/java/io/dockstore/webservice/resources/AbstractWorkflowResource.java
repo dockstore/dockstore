@@ -318,12 +318,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected List<Workflow> githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-
-        // Get Installation Access Token
-        String installationAccessToken = gitHubAppSetup(installationId);
-
         // Grab Dockstore YML from GitHub
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationAccessToken);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
 
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
         GHRateLimit endRateLimit;
@@ -336,10 +332,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             final List<Workflow> workflows = new ArrayList();
             workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference,
-                    gitHubSourceCodeRepo, user, dockstoreYml));
+                    (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId)), user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
                     (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId)), user, dockstoreYml));
-
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
