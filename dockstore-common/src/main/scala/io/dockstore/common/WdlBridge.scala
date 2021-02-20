@@ -105,15 +105,20 @@ class WdlBridge {
     bundle.allCallables.foreach(callable => {
       callable._2 match {
         case w: WorkflowDefinition => {
-          val before = callable._2.asInstanceOf[WorkflowDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
-          val metadata = JavaConverters.mapAsJavaMap(before)
+          //val before = callable._2.asInstanceOf[WorkflowDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
+          val workflow_metadata = callable._2.asInstanceOf[WorkflowDefinition].meta
+          val converted_workflow_map = workflow_metadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
+            //.mapValues(_.asInstanceOf[MetaValueElementString].value)
+          val metadata = JavaConverters.mapAsJavaMap(converted_workflow_map)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
         }
         case c: CallableTaskDefinition => {
-          val before = callable._2.asInstanceOf[CallableTaskDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
-          val metadata = JavaConverters.mapAsJavaMap(before)
+          //val before = callable._2.asInstanceOf[CallableTaskDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
+          val task_metadata = callable._2.asInstanceOf[CallableTaskDefinition].meta
+          val converted_task_metadata_map = task_metadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
+          val metadata = JavaConverters.mapAsJavaMap(converted_task_metadata_map)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
