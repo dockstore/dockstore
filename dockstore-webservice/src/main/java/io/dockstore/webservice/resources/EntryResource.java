@@ -136,7 +136,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/{id}/collections")
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "entryCollections", description = "Get the collections and organizations that contain the published entry")
+    @Operation(operationId = "entryCollections", description = "Get the collections and approved organizations that contain the published entry")
     @ApiOperation(value = "Get the collections and organizations that contain the published entry", notes = "Entry must be published", response = CollectionOrganization.class, responseContainer = "List")
     public List<CollectionOrganization> entryCollections(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
