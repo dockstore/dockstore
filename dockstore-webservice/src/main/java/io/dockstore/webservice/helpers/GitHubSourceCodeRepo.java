@@ -216,12 +216,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
 
         GHRef[] branchesAndTags;
-        try {
-            branchesAndTags = getBranchesAndTags(repo);
-        } catch (IOException ex) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", ex);
-            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
-        }
+        branchesAndTags = getBranchesAndTags(repo);
 
         if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
@@ -407,20 +402,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRef[] refs = {};
         try {
             refs = getBranchesAndTags(repository);
-        } catch (IOException ex) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", ex);
-            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
-        }
-
-        for (GHRef ref : refs) {
-            Triple<String, Date, String> referenceTriple = getRef(ref, repository);
-            if (referenceTriple != null) {
-                if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
-                    references.add(referenceTriple);
+            for (GHRef ref : refs) {
+                Triple<String, Date, String> referenceTriple = getRef(ref, repository);
+                if (referenceTriple != null) {
+                    if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
+                        references.add(referenceTriple);
+                    }
                 }
             }
+        } catch(GHFileNotFoundException e) {
+            // seems to legitimately do this when the repo has no tags or releases
+            LOG.debug("repo had no releases or tags: " + repositoryId, e);
+        } catch (IOException e) {
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
+            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
-
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
@@ -864,10 +860,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (GHFileNotFoundException ex) {
             LOG.debug("No tags found for  " + repo.getName());
             if (!getBranchesSucceeded) {
-                LOG.info("Repo: " + repo.getName() + "has no branches or tags.");
+                throw ex;
             }
         }
-
         return ArrayUtils.addAll(branches, tags);
     }
 
