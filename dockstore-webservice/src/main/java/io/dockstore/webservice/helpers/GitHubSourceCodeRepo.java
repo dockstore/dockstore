@@ -219,7 +219,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             branchesAndTags = getBranchesAndTags(repo);
         } catch (IOException ex) {
-            throw new CustomWebApplicationException("Unable to get branches or tags for repo: " + repo.getName(), HttpStatus.SC_BAD_REQUEST);
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", ex);
+            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
@@ -403,13 +404,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Triple<String, Date, String>> references = new ArrayList<>();
 
-        GHRef[] refs;
+        GHRef[] refs = {};
         try {
             refs = getBranchesAndTags(repository);
         } catch (IOException ex) {
-            String errMsg = "Unable to get branches or tags for repo: " + repository.getName();
-            LOG.error(errMsg);
-            throw new CustomWebApplicationException(errMsg, HttpStatus.SC_BAD_REQUEST);
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", ex);
+            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         for (GHRef ref : refs) {
@@ -848,27 +848,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private GHRef[] getBranchesAndTags(GHRepository repo) throws IOException {
         boolean getBranchesSucceeded = false;
-        boolean getTagsSucceeded = false;
         GHRef[] branches = {};
         GHRef[] tags = {};
 
-        // getRefs() fails if there are no matching results instead of returning an empty array/null.
+        // getRefs() fails with a GHFileNotFoundException if there are no matching results instead of returning an empty array/null.
         try {
             branches = repo.getRefs("refs/heads/");
             getBranchesSucceeded = true;
-        } catch (IOException ex) {
+        } catch (GHFileNotFoundException ex) {
             LOG.debug("No branches found for " + repo.getName(), ex);
         }
+
         try {
             tags = repo.getRefs("refs/tags/");
-            getTagsSucceeded = true;
-        } catch (IOException ex) {
-            LOG.debug("No tags found for " + repo.getName(), ex);
+        } catch (GHFileNotFoundException ex) {
+            LOG.debug("No tags found for  " + repo.getName());
+            if (!getBranchesSucceeded) {
+                LOG.info("Repo: " + repo.getName() + "has no branches or tags.");
+            }
         }
 
-        if (!getTagsSucceeded && !getBranchesSucceeded) {
-            throw new IOException("Could not get branches or tags for repo: " + repo.getName());
-        }
         return ArrayUtils.addAll(branches, tags);
     }
 
