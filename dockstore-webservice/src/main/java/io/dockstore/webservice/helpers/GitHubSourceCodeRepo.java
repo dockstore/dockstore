@@ -410,7 +410,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                 }
             }
-        } catch(GHFileNotFoundException e) {
+        } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
             LOG.debug("repo had no releases or tags: " + repositoryId, e);
         } catch (IOException e) {
