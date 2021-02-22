@@ -215,7 +215,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
 
-        GHRef[] branchesAndTags = getBranchesAndTags(repo);
+        GHRef[] branchesAndTags;
+        try {
+            branchesAndTags = getBranchesAndTags(repo);
+        } catch (IOException ex) {
+            throw new CustomWebApplicationException("Unable to get branches or tags for repo: " + repo.getName(), HttpStatus.SC_BAD_REQUEST);
+        }
+
         if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
@@ -397,7 +403,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Triple<String, Date, String>> references = new ArrayList<>();
 
-        GHRef[] refs = getBranchesAndTags(repository);
+        GHRef[] refs;
+        try {
+            refs = getBranchesAndTags(repository);
+        } catch (IOException ex) {
+            String errMsg = "Unable to get branches or tags for repo: " + repository.getName();
+            LOG.error(errMsg);
+            throw new CustomWebApplicationException(errMsg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         for (GHRef ref : refs) {
             Triple<String, Date, String> referenceTriple = getRef(ref, repository);
             if (referenceTriple != null) {
@@ -832,21 +846,29 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return startRateLimit;
     }
 
-    private GHRef[] getBranchesAndTags(GHRepository repo) {
+    private GHRef[] getBranchesAndTags(GHRepository repo) throws IOException {
+        boolean getBranchesSucceeded = false;
+        boolean getTagsSucceeded = false;
         GHRef[] branches = {};
         GHRef[] tags = {};
 
+        // getRefs() fails if there are no matching results instead of returning an empty array/null.
         try {
             branches = repo.getRefs("refs/heads/");
+            getBranchesSucceeded = true;
         } catch (IOException ex) {
             LOG.debug("No branches found for " + repo.getName(), ex);
         }
         try {
             tags = repo.getRefs("refs/tags/");
+            getTagsSucceeded = true;
         } catch (IOException ex) {
             LOG.debug("No tags found for " + repo.getName(), ex);
         }
 
+        if (!getTagsSucceeded && !getBranchesSucceeded) {
+            throw new IOException("Could not get branches or tags for repo: " + repo.getName());
+        }
         return ArrayUtils.addAll(branches, tags);
     }
 

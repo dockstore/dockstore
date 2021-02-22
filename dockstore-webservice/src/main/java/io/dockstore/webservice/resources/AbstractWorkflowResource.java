@@ -2,6 +2,8 @@ package io.dockstore.webservice.resources;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -332,9 +334,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             final List<Workflow> workflows = new ArrayList();
             workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference,
-                    (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId)), user, dockstoreYml));
+                    installationId, user, dockstoreYml));
             workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
-                    (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId)), user, dockstoreYml));
+                    installationId, user, dockstoreYml));
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -397,13 +399,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * ONLY WORKS FOR v1.2
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
-     * @param gitHubSourceCodeRepo Source Code Repo
+     * @param installationId Installation id needed to setup GitHub apps
      * @param user User that triggered action
      * @param dockstoreYml
      * @return List of new and updated workflows
      */
-    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, GitHubSourceCodeRepo gitHubSourceCodeRepo, User user,
+    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
             List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
@@ -430,13 +433,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * ONLY WORKS FOR v1.1
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
-     * @param gitHubSourceCodeRepo Source Code Repo
+     * @param installationId installation id needed to set up GitHub Apps
      * @param user User that triggered action
      * @param dockstoreYml
      * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference,
-            GitHubSourceCodeRepo gitHubSourceCodeRepo, User user, final SourceFile dockstoreYml) {
+    private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
+            User user, final SourceFile dockstoreYml) {
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
             if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
@@ -510,6 +514,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
             GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
+        Instant startTime = Instant.now();
         try {
             // Create version and pull relevant files
             WorkflowVersion remoteWorkflowVersion = gitHubSourceCodeRepo
@@ -546,6 +551,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.", LAMBDA_FAILURE);
         }
+        Instant endTime = Instant.now();
+        long timeElasped = Duration.between(startTime, endTime).toSeconds();
+        LOG.info("Processing .dockstore.yml workflow version " + gitReference + " for repo: " + repository + " took " + timeElasped + " seconds");
         return workflow;
     }
 
