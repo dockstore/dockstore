@@ -60,6 +60,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -212,8 +213,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
-        GHRef[] refs = repo.getRefs();
-        if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+
+        GHRef[] branchesAndTags = getBranchesAndTags(repo);
+
+        if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
         // only look at github if the reference exists
@@ -393,8 +396,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Triple<String, Date, String>> references = new ArrayList<>();
+
+        GHRef[] refs = {};
         try {
-            GHRef[] refs = repository.getRefs();
+            refs = getBranchesAndTags(repository);
             for (GHRef ref : refs) {
                 Triple<String, Date, String> referenceTriple = getRef(ref, repository);
                 if (referenceTriple != null) {
@@ -814,7 +819,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    private GHRateLimit getGhRateLimitQuietly() {
+    public void reportOnGitHubRelease(GHRateLimit startRateLimit, GHRateLimit endRateLimit, String repository, String username, String gitReference, boolean isSuccessful) {
+        String gitHubRepoInfo = "Performing GitHub release for repository: " + repository + ", user: " + username + ", and git reference: " + gitReference;
+        String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
+        if (isSuccessful) {
+            LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
+        } else {
+            LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+        }
+
+    }
+
+    public GHRateLimit getGhRateLimitQuietly() {
         GHRateLimit startRateLimit = null;
         try {
             startRateLimit = github.rateLimit();
@@ -822,6 +838,37 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.error("unable to retrieve rate limit, weird", e);
         }
         return startRateLimit;
+    }
+
+    /**
+     * This function replaces calling repo.getRefs(). Calling getRefs() will return all GHRefs, including old PRs. This change makes two calls
+     * instead to get only the branches and tags separately. Previously, an exception would get thrown if the repo had no GHRefs at all; now
+     * it will throw an exception only if the repo has neither tags nor branches, so that it is as similar as possible.
+     * @param repo Repository path (ex. dockstore/dockstore-ui2)
+     * @return GHRef[] Array of branches and tags
+     */
+    private GHRef[] getBranchesAndTags(GHRepository repo) throws IOException {
+        boolean getBranchesSucceeded = false;
+        GHRef[] branches = {};
+        GHRef[] tags = {};
+
+        // getRefs() fails with a GHFileNotFoundException if there are no matching results instead of returning an empty array/null.
+        try {
+            branches = repo.getRefs("refs/heads/");
+            getBranchesSucceeded = true;
+        } catch (GHFileNotFoundException ex) {
+            LOG.debug("No branches found for " + repo.getName(), ex);
+        }
+
+        try {
+            tags = repo.getRefs("refs/tags/");
+        } catch (GHFileNotFoundException ex) {
+            LOG.debug("No tags found for  " + repo.getName());
+            if (!getBranchesSucceeded) {
+                throw ex;
+            }
+        }
+        return ArrayUtils.addAll(branches, tags);
     }
 
     @Override
@@ -877,8 +924,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
-            GHRef[] refs = repo.getRefs();
-
+            GHRef[] refs = getBranchesAndTags(repo);
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
                 if (reference.equals(version.getReference())) {
@@ -903,7 +949,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
-            GHRef[] refs = repo.getRefs();
+            GHRef[] refs = getBranchesAndTags(repo);
 
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
