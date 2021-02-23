@@ -18,7 +18,6 @@ jobs:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install   
-        
       - uses: actions/checkout@v2
       # Step that does that actual cache save and restore
       - uses: actions/cache@v1
