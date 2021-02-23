@@ -215,8 +215,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
 
-        GHRef[] branchesAndTags;
-        branchesAndTags = getBranchesAndTags(repo);
+        GHRef[] branchesAndTags = getBranchesAndTags(repo);
 
         if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
@@ -825,9 +824,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         String gitHubRepoInfo = "Performing GitHub release for repository: " + repository + ", user: " + username + ", and git reference: " + gitReference;
         String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
         if (isSuccessful) {
-            LOG.info(gitHubRepoInfo + " succeeded and" + gitHubRateLimitInfo);
+            LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
         } else {
-            LOG.info(gitHubRepoInfo + " failed. Attempt" + gitHubRateLimitInfo);
+            LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
         }
 
     }
@@ -842,6 +841,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return startRateLimit;
     }
 
+    /**
+     * This function replaces calling repo.getRefs(). Calling getRefs() will return all GHRefs, including old PRs. This change makes two calls
+     * instead to get only the branches and tags separately. Previously, an exception would get thrown if the repo had no GHRefs at all; now
+     * it will throw an exception only if the repo has neither tags nor branches, so that it is as similar as possible.
+     * @param repo Repository path (ex. dockstore/dockstore-ui2)
+     * @return GHRef[] Array of branches and tags
+     */
     private GHRef[] getBranchesAndTags(GHRepository repo) throws IOException {
         boolean getBranchesSucceeded = false;
         GHRef[] branches = {};
