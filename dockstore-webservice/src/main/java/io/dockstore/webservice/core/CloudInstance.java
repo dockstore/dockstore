@@ -12,14 +12,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(value = "CloudInstance", description = "Instances that launch-with cloud partners have")
 @Entity
 @Table(name = "cloud_instance")
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT * from cloud_instance where user_id is null")
+})
 public class CloudInstance implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,6 +52,7 @@ public class CloudInstance implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true, unique = true)
+    @JsonIgnore
     private User user;
 
     @ElementCollection(targetClass = Language.class)

@@ -86,6 +86,7 @@ import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.resources.AdminPrivilegesFilter;
 import io.dockstore.webservice.resources.AliasResource;
+import io.dockstore.webservice.resources.CloudInstanceResource;
 import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
@@ -347,6 +348,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));
         environment.jersey().register(new ToolTesterResource(configuration));
+        environment.jersey().register(new CloudInstanceResource(getHibernate().getSessionFactory()));
 
         // disable odd extra endpoints showing up
         final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().prettyPrint(true);
