@@ -105,19 +105,21 @@ class WdlBridge {
     bundle.allCallables.foreach(callable => {
       callable._2 match {
         case w: WorkflowDefinition => {
-          val workflow_instance = callable._2.asInstanceOf[WorkflowDefinition]
-          val workflow_metadata = workflow_instance.meta
-          val converted_workflow_map = workflow_metadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
-          val metadata = JavaConverters.mapAsJavaMap(converted_workflow_map)
+          val workflowCallable = callable._2
+          val workflowInstance = workflowCallable.asInstanceOf[WorkflowDefinition]
+          val workflowMetadata = workflowInstance.meta
+          val convertedWorkflowMap = workflowMetadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
+          val metadata = JavaConverters.mapAsJavaMap(convertedWorkflowMap)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
         }
         case c: CallableTaskDefinition => {
-          val task_instance = callable._2.asInstanceOf[CallableTaskDefinition]
-          val task_metadata = task_instance.meta
-          val converted_task_metadata_map = task_metadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
-          val metadata = JavaConverters.mapAsJavaMap(converted_task_metadata_map)
+          val taskCallable = callable._2
+          val taskInstance = taskCallable.asInstanceOf[CallableTaskDefinition]
+          val taskMetadata = taskInstance.meta
+          val convertedTaskMetadataMap = taskMetadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
+          val metadata = JavaConverters.mapAsJavaMap(convertedTaskMetadataMap)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
