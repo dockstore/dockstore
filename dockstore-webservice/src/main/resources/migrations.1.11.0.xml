@@ -62,10 +62,10 @@
             <column name="cloudinstance_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="cloudinstance_supportedlanguages_pkey"/>
             </column>
-            <column name="language" type="VARCHAR(255)">
+            <column name="language" type="VARCHAR(50)">
                 <constraints primaryKey="true" primaryKeyName="cloudinstance_supportedlanguages_pkey"/>
             </column>
-            <column name="version" type="VARCHAR(255)"/>
+            <column name="version" type="VARCHAR(50)"/>
         </createTable>
     </changeSet>
 </databaseChangeLog>
