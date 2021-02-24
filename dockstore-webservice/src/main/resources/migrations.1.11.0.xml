@@ -43,4 +43,29 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet author="gluu (generated)" id="cloudInstanceAndLanguageTables">
+        <createTable tableName="cloud_instance">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="cloud_instance_pkey"/>
+            </column>
+            <column name="partner" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="supports_file_imports" type="BOOLEAN"/>
+            <column name="supports_http_imports" type="BOOLEAN"/>
+            <column name="url" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT"/>
+        </createTable>
+        <createTable tableName="cloudinstance_supportedlanguages">
+            <column name="cloudinstance_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="cloudinstance_supportedlanguages_pkey"/>
+            </column>
+            <column name="language" type="VARCHAR(255)">
+                <constraints primaryKey="true" primaryKeyName="cloudinstance_supportedlanguages_pkey"/>
+            </column>
+            <column name="version" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>
