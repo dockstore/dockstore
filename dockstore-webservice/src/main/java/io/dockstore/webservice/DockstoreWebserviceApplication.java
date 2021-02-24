@@ -40,6 +40,7 @@ import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DeletedUsername;
@@ -172,7 +173,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
             WorkflowVersion.class, FileFormat.class, Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class,
             Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
-            ParsedInformation.class, EntryVersion.class, DeletedUsername.class) {
+            ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -346,6 +347,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));
         environment.jersey().register(new ToolTesterResource(configuration));
+
         // disable odd extra endpoints showing up
         final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().prettyPrint(true);
         swaggerConfiguration.setIgnoredRoutes(Lists.newArrayList("/application.wadl", "/pprof"));
@@ -371,33 +373,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         GoogleHelper.setConfig(configuration);
 
-        ToolsApi toolsApi = new ToolsApi(null);
-        environment.jersey().register(toolsApi);
-
-        // TODO: attach V2 final properly
-        environment.jersey().register(new io.openapi.api.ToolsApi(null));
-
-        environment.jersey().register(new ToolsExtendedApi());
-        environment.jersey().register(new io.openapi.api.ToolClassesApi(null));
-        environment.jersey().register(new io.openapi.api.ServiceInfoApi(null));
-        environment.jersey().register(new MetadataApi(null));
-        environment.jersey().register(new ToolClassesApi(null));
-        environment.jersey().register(new PersistenceExceptionMapper());
-        environment.jersey().register(new TransactionExceptionMapper());
-
-        environment.jersey().register(new ToolsApiV1());
-        environment.jersey().register(new MetadataApiV1());
-        environment.jersey().register(new ToolClassesApiV1());
-
-        // extra renderers
-        environment.jersey().register(new CharsetResponseFilter());
-
-        // Filter used to log every request an admin user makes.
-        environment.jersey().register(new AdminPrivilegesFilter());
-
-        // Swagger providers
-        environment.jersey().register(ApiListingResource.class);
-        environment.jersey().register(SwaggerSerializers.class);
+        registerAPIsAndMisc(environment);
 
         // optional CORS support
         // Enable CORS headers
@@ -413,6 +389,35 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
+    }
+
+    private void registerAPIsAndMisc(Environment environment) {
+        ToolsApi toolsApi = new ToolsApi(null);
+        environment.jersey().register(toolsApi);
+
+        // TODO: attach V2 final properly
+        environment.jersey().register(new io.openapi.api.ToolsApi(null));
+
+        environment.jersey().register(new ToolsExtendedApi());
+        environment.jersey().register(new io.openapi.api.ToolClassesApi(null));
+        environment.jersey().register(new io.openapi.api.ServiceInfoApi(null));
+        environment.jersey().register(new MetadataApi(null));
+        environment.jersey().register(new ToolClassesApi(null));
+        environment.jersey().register(new PersistenceExceptionMapper());
+        environment.jersey().register(new TransactionExceptionMapper());
+        environment.jersey().register(new ToolsApiV1());
+        environment.jersey().register(new MetadataApiV1());
+        environment.jersey().register(new ToolClassesApiV1());
+
+        // extra renderers
+        environment.jersey().register(new CharsetResponseFilter());
+
+        // Filter used to log every request an admin user makes.
+        environment.jersey().register(new AdminPrivilegesFilter());
+
+        // Swagger providers
+        environment.jersey().register(ApiListingResource.class);
+        environment.jersey().register(SwaggerSerializers.class);
     }
 
     private void describeAvailableLanguagePlugins(DefaultPluginManager languagePluginManager) {

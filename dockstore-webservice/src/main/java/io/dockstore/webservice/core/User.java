@@ -206,6 +206,9 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private String temporaryCredential;
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user", orphanRemoval = true)
+    private Set<CloudInstance> cloudInstances;
+
     /**
      * The user's ORCID id in the format xxxx-xxxx-xxxx-xxxx
      */
