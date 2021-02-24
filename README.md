@@ -99,6 +99,12 @@ and setup with the database user specified in [.travis.yml](https://github.com/d
 
 ### Building
 
+As an alternative to the following commands, if you do not have Maven installed you can use the maven wrapper as a substitute. For example
+
+   ./mvnw clean install
+   # instead of 
+   mvn clean install
+
 If you maven build in the root directory this will build not only the web service but the client tool:
 
     mvn clean install
