@@ -37,6 +37,25 @@ components:
         - checksum
         - type
       type: object
+    CloudInstance:
+      properties:
+        id:
+          format: int64
+          type: integer
+        partner:
+          type: string
+        supportedLanguages:
+          items:
+            $ref: '#/components/schemas/Language'
+          type: array
+          uniqueItems: true
+        supportsFileImports:
+          type: boolean
+        supportsHttpImports:
+          type: boolean
+        url:
+          type: string
+      type: object
     Collection:
       description: Collection in an organization, collects entries
       properties:
@@ -566,6 +585,8 @@ components:
             - DELETE
             - INSTALL
           type: string
+      type: object
+    Language:
       type: object
     LicenseInformation:
       properties:
@@ -1849,7 +1870,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -2501,6 +2522,57 @@ paths:
         - bearer: []
       tags:
         - tokens
+  /cloudInstances:
+    get:
+      operationId: getCloudInstances
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudInstance'
+                type: array
+          description: Got all known public cloud instances
+      summary: Get all known public cloud instances
+      tags:
+        - Cloud Instances
+    post:
+      operationId: postCloudInstance
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/CloudInstance'
+        description: Cloud instance to create
+        required: true
+      responses:
+        "200":
+          description: Successfully created cloud instance
+      security:
+        - bearer: []
+      summary: Add a new public cloud instance, admin only
+      tags:
+        - Cloud Instances
+  /cloudInstances/{cloudInstanceId}:
+    delete:
+      operationId: deleteCloudInstance
+      parameters:
+        - description: Cloud instance to delete
+          in: path
+          name: cloudInstanceId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "200":
+          description: Successfully deleted cloud instance
+      security:
+        - bearer: []
+      summary: Delete a public cloud instance, admin only
+      tags:
+        - Cloud Instances
   /containers/dockerRegistryList:
     get:
       description: Get the list of docker registries supported on Dockstore.
@@ -3794,7 +3866,7 @@ paths:
         - entries
   /entries/{id}/collections:
     get:
-      description: Get the collections and organizations that contain the published entry
+      description: Get the collections and approved organizations that contain the published entry
       operationId: entryCollections
       parameters:
         - in: path
