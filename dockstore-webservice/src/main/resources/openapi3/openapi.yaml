@@ -1362,6 +1362,11 @@ components:
       properties:
         avatarUrl:
           type: string
+        cloudInstances:
+          items:
+            $ref: '#/components/schemas/CloudInstance'
+          type: array
+          uniqueItems: true
         curator:
           type: boolean
         id:
@@ -2541,7 +2546,7 @@ paths:
       operationId: postCloudInstance
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/CloudInstance'
         description: Cloud instance to create
@@ -6308,6 +6313,126 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
+  /users/{userId}/cloudInstances:
+    get:
+      description: Get all of cloud instances belonging to the user
+      operationId: getUserCloudInstances
+      parameters:
+        - description: User to update
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudInstance'
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
+    post:
+      description: Create a new cloud instances belonging to the user
+      operationId: postUserCloudInstance
+      parameters:
+        - description: User to create cloud instance for
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/CloudInstance'
+        description: Cloud instance to replace for a user
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudInstance'
+                type: array
+                uniqueItems: true
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
+  /users/{userId}/cloudInstances/{cloudInstanceId}:
+    delete:
+      description: Delete a cloud instances belonging to the user
+      operationId: deleteUserCloudInstance
+      parameters:
+        - description: User to delete cloud instance for
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Cloud instance Id to remove from user
+          in: path
+          name: cloudInstanceId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+        - bearer: []
+      tags:
+        - users
+    put:
+      description: Delete a cloud instances belonging to the user
+      operationId: putUserCloudInstance
+      parameters:
+        - description: User to delete cloud instance for
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Cloud instance Id to remove from user
+          in: path
+          name: cloudInstanceId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/CloudInstance'
+        description: Cloud instance to replace for a user
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
           description: default response
       security:
         - bearer: []

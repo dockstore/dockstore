@@ -7,7 +7,7 @@ import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
-public class    CloudInstanceDAO extends AbstractDAO<CloudInstance> {
+public class CloudInstanceDAO extends AbstractDAO<CloudInstance> {
     public CloudInstanceDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
     }

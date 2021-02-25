@@ -56,6 +56,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.api.PrivilegeRequest;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.Entry;
@@ -81,6 +82,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
+import io.dockstore.webservice.jdbi.CloudInstanceDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -133,7 +135,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final TokenDAO tokenDAO;
 
     private final WorkflowResource workflowResource;
-    private final ServiceResource serviceResource;
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
@@ -145,7 +146,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
-    private SessionFactory sessionFactory;
+    private final CloudInstanceDAO cloudInstanceDAO;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
@@ -153,7 +154,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
-        this.sessionFactory = sessionFactory;
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -163,8 +163,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
+        this.cloudInstanceDAO = new CloudInstanceDAO(sessionFactory);
         this.workflowResource = workflowResource;
-        this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
         this.cachingAuthenticator = cachingAuthenticator;
@@ -915,6 +915,56 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .map(repository -> new Repository(repository.split("/")[0], repository.split("/")[1], gitRegistry, workflowDAO.findByPath(gitRegistry + "/" + repository, false, BioWorkflow.class).isPresent(), canDeleteWorkflow(gitRegistry + "/" + repository)))
                 .sorted(Comparator.comparing(Repository::getRepositoryName))
                 .collect(Collectors.toList());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{userId}/cloudInstances")
+    @Operation(operationId = "getUserCloudInstances", description = "Get all of cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public Set<CloudInstance> getUserCloudInstances(@Parameter(hidden = true, name = "user")@Auth User authUser,
+        @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId) {
+        final User user = userDAO.findById(authUser.getId());
+        return user.getCloudInstances();
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances")
+    @Operation(operationId = "postUserCloudInstance", description = "Create a new cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public Set<CloudInstance> postUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to create cloud instance for", required = true) long userId,
+            @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
+        final User user = userDAO.findById(authUser.getId());
+        user.getCloudInstances().add(cloudInstanceBody);
+        return user.getCloudInstances();
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances/{cloudInstanceId}")
+    @Operation(operationId = "deleteUserCloudInstance", description = "Delete a cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public void deleteUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to delete cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = "Cloud instance Id to remove from user", required = true) long cloudInstanceId) {
+        final User user = userDAO.findById(authUser.getId());
+        user.getCloudInstances().removeIf(cloudInstance -> cloudInstance.getId() == cloudInstanceId);
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances/{cloudInstanceId}")
+    @Operation(operationId = "putUserCloudInstance", description = "Delete a cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public void putUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to delete cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = "Cloud instance Id to remove from user", required = true) long cloudInstanceId,
+            @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
+        final User user = userDAO.findById(authUser.getId());
+        user.getCloudInstances().removeIf(cloudInstance -> cloudInstance.getId() == cloudInstanceId);
+        user.getCloudInstances().add(cloudInstanceBody);
     }
 
     /**

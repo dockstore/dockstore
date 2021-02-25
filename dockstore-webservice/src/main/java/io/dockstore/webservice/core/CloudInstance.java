@@ -24,7 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 @Table(name = "cloud_instance")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT * from cloud_instance where user_id is null")
+        @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT ci from CloudInstance ci where user_id is null")
 })
 public class CloudInstance implements Serializable {
     @Id

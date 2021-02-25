@@ -527,6 +527,14 @@ public class User implements Principal, Comparable<User>, Serializable {
         isBanned = banned;
     }
 
+    public void setCloudInstances(Set<CloudInstance> cloudInstances) {
+        this.cloudInstances = cloudInstances;
+    }
+
+    public Set<CloudInstance> getCloudInstances() {
+        return cloudInstances;
+    }
+
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)
      * The order of the properties are important, the UI lists these properties in this order.
