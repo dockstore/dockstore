@@ -31,7 +31,6 @@ public abstract class AbstractYamlService {
     /**
      * (DEPRECATED) Replaced by authors
      */
-    @Deprecated
     private String author;
     /**
      * The service's authors
