@@ -100,6 +100,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final int discourseCategoryId;
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
+    private final String hostName;
 
     public EntryResource(ToolDAO toolDAO, VersionDAO versionDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
@@ -114,6 +115,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         apiClient.addDefaultHeader("cache-control", "no-cache");
         apiClient.setBasePath(discourseUrl);
 
+        hostName = configuration.getExternalConfig().getHostname();
         topicsApi = new TopicsApi(apiClient);
     }
 
@@ -226,16 +228,21 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
 
         // Create title and link to entry
+
         String entryLink = "https://dockstore.org/";
-        String title;
+        String title = "";
+        if (hostName.contains("staging")) {
+            entryLink = "https://staging.dockstore.org/";
+            title = "Staging ";
+        }
         if (entry instanceof BioWorkflow) {
-            title = ((BioWorkflow)(entry)).getWorkflowPath();
+            title += ((BioWorkflow)(entry)).getWorkflowPath();
             entryLink += "workflows/";
         } else if (entry instanceof Service) {
-            title = ((Service)(entry)).getWorkflowPath();
+            title += ((Service)(entry)).getWorkflowPath();
             entryLink += "services/";
         } else {
-            title = ((Tool)(entry)).getToolPath();
+            title += ((Tool)(entry)).getToolPath();
             entryLink += "tools/";
         }
 
