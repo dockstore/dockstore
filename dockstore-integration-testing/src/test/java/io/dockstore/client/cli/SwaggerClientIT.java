@@ -110,8 +110,8 @@ public class SwaggerClientIT extends BaseIT {
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     private static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     private static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
-    private static final StarRequest STAR_REQUEST = SwaggerUtility.createStarRequest(true);
-    private static final StarRequest UNSTAR_REQUEST = SwaggerUtility.createStarRequest(false);
+    private static final StarRequest STAR_REQUEST = getStarRequest(true);
+    private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -130,6 +130,13 @@ public class SwaggerClientIT extends BaseIT {
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestDataAndAdditionalTools(SUPPORT, true);
     }
+
+    private static StarRequest getStarRequest(boolean star) {
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(star);
+        return starRequest;
+    }
+
     @Test
     public void testListUsersTools() throws ApiException {
         ApiClient client = getAdminWebClient();
