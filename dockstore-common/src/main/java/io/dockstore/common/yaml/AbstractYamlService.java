@@ -29,7 +29,7 @@ public abstract class AbstractYamlService {
      */
     private String name;
     /**
-     * (DEPRECATED) Replaced by authors
+     * (TO BE DEPRECATED) Replaced by authors
      */
     private String author;
     /**

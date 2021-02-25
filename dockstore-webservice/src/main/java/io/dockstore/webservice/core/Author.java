@@ -16,10 +16,7 @@
 
 package io.dockstore.webservice.core;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import java.sql.Timestamp;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,7 +24,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.sql.Timestamp;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @ApiModel(value = "Author", description = "This describes an author of entries in Dockstore")
 @Entity
@@ -43,7 +44,7 @@ public class Author {
     private String name;
 
     @Column(columnDefinition = "varchar(50)")
-    private String orcid_id;
+    private String orcid;
 
     @Column(columnDefinition = "varchar(255)")
     private String role;
@@ -63,30 +64,7 @@ public class Author {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public Author() {
-    }
-
     public Author(String name) {
         this.name = name;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(final String name) {
-        this.name = name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(final String email) {
-        this.email = email;
     }
 }
