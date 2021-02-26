@@ -43,6 +43,14 @@ components:
           format: int64
           type: integer
         partner:
+          enum:
+            - GALAXY
+            - TERRA
+            - DNA_STACK
+            - DNA_NEXUS
+            - CGC
+            - NHLBI_BIODATA_CATALYST
+            - ANVIL
           type: string
         supportedLanguages:
           items:
@@ -739,8 +747,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         hasHTTPImports:
           type: boolean
@@ -1362,11 +1370,6 @@ components:
       properties:
         avatarUrl:
           type: string
-        cloudInstances:
-          items:
-            $ref: '#/components/schemas/CloudInstance'
-          type: array
-          uniqueItems: true
         curator:
           type: boolean
         id:
@@ -1592,8 +1595,8 @@ components:
             - SWL
             - NFL
             - service
-            
-            
+            - cwl
+            - wdl
           type: string
         descriptorTypeSubclass:
           enum:
@@ -2552,8 +2555,10 @@ paths:
         description: Cloud instance to create
         required: true
       responses:
-        "200":
-          description: Successfully created cloud instance
+        default:
+          content:
+            application/json: {}
+          description: default response
       security:
         - bearer: []
       summary: Add a new public cloud instance, admin only
@@ -2571,8 +2576,10 @@ paths:
             format: int64
             type: integer
       responses:
-        "200":
-          description: Successfully deleted cloud instance
+        default:
+          content:
+            application/json: {}
+          description: default response
       security:
         - bearer: []
       summary: Delete a public cloud instance, admin only
@@ -6357,7 +6364,7 @@ paths:
             type: integer
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/CloudInstance'
         description: Cloud instance to replace for a user
@@ -6424,7 +6431,7 @@ paths:
             type: integer
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/CloudInstance'
         description: Cloud instance to replace for a user
@@ -7622,8 +7629,8 @@ paths:
               - SWL
               - NFL
               - service
-              
-              
+              - cwl
+              - wdl
             type: string
       responses:
         default:
