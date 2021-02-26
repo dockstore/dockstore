@@ -7,7 +7,9 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.CloudInstancesApi;
+import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.model.CloudInstance;
+import io.dockstore.openapi.client.model.User;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,6 +28,12 @@ public class CloudInstanceIT extends BaseIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+    public static final String MODIFIED_MEMBER_PARTNER_1 = "modifiedMemberPartner1";
+    public static final String MEMBER_PARTNER_2 = "memberPartner2";
+    public static final String MODIFIED_ADMIN_PARTNER_1 = "modifiedAdminPartner1";
+    public static final String ADMIN_PARTNER_2 = "adminPartner2";
+    public static final String MEMBER_PARTNER_1 = "memberPartner1";
+    public static final String ADMIN_PARTNER_1 = "adminPartner1";
 
     @Before
     @Override
@@ -108,5 +116,142 @@ public class CloudInstanceIT extends BaseIT {
         Assert.assertEquals(1, memberCloudInstances.size());
         Assert.assertEquals(1, anonymousCloudInstances.size());
         Assert.assertEquals("The potato cloud instance should be deleted, not onion", "onion", anonymousCloudInstances.get(0).getPartner());
+
+        // The rest of the test below covers UserResource cloud instance endpoints
+        UsersApi adminUsersApi = new UsersApi(adminApiClient);
+        UsersApi memberUsersApi = new UsersApi(memberApiClient);
+        UsersApi anonymousUsersApi = new UsersApi(anonymousApiClient);
+
+        // Check get works
+        User adminUser = adminUsersApi.getUser();
+        Long adminUserId = adminUser.getId();
+        List<CloudInstance> adminUserCloudInstances = adminUsersApi.getUserCloudInstances(adminUserId);
+        Assert.assertEquals(0, adminUserCloudInstances.size());
+        User memberUser = memberUsersApi.getUser();
+        Long memberUserId = memberUser.getId();
+        List<CloudInstance> memberUserCloudInstances = memberUsersApi.getUserCloudInstances(memberUserId);
+        Assert.assertEquals(0, memberUserCloudInstances.size());
+        anonymousUserCannotDoAnything(anonymousUsersApi);
+
+        try {
+            memberUsersApi.getUserCloudInstances(adminUserId);
+            Assert.fail("Should not be able to get a different user's cloud instances");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
+        memberUserCloudInstances = adminUsersApi.getUserCloudInstances(memberUserId);
+        Assert.assertEquals("Admin can still get a different user's cloud instance", 0, memberUserCloudInstances.size());
+
+        // Check post works
+        newCloudInstance.setPartner(ADMIN_PARTNER_1);
+        adminUsersApi.postUserCloudInstance(newCloudInstance, adminUserId);
+        newCloudInstance.setPartner(MEMBER_PARTNER_1);
+        memberUsersApi.postUserCloudInstance(newCloudInstance, memberUserId);
+        newCloudInstance.setPartner(ADMIN_PARTNER_2);
+        adminUsersApi.postUserCloudInstance(newCloudInstance, adminUserId);
+        newCloudInstance.setPartner(MEMBER_PARTNER_2);
+        memberUsersApi.postUserCloudInstance(newCloudInstance, memberUserId);
+        memberUserCloudInstances = memberUsersApi.getUserCloudInstances(memberUserId);
+        adminUserCloudInstances = adminUsersApi.getUserCloudInstances(adminUserId);
+        Assert.assertEquals(2, memberUserCloudInstances.size());
+        Long memberPartner1Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(
+                MEMBER_PARTNER_1)).findFirst().get()
+                .getId();
+        Long memberPartner2Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals("memberPartner2")).findFirst().get()
+                .getId();
+        Assert.assertEquals(2, adminUserCloudInstances.size());
+        Long adminPartner1Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(ADMIN_PARTNER_1)).findFirst().get()
+                .getId();
+        Long adminPartner2Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals("adminPartner2")).findFirst().get()
+                .getId();
+        try {
+            memberUsersApi.postUserCloudInstance(newCloudInstance, adminUserId);
+            Assert.fail("Should not be create a cloud instances on a different user");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
+
+        // Check put works
+        newCloudInstance.setPartner(MODIFIED_MEMBER_PARTNER_1);
+        memberUsersApi.putUserCloudInstance(newCloudInstance, memberUserId, memberPartner1Id);
+        memberUserCloudInstances = memberUsersApi.getUserCloudInstances(memberUserId);
+        newCloudInstance.setPartner(MODIFIED_ADMIN_PARTNER_1);
+        adminUsersApi.putUserCloudInstance(newCloudInstance, adminUserId, adminPartner1Id);
+        adminUserCloudInstances = adminUsersApi.getUserCloudInstances(adminUserId);
+        try {
+            memberUsersApi.putUserCloudInstance(newCloudInstance, adminUserId, memberPartner1Id);
+            Assert.fail("Should not be update a cloud instances on a different user");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
+        try {
+            memberUsersApi.putUserCloudInstance( newCloudInstance, memberUserId, 9001L);
+            Assert.fail("Should not be update a cloud instances that doesn't exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
+        }
+        Assert.assertEquals(2, memberUserCloudInstances.size());
+        memberPartner1Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(
+                MODIFIED_MEMBER_PARTNER_1)).findFirst().get()
+                .getId();
+        memberPartner2Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(MEMBER_PARTNER_2)).findFirst().get()
+                .getId();
+        Assert.assertEquals(2, adminUserCloudInstances.size());
+        adminPartner1Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(
+                MODIFIED_ADMIN_PARTNER_1)).findFirst().get()
+                .getId();
+        adminPartner2Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(ADMIN_PARTNER_2)).findFirst().get()
+                .getId();
+
+        // Check delete works
+        adminUsersApi.deleteUserCloudInstance(adminUserId, adminPartner1Id);
+        memberUsersApi.deleteUserCloudInstance(memberUserId, memberPartner1Id);
+        try {
+            memberUsersApi.deleteUserCloudInstance(adminUserId, adminPartner1Id);
+            Assert.fail("Should not be delete a cloud instances on a different user");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
+        try {
+            memberUsersApi.deleteUserCloudInstance(memberUserId, 9001L);
+            Assert.fail("Should not be delete a cloud instances that doesn't exist");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
+        }
+        adminUserCloudInstances = adminUsersApi.getUserCloudInstances(adminUserId);
+        Assert.assertEquals(1, adminUserCloudInstances.size());
+        Assert.assertEquals(ADMIN_PARTNER_2, adminUserCloudInstances.get(0).getPartner());
+        Assert.assertEquals(adminPartner2Id, adminUserCloudInstances.get(0).getId());
+        memberUserCloudInstances = memberUsersApi.getUserCloudInstances(memberUserId);
+        Assert.assertEquals(1, memberUserCloudInstances.size());
+        Assert.assertEquals(MEMBER_PARTNER_2, memberUserCloudInstances.get(0).getPartner());
+        Assert.assertEquals(memberPartner2Id, memberUserCloudInstances.get(0).getId());
+    }
+
+    private void anonymousUserCannotDoAnything(UsersApi anonymousUsersApi) {
+        try {
+            anonymousUsersApi.getUserCloudInstances(1L);
+            Assert.fail("Should not be able to get a different user's cloud instances");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+        }
+        try {
+            anonymousUsersApi.postUserCloudInstance(new CloudInstance(), 1L);
+            Assert.fail("Should not be able to get a different user's cloud instances");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+        }
+        try {
+            anonymousUsersApi.putUserCloudInstance(new CloudInstance(), 1L, 1L);
+            Assert.fail("Should not be able to get a different user's cloud instances");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+        }
+        try {
+            anonymousUsersApi.deleteUserCloudInstance(1L, 1L);
+            Assert.fail("Should not be able to get a different user's cloud instances");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+        }
     }
 }
