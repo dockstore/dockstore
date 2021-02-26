@@ -45,8 +45,9 @@ import static org.junit.Assert.fail;
 
 @Category(ConfidentialTest.class)
 public class OrganizationIT extends BaseIT {
-    private static final StarRequest STAR_REQUEST = SwaggerUtility.createStarRequest(true);
-    private static final StarRequest UNSTAR_REQUEST = SwaggerUtility.createStarRequest(false);
+    private static final StarRequest STAR_REQUEST = getStarRequest(true);
+    private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -68,6 +69,12 @@ public class OrganizationIT extends BaseIT {
         .asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
     private final List<String> badDisplayNames = Arrays
         .asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
+
+    private static StarRequest getStarRequest(boolean star) {
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(star);
+        return starRequest;
+    }
 
 
     @Before

@@ -55,6 +55,10 @@
                     <groupId>io.dockstore</groupId>
                     <artifactId>swagger-java-client</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.dockstore</groupId>
+                    <artifactId>openapi-java-client</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
