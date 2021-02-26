@@ -20,20 +20,18 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class CloudInstanceIT extends BaseIT {
+    public static final CloudInstance.PartnerEnum MODIFIED_MEMBER_PARTNER_1 = CloudInstance.PartnerEnum.DNA_STACK;
+    public static final CloudInstance.PartnerEnum MEMBER_PARTNER_2 = CloudInstance.PartnerEnum.DNA_NEXUS;
+    public static final CloudInstance.PartnerEnum MODIFIED_ADMIN_PARTNER_1 = CloudInstance.PartnerEnum.CGC;
+    public static final CloudInstance.PartnerEnum ADMIN_PARTNER_2 = CloudInstance.PartnerEnum.ANVIL;
+    public static final CloudInstance.PartnerEnum MEMBER_PARTNER_1 = CloudInstance.PartnerEnum.GALAXY;
+    public static final CloudInstance.PartnerEnum ADMIN_PARTNER_1 = CloudInstance.PartnerEnum.TERRA;
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    public static final String MODIFIED_MEMBER_PARTNER_1 = "modifiedMemberPartner1";
-    public static final String MEMBER_PARTNER_2 = "memberPartner2";
-    public static final String MODIFIED_ADMIN_PARTNER_1 = "modifiedAdminPartner1";
-    public static final String ADMIN_PARTNER_2 = "adminPartner2";
-    public static final String MEMBER_PARTNER_1 = "memberPartner1";
-    public static final String ADMIN_PARTNER_1 = "adminPartner1";
 
     @Before
     @Override
@@ -59,7 +57,7 @@ public class CloudInstanceIT extends BaseIT {
         // This should not do anything
         Long ignoredId = 9001L;
         newCloudInstance.setId(ignoredId);
-        newCloudInstance.setPartner("potato");
+        newCloudInstance.setPartner(CloudInstance.PartnerEnum.DNA_STACK);
         newCloudInstance.setUrl("www.google.ca");
         newCloudInstance.setSupportsFileImports(null);
         newCloudInstance.setSupportsHttpImports(null);
@@ -84,9 +82,9 @@ public class CloudInstanceIT extends BaseIT {
         Assert.assertEquals(1, adminCloudInstances.size());
         Assert.assertEquals(1, memberCloudInstances.size());
         Assert.assertEquals(1, anonymousCloudInstances.size());
-        Long actualId = anonymousCloudInstances.get(0).getId();
-        Assert.assertNotEquals("Should have ignored the ID passed in", ignoredId, actualId);
-        newCloudInstance.setPartner("onion");
+        Long dnaNexusId = anonymousCloudInstances.get(0).getId();
+        Assert.assertNotEquals("Should have ignored the ID passed in", ignoredId, dnaNexusId);
+        newCloudInstance.setPartner(CloudInstance.PartnerEnum.DNA_NEXUS);
         newCloudInstance.setUrl("www.google.com");
         adminCloudInstancesApi.postCloudInstance(newCloudInstance);
         adminCloudInstances = adminCloudInstancesApi.getCloudInstances();
@@ -96,28 +94,36 @@ public class CloudInstanceIT extends BaseIT {
         Assert.assertEquals(2, memberCloudInstances.size());
         Assert.assertEquals(2, anonymousCloudInstances.size());
         try {
-            anonymousCloudInstancesApi.deleteCloudInstance(actualId);
+            anonymousCloudInstancesApi.deleteCloudInstance(dnaNexusId);
             Assert.fail("Only admins can create a new cloud instance");
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
         }
 
         try {
-            memberCloudInstancesApi.deleteCloudInstance(actualId);
+            memberCloudInstancesApi.deleteCloudInstance(dnaNexusId);
             Assert.fail("Only admins can create a new cloud instance");
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
-        adminCloudInstancesApi.deleteCloudInstance(actualId);
+        adminCloudInstancesApi.deleteCloudInstance(dnaNexusId);
         adminCloudInstances = adminCloudInstancesApi.getCloudInstances();
         memberCloudInstances = memberCloudInstancesApi.getCloudInstances();
         anonymousCloudInstances = anonymousCloudInstancesApi.getCloudInstances();
         Assert.assertEquals(1, adminCloudInstances.size());
         Assert.assertEquals(1, memberCloudInstances.size());
         Assert.assertEquals(1, anonymousCloudInstances.size());
-        Assert.assertEquals("The potato cloud instance should be deleted, not onion", "onion", anonymousCloudInstances.get(0).getPartner());
+        Assert.assertEquals("The DNAstack cloud instance should be deleted, not DNAnexus", CloudInstance.PartnerEnum.DNA_NEXUS, anonymousCloudInstances.get(0).getPartner());
 
-        // The rest of the test below covers UserResource cloud instance endpoints
+        testCloudInstancesInUserResource(adminApiClient, memberApiClient, anonymousApiClient, newCloudInstance);
+
+        List<CloudInstance> cloudInstances = anonymousCloudInstancesApi.getCloudInstances();
+        Assert.assertEquals("After all the user cloud instance tests, public cloud instances should remain unchanged", 1,
+                cloudInstances.size());
+    }
+
+    private void testCloudInstancesInUserResource(ApiClient adminApiClient, ApiClient memberApiClient, ApiClient anonymousApiClient,
+            CloudInstance newCloudInstance) {
         UsersApi adminUsersApi = new UsersApi(adminApiClient);
         UsersApi memberUsersApi = new UsersApi(memberApiClient);
         UsersApi anonymousUsersApi = new UsersApi(anonymousApiClient);
@@ -154,16 +160,15 @@ public class CloudInstanceIT extends BaseIT {
         memberUserCloudInstances = memberUsersApi.getUserCloudInstances(memberUserId);
         adminUserCloudInstances = adminUsersApi.getUserCloudInstances(adminUserId);
         Assert.assertEquals(2, memberUserCloudInstances.size());
-        Long memberPartner1Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(
-                MEMBER_PARTNER_1)).findFirst().get()
-                .getId();
-        Long memberPartner2Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals("memberPartner2")).findFirst().get()
-                .getId();
+        Long memberPartner1Id = memberUserCloudInstances.stream()
+                .filter(cloudInstance -> cloudInstance.getPartner().equals(MEMBER_PARTNER_1)).findFirst().get().getId();
+        Long memberPartner2Id = memberUserCloudInstances.stream()
+                .filter(cloudInstance -> cloudInstance.getPartner().equals(MEMBER_PARTNER_2)).findFirst().get().getId();
         Assert.assertEquals(2, adminUserCloudInstances.size());
-        Long adminPartner1Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(ADMIN_PARTNER_1)).findFirst().get()
-                .getId();
-        Long adminPartner2Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals("adminPartner2")).findFirst().get()
-                .getId();
+        Long adminPartner1Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(ADMIN_PARTNER_1))
+                .findFirst().get().getId();
+        Long adminPartner2Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(ADMIN_PARTNER_2))
+                .findFirst().get().getId();
         try {
             memberUsersApi.postUserCloudInstance(newCloudInstance, adminUserId);
             Assert.fail("Should not be create a cloud instances on a different user");
@@ -185,23 +190,21 @@ public class CloudInstanceIT extends BaseIT {
             Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
         }
         try {
-            memberUsersApi.putUserCloudInstance( newCloudInstance, memberUserId, 9001L);
+            memberUsersApi.putUserCloudInstance(newCloudInstance, memberUserId, 9001L);
             Assert.fail("Should not be update a cloud instances that doesn't exist");
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_NOT_FOUND, e.getCode());
         }
         Assert.assertEquals(2, memberUserCloudInstances.size());
-        memberPartner1Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(
-                MODIFIED_MEMBER_PARTNER_1)).findFirst().get()
-                .getId();
-        memberPartner2Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(MEMBER_PARTNER_2)).findFirst().get()
-                .getId();
+        memberPartner1Id = memberUserCloudInstances.stream()
+                .filter(cloudInstance -> cloudInstance.getPartner().equals(MODIFIED_MEMBER_PARTNER_1)).findFirst().get().getId();
+        memberPartner2Id = memberUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(MEMBER_PARTNER_2))
+                .findFirst().get().getId();
         Assert.assertEquals(2, adminUserCloudInstances.size());
-        adminPartner1Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(
-                MODIFIED_ADMIN_PARTNER_1)).findFirst().get()
-                .getId();
-        adminPartner2Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(ADMIN_PARTNER_2)).findFirst().get()
-                .getId();
+        adminPartner1Id = adminUserCloudInstances.stream()
+                .filter(cloudInstance -> cloudInstance.getPartner().equals(MODIFIED_ADMIN_PARTNER_1)).findFirst().get().getId();
+        adminPartner2Id = adminUserCloudInstances.stream().filter(cloudInstance -> cloudInstance.getPartner().equals(ADMIN_PARTNER_2))
+                .findFirst().get().getId();
 
         // Check delete works
         adminUsersApi.deleteUserCloudInstance(adminUserId, adminPartner1Id);

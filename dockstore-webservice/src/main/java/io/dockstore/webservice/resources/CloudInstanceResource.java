@@ -61,7 +61,11 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @Path("/{cloudInstanceId}")
     @RolesAllowed({ "admin" })
     @Operation(operationId = "deleteCloudInstance", summary = "Delete a public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponses(@ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted cloud instance"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = HttpStatus.SC_OK + ""),
+            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + ""),
+            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "")
+    })
     public void deleteCloudInstance(@Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(description = "Cloud instance to delete", name = "cloudInstanceId", in = ParameterIn.PATH, required = true) @PathParam("cloudInstanceId") Long cloudInstanceId) {
         this.cloudInstanceDAO.deleteById(cloudInstanceId);
@@ -75,9 +79,9 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @Operation(operationId = "postCloudInstance", summary = "Add a new public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponses(value = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created cloud instance"),
-            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Need to "),
-            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Successfully created cloud instance")
+            @ApiResponse(responseCode = HttpStatus.SC_OK + ""),
+            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + ""),
+            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "")
     })
     public void postCloudInstance(@Parameter(hidden = true, name = "user") @Auth User user,
             @Parameter(name = "Cloud Instance", description = "Cloud instance to create", required = true) CloudInstance cloudInstance) {

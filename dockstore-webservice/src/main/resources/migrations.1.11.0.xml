@@ -67,5 +67,7 @@
             </column>
             <column name="version" type="VARCHAR(50)"/>
         </createTable>
+        <addForeignKeyConstraint baseColumnNames="cloudinstance_id" baseTableName="cloudinstance_supportedlanguages" constraintName="fk_cloudinstance_supportedlanguages" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cloud_instance"/>
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="cloud_instance" constraintName="fk_end_user_cloud_instance" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
 </databaseChangeLog>

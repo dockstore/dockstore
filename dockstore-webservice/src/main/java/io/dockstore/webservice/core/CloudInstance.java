@@ -6,6 +6,8 @@ import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -33,25 +35,27 @@ public class CloudInstance implements Serializable {
     @ApiModelProperty(value = "The ID used to update CloudInstances", accessMode = ApiModelProperty.AccessMode.READ_ONLY)
     private long id;
 
-    // This needs to be an enum
-    @Column(name = "partner", unique = true, nullable = false)
+    // TODO: This needs to be an enum
+    // @Column(name = "partner", nullable = false, columnDefinition = "enum('GALAXY', 'TERRA', 'DNA_STACK', 'DNA_NEXUS', 'CGC', 'NHLBI_BIODATA_CATALYST', 'ANVIL')") did not work
+    @Column(name = "partner", nullable = false)
     @ApiModelProperty(value = "Name of the partner")
-    private String partner;
+    @Enumerated(EnumType.STRING)
+    private Partner partner;
 
-    @Column(name = "url", unique = true, nullable = false)
+    @Column(name = "url", nullable = false)
     @ApiModelProperty(value = "The URL of the launch-with partner's private cloud instance")
     private String url;
 
-    @Column(name = "supports_http_imports", unique = true, nullable = true)
+    @Column(name = "supports_http_imports")
     @ApiModelProperty(value = "Whether the CloudInstance supports http imports or not")
     private boolean supportsHttpImports;
 
-    @Column(name = "supports_file_imports", unique = true, nullable = true)
+    @Column(name = "supports_file_imports")
     @ApiModelProperty(value = "Whether the CloudInstance supports file imports or not")
     private boolean supportsFileImports;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true, unique = true)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     @JsonIgnore
     private User user;
 
@@ -67,11 +71,11 @@ public class CloudInstance implements Serializable {
         this.id = id;
     }
 
-    public String getPartner() {
+    public Partner getPartner() {
         return partner;
     }
 
-    public void setPartner(String partner) {
+    public void setPartner(Partner partner) {
         this.partner = partner;
     }
 

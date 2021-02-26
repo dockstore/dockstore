@@ -207,6 +207,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private String temporaryCredential;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user", orphanRemoval = true)
+    @JsonIgnore
     private Set<CloudInstance> cloudInstances;
 
     /**
