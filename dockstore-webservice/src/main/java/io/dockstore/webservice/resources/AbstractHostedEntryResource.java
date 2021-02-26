@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -70,6 +71,7 @@ import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -185,9 +187,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
     public T editHosted(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
+        @ApiParam(value = "Entry to modify.", required = true) @Parameter(description = "Entry to modify", name = "entryId", in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
+        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true)
+        @Parameter(description = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", name = "sourceFiles", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
         checkUserCanUpdate(user, entry);

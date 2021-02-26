@@ -1849,7 +1849,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -2582,7 +2582,8 @@ paths:
       description: Non-idempotent operation for creating new revisions of hosted tools.
       operationId: editHostedTool
       parameters:
-        - in: path
+        - description: Entry to modify
+          in: path
           name: entryId
           required: true
           schema:
@@ -2590,12 +2591,14 @@ paths:
             type: integer
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               items:
                 $ref: '#/components/schemas/SourceFile'
               type: array
               uniqueItems: true
+        description: Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content
+        required: true
       responses:
         default:
           content:
@@ -3794,7 +3797,7 @@ paths:
         - entries
   /entries/{id}/collections:
     get:
-      description: Get the collections and organizations that contain the published entry
+      description: Get the collections and approved organizations that contain the published entry
       operationId: entryCollections
       parameters:
         - in: path
@@ -6642,7 +6645,8 @@ paths:
       description: Non-idempotent operation for creating new revisions of hosted workflows
       operationId: editHostedWorkflow
       parameters:
-        - in: path
+        - description: Entry to modify
+          in: path
           name: entryId
           required: true
           schema:
@@ -6650,12 +6654,14 @@ paths:
             type: integer
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               items:
                 $ref: '#/components/schemas/SourceFile'
               type: array
               uniqueItems: true
+        description: Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content
+        required: true
       responses:
         default:
           content:
