@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/gh/dockstore/dockstore/branch/develop/graph/badge.svg)](https://codecov.io/gh/dockstore/dockstore)
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3628791.svg)](https://doi.org/10.5281/zenodo.3628791)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4289328.svg)](https://doi.org/10.5281/zenodo.4289328)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
 [![CircleCI](https://circleci.com/gh/dockstore/dockstore/tree/develop.svg?style=svg)](https://circleci.com/gh/dockstore/dockstore/tree/develop)
@@ -98,6 +98,12 @@ Dockstore users, note the setup instructions for postgres. Specifically, you wil
 and setup with the database user specified in [.travis.yml](https://github.com/dockstore/dockstore/blob/develop/.travis.yml#L26) (ideally, postgres is need only for integration tests but not unit tests).
 
 ### Building
+
+As an alternative to the following commands, if you do not have Maven installed you can use the maven wrapper as a substitute. For example
+
+   ./mvnw clean install
+   # instead of 
+   mvn clean install
 
 If you maven build in the root directory this will build not only the web service but the client tool:
 

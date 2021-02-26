@@ -1,9 +1,6 @@
 package io.dockstore.common
 
 
-import java.nio.file.{Files, Paths}
-import java.util
-
 import cats.syntax.validated._
 import com.typesafe.config.ConfigFactory
 import common.Checked
@@ -20,15 +17,20 @@ import org.slf4j.LoggerFactory
 import shapeless.Inl
 import spray.json.DefaultJsonProtocol._
 import spray.json._
+import wdl.draft2.model.WdlWomExpression
 import wdl.draft3.parser.WdlParser
+import wdl.model.draft3.elements.ExpressionElement.StringLiteral
+import wdl.transforms.base.wdlom2wom.expression.WdlomWomExpression
 import wom.ResolvedImportRecord
 import wom.callable.MetaValueElement.MetaValueElementString
-import wom.callable.{CallableTaskDefinition, ExecutableCallable, MetaValueElement, WorkflowDefinition}
+import wom.callable.{CallableTaskDefinition, ExecutableCallable, WorkflowDefinition}
 import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph._
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
 
+import java.nio.file.{Files, Paths}
+import java.util
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -103,15 +105,21 @@ class WdlBridge {
     bundle.allCallables.foreach(callable => {
       callable._2 match {
         case w: WorkflowDefinition => {
-          val before = callable._2.asInstanceOf[WorkflowDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
-          val metadata = JavaConverters.mapAsJavaMap(before)
+          val workflowCallable = callable._2
+          val workflowInstance = workflowCallable.asInstanceOf[WorkflowDefinition]
+          val workflowMetadata = workflowInstance.meta
+          val convertedWorkflowMap = workflowMetadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
+          val metadata = JavaConverters.mapAsJavaMap(convertedWorkflowMap)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
         }
         case c: CallableTaskDefinition => {
-          val before = callable._2.asInstanceOf[CallableTaskDefinition].meta.mapValues(_.asInstanceOf[MetaValueElementString].value)
-          val metadata = JavaConverters.mapAsJavaMap(before)
+          val taskCallable = callable._2
+          val taskInstance = taskCallable.asInstanceOf[CallableTaskDefinition]
+          val taskMetadata = taskInstance.meta
+          val convertedTaskMetadataMap = taskMetadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
+          val metadata = JavaConverters.mapAsJavaMap(convertedTaskMetadataMap)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
@@ -236,31 +244,61 @@ class WdlBridge {
     dependencyMap
   }
 
-
   /**
     * Create a mapping of calls to docker images
     * @param filePath absolute path to file
     * @return mapping of call names to docker
     */
   @throws(classOf[WdlParser.SyntaxError])
-  def getCallsToDockerMap(filePath: String, sourceFilePath: String): util.LinkedHashMap[String, String] = {
-    val callsToDockerMap = new util.LinkedHashMap[String, String]()
+  def getCallsToDockerMap(filePath: String, sourceFilePath: String): util.LinkedHashMap[String, DockerParameter] = {
     val executableCallable = convertFilePathToExecutableCallable(filePath, sourceFilePath)
+    getCallsToDockerMap(executableCallable)
+  }
+
+
+  def getCallsToDockerMap(executableCallable: ExecutableCallable) = {
+
+    def imageReference(call: CommandCallNode, dockerAttribute: Option[WomExpression]) = {
+      dockerAttribute match {
+        // We get WdlomWomExpression for 1.x
+        case Some(WdlomWomExpression(s: StringLiteral, _)) =>  DockerImageReference.LITERAL
+        case Some(WdlomWomExpression(_, _)) =>  DockerImageReference.DYNAMIC
+
+        // This is for WDL pre-1.0
+        case Some(WdlWomExpression(wdlExpression, _)) => {
+          wdlExpression.ast match {
+            case t: wdl.draft2.parser.WdlParser.Terminal =>
+              if ("string" == t.terminal_str) DockerImageReference.LITERAL // t.terminal_str is "identifier" if it's not a literal string
+              else DockerImageReference.DYNAMIC
+            case _ => {
+              WdlBridge.logger.warn(s"Unexpected ast: ${wdlExpression.ast.toPrettyString}")
+              DockerImageReference.UNKNOWN
+            }
+          }
+
+        }
+        case Some(_) => {
+          WdlBridge.logger.error(s"Unexpected dockerAttribute ${dockerAttribute.mkString}")
+          DockerImageReference.UNKNOWN
+        }
+        case None => DockerImageReference.UNKNOWN // not applicable really
+      }
+    }
+
+    val callsToDockerMap = new util.LinkedHashMap[String, DockerParameter]()
     executableCallable.taskCallNodes
       .foreach(call => {
         val dockerAttribute = call.callable.runtimeAttributes.attributes.get("docker")
         val callName = "dockstore_" + call.identifier.localName.value
-        var dockerString = ""
-        if (dockerAttribute.isDefined) {
-          dockerString = dockerAttribute.get.sourceString.replaceAll("\"", "")
-        }
-        callsToDockerMap.put(callName, dockerString)
+        val dockerString = dockerAttribute.map(_.sourceString.replaceAll("\"", "")).getOrElse("")
+        callsToDockerMap.put(callName, DockerParameter(dockerString, imageReference(call, dockerAttribute)))
       })
     callsToDockerMap
   }
 
   /**
     * Get a parameter file as a string
+    *
     * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
     * @return stub parameter file for the workflow
@@ -280,6 +318,10 @@ class WdlBridge {
   @throws(classOf[WdlParser.SyntaxError])
   private def convertFilePathToExecutableCallable(filePath: String, sourceFilePath: String): ExecutableCallable = {
     val bundle = getBundle(filePath, sourceFilePath)
+    convertBundleToExecutableCallable(bundle)
+  }
+
+  def convertBundleToExecutableCallable(bundle: WomBundle) = {
     val executableCallable = bundle.toExecutableCallable.right.getOrElse(null)
     if (executableCallable == null) {
       throw new WdlParser.SyntaxError("Error parsing WDL file")
@@ -402,6 +444,7 @@ case class MapResolver(filePath: String) extends ImportResolver {
 
   override def hashKey: ErrorOr[String] = ().hashCode().toString.validNel
 }
+case class DockerParameter(imageName: String, imageReference: DockerImageReference)
 
 object WdlBridgeShutDown {
   def shutdownSTTP(): Unit = {

@@ -193,9 +193,6 @@
       "tool_maintainer_email": {
         "type": "text"
       },
-      "tool_path": {
-        "type": "text"
-      },
       "toolname": {
         "type": "text"
       },

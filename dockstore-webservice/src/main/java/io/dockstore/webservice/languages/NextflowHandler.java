@@ -427,7 +427,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
         // Get import files
         Map<String, String> namespaceToPath = this.getImportMap(mainDescriptor);
-        Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(callToDockerMap, callToDependencies);
+        Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(WDLHandler.convertToDockerParameter(callToDockerMap), callToDependencies);
         return convertMapsToContent(mainScriptPath, type, dao, callType, toolType, toolInfoMap, namespaceToPath);
     }
 
