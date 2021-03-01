@@ -1415,6 +1415,8 @@ paths:
       summary: "Non-idempotent operation for creating new revisions of hosted tools."
       description: ""
       operationId: "editHostedTool"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4852,6 +4854,8 @@ paths:
       summary: "Non-idempotent operation for creating new revisions of hosted workflows"
       description: ""
       operationId: "editHostedWorkflow"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
