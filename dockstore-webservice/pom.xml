@@ -1365,40 +1365,40 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                &lt;!&ndash; this is terrible and due to https://github.com/OAI/OpenAPI-Specification/issues/892 &ndash;&gt;-->
-<!--                &lt;!&ndash; revisit when swagger-codegen supports Handlebars or Swagger handles path parameters with slashes &ndash;&gt;-->
-<!--                <groupId>com.google.code.maven-replacer-plugin</groupId>-->
-<!--                <artifactId>replacer</artifactId>-->
-<!--                <version>1.5.3</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>replace1</id>-->
-<!--                        <phase>generate-sources</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>replace</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                    &lt;!&ndash; not sure why swagger-codegen-maven-plugin runs in two phases &ndash;&gt;-->
-<!--                    <execution>-->
-<!--                        <id>replace2</id>-->
-<!--                        <phase>compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>replace</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--                <configuration>-->
-<!--                    <filesToInclude>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java,${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</filesToInclude>-->
-<!--                    <regex>false</regex>-->
-<!--                    <replacements>-->
-<!--                        <replacement>-->
-<!--                            <token>{relative_path}</token>-->
-<!--                            <value>{relative_path : .+}</value>-->
-<!--                        </replacement>-->
-<!--                    </replacements>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
+            <plugin>
+                <!-- this is terrible and due to https://github.com/OAI/OpenAPI-Specification/issues/892 -->
+                <!-- revisit when swagger-codegen supports Handlebars or Swagger handles path parameters with slashes -->
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>1.5.3</version>
+                <executions>
+                    <execution>
+                        <id>replace1</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                    <!-- not sure why swagger-codegen-maven-plugin runs in two phases -->
+                    <execution>
+                        <id>replace2</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <filesToInclude>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/openapi/api/ToolsApi.java,${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</filesToInclude>
+                    <regex>false</regex>
+                    <replacements>
+                        <replacement>
+                            <token>{relative_path}</token>
+                            <value>{relative_path : .+}</value>
+                        </replacement>
+                    </replacements>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>

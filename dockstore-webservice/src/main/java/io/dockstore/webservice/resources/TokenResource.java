@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -234,7 +235,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private void checkIfAccountHasBeenLinked(String username, TokenType tokenType) {
         Token existingToken = tokenDAO.findTokenByUserNameAndTokenSource(username, tokenType);
         if (existingToken != null) {
-            String msg = "A '" + tokenType.toString() + "' token already exists on Dockstore for the account '" + username + "'";
+            User dockstoreUser = userDAO.findById(existingToken.getUserId());
+            final String tokenAccount = "\"" + tokenType.toString() + "\"";
+            final String tokenAccountName = "\"" + username + "\"";
+            final String dockstoreUserName = "\"" + dockstoreUser.getName() + "\"";
+            String msg = MessageFormat.format("The {0} account {1} is already linked to the Dockstore user {2}. "
+                + "Login to Dockstore using your {0} {1} user.", tokenAccount, tokenAccountName, dockstoreUserName);
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_CONFLICT);
         }
