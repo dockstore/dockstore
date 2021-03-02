@@ -66,6 +66,6 @@
                 <constraints primaryKey="true" primaryKeyName="version_author_pkey"/>
             </column>
         </createTable>
-        <addForeignKeyConstraint baseColumnNames="authorid" baseTableName="version_author" constraintName="fkh4vu3hycvnwbcih0pojrf5bbw" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="author"/>
+        <addForeignKeyConstraint baseColumnNames="authorid" baseTableName="version_author" constraintName="version_author_fk_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="author"/>
     </changeSet>
 </databaseChangeLog>

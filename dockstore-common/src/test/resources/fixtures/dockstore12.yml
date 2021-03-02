@@ -3,8 +3,8 @@ workflows:
   -  name: foobar
      subclass: wdl
      authors:
-       - name: OICR
-         role: Institute
+       - name: Denis Yuen
+         orcid: 0000-0002-6130-1021
        - name: UCSC Genomics Institute
          role: Institute
          affiliation: UCSC

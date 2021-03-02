@@ -105,7 +105,7 @@ public class DockstoreYamlTest {
         assertEquals("gwas*", tags.get(0));
         List<Author> authors = workflow.getAuthors();
         assertEquals(2, authors.size());
-        assertEquals("OICR", authors.get(0).getName());
+        assertEquals("0000-0002-6130-1021", authors.get(0).getOrcid());
         assertEquals("UCSC", authors.get(1).getAffiliation());
 
         final Service12 service = dockstoreYaml.getService();
