@@ -6559,11 +6559,7 @@ paths:
       responses:
         default:
           content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
-                type: array
+            application/json: {}
           description: default response
       security:
         - bearer: []
