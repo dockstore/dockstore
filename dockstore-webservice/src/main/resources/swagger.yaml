@@ -3088,6 +3088,8 @@ paths:
       description: "Currently only name, display name, description, topic, email,\
         \ link, avatarUrl, and location can be updated."
       operationId: "updateOrganization"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:

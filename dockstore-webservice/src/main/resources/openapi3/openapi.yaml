@@ -4791,7 +4791,7 @@ paths:
             type: integer
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Organization'
         description: Organization to register.
