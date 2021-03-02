@@ -40,6 +40,8 @@ public class YamlWorkflow {
     @NotNull
     private String primaryDescriptorPath;
 
+    private Boolean publish;
+
     private Filters filters = new Filters();
 
     private List<String> testParameterFiles = new ArrayList<>();
@@ -70,6 +72,14 @@ public class YamlWorkflow {
 
     public void setPrimaryDescriptorPath(final String primaryDescriptorPath) {
         this.primaryDescriptorPath = primaryDescriptorPath;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(final Boolean publish) {
+        this.publish = publish;
     }
 
     public Filters getFilters() {
