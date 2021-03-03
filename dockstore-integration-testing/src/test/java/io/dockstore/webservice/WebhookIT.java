@@ -386,12 +386,15 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
-        assertEquals("Should only have one service", 1, workflows.size());
-        assertEquals("Should be able to get license after GitHub App register", "Apache License 2.0", workflows.get(0).getLicenseInformation().getLicenseName());
+        client.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount);
+
+        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        assertEquals("Should be able to get license after GitHub App register", "Apache License 2.0", workflow.getLicenseInformation().getLicenseName());
 
         // Ensure that new workflow is created and is what is expected
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
@@ -439,8 +442,9 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
-        assertEquals("Should only have one service", 1, workflows.size());
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount);
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
@@ -459,8 +463,9 @@ public class WebhookIT extends BaseIT {
         assertEquals("The old versions should have been removed", 0, updatedWorkflowAfterModifyingDescriptorType.getWorkflowVersions().size());
 
         // Release 0.1 on GitHub - one new wdl workflow
-        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
-        assertEquals("Should only have one service", 1, workflows.size());
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
+        workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
@@ -499,8 +504,9 @@ public class WebhookIT extends BaseIT {
         UsersApi usersApi = new UsersApi(webClient);
 
         // Release 0.1 on GitHub - one new wdl workflow
-        List<Workflow> workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
-        assertEquals("Should only have one service", 1, workflows.size());
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.1", installationId);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
         Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
@@ -510,8 +516,9 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should be valid", workflow.getWorkflowVersions().get(0).isValid());
 
         // Push missingPrimaryDescriptor on GitHub - one existing wdl workflow, missing primary descriptor
-        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
-        assertEquals("Should only have one service", 1, workflows.size());
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
+        workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount);
 
         // Ensure that new version is in the correct state (invalid)
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
@@ -529,8 +536,9 @@ public class WebhookIT extends BaseIT {
         assertFalse("Should have invalid doesnotexist.wdl", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 
         // Push missingTestParameterFile on GitHub - one existing wdl workflow, missing a test parameter file
-        workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingTestParameterFile", installationId);
-        assertEquals("Should only have one service", 1, workflows.size());
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingTestParameterFile", installationId);
+        workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount);
 
         // Ensure that new version is in the correct state (invalid)
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
@@ -554,7 +562,7 @@ public class WebhookIT extends BaseIT {
 
         // Push branch with invalid dockstore.yml
         try {
-            workflows = client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidDockstoreYml", installationId);
+            client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidDockstoreYml", installationId);
             fail("Should not reach this statement");
         } catch (ApiException ex) {
             List<LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
