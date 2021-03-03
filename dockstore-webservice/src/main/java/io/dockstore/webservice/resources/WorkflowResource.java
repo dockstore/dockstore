@@ -2083,7 +2083,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
         githubWebhookRelease(repository, username, gitReference, installationId);
-        return Response.status(HttpStatus.SC_CREATED).build();
+        return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 
     @POST
