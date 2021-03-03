@@ -7247,8 +7247,6 @@ definitions:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "OLD_CWL"
-        - "OLD_WDL"
       hasHTTPImports:
         type: "boolean"
       hasLocalImports:

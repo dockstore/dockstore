@@ -747,8 +747,6 @@ components:
             - SWL
             - NFL
             - service
-            
-            
           type: string
         hasHTTPImports:
           type: boolean
@@ -1595,8 +1593,6 @@ components:
             - SWL
             - NFL
             - service
-            
-            
           type: string
         descriptorTypeSubclass:
           enum:
@@ -7629,8 +7625,6 @@ paths:
               - SWL
               - NFL
               - service
-              
-              
             type: string
       responses:
         default:
