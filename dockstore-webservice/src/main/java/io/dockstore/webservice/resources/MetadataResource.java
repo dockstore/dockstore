@@ -344,9 +344,6 @@ public class MetadataResource {
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
         Arrays.stream(DescriptorLanguage.values()).filter(lang ->
-            // crappy evil hack for 1.6.0 backwards compatibility after all sorts of Jackson annotations failed
-            // delete after 1.6.0 CLI users fade out https://github.com/dockstore/dockstore/issues/2860
-            lang != DescriptorLanguage.OLD_CWL && lang != DescriptorLanguage.OLD_WDL).filter(lang ->
             // only include plugin languages that have installed plugins
             !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang)).
             forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
