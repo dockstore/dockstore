@@ -79,7 +79,7 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
     public void postCloudInstance(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(name = "Cloud Instance", description = "ID of cloud instance to create", required = true) CloudInstance cloudInstance) {
+            @Parameter(name = "Cloud Instance", description = "Cloud instance to create", required = true) CloudInstance cloudInstance) {
         CloudInstance cloudInstanceToBeAdded = new CloudInstance();
         cloudInstanceToBeAdded.setPartner(cloudInstance.getPartner());
         cloudInstanceToBeAdded.setUrl(cloudInstance.getUrl());
