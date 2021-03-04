@@ -428,7 +428,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
 
                 if (publish != null) {
-                    publishWorkflow(workflow, publish);
+                    try {
+                        workflow = publishWorkflow(workflow, publish);
+                    } catch (CustomWebApplicationException ex) {
+                        LOG.warn(ex.getMessage());
+                    }
                 }
 
                 updatedWorkflows.add(workflow);
@@ -458,8 +462,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 return updatedServices;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
+            final Boolean publish = service.getPublish();
+
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+
+            if (publish != null) {
+                try {
+                    workflow = publishWorkflow(workflow, publish);
+                } catch (CustomWebApplicationException ex) {
+                    LOG.warn(ex.getMessage());
+                }
+            }
+
             updatedServices.add(workflow);
         }
         return updatedServices;
@@ -670,6 +685,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return installationAccessToken;
     }
 
+    /**
+     * Publish or unpublish given workflow
+     * @param workflow
+     * @param publish
+     * @return
+     */
     Workflow publishWorkflow(Workflow workflow, final boolean publish) {
         Workflow checker = workflow.getCheckerWorkflow();
 

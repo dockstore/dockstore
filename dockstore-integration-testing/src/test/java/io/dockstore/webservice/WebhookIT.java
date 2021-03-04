@@ -660,4 +660,22 @@ public class WebhookIT extends BaseIT {
         assertEquals(6, workflow.getWorkflowVersions().size());
         assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
     }
+
+    /**
+     * This tests publishing functionality in .dockstore.yml
+     * @throws Exception
+     */
+    @Test
+    public void testDockstoreYmlPublish() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/publish", installationId);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertTrue(workflow.isIsPublished());
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/unpublish", installationId);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        assertFalse(workflow.isIsPublished());
+    }
 }
