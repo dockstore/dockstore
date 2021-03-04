@@ -168,7 +168,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
     private final FileFormatDAO fileFormatDAO;
-    private final EntryResource entryResource;
     private final ServiceEntryDAO serviceEntryDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
     private final VersionDAO versionDAO;
@@ -184,7 +183,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
-        super(client, sessionFactory, configuration, Workflow.class);
+        super(client, sessionFactory, entryResource, configuration, Workflow.class);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
         this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
@@ -193,8 +192,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.versionDAO = new VersionDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
-
-        this.entryResource = entryResource;
 
 
         zenodoUrl = configuration.getZenodoUrl();
@@ -829,54 +826,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         checkCanShareWorkflow(user, workflow);
 
-        Workflow checker = workflow.getCheckerWorkflow();
-
-        if (workflow.isIsChecker()) {
-            String msg = "Cannot directly publish/unpublish a checker workflow.";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        if (request.getPublish()) {
-            boolean validTag = false;
-            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
-            for (WorkflowVersion workflowVersion : versions) {
-                if (workflowVersion.isValid()) {
-                    validTag = true;
-                    break;
-                }
-            }
-
-            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
-                workflow.setIsPublished(true);
-                if (checker != null) {
-                    checker.setIsPublished(true);
-                }
-            } else {
-                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
-            }
-        } else {
-            workflow.setIsPublished(false);
-            if (checker != null) {
-                checker.setIsPublished(false);
-            }
-        }
-
-        long id = workflowDAO.create(workflow);
-        workflow = workflowDAO.findById(id);
-        if (request.getPublish()) {
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
-            if (workflow.getTopicId() == null) {
-                try {
-                    entryResource.createAndSetDiscourseTopic(id);
-                } catch (CustomWebApplicationException ex) {
-                    LOG.error("Error adding discourse topic.", ex);
-                }
-            }
-        } else {
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
-        }
-        return workflow;
+        return publishWorkflow(workflow, request.getPublish());
     }
 
     @GET

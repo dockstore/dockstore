@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -40,8 +41,10 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
@@ -82,6 +85,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final WorkflowDAO workflowDAO;
     protected final UserDAO userDAO;
     protected final WorkflowVersionDAO workflowVersionDAO;
+    protected final EntryResource entryResource;
     protected final EventDAO eventDAO;
     protected final FileDAO fileDAO;
     protected final LambdaEventDAO lambdaEventDAO;
@@ -93,9 +97,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final String bitbucketClientID;
     private final Class<T> entityClass;
 
-    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
+    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
         this.sessionFactory = sessionFactory;
+        this.entryResource = entryResource;
 
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -417,9 +422,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
+                Boolean publish = wf.getPublish();
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+
+                if (publish != null) {
+                    publishWorkflow(workflow, publish);
+                }
+
                 updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
@@ -657,5 +668,56 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return installationAccessToken;
+    }
+
+    Workflow publishWorkflow(Workflow workflow, final boolean publish) {
+        Workflow checker = workflow.getCheckerWorkflow();
+
+        if (workflow.isIsChecker()) {
+            String msg = "Cannot directly publish/unpublish a checker workflow.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (publish) {
+            boolean validTag = false;
+            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
+            for (WorkflowVersion workflowVersion : versions) {
+                if (workflowVersion.isValid()) {
+                    validTag = true;
+                    break;
+                }
+            }
+
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+                workflow.setIsPublished(true);
+                if (checker != null) {
+                    checker.setIsPublished(true);
+                }
+            } else {
+                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
+            }
+        } else {
+            workflow.setIsPublished(false);
+            if (checker != null) {
+                checker.setIsPublished(false);
+            }
+        }
+
+        long id = workflowDAO.create(workflow);
+        workflow = workflowDAO.findById(id);
+        if (publish) {
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
+            if (workflow.getTopicId() == null) {
+                try {
+                    entryResource.createAndSetDiscourseTopic(id);
+                } catch (CustomWebApplicationException ex) {
+                    LOG.error("Error adding discourse topic.", ex);
+                }
+            }
+        } else {
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
+        }
+        return workflow;
     }
 }
