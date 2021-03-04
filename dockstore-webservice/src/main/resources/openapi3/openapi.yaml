@@ -51,6 +51,8 @@ components:
             - CGC
             - NHLBI_BIODATA_CATALYST
             - ANVIL
+            - CAVATICA
+            - NEXTFLOW_TOWER
           type: string
         supportedLanguages:
           items:
@@ -1874,7 +1876,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -2537,7 +2539,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/CloudInstance'
                 type: array
-          description: Got all known public cloud instances
+          description: OK
       summary: Get all known public cloud instances
       tags:
         - Cloud Instances
@@ -2548,13 +2550,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CloudInstance'
-        description: Cloud instance to create
+        description: ID of cloud instance to create
         required: true
       responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
         - bearer: []
       summary: Add a new public cloud instance, admin only
@@ -2564,7 +2568,7 @@ paths:
     delete:
       operationId: deleteCloudInstance
       parameters:
-        - description: Cloud instance to delete
+        - description: ID of cloud instance to delete
           in: path
           name: cloudInstanceId
           required: true
@@ -2572,10 +2576,12 @@ paths:
             format: int64
             type: integer
       responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
         - bearer: []
       summary: Delete a public cloud instance, admin only
@@ -6323,10 +6329,10 @@ paths:
         - users
   /users/{userId}/cloudInstances:
     get:
-      description: Get all of cloud instances belonging to the user
+      description: Get all cloud instances belonging to the user
       operationId: getUserCloudInstances
       parameters:
-        - description: User to update
+        - description: ID of user to get cloud instances for
           in: path
           name: userId
           required: true
@@ -6334,24 +6340,23 @@ paths:
             format: int64
             type: integer
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 items:
                   $ref: '#/components/schemas/CloudInstance'
                 type: array
-                uniqueItems: true
-          description: default response
+          description: OK
       security:
         - bearer: []
       tags:
         - users
     post:
-      description: Create a new cloud instances belonging to the user
+      description: Create a new cloud instance belonging to the user
       operationId: postUserCloudInstance
       parameters:
-        - description: User to create cloud instance for
+        - description: ID of user to create the cloud instance for
           in: path
           name: userId
           required: true
@@ -6363,18 +6368,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CloudInstance'
-        description: Cloud instance to replace for a user
+        description: Cloud instance to add to the user
         required: true
       responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/CloudInstance'
-                type: array
-                uniqueItems: true
-          description: default response
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
         - bearer: []
       tags:
@@ -6384,14 +6386,14 @@ paths:
       description: Delete a cloud instances belonging to the user
       operationId: deleteUserCloudInstance
       parameters:
-        - description: User to delete cloud instance for
+        - description: ID of user to delete the cloud instance for
           in: path
           name: userId
           required: true
           schema:
             format: int64
             type: integer
-        - description: Cloud instance Id to remove from user
+        - description: ID of cloud instance to update/delete
           in: path
           name: cloudInstanceId
           required: true
@@ -6399,26 +6401,30 @@ paths:
             format: int64
             type: integer
       responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
       security:
         - bearer: []
       tags:
         - users
     put:
-      description: Delete a cloud instances belonging to the user
+      description: Update a cloud instance belonging to the user
       operationId: putUserCloudInstance
       parameters:
-        - description: User to delete cloud instance for
+        - description: ID of user to update the cloud instance for
           in: path
           name: userId
           required: true
           schema:
             format: int64
             type: integer
-        - description: Cloud instance Id to remove from user
+        - description: ID of cloud instance to update/delete
           in: path
           name: cloudInstanceId
           required: true
@@ -6433,10 +6439,14 @@ paths:
         description: Cloud instance to replace for a user
         required: true
       responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
       security:
         - bearer: []
       tags:
