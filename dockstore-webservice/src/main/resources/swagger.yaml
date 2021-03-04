@@ -4738,12 +4738,8 @@ paths:
         required: false
         type: "string"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/hostedEntry:
