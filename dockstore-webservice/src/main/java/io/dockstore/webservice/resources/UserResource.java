@@ -104,8 +104,10 @@ import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -133,6 +135,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
+    private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
@@ -924,9 +927,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/cloudInstances")
     @ApiOperation(value = "See OpenApi for details", hidden = true)
-    @Operation(operationId = "getUserCloudInstances", description = "Get all of cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getUserCloudInstances", description = "Get all cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
     public Set<CloudInstance> getUserCloudInstances(@Parameter(hidden = true, name = "user")@Auth User authUser,
-        @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId) {
+        @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
         return user.getCloudInstances();
@@ -936,17 +941,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork()
     @Path("/{userId}/cloudInstances")
-    @Operation(operationId = "postUserCloudInstance", description = "Create a new cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "postUserCloudInstance", description = "Create a new cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "")
-    })
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public Set<CloudInstance> postUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
-            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to create cloud instance for", required = true) long userId,
-            @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to create the cloud instance for", required = true) long userId,
+            @Parameter(description = "Cloud instance to add to the user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
         CloudInstance cloudInstanceToBeAdded = new CloudInstance();
@@ -966,17 +969,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork()
     @Path("/{userId}/cloudInstances/{cloudInstanceId}")
-    @Operation(operationId = "deleteUserCloudInstance", description = "Delete a cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "")
-    })
+    @Operation(operationId = "deleteUserCloudInstance", description = "Delete a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public void deleteUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
-            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to delete cloud instance for", required = true) long userId,
-            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = "Cloud instance Id to remove from user", required = true) long cloudInstanceId) {
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to delete the cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
         boolean deleted = user.getCloudInstances().removeIf(cloudInstance -> cloudInstance.getId() == cloudInstanceId);
@@ -989,18 +990,16 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork()
     @Path("/{userId}/cloudInstances/{cloudInstanceId}")
-    @Operation(operationId = "putUserCloudInstance", description = "Delete a cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "putUserCloudInstance", description = "Update a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "")
-    })
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
     public void putUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
-            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to delete cloud instance for", required = true) long userId,
-            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = "Cloud instance Id to remove from user", required = true) long cloudInstanceId,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to update the cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId,
             @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);

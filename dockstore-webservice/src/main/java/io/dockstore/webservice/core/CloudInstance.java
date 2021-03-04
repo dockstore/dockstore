@@ -32,7 +32,7 @@ public class CloudInstance implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty(value = "The ID used to update CloudInstances", accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    @ApiModelProperty(value = "The CloudInstance ID", accessMode = ApiModelProperty.AccessMode.READ_ONLY)
     private long id;
 
     // TODO: This needs to be an enum

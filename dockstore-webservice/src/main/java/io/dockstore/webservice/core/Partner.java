@@ -10,5 +10,7 @@ public enum Partner {
     DNA_NEXUS,
     CGC,
     NHLBI_BIODATA_CATALYST,
-    ANVIL
+    ANVIL,
+    CAVATICA,
+    NEXTFLOW_TOWER
 }

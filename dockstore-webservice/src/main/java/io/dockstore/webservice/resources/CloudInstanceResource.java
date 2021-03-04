@@ -25,7 +25,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -50,7 +49,7 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @Path("/")
     @Operation(operationId = "getCloudInstances", summary = "Get all known public cloud instances")
     @ApiResponse(responseCode = HttpStatus.SC_OK
-            + "", description = "Got all known public cloud instances", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
+            + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
     public List<CloudInstance> getCloudInstances() {
         return this.cloudInstanceDAO.findAllWithoutUser();
     }
@@ -61,13 +60,11 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @Path("/{cloudInstanceId}")
     @RolesAllowed({ "admin" })
     @Operation(operationId = "deleteCloudInstance", summary = "Delete a public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "")
-    })
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
     public void deleteCloudInstance(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(description = "Cloud instance to delete", name = "cloudInstanceId", in = ParameterIn.PATH, required = true) @PathParam("cloudInstanceId") Long cloudInstanceId) {
+            @Parameter(description = "ID of cloud instance to delete", name = "cloudInstanceId", in = ParameterIn.PATH, required = true) @PathParam("cloudInstanceId") Long cloudInstanceId) {
         this.cloudInstanceDAO.deleteById(cloudInstanceId);
     }
 
@@ -78,13 +75,11 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @RolesAllowed({ "admin" })
     @Operation(operationId = "postCloudInstance", summary = "Add a new public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + ""),
-            @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "")
-    })
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
     public void postCloudInstance(@Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(name = "Cloud Instance", description = "Cloud instance to create", required = true) CloudInstance cloudInstance) {
+            @Parameter(name = "Cloud Instance", description = "ID of cloud instance to create", required = true) CloudInstance cloudInstance) {
         CloudInstance cloudInstanceToBeAdded = new CloudInstance();
         cloudInstanceToBeAdded.setPartner(cloudInstance.getPartner());
         cloudInstanceToBeAdded.setUrl(cloudInstance.getUrl());
