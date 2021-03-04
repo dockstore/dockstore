@@ -1876,7 +1876,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -2550,7 +2550,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CloudInstance'
-        description: ID of cloud instance to create
+        description: Cloud instance to create
         required: true
       responses:
         "204":
@@ -6383,7 +6383,7 @@ paths:
         - users
   /users/{userId}/cloudInstances/{cloudInstanceId}:
     delete:
-      description: Delete a cloud instances belonging to the user
+      description: Delete a cloud instance belonging to the user
       operationId: deleteUserCloudInstance
       parameters:
         - description: ID of user to delete the cloud instance for
