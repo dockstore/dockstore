@@ -686,12 +686,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Publish or unpublish given workflow
+     * Publish or unpublish given workflow, if necessary.
      * @param workflow
      * @param publish
      * @return
      */
-    Workflow publishWorkflow(Workflow workflow, final boolean publish) {
+    protected Workflow publishWorkflow(Workflow workflow, final boolean publish) {
+        if (workflow.getIsPublished() == publish) {
+            return workflow;
+        }
+
         Workflow checker = workflow.getCheckerWorkflow();
 
         if (workflow.isIsChecker()) {
@@ -726,10 +730,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         long id = workflowDAO.create(workflow);
-        workflow = workflowDAO.findById(id);
+        Workflow newWorkflow = workflowDAO.findById(id);
         if (publish) {
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
-            if (workflow.getTopicId() == null) {
+            PublicStateManager.getInstance().handleIndexUpdate(newWorkflow, StateManagerMode.PUBLISH);
+            if (newWorkflow.getTopicId() == null) {
                 try {
                     entryResource.createAndSetDiscourseTopic(id);
                 } catch (CustomWebApplicationException ex) {
@@ -737,8 +741,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
             }
         } else {
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(newWorkflow, StateManagerMode.DELETE);
         }
-        return workflow;
+        return newWorkflow;
     }
 }
