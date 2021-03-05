@@ -431,7 +431,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     try {
                         workflow = publishWorkflow(workflow, publish);
                     } catch (CustomWebApplicationException ex) {
-                        LOG.warn("Could not set publish state from YML.", ex.getMessage());
+                        LOG.warn("Could not set publish state from YML.", ex);
                     }
                 }
 
@@ -471,7 +471,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 try {
                     workflow = publishWorkflow(workflow, publish);
                 } catch (CustomWebApplicationException ex) {
-                    LOG.warn(ex.getMessage());
+                    LOG.warn("Could not set publish state from YML.", ex);
                 }
             }
 
