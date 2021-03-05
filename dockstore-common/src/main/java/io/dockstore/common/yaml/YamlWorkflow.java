@@ -40,6 +40,10 @@ public class YamlWorkflow {
     @NotNull
     private String primaryDescriptorPath;
 
+    /**
+     * Change the workflow's publish-state, if set.
+     * null does nothing; True & False correspond with the current API behaviour of publishing & unpublishing.
+     */
     private Boolean publish;
 
     private Filters filters = new Filters();

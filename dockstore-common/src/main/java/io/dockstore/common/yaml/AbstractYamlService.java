@@ -37,7 +37,8 @@ public abstract class AbstractYamlService {
      */
     private String description;
     /**
-     * Change the service's publish-state, if set
+     * Change the service's publish-state, if set.
+     * null does nothing; True & False correspond with the current API behaviour of publishing & unpublishing.
      */
     private Boolean publish;
     /**
