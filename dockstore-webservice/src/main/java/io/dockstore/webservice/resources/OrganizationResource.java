@@ -532,6 +532,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork
     @Path("{organizationId}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Update an organization.", notes = "Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     @Operation(operationId = "updateOrganization", summary = "Update an organization.", description = "Update an organization. Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", security = @SecurityRequirement(name = "bearer"))
     public Organization updateOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
