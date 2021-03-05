@@ -729,20 +729,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         }
 
-        long id = workflowDAO.create(workflow);
-        Workflow newWorkflow = workflowDAO.findById(id);
         if (publish) {
-            PublicStateManager.getInstance().handleIndexUpdate(newWorkflow, StateManagerMode.PUBLISH);
-            if (newWorkflow.getTopicId() == null) {
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
+            if (workflow.getTopicId() == null) {
                 try {
-                    entryResource.createAndSetDiscourseTopic(id);
+                    entryResource.createAndSetDiscourseTopic(workflow.getId());
                 } catch (CustomWebApplicationException ex) {
                     LOG.error("Error adding discourse topic.", ex);
                 }
             }
         } else {
-            PublicStateManager.getInstance().handleIndexUpdate(newWorkflow, StateManagerMode.DELETE);
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         }
-        return newWorkflow;
+        return workflow;
     }
 }
