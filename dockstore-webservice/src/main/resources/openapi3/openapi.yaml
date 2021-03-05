@@ -37,6 +37,35 @@ components:
         - checksum
         - type
       type: object
+    CloudInstance:
+      properties:
+        id:
+          format: int64
+          type: integer
+        partner:
+          enum:
+            - GALAXY
+            - TERRA
+            - DNA_STACK
+            - DNA_NEXUS
+            - CGC
+            - NHLBI_BIODATA_CATALYST
+            - ANVIL
+            - CAVATICA
+            - NEXTFLOW_TOWER
+          type: string
+        supportedLanguages:
+          items:
+            $ref: '#/components/schemas/Language'
+          type: array
+          uniqueItems: true
+        supportsFileImports:
+          type: boolean
+        supportsHttpImports:
+          type: boolean
+        url:
+          type: string
+      type: object
     Collection:
       description: Collection in an organization, collects entries
       properties:
@@ -567,6 +596,8 @@ components:
             - INSTALL
           type: string
       type: object
+    Language:
+      type: object
     LicenseInformation:
       properties:
         licenseName:
@@ -718,8 +749,6 @@ components:
             - SWL
             - NFL
             - service
-            
-            
           type: string
         hasHTTPImports:
           type: boolean
@@ -1566,8 +1595,6 @@ components:
             - SWL
             - NFL
             - service
-            
-            
           type: string
         descriptorTypeSubclass:
           enum:
@@ -2501,6 +2528,65 @@ paths:
         - bearer: []
       tags:
         - tokens
+  /cloudInstances:
+    get:
+      operationId: getCloudInstances
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudInstance'
+                type: array
+          description: OK
+      summary: Get all known public cloud instances
+      tags:
+        - Cloud Instances
+    post:
+      operationId: postCloudInstance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloudInstance'
+        description: Cloud instance to create
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+        - bearer: []
+      summary: Add a new public cloud instance, admin only
+      tags:
+        - Cloud Instances
+  /cloudInstances/{cloudInstanceId}:
+    delete:
+      operationId: deleteCloudInstance
+      parameters:
+        - description: ID of cloud instance to delete
+          in: path
+          name: cloudInstanceId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+        - bearer: []
+      summary: Delete a public cloud instance, admin only
+      tags:
+        - Cloud Instances
   /containers/dockerRegistryList:
     get:
       description: Get the list of docker registries supported on Dockstore.
@@ -6244,6 +6330,130 @@ paths:
         - bearer: []
       tags:
         - users
+  /users/{userId}/cloudInstances:
+    get:
+      description: Get all cloud instances belonging to the user
+      operationId: getUserCloudInstances
+      parameters:
+        - description: ID of user to get cloud instances for
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CloudInstance'
+                type: array
+          description: OK
+      security:
+        - bearer: []
+      tags:
+        - users
+    post:
+      description: Create a new cloud instance belonging to the user
+      operationId: postUserCloudInstance
+      parameters:
+        - description: ID of user to create the cloud instance for
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloudInstance'
+        description: Cloud instance to add to the user
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+        - bearer: []
+      tags:
+        - users
+  /users/{userId}/cloudInstances/{cloudInstanceId}:
+    delete:
+      description: Delete a cloud instance belonging to the user
+      operationId: deleteUserCloudInstance
+      parameters:
+        - description: ID of user to delete the cloud instance for
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: ID of cloud instance to update/delete
+          in: path
+          name: cloudInstanceId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+        - bearer: []
+      tags:
+        - users
+    put:
+      description: Update a cloud instance belonging to the user
+      operationId: putUserCloudInstance
+      parameters:
+        - description: ID of user to update the cloud instance for
+          in: path
+          name: userId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: ID of cloud instance to update/delete
+          in: path
+          name: cloudInstanceId
+          required: true
+          schema:
+            format: int64
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloudInstance'
+        description: Cloud instance to replace for a user
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+        - bearer: []
+      tags:
+        - users
   /users/{userId}/containers:
     get:
       description: List all tools owned by the authenticated user.
@@ -7431,8 +7641,6 @@ paths:
               - SWL
               - NFL
               - service
-              
-              
             type: string
       responses:
         default:
