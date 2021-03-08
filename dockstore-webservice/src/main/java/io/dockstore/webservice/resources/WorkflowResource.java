@@ -2051,6 +2051,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkUser(foundUser, workflow);
         if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
             PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow.get(), StateManagerMode.DELETE);
+            eventDAO.deleteEventByEntryID(workflow.getId());
             workflowDAO.delete(workflow);
         } else {
             String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
