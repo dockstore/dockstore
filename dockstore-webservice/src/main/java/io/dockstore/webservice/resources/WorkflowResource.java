@@ -1918,6 +1918,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
+        if (workflow == null) {
+            throw new CustomWebApplicationException("could not find tool", HttpStatus.SC_NOT_FOUND);
+        }
         checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
