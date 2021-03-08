@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.xml.bind.JAXBException;
+import javax.xml.datatype.DatatypeConfigurationException;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -42,11 +45,14 @@ import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dropwizard.auth.Auth;
@@ -71,6 +77,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +99,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
+    private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
     private final VersionDAO versionDAO;
     private final TopicsApi topicsApi;
@@ -101,14 +109,20 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
     private final String hostName;
+    private URL orcidBaseUrl = null;
 
-    public EntryResource(ToolDAO toolDAO, VersionDAO versionDAO, DockstoreWebserviceConfiguration configuration) {
+    public EntryResource(TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
-
+        this.tokenDAO = tokenDAO;
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
+        try {
+            orcidBaseUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
+        } catch (MalformedURLException e) {
+            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.");
+        }
 
         ApiClient apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -194,6 +208,39 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             }
             checkUser(user.get(), entry);
         }
+    }
+
+    @POST
+    @Path("/{entryId}/exportToOrcid")
+    @Timed
+    @UnitOfWork
+    @Operation(description = "Export entry to ORCID", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "Internal Server Error")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    @ApiOperation(value = "hidden", hidden = true)
+    public void exportToORCID(@Parameter(hidden = true, name = "user") @Auth User user, @Parameter(description = "The id of the entry to export.", name = "entryId", in = ParameterIn.PATH, required = true)
+        @PathParam("entryId") Long entryId) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
+        checkEntry(entry);
+        checkEntryPermissions(Optional.of(user), entry);
+        List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
+        if (orcidBaseUrl == null) {
+            throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        try {
+            String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, Optional.empty());
+            // baseUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
+            String baseUrl = orcidBaseUrl.getProtocol() + "://" + "api." + orcidBaseUrl.getHost() + "/v3.0/";
+            HttpResponse response = ORCIDHelper.postWorkString(baseUrl, user.getOrcid(), orcidWorkString,
+                    orcidByUserId.get(0).getToken());
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
+                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
+            }
+        } catch (JAXBException | DatatypeConfigurationException | IOException e) {
+            throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
     }
 
     @POST

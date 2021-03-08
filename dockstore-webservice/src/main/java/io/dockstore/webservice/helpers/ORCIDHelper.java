@@ -104,17 +104,7 @@ public final class ORCIDHelper {
         return postWorkString(ORCID_BASE_URL, id, workString, token);
     }
 
-
-    private static String transformWork(Work work) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(Work.class);
-        StringWriter writer = new StringWriter();
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        marshaller.marshal(work, writer);
-        return writer.getBuffer().toString();
-    }
-
-    private static HttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
+    public static HttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
         HttpPost postRequest = new HttpPost(baseURL + id + "/work");
         postRequest.addHeader("content-type", "application/vnd.orcid+xml");
         postRequest.addHeader("Authorization", "Bearer " + token);
@@ -126,5 +116,14 @@ public final class ORCIDHelper {
         } finally {
             httpClient.close();
         }
+    }
+
+    private static String transformWork(Work work) throws JAXBException {
+        JAXBContext context = JAXBContext.newInstance(Work.class);
+        StringWriter writer = new StringWriter();
+        Marshaller marshaller = context.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+        marshaller.marshal(work, writer);
+        return writer.getBuffer().toString();
     }
 }
