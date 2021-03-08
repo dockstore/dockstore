@@ -427,12 +427,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
 
-                if (publish != null) {
+                if (publish != null && workflow.getIsPublished() != publish) {
+                    LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                     try {
                         workflow = publishWorkflow(workflow, publish);
                     } catch (CustomWebApplicationException ex) {
                         LOG.warn("Could not set publish state from YML.", ex);
+                        lambdaEvent.setSuccess(false);
+                        lambdaEvent.setMessage(ex.getMessage());
                     }
+                    lambdaEventDAO.create(lambdaEvent);
                 }
 
                 updatedWorkflows.add(workflow);
@@ -467,12 +471,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
 
-            if (publish != null) {
+            if (publish != null && workflow.getIsPublished() != publish) {
+                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                 try {
                     workflow = publishWorkflow(workflow, publish);
                 } catch (CustomWebApplicationException ex) {
                     LOG.warn("Could not set publish state from YML.", ex);
+                    lambdaEvent.setSuccess(false);
+                    lambdaEvent.setMessage(ex.getMessage());
                 }
+                lambdaEventDAO.create(lambdaEvent);
             }
 
             updatedServices.add(workflow);
@@ -722,14 +730,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
-        } else {
-            workflow.setIsPublished(false);
-            if (checker != null) {
-                checker.setIsPublished(false);
-            }
-        }
 
-        if (publish) {
             PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
             if (workflow.getTopicId() == null) {
                 try {
@@ -739,6 +740,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
             }
         } else {
+            workflow.setIsPublished(false);
+            if (checker != null) {
+                checker.setIsPublished(false);
+            }
             PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         }
         return workflow;
