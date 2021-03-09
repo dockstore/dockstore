@@ -117,7 +117,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
     private static final String ORCID_URL = "https://orcid.org/";
-    private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_1;
+    private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_2;
     private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 

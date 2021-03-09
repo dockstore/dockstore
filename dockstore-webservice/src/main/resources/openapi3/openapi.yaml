@@ -1876,7 +1876,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []
@@ -2587,21 +2587,6 @@ paths:
       summary: Delete a public cloud instance, admin only
       tags:
         - Cloud Instances
-  /containers/dockerRegistryList:
-    get:
-      description: Get the list of docker registries supported on Dockstore.
-      operationId: getDockerRegistries
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
-                type: array
-          description: default response
-      tags:
-        - containers
   /containers/hostedEntry:
     post:
       description: Create a hosted tool.
@@ -4522,7 +4507,7 @@ paths:
   /metadata/dockerRegistryList:
     get:
       description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries_1
+      operationId: getDockerRegistries
       responses:
         default:
           content:
