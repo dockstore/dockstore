@@ -218,18 +218,32 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
     @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "Internal Server Error")
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     @ApiOperation(value = "hidden", hidden = true)
     public void exportToORCID(@Parameter(hidden = true, name = "user") @Auth User user, @Parameter(description = "The id of the entry to export.", name = "entryId", in = ParameterIn.PATH, required = true)
-        @PathParam("entryId") Long entryId) {
+        @PathParam("entryId") Long entryId,
+        @ApiParam(value = "Version ID") @QueryParam("versionID") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
         checkEntryPermissions(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
+        Optional<Version> optionalVersion = Optional.empty();
+        if (versionId != null) {
+            Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
+            if (version.getDoiURL() == null) {
+                throw new CustomWebApplicationException("Version does not have a DOI url associated with it", HttpStatus.SC_BAD_REQUEST);
+            }
+            optionalVersion = Optional.ofNullable(version);
+        } else {
+            if (entry.getConceptDoi() == null) {
+                throw new CustomWebApplicationException("Entry does not have a concept DOI associated with it", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
         if (orcidBaseUrl == null) {
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         try {
-            String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, Optional.empty());
+            String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion);
             // baseUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
             String baseUrl = orcidBaseUrl.getProtocol() + "://" + "api." + orcidBaseUrl.getHost() + "/v3.0/";
             HttpResponse response = ORCIDHelper.postWorkString(baseUrl, user.getOrcid(), orcidWorkString,
