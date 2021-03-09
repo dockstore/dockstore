@@ -236,7 +236,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 int statusCode = e.getResponse().getStatusLine().getStatusCode();
                 LOG.error("Could not use Elasticsearch search", e);
                 if (ArrayUtils.contains(codesToResurface, statusCode)) {
-                    throw new CustomWebApplicationException(e.getMessage(), statusCode);
+                    String reasonPhrase = e.getResponse().getStatusLine().getReasonPhrase();
+                    // Provide a minimal amount of error information in the browser console as outlined by
+                    // https://ucsc-cgl.atlassian.net/browse/SEAB-2128
+                    throw new CustomWebApplicationException(reasonPhrase, statusCode);
                 } else {
                     throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
