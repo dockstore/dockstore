@@ -958,18 +958,6 @@ public class DockerRepoResource
         }
     }
 
-    /*
-     * TODO: This endpoint has been moved to metadata, though it still exists here to deal with the case of users trying to interact with this endpoint.
-     */
-    @GET
-    @Timed
-    @Path("/dockerRegistryList")
-    @Operation(operationId = "getDockerRegistries", description = "Get the list of docker registries supported on Dockstore.")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
-    public List<Registry.RegistryBean> getDockerRegistries() {
-        return rc.getResource(MetadataResource.class).getDockerRegistries();
-    }
-
     @PUT
     @Timed
     @UnitOfWork

@@ -1322,23 +1322,6 @@ paths:
           description: "Invalid token value"
       security:
       - BEARER: []
-  /containers/dockerRegistryList:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the list of docker registries supported on Dockstore."
-      description: "Does not need authentication"
-      operationId: "getDockerRegistries"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/RegistryBean"
   /containers/hostedEntry:
     post:
       tags:
