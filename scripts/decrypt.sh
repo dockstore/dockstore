@@ -2,7 +2,7 @@
 # This script decrypts our test database
 # Bash3 Boilerplate. Copyright (c) 2014, kvz.io
 # You will need the environment variables CIRCLE_CI_KEY and CIRCLE_CI_IV
-# This is tested with openssl 1.1.1i when running locally. Your mileage may vary with other versions
+# This is tested with openssl 1.1.1 when running locally. Your mileage may vary with other versions
 
 set -o errexit
 set -o pipefail
