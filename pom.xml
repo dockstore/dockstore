@@ -89,14 +89,6 @@
             <name>Apache Releases repository</name>
             <url>https://repository.apache.org/content/repositories/releases/</url>
         </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jcenter</id>
-            <name>bintray</name>
-            <url>https://jcenter.bintray.com</url>
-        </repository>
         <!-- broad -->
         <repository>
             <id>artifactory.broadinstitute.org</id>
@@ -113,11 +105,6 @@
             <id>sagebionetworks</id>
             <name>sagebionetworks-releases</name>
             <url>https://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
-        </repository>
-        <repository>
-            <id>mockito</id>
-            <name>mockito</name>
-            <url>https://dl.bintray.com/mockito/maven/</url>
         </repository>
     </repositories>
 
