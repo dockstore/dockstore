@@ -4743,12 +4743,8 @@ paths:
         required: false
         type: "string"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/hostedEntry:
@@ -7957,6 +7953,7 @@ definitions:
         enum:
         - "NONE"
         - "TOS_VERSION_1"
+        - "TOS_VERSION_2"
       userProfiles:
         type: "object"
         description: "Profile information of the user retrieved from 3rd party sites\
