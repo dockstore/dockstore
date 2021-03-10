@@ -120,6 +120,7 @@ import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
+import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -137,13 +138,18 @@ import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import okhttp3.Cache;
+import okhttp3.Call;
+import okhttp3.EventListener;
 import okhttp3.OkHttpClient;
+import okhttp3.Response;
+import okhttp3.internal.connection.RealCall;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginWrapper;
@@ -230,8 +236,25 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             cache = new Cache(cacheDir, cacheSize);
         }
         // match HttpURLConnection which does not have a timeout by default
-        okHttpClient = new OkHttpClient().newBuilder().cache(cache).connectTimeout(0, TimeUnit.SECONDS)
-                .readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
+        okHttpClient = new OkHttpClient().newBuilder().eventListener(new EventListener() {
+            @Override
+            public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
+                /* do nothing, might be useful for debugging rate limit */
+            }
+
+            @Override
+            public void cacheHit(@NotNull Call call, @NotNull Response response) {
+                /* do nothing, might be useful for debugging rate limit */
+            }
+
+            @Override
+            public void cacheMiss(@NotNull Call call) {
+                String endpointCalled = ((RealCall)call).getOriginalRequest().url().toString();
+                if (!endpointCalled.contains("rate_limit")) {
+                    LOG.info("DockstoreWebserviceApplication cacheMiss for : " + endpointCalled);
+                }
+            }
+        }).cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
             URL.setURLStreamHandlerFactory(new ObsoleteUrlFactory(okHttpClient));
@@ -391,6 +414,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
+
+        // properly shutdown http cache
+        ManagedCache myManagedObject = new ManagedCache(cache);
+        environment.lifecycle().manage(myManagedObject);
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -454,5 +481,26 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {
         return hibernate;
+    }
+
+    private static class ManagedCache implements Managed {
+
+        private final Cache cache;
+
+        ManagedCache(Cache cache) {
+            this.cache = cache;
+        }
+
+        @Override
+        public void start() throws Exception {
+            cache.initialize();
+        }
+
+        @Override
+        public void stop() throws Exception {
+            LOG.info("properly writing cache, or at least trying to");
+            cache.flush();
+            cache.close();
+        }
     }
 }

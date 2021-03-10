@@ -58,13 +58,18 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import okhttp3.Call;
+import okhttp3.EventListener;
 import okhttp3.OkHttpClient;
+import okhttp3.Response;
+import okhttp3.internal.connection.RealCall;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpStatus;
+import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
@@ -101,8 +106,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
-        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
-                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
+        // this code is duplicate from DockstoreWebserviceApplication, escept this is a lot faster ...
+        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(new OkHttpClient.Builder().eventListener(new EventListener() {
+            @Override
+            public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
+                /* do nothing, might be useful for debugging rate limit */
+            }
+
+            @Override
+            public void cacheHit(@NotNull Call call, @NotNull Response response) {
+                /* do nothing, might be useful for debugging rate limit */
+            }
+
+            @Override
+            public void cacheMiss(@NotNull Call call) {
+                String endpointCalled = ((RealCall)call).getOriginalRequest().url().toString();
+                if (!endpointCalled.contains("rate_limit")) {
+                    LOG.info("GitHubSourceCodeRepo cacheMiss for : " + endpointCalled);
+                }
+            }
+        }).cache(DockstoreWebserviceApplication.getCache()).build());
         HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
@@ -835,7 +858,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public GHRateLimit getGhRateLimitQuietly() {
         GHRateLimit startRateLimit = null;
         try {
-            startRateLimit = github.rateLimit();
+            // github.rateLimit() was deprecated and returned a much lower limit, low balling our rate limit numbers
+            startRateLimit = github.getRateLimit();
         } catch (IOException e) {
             LOG.error("unable to retrieve rate limit, weird", e);
         }
