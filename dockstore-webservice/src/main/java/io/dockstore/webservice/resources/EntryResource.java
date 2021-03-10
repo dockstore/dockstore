@@ -109,7 +109,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
     private final String hostName;
-    private URL orcidBaseUrl = null;
+    private String baseApiURL;
 
     public EntryResource(TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
@@ -119,7 +119,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
         try {
-            orcidBaseUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
+            URL orcidAuthUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
+            // baseUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
+            baseApiURL = orcidAuthUrl.getProtocol() + "://" + "api." + orcidAuthUrl.getHost() + "/v3.0/";
         } catch (MalformedURLException e) {
             LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.");
         }
@@ -222,7 +224,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiOperation(value = "hidden", hidden = true)
     public void exportToORCID(@Parameter(hidden = true, name = "user") @Auth User user, @Parameter(description = "The id of the entry to export.", name = "entryId", in = ParameterIn.PATH, required = true)
         @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Version ID") @QueryParam("versionID") Long versionId) {
+        @Parameter(description = "Optional version ID of the entry version to export.", name = "versionId", in = ParameterIn.QUERY) @QueryParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
         checkEntry(entry);
         checkEntryPermissions(Optional.of(user), entry);
@@ -230,6 +232,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         Optional<Version> optionalVersion = Optional.empty();
         if (versionId != null) {
             Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
+            if (version == null) {
+                throw new CustomWebApplicationException("Version does not belong to entry", HttpStatus.SC_BAD_REQUEST);
+            }
             if (version.getDoiURL() == null) {
                 throw new CustomWebApplicationException("Version does not have a DOI url associated with it", HttpStatus.SC_BAD_REQUEST);
             }
@@ -239,14 +244,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 throw new CustomWebApplicationException("Entry does not have a concept DOI associated with it", HttpStatus.SC_BAD_REQUEST);
             }
         }
-        if (orcidBaseUrl == null) {
+        if (baseApiURL == null) {
+            LOG.error("ORCID auth URL is likely incorrect");
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         try {
             String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion);
-            // baseUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
-            String baseUrl = orcidBaseUrl.getProtocol() + "://" + "api." + orcidBaseUrl.getHost() + "/v3.0/";
-            HttpResponse response = ORCIDHelper.postWorkString(baseUrl, user.getOrcid(), orcidWorkString,
+            HttpResponse response = ORCIDHelper.postWorkString(baseApiURL, user.getOrcid(), orcidWorkString,
                     orcidByUserId.get(0).getToken());
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
                 throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
