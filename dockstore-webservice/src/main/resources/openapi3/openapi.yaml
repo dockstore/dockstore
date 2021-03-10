@@ -3792,9 +3792,17 @@ paths:
           schema:
             format: int64
             type: integer
+        - description: Optional version ID of the entry version to export.
+          in: query
+          name: versionId
+          schema:
+            format: int64
+            type: integer
       responses:
         "204":
           description: No Content
+        "400":
+          description: Bad Request
         "404":
           description: Not Found
         "500":
