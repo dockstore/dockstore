@@ -70,25 +70,17 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
             <version>1.11.0-alpha.1-SNAPSHOT</version>
-            <exclusions>
-                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
-                <exclusion>
-                    <groupId>org.liquibase</groupId>
-                    <artifactId>liquibase-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
             <version>1.11.0-alpha.1-SNAPSHOT</version>
-            <exclusions>
-                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
-                <exclusion>
-                    <groupId>org.liquibase</groupId>
-                    <artifactId>liquibase-core</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
