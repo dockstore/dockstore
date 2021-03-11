@@ -113,7 +113,7 @@ public class BaseIT {
         GHRateLimit ghRateLimitQuietly2 = user2.getGhRateLimitQuietly();
 
         user1.reportOnGitHubRelease(user1Limit, ghRateLimitQuietly1, "n/a", USER_1_USERNAME, "n/a", true);
-        user1.reportOnGitHubRelease(user2Limit, ghRateLimitQuietly2, "n/a", USER_2_USERNAME, "n/a", true);
+        user2.reportOnGitHubRelease(user2Limit, ghRateLimitQuietly2, "n/a", USER_2_USERNAME, "n/a", true);
 
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
