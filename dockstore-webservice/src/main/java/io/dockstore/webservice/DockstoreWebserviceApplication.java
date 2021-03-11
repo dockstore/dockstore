@@ -235,6 +235,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             }
             cache = new Cache(cacheDir, cacheSize);
         }
+        try {
+            cache.initialize();
+        } catch (IOException e) {
+            LOG.error("Could no create web cache, initialization exception", e);
+            throw new RuntimeException(e);
+        }
         // match HttpURLConnection which does not have a timeout by default
         okHttpClient = new OkHttpClient().newBuilder().eventListener(new EventListener() {
             @Override
@@ -262,7 +268,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             if (factoryException.getMessage().contains("factory already defined")) {
                 LOG.debug("OkHttpClient already registered, skipping");
             } else {
-                LOG.error("Could no create web cache, factory exception", factoryException);
+                LOG.error("Could not create web cache, factory exception", factoryException);
                 throw new RuntimeException(factoryException);
             }
         }
