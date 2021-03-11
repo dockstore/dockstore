@@ -888,7 +888,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         try {
-            tags = repo.getRefs("refs/tags/");
+            // this crazy looking structure is because getRefs can result in a cache miss (on repos without tags) whereas listTags seems to not have this problem
+            // yes this could probably be re-coded to use listTags directly
+            if (repo.listTags().iterator().hasNext()) {
+                tags = repo.getRefs("refs/tags/");
+            }
         } catch (GHFileNotFoundException ex) {
             LOG.debug("No tags found for  " + repo.getName());
             if (!getBranchesSucceeded) {

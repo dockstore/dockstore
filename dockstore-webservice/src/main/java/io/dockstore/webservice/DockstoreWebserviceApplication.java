@@ -120,7 +120,6 @@ import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
-import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -420,10 +419,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Initialize GitHub App Installation Access Token cache
         CacheConfigManager cacheConfigManager = CacheConfigManager.getInstance();
         cacheConfigManager.initCache();
-
-        // properly shutdown http cache
-        ManagedCache myManagedObject = new ManagedCache(cache);
-        environment.lifecycle().manage(myManagedObject);
     }
 
     private void registerAPIsAndMisc(Environment environment) {
@@ -487,29 +482,5 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {
         return hibernate;
-    }
-
-    private static class ManagedCache implements Managed {
-
-        private final Cache cache;
-
-        ManagedCache(Cache cache) {
-            this.cache = cache;
-        }
-
-        @Override
-        public void start() throws Exception {
-            cache.initialize();
-        }
-
-        @Override
-        public void stop() throws Exception {
-            if (!cache.isClosed()) {
-                LOG.info("attempting to properly shutdown cache");
-                cache.flush();
-                cache.close();
-                LOG.info("completed writing cache");
-            }
-        }
     }
 }
