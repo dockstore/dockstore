@@ -40,9 +40,10 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
-import org.apache.http.HttpHost;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -52,7 +53,6 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.hibernate.Hibernate;
@@ -70,13 +70,11 @@ public class ElasticListener implements StateListenerInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
-    private String hostname;
-    private int port;
+    private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
     public void setConfig(DockstoreWebserviceConfiguration config) {
-        hostname = config.getEsConfiguration().getHostname();
-        port = config.getEsConfiguration().getPort();
+        this.elasticSearchConfig = config.getEsConfiguration();
     }
 
     /**
@@ -97,7 +95,7 @@ public class ElasticListener implements StateListenerInterface {
             return;
         }
         LOGGER.info("Performing index update with " + command + ".");
-        if (hostname == null || hostname.isEmpty()) {
+        if (StringUtils.isEmpty(elasticSearchConfig.getHostname())) {
             LOGGER.error("No elastic search host found.");
             return;
         }
@@ -105,9 +103,7 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
-        try (RestHighLevelClient client = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(hostname, port, "http")))) {
+        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder(this.elasticSearchConfig))) {
             String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
@@ -211,9 +207,7 @@ public class ElasticListener implements StateListenerInterface {
             }
         };
 
-        try (RestHighLevelClient client = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(hostname, port, "http")))) {
+        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder(this.elasticSearchConfig))) {
             BulkProcessor.Builder builder = BulkProcessor.builder(
                 (request, bulkListener) ->
                         client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
