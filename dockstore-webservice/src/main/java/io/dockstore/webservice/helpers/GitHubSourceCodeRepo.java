@@ -106,7 +106,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
-        // this code is duplicate from DockstoreWebserviceApplication, escept this is a lot faster ...
+        // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster ...
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(new OkHttpClient.Builder().eventListener(new EventListener() {
             @Override
             public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
@@ -128,7 +128,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }).cache(DockstoreWebserviceApplication.getCache()).build());
         HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT)
+                    .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

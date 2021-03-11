@@ -498,9 +498,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         @Override
         public void stop() throws Exception {
-            LOG.info("properly writing cache, or at least trying to");
+            LOG.info("attempting to properly shutdown cache");
             cache.flush();
             cache.close();
+            LOG.info("completed writing cache");
         }
     }
 }
