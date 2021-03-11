@@ -104,7 +104,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
 
-    GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
+    public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster ...
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(new OkHttpClient.Builder().eventListener(new EventListener() {
@@ -836,7 +836,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
         if (startRateLimit != null && endRateLimit != null) {
-            int used = startRateLimit.remaining - endRateLimit.remaining;
+            int used = startRateLimit.getRemaining() - endRateLimit.getRemaining();
             if (used > 0) {
                 LOG.debug(id + ": used up " + used + " GitHub rate limited requests");
             } else {
