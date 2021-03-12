@@ -92,12 +92,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
             <version>1.11.0-alpha.1-SNAPSHOT</version>

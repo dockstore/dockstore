@@ -26,6 +26,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -148,7 +150,6 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginWrapper;
@@ -237,7 +238,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         try {
             cache.initialize();
         } catch (IOException e) {
-            LOG.error("Could no create web cache, initialization exception", e);
+            LOG.error("Could not create web cache, initialization exception", e);
             throw new RuntimeException(e);
         }
         // match HttpURLConnection which does not have a timeout by default

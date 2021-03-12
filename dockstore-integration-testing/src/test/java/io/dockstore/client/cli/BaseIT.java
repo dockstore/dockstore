@@ -27,7 +27,6 @@ import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -43,7 +42,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-import org.kohsuke.github.GHRateLimit;
 
 /**
  * Base integration test class
@@ -64,13 +62,6 @@ public class BaseIT {
     // This is not an admin
     static final String OTHER_USERNAME = "OtherUser";
 
-
-    // record starting rate limit per set of tests
-    private static GHRateLimit user1Limit;
-    private static GHRateLimit user2Limit;
-    private static GitHubSourceCodeRepo user1;
-    private static GitHubSourceCodeRepo user2;
-
     @Rule
     public final TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
@@ -84,13 +75,21 @@ public class BaseIT {
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
-        INIConfiguration parseConfig = Utilities.parseConfig(FileUtils.getFile("src", "test", "resources", "config").getAbsolutePath());
 
-        user1 = new GitHubSourceCodeRepo(USER_1_USERNAME, parseConfig.getString(Constants.WEBSERVICE_TOKEN_USER_1));
-        user2 = new GitHubSourceCodeRepo(USER_2_USERNAME, parseConfig.getString(Constants.WEBSERVICE_TOKEN_USER_2));
-
-        user1Limit = user1.getGhRateLimitQuietly();
-        user2Limit = user2.getGhRateLimitQuietly();
+        // this is not great, doing this per test suite sucks. But at this point, there is no easy way to get the test tokens for both test users without loading both databases and dumping them too?
+        // also see code below
+        //        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        //        String githubToken1 = testingPostgres
+        //                .runSelectStatement("select content from token where username='" + USER_1_USERNAME + "' and tokensource='github.com'",
+        //                        String.class);
+        //        String githubToken2 = testingPostgres
+        //                .runSelectStatement("select content from token where username='" + USER_2_USERNAME + "' and tokensource='github.com'",
+        //                        String.class);
+        //        user1 = new GitHubSourceCodeRepo(USER_1_USERNAME, githubToken1);
+        //        user2 = new GitHubSourceCodeRepo(USER_2_USERNAME, githubToken2);
+        //
+        //        user1Limit = user1.getGhRateLimitQuietly();
+        //        user2Limit = user2.getGhRateLimitQuietly();
     }
 
     public static void assertNoMetricsLeaks(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws InterruptedException {
@@ -109,11 +108,11 @@ public class BaseIT {
 
     @AfterClass
     public static void afterClass() {
-        GHRateLimit ghRateLimitQuietly1 = user1.getGhRateLimitQuietly();
-        GHRateLimit ghRateLimitQuietly2 = user2.getGhRateLimitQuietly();
-
-        user1.reportOnGitHubRelease(user1Limit, ghRateLimitQuietly1, "n/a", USER_1_USERNAME, "n/a", true);
-        user2.reportOnGitHubRelease(user2Limit, ghRateLimitQuietly2, "n/a", USER_2_USERNAME, "n/a", true);
+        //        GHRateLimit ghRateLimitQuietly1 = user1.getGhRateLimitQuietly();
+        //        GHRateLimit ghRateLimitQuietly2 = user2.getGhRateLimitQuietly();
+        //
+        //        user1.reportOnGitHubRelease(user1Limit, ghRateLimitQuietly1, "n/a", USER_1_USERNAME, "n/a", true);
+        //        user2.reportOnGitHubRelease(user2Limit, ghRateLimitQuietly2, "n/a", USER_2_USERNAME, "n/a", true);
 
         SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();

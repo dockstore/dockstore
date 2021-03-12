@@ -33,6 +33,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
@@ -69,7 +71,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpStatus;
-import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
