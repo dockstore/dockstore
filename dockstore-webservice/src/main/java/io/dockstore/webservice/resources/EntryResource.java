@@ -121,9 +121,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         try {
             URL orcidAuthUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
             // baseUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
-            baseApiURL = orcidAuthUrl.getProtocol() + "://" + "api." + orcidAuthUrl.getHost() + "/v3.0/";
+            baseApiURL = orcidAuthUrl.getProtocol() + "://api." + orcidAuthUrl.getHost() + "/v3.0/";
         } catch (MalformedURLException e) {
-            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.");
+            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
         }
 
         ApiClient apiClient = Configuration.getDefaultApiClient();
@@ -229,6 +229,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         checkEntry(entry);
         checkEntryPermissions(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
+
         Optional<Version> optionalVersion = Optional.empty();
         if (versionId != null) {
             Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
@@ -247,6 +248,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         if (baseApiURL == null) {
             LOG.error("ORCID auth URL is likely incorrect");
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        if (orcidByUserId.isEmpty()) {
+            throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         try {
             String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion);
