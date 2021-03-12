@@ -179,7 +179,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // orcidUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
             orcidUrl = orcidAuthUrl.getProtocol() + "://" + orcidAuthUrl.getHost() + "/";
         } catch (MalformedURLException e) {
-            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.");
+            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
         }
     }
 
