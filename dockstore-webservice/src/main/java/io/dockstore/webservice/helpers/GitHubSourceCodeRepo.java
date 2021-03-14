@@ -33,8 +33,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotNull;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
@@ -45,6 +43,7 @@ import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -60,11 +59,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import okhttp3.Call;
-import okhttp3.EventListener;
 import okhttp3.OkHttpClient;
-import okhttp3.Response;
-import okhttp3.internal.connection.RealCall;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -108,25 +103,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster ...
-        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(new OkHttpClient.Builder().eventListener(new EventListener() {
-            @Override
-            public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
-                /* do nothing, might be useful for debugging rate limit */
-            }
-
-            @Override
-            public void cacheHit(@NotNull Call call, @NotNull Response response) {
-                /* do nothing, might be useful for debugging rate limit */
-            }
-
-            @Override
-            public void cacheMiss(@NotNull Call call) {
-                String endpointCalled = ((RealCall)call).getOriginalRequest().url().toString();
-                if (!endpointCalled.contains("rate_limit")) {
-                    LOG.info("GitHubSourceCodeRepo cacheMiss for : " + endpointCalled);
-                }
-            }
-        }).cache(DockstoreWebserviceApplication.getCache()).build());
+        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(new OkHttpClient.Builder().eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName())).cache(DockstoreWebserviceApplication.getCache()).build());
         HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT)

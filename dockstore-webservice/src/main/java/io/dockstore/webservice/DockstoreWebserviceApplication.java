@@ -26,8 +26,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -139,11 +137,7 @@ import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import okhttp3.Cache;
-import okhttp3.Call;
-import okhttp3.EventListener;
 import okhttp3.OkHttpClient;
-import okhttp3.Response;
-import okhttp3.internal.connection.RealCall;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -169,6 +163,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String GA4GH_API_PATH_V2_BETA = "/api/ga4gh/v2";
     public static final String GA4GH_API_PATH_V2_FINAL = "/ga4gh/trs/v2";
     public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
+    public static final String DOCKSTORE_WEB_CACHE = "/tmp/dockstore-web-cache";
+    public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
+    public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
+
     public static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
@@ -228,7 +226,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 // let's try using the same cache each time
                 // not sure how corruptible/non-curruptable the cache is
                 // https://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/cache/DiskLruCache.java#L82 looks promising
-                cacheDir = Files.createDirectories(Paths.get("/tmp/dockstore-web-cache")).toFile();
+                cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE)).toFile();
             } catch (IOException e) {
                 LOG.error("Could no create or re-use web cache", e);
                 throw new RuntimeException(e);
@@ -242,25 +240,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             throw new RuntimeException(e);
         }
         // match HttpURLConnection which does not have a timeout by default
-        okHttpClient = new OkHttpClient().newBuilder().eventListener(new EventListener() {
-            @Override
-            public void cacheConditionalHit(@NotNull Call call, @NotNull Response cachedResponse) {
-                /* do nothing, might be useful for debugging rate limit */
-            }
-
-            @Override
-            public void cacheHit(@NotNull Call call, @NotNull Response response) {
-                /* do nothing, might be useful for debugging rate limit */
-            }
-
-            @Override
-            public void cacheMiss(@NotNull Call call) {
-                String endpointCalled = ((RealCall)call).getOriginalRequest().url().toString();
-                if (!endpointCalled.contains("rate_limit")) {
-                    LOG.info("DockstoreWebserviceApplication cacheMiss for : " + endpointCalled);
-                }
-            }
-        }).cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
+        okHttpClient = new OkHttpClient().newBuilder().eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName())).cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
             URL.setURLStreamHandlerFactory(new ObsoleteUrlFactory(okHttpClient));
@@ -484,4 +464,5 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {
         return hibernate;
     }
+
 }
