@@ -13,143 +13,15 @@ components:
           type: object
       type: object
     BioWorkflow:
-      properties:
-        aliases:
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
+      allOf:
+        - $ref: '#/components/schemas/Workflow'
+        - properties:
+            is_checker:
+              type: boolean
+            parent_id:
+              format: int64
+              type: integer
           type: object
-        author:
-          type: string
-        checker_id:
-          format: int64
-          type: integer
-        conceptDoi:
-          type: string
-        dbCreateDate:
-          format: int64
-          type: integer
-        dbUpdateDate:
-          format: int64
-          type: integer
-        defaultTestParameterFilePath:
-          type: string
-        defaultVersion:
-          type: string
-        description:
-          type: string
-        descriptorType:
-          enum:
-            - CWL
-            - WDL
-            - gxformat2
-            - SWL
-            - NFL
-            - service
-          type: string
-        descriptorTypeSubclass:
-          enum:
-            - docker-compose
-            - helm
-            - swarm
-            - kubernetes
-            - n/a
-          type: string
-        email:
-          type: string
-        forumUrl:
-          maxLength: 256
-          minLength: 0
-          type: string
-        full_workflow_path:
-          type: string
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          format: int64
-          type: integer
-        input_file_formats:
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          type: array
-          uniqueItems: true
-        is_checker:
-          type: boolean
-        is_published:
-          type: boolean
-        labels:
-          items:
-            $ref: '#/components/schemas/Label'
-          type: array
-          uniqueItems: true
-        lastUpdated:
-          format: int64
-          type: integer
-        last_modified:
-          format: int32
-          type: integer
-        last_modified_date:
-          format: int64
-          type: integer
-        licenseInformation:
-          $ref: '#/components/schemas/LicenseInformation'
-        metadataFromEntry:
-          $ref: '#/components/schemas/Workflow'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        mode:
-          enum:
-            - FULL
-            - STUB
-            - HOSTED
-            - DOCKSTORE_YML
-          type: string
-        organization:
-          type: string
-        output_file_formats:
-          items:
-            $ref: '#/components/schemas/FileFormat'
-          type: array
-          uniqueItems: true
-        parent_id:
-          format: int64
-          type: integer
-        path:
-          type: string
-        repository:
-          type: string
-        sourceControl:
-          enum:
-            - dockstore.org
-            - github.com
-            - bitbucket.org
-            - gitlab.com
-          type: string
-        source_control_provider:
-          type: string
-        starredUsers:
-          items:
-            $ref: '#/components/schemas/User'
-          type: array
-          uniqueItems: true
-        topicId:
-          format: int64
-          type: integer
-        users:
-          items:
-            $ref: '#/components/schemas/User'
-          type: array
-          uniqueItems: true
-        workflowName:
-          type: string
-        workflowVersions:
-          items:
-            $ref: '#/components/schemas/WorkflowVersion'
-          type: array
-          uniqueItems: true
-        workflow_path:
-          type: string
       type: object
     Checksum:
       description: The checksum value and its type

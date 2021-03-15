@@ -66,6 +66,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
@@ -396,6 +397,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         DOIGeneratorFactory.setConfig(configuration);
 
         GoogleHelper.setConfig(configuration);
+        ElasticSearchHelper.setConfig(configuration.getEsConfiguration());
 
         registerAPIsAndMisc(environment);
 

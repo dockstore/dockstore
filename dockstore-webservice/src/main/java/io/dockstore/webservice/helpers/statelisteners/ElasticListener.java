@@ -103,7 +103,7 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
-        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder(this.elasticSearchConfig))) {
+        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder())) {
             String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
@@ -207,7 +207,7 @@ public class ElasticListener implements StateListenerInterface {
             }
         };
 
-        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder(this.elasticSearchConfig))) {
+        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder())) {
             BulkProcessor.Builder builder = BulkProcessor.builder(
                 (request, bulkListener) ->
                         client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
