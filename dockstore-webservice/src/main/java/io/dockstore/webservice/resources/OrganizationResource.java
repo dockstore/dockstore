@@ -251,6 +251,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = getOrganizationByIdOptionalAuth(user, id);
         Hibernate.initialize(organization.getAliases());
+        organization.setCollectionsLength(organization.getCollections().size());
         return organization;
     }
 

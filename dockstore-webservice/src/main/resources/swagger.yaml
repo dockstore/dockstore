@@ -7100,6 +7100,10 @@ definitions:
         description: "aliases can be used as an alternate unique id for organizations"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      collectionsLength:
+        type: "integer"
+        format: "int64"
+        description: "collectionsLength"
       dbCreateDate:
         type: "integer"
         format: "int64"
