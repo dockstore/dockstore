@@ -99,6 +99,7 @@ import org.hibernate.annotations.Check;
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
+@Schema(name = "DockstoreTool")
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
@@ -365,14 +366,12 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     /**
-     * Change name of JsonProperty back to "registry_provider" once users no longer use the older client (CommonTestUtilities.OLD_DOCKSTORE_VERSION)
+     * We cannot only use an enum because Custom Docker Registry Path for Seven Bridges, Amazon ECR, and etc requires a string property.
+     * We cannot only use the string because in many situations, it's easier to use an enum
      * @return the registry as an enum
      */
     @Enumerated(EnumType.STRING)
     @JsonProperty("registry")
-    //FIXME: breaks this for OpenAPI, if we don't break it, the enum is generated using dockerPath via toString which
-    // fails horribly
-    @Schema(type = "integer")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
         if (this.registry == null) {
