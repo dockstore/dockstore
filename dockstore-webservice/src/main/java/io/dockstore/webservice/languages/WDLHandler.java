@@ -269,10 +269,17 @@ public class WDLHandler implements LanguageHandlerInterface {
                 WdlBridge wdlBridge = new WdlBridge();
                 wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
 
-                if (Objects.equals(type, "tool")) {
-                    wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath(), primaryDescriptorFilePath);
+                String unsupportedVersion = "version 1.1";
+                if (wdlBridge.fileFirstLineStartsWithString(unsupportedVersion, tempMainDescriptor.getAbsolutePath())) {
+                    validationMessageObject.put(primaryDescriptorFilePath, "WDL version" + unsupportedVersion + " cannot be completely"
+                            + " validated at this time.");
+                    return new VersionTypeValidation(false, validationMessageObject);
                 } else {
-                    wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
+                    if (Objects.equals(type, "tool")) {
+                        wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath(), primaryDescriptorFilePath);
+                    } else {
+                        wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
+                    }
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());

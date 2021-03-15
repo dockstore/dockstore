@@ -8,7 +8,7 @@ import common.validation.Checked._
 import common.validation.ErrorOr.ErrorOr
 import cromwell.core.path.DefaultPathBuilder
 import cromwell.languages.LanguageFactory
-import cromwell.languages.util.ImportResolver
+import cromwell.languages.util.{ImportResolver, LanguageFactoryUtil}
 import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, ImportResolver, ResolvedImportBundle}
 import languages.wdl.biscayne.WdlBiscayneLanguageFactory
 import languages.wdl.draft2.WdlDraft2LanguageFactory
@@ -28,9 +28,9 @@ import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph._
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
-
 import java.nio.file.{Files, Paths}
 import java.util
+
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -413,6 +413,17 @@ class WdlBridge {
     * @return Content of file as a string
     */
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
+
+
+  /**
+    * Determine whether the the first line in the file starts with the specified string
+    * @param lineStartString String to search for at beginning of first line, e.g. 'version 1.1'
+    * @return Boolean indicating a the first line starts with the string
+    */
+  def fileFirstLineStartsWithString(lineStartString: String, descriptorFilePath: String): Boolean = {
+    val fileContent = readFile(descriptorFilePath)
+    LanguageFactoryUtil.simpleLooksParseable(List(lineStartString), List("#"))(fileContent)
+  }
 }
 
 object WdlBridge {
