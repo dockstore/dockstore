@@ -47,6 +47,10 @@
             <artifactId>dropwizard-logging</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-lifecycle</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
             <version>1.11.0-alpha.1-SNAPSHOT</version>

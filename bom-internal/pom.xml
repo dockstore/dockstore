@@ -405,6 +405,11 @@ POM as their parent.
                 <artifactId>dropwizard-jackson</artifactId>
                 <version>${dropwizard.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-lifecycle</artifactId>
+                <version>${dropwizard.version}</version>
+            </dependency>
 
             <!-- should not be needed, but dropwizard has a conflicting dependency within their own dependency list -->
             <dependency>
