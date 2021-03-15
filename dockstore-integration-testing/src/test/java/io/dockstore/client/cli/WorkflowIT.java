@@ -345,8 +345,8 @@ public class WorkflowIT extends BaseIT {
             .filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 1);
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
-        assertEquals("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), 4,
-            refreshGithub.getWorkflowVersions().size());
+        assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(),
+                4 <= refreshGithub.getWorkflowVersions().size());
         assertEquals("should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
                 .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(), 2,
             refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
@@ -507,7 +507,6 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void downloadZipFile() throws IOException {
-        String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -697,8 +696,6 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
-        String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -1031,7 +1028,6 @@ public class WorkflowIT extends BaseIT {
     public void testManualRegisterThenPublish() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        UsersApi usersApi = new UsersApi(webClient);
 
         // Make publish request (true)
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
