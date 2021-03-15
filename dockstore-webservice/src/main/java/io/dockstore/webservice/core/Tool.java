@@ -393,10 +393,6 @@ public class Tool extends Entry<Tool, Tag> {
         }
     }
 
-    /**
-     * Remove this once users no longer use the old client (1.3.6)
-     * @param registryThing
-     */
     public void setRegistryProvider(Registry registryThing) {
         switch (registryThing) {
         case GITLAB:
@@ -413,10 +409,6 @@ public class Tool extends Entry<Tool, Tag> {
 
     }
 
-    /**
-     * Remove this once users no longer use the old client (1.3.6)
-     * @param newCustomDockerRegistryString
-     */
     public void setCustomerDockerRegistryPath(String newCustomDockerRegistryString) {
         if (newCustomDockerRegistryString != null) {
             this.setRegistry(newCustomDockerRegistryString);
@@ -427,10 +419,6 @@ public class Tool extends Entry<Tool, Tag> {
         return new Event.Builder().withTool(this);
     }
 
-    /**
-     * Remove this once users no longer use the old client (1.3.6)
-     * @return
-     */
     @JsonProperty("custom_docker_registry_path")
     public String getCustomDockerRegistryPath() {
         return this.registry;
