@@ -7007,6 +7007,7 @@ definitions:
         - "PUSH"
         - "DELETE"
         - "INSTALL"
+        - "PUBLISH"
   LicenseInformation:
     type: "object"
     properties:
