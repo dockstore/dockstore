@@ -344,8 +344,8 @@ public class WorkflowIT extends BaseIT {
             .filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 1);
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
-        assertEquals("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), 4,
-            refreshGithub.getWorkflowVersions().size());
+        assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(),
+                4 <= refreshGithub.getWorkflowVersions().size());
         assertEquals("should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
                 .filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count(), 2,
             refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !fileDAO.findSourceFilesByVersion(workflowVersion.getId()).isEmpty()).count());
