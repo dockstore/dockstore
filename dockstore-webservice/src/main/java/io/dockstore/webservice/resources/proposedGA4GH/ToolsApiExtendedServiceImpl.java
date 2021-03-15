@@ -199,7 +199,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
             } catch (IOException e) {
                 LOG.error("Could not create elastic search index", e);
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             return Response.ok().entity(published.size()).build();
         }
@@ -245,7 +245,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
             } catch (IOException e2) {
                 LOG.error("Could not use Elasticsearch search", e2);
-                throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Search failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
         return Response.ok().entity(0).build();
