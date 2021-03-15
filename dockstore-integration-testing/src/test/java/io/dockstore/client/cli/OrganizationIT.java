@@ -1684,6 +1684,35 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * Tests that we are getting the number of workflows and tools correctly
+     */
+    @Test
+    public void testWorkflowsToolsLength() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+
+        long wLength = 2;
+        long tLength = 3;
+        stubCollection.setWorkflowsLength(wLength);
+        stubCollection.setToolsLength(tLength);
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+
+        // Approve the org
+        testingPostgres.runUpdateStatement(
+                "update organization set status = '" + io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() + "'");
+
+        assertEquals(wLength, (long)collection.getWorkflowsLength());
+        assertEquals(tLength, (long)collection.getToolsLength());
+    }
+
+    /**
      * This tests that you can update the name and description of a collection.
      * Also tests when name is a duplicate.
      */
