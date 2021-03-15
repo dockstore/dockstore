@@ -315,7 +315,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final ElasticSearchHealthCheck elasticSearchHealthCheck = new ElasticSearchHealthCheck(new ToolsExtendedApi());
         environment.healthChecks().register("elasticSearch", elasticSearchHealthCheck);
-
+        environment.lifecycle().manage(new ElasticSearchHelper(configuration.getEsConfiguration()));
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final DeletedUsernameDAO deletedUsernameDAO = new DeletedUsernameDAO(hibernate.getSessionFactory());
@@ -397,7 +397,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         DOIGeneratorFactory.setConfig(configuration);
 
         GoogleHelper.setConfig(configuration);
-        ElasticSearchHelper.setConfig(configuration.getEsConfiguration());
 
         registerAPIsAndMisc(environment);
 

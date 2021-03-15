@@ -169,8 +169,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public Response toolsIndexGet(SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             List<Entry> published = getPublished();
-            try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder())) {
-
+            try {
+                RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
                 // Delete previous indices
                 deleteIndex(client, TOOLS_INDEX);
                 deleteIndex(client, WORKFLOWS_INDEX);
@@ -207,7 +207,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
-            try (RestClient restClient = ElasticSearchHelper.restClientBuilder().build()) {
+            try {
+                RestClient restClient = ElasticSearchHelper.restClient();
                 Map<String, String> parameters = new HashMap<>();
                 // TODO: note that this is lossy if there are repeated parameters
                 // but it looks like the elastic search http client classes don't handle it

@@ -103,7 +103,8 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
-        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder())) {
+        try {
+            RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
             String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
@@ -207,7 +208,8 @@ public class ElasticListener implements StateListenerInterface {
             }
         };
 
-        try (RestHighLevelClient client = new RestHighLevelClient(ElasticSearchHelper.restClientBuilder())) {
+        try {
+            RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
             BulkProcessor.Builder builder = BulkProcessor.builder(
                 (request, bulkListener) ->
                         client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
@@ -238,7 +240,7 @@ public class ElasticListener implements StateListenerInterface {
                 LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }

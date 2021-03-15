@@ -34,7 +34,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
@@ -64,7 +63,6 @@ public class PublicStateManagerIT {
         config.getEsConfiguration().setPort(9200);
         PublicStateManagerIT.manager = PublicStateManager.getInstance();
         manager.setConfig(config);
-        ElasticSearchHelper.setConfig(config.getEsConfiguration());
     }
 
     @Test
