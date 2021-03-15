@@ -81,7 +81,7 @@ Lists of 370 third-party dependencies.
      (MIT) Cats kernel (org.typelevel:cats-kernel_2.12:2.4.2 - https://github.com/typelevel/cats)
      (Apache-2.0) cats-effect (org.typelevel:cats-effect_2.12:2.3.0 - https://typelevel.org/cats-effect/)
      (ASF 2.0) cglib-nodep (cglib:cglib-nodep:3.2.9 - https://github.com/cglib/cglib/cglib-nodep)
-     (The MIT License) Checker Qual (org.checkerframework:checker-qual:3.8.0 - https://checkerframework.org)
+     (The MIT License) Checker Qual (org.checkerframework:checker-qual:3.10.0 - https://checkerframework.org)
      (Apache 2.0) Circe core (io.circe:circe-core_2.12:0.13.0 - https://github.com/circe/circe)
      (Apache 2.0) Circe generic (io.circe:circe-generic_2.12:0.13.0 - https://github.com/circe/circe)
      (Apache 2.0) Circe jawn (io.circe:circe-jawn_2.12:0.13.0 - https://github.com/circe/circe)
