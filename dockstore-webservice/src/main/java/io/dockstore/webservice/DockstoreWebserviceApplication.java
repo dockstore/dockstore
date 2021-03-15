@@ -240,7 +240,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             throw new RuntimeException(e);
         }
         // match HttpURLConnection which does not have a timeout by default
-        okHttpClient = new OkHttpClient().newBuilder().eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName())).cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        if (System.getenv("CIRCLE_SHA1") != null) {
+            builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName()));
+        }
+        okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
+                .writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
             URL.setURLStreamHandlerFactory(new ObsoleteUrlFactory(okHttpClient));

@@ -35,16 +35,14 @@ public class CacheHitListener extends EventListener {
 
     @Override
     public void cacheMiss(@NotNull Call call) {
-        if (System.getenv("CIRCLE_SHA1") != null) {
-            String endpointCalled = ((RealCall)call).getOriginalRequest().url().toString();
-
-            if (!endpointCalled.contains("rate_limit")) {
-                LOG.info(listenerTag + " cacheMiss for : " + endpointCalled);
-                try {
-                    FileUtils.writeStringToFile(DockstoreWebserviceApplication.CACHE_MISS_LOG_FILE, endpointCalled + "\n", StandardCharsets.UTF_8, true);
-                } catch (IOException e) {
-                    LOG.error("could not write cache miss to log", e);
-                }
+        String endpointCalled = ((RealCall)call).getOriginalRequest().url().toString();
+        if (!endpointCalled.contains("rate_limit")) {
+            LOG.info(listenerTag + " cacheMiss for : " + endpointCalled);
+            try {
+                FileUtils.writeStringToFile(DockstoreWebserviceApplication.CACHE_MISS_LOG_FILE, endpointCalled + "\n",
+                        StandardCharsets.UTF_8, true);
+            } catch (IOException e) {
+                LOG.error("could not write cache miss to log", e);
             }
         }
     }
