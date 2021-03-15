@@ -43,6 +43,7 @@ import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -99,13 +100,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
 
-    GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
+    public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
-        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
-                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
+        // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder().cache(DockstoreWebserviceApplication.getCache());
+        if (System.getenv("CIRCLE_SHA1") != null) {
+            builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName()));
+        }
+        OkHttpClient build = builder.build();
+        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
+
         HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT)
+                    .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -812,7 +820,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
         if (startRateLimit != null && endRateLimit != null) {
-            int used = startRateLimit.remaining - endRateLimit.remaining;
+            int used = startRateLimit.getRemaining() - endRateLimit.getRemaining();
             if (used > 0) {
                 LOG.debug(id + ": used up " + used + " GitHub rate limited requests");
             } else {
@@ -835,7 +843,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public GHRateLimit getGhRateLimitQuietly() {
         GHRateLimit startRateLimit = null;
         try {
-            startRateLimit = github.rateLimit();
+            // github.rateLimit() was deprecated and returned a much lower limit, low balling our rate limit numbers
+            startRateLimit = github.getRateLimit();
         } catch (IOException e) {
             LOG.error("unable to retrieve rate limit, weird", e);
         }
@@ -863,7 +872,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         try {
-            tags = repo.getRefs("refs/tags/");
+            // this crazy looking structure is because getRefs can result in a cache miss (on repos without tags) whereas listTags seems to not have this problem
+            // yes this could probably be re-coded to use listTags directly
+            if (repo.listTags().iterator().hasNext()) {
+                tags = repo.getRefs("refs/tags/");
+            }
         } catch (GHFileNotFoundException ex) {
             LOG.debug("No tags found for  " + repo.getName());
             if (!getBranchesSucceeded) {
