@@ -1688,18 +1688,15 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testWorkflowsToolsLength() {
-        // Setup user who creates Organization and collection
+        // Setup user(an admin) who creates Organization and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
         Collection stubCollection = stubCollectionObject();
-
-        long wLength = 2;
-        long tLength = 3;
-        stubCollection.setWorkflowsLength(wLength);
-        stubCollection.setToolsLength(tLength);
 
         // Attach collections
         Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
@@ -1708,8 +1705,28 @@ public class OrganizationIT extends BaseIT {
         testingPostgres.runUpdateStatement(
                 "update organization set status = '" + io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() + "'");
 
-        assertEquals(wLength, (long)collection.getWorkflowsLength());
-        assertEquals(tLength, (long)collection.getToolsLength());
+        long collectionId = collection.getId();
+
+        // Publish a tool
+        long entryId = 2;
+        ContainersApi containersApi = new ContainersApi(webClientUser2);
+        containersApi.publish(entryId, publishRequest);
+
+        // Add tool to collection
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, "");
+        // long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
+        long toolsCount = collection.getToolsLength();
+        assertEquals(1, toolsCount);
+
+        //manually register a workflow
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClientUser2);
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        //publish a workflow
+        workflowsApi.publish(workflow.getId(), publishRequest);
+        //add workflow to collection
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), "");
+        long workflowsCount = collection.getWorkflowsLength();
+        assertEquals(1, workflowsCount);
     }
 
     /**
