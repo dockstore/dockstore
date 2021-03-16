@@ -70,7 +70,10 @@
         <addForeignKeyConstraint baseColumnNames="cloudinstance_id" baseTableName="cloudinstance_supportedlanguages" constraintName="fk_cloudinstance_supportedlanguages" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cloud_instance"/>
         <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="cloud_instance" constraintName="fk_end_user_cloud_instance" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
-    <changeSet author="ghogue (generated)" id="postgres11Migrations">
+    <changeSet author="ghogue" id="postgres11Migrations">
+        <sql>
+            drop policy * on sourcefile;
+        </sql>
         <modifyDataType columnName="id" newDataType="bigint" tableName="cloud_instance"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="collection"/>
         <modifyDataType columnName="id" newDataType="int" tableName="collection_entry_version"/>
@@ -85,5 +88,12 @@
         <modifyDataType columnName="id" newDataType="bigint" tableName="sourcefile"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="token"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="validation"/>
+        <sql>
+            /* all users can read the table, but cannot update or delete frozen files */
+            create policy select_frozenfiles on sourcefile for select using (true);
+            create policy insert_frozenfiles on sourcefile for insert with check (true);
+            create policy update_frozenfiles on sourcefile for update using (not frozen) with check (true);
+            create policy delete_frozenfiles on sourcefile for delete using (not frozen);
+        </sql>
     </changeSet>
 </databaseChangeLog>
