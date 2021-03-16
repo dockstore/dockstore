@@ -67,6 +67,11 @@
             <version>1.11.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <scope>testing</scope>
+        </dependency>
+        <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
             <version>1.11.0-alpha.1-SNAPSHOT</version>
