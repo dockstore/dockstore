@@ -325,8 +325,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+        final List<Token> tokens = this.tokenDAO.findGithubByUserId(user.getId());
+        final Token token = tokens.get(0);
         // Grab Dockstore YML from GitHub
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(token.getContent());
 
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
         GHRateLimit endRateLimit;
@@ -337,8 +339,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml);
+//            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, token.getContent(), user, dockstoreYml);
+            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, token.getContent(), user, dockstoreYml);
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -407,7 +409,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml) {
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(installationId);
         try {
             List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
