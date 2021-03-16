@@ -72,32 +72,18 @@
     </changeSet>
     <changeSet author="ghogue (generated)" id="postgres11Migrations">
         <modifyDataType columnName="id" newDataType="bigint" tableName="cloud_instance"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('cloud_instance_id_seq'::regclass)" tableName="cloud_instance"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="collection"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('collection_id_seq'::regclass)" tableName="collection"/>
         <modifyDataType columnName="id" newDataType="int" tableName="collection_entry_version"/>
-        <addDefaultValue columnDataType="int" columnName="id" defaultValueComputed="nextval('collection_entry_version_id_seq'::regclass)" tableName="collection_entry_version"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="deletedusername"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('deletedusername_id_seq'::regclass)" tableName="deletedusername"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="enduser"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('enduser_id_seq'::regclass)" tableName="enduser"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="event"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('event_id_seq'::regclass)" tableName="event"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="fileformat"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('fileformat_id_seq'::regclass)" tableName="fileformat"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="image"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('image_id_seq'::regclass)" tableName="image"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="label"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('label_id_seq'::regclass)" tableName="label"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="lambdaevent"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('lambdaevent_id_seq'::regclass)" tableName="lambdaevent"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="organization"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('organization_id_seq'::regclass)" tableName="organization"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="sourcefile"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('sourcefile_id_seq'::regclass)" tableName="sourcefile"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="token"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('token_id_seq'::regclass)" tableName="token"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="validation"/>
-        <addDefaultValue columnDataType="bigint" columnName="id" defaultValueComputed="nextval('validation_id_seq'::regclass)" tableName="validation"/>
     </changeSet>
 </databaseChangeLog>
