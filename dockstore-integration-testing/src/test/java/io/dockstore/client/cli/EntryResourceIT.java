@@ -13,6 +13,7 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
+import io.dockstore.webservice.resources.EntryResource;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -66,7 +67,7 @@ public class EntryResourceIT extends BaseIT {
             fail("Should not have been able to export an entry without DOI concept URL");
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
-            Assert.assertEquals("Entry does not have a concept DOI associated with it", e.getMessage());
+            Assert.assertEquals(EntryResource.ENTRY_NO_DOI_ERROR_MESSAGE, e.getMessage());
         }
         testingPostgres.runUpdateStatement("update workflow set conceptDOI='dummy'");
         try {
@@ -74,14 +75,14 @@ public class EntryResourceIT extends BaseIT {
             fail("Should not have been able to export a version without DOI URL");
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
-            Assert.assertEquals("Version does not have a DOI url associated with it", e.getMessage());
+            Assert.assertEquals(EntryResource.VERSION_NO_DOI_ERROR_MESSAGE, e.getMessage());
         }
         try {
             entriesApi.exportToORCID(workflowId, workflowVersionId + 1);
             fail("Should not have been able to export a version that doesn't belong to the entry");
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
-            Assert.assertEquals("Version does not belong to entry", e.getMessage());
+            Assert.assertEquals(EntryResource.VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, e.getMessage());
         }
 
     }

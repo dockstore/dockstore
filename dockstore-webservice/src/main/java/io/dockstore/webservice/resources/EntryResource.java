@@ -98,6 +98,9 @@ import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SE
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
+    public static final String VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE = "Version does not belong to entry";
+    public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
+    public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
 
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
@@ -234,15 +237,15 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         if (versionId != null) {
             Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
             if (version == null) {
-                throw new CustomWebApplicationException("Version does not belong to entry", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
             if (version.getDoiURL() == null) {
-                throw new CustomWebApplicationException("Version does not have a DOI url associated with it", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(VERSION_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
             optionalVersion = Optional.ofNullable(version);
         } else {
             if (entry.getConceptDoi() == null) {
-                throw new CustomWebApplicationException("Entry does not have a concept DOI associated with it", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(ENTRY_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
         }
         if (baseApiURL == null) {
@@ -250,7 +253,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         if (orcidByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_BAD_REQUEST);
         }
         try {
             String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion);
