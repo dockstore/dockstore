@@ -41,7 +41,7 @@ public class CacheHitListener extends EventListener {
         if (!endpointCalled.contains("rate_limit")) {
             LOG.debug(listenerTag + " cacheMiss for : " + endpointCalled);
             try {
-                FileUtils.writeStringToFile(DockstoreWebserviceApplication.CACHE_MISS_LOG_FILE, username + '\t' + endpointCalled + '\n',
+                FileUtils.writeStringToFile(DockstoreWebserviceApplication.CACHE_MISS_LOG_FILE, listenerTag + ',' + username + ',' + endpointCalled + '\n',
                         StandardCharsets.UTF_8, true);
             } catch (IOException e) {
                 LOG.error("could not write cache miss to log", e);
