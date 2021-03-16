@@ -286,7 +286,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 WdlBridge wdlBridge = new WdlBridge();
                 if (wdlBridge.fileFirstLineStartsWithString(UNSUPPORTED_WDL_VERSION, tempMainDescriptor.getAbsolutePath())) {
                     validationMessageObject.put(primaryDescriptorFilePath, "WDL " + UNSUPPORTED_WDL_VERSION + " cannot be completely"
-                            + " validated at this time." );
+                            + " validated at this time.");
                 } else {
                     validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 }
