@@ -654,6 +654,8 @@
                     <sortArtifactByName>true</sortArtifactByName>
                     <failOnMissing>true</failOnMissing>
                     <excludedGroups>^io\.dockstore</excludedGroups>
+                    <!-- this is timing out the build and throwing off weird messages, see https://github.com/dockstore/dockstore/issues/4109 -->
+                    <skipAggregateAddThirdParty>true</skipAggregateAddThirdParty>
                 </configuration>
                 <executions>
                     <execution>
