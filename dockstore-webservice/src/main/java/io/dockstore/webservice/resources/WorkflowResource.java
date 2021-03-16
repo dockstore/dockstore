@@ -276,7 +276,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             // create each type of repo and check its validity
             SourceCodeRepoInterface sourceCodeRepo = null;
             if (token != null) {
-                sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+                sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token);
             }
             boolean hasToken = token != null && token.getContent() != null;
             foundAtLeastOneToken = foundAtLeastOneToken || hasToken;
@@ -1929,7 +1929,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         final Token gitToken = scTokens.get(0);
 
-        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
+        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken);
         final String tokenSource = gitToken.getTokenSource().toString();
         final String repository = organization + "/" + repositoryName;
 

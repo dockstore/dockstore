@@ -105,7 +105,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder().cache(DockstoreWebserviceApplication.getCache());
         if (System.getenv("CIRCLE_SHA1") != null) {
-            builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName()));
+            builder.eventListener(new CacheHitListener(gitUsername, GitHubSourceCodeRepo.class.getSimpleName()));
         }
         OkHttpClient build = builder.build();
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
