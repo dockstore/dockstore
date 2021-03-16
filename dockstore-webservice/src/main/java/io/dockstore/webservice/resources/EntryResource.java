@@ -97,10 +97,10 @@ import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SE
 @Tag(name = "entries", description = ResourceConstants.ENTRIES)
 public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
     public static final String VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE = "Version does not belong to entry";
     public static final String ENTRY_NO_DOI_ERROR_MESSAGE = "Entry does not have a concept DOI associated with it";
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
+    private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
