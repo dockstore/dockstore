@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -40,8 +41,10 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
@@ -82,6 +85,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final WorkflowDAO workflowDAO;
     protected final UserDAO userDAO;
     protected final WorkflowVersionDAO workflowVersionDAO;
+    protected final EntryResource entryResource;
     protected final EventDAO eventDAO;
     protected final FileDAO fileDAO;
     protected final LambdaEventDAO lambdaEventDAO;
@@ -93,9 +97,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final String bitbucketClientID;
     private final Class<T> entityClass;
 
-    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
+    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
         this.client = client;
         this.sessionFactory = sessionFactory;
+        this.entryResource = entryResource;
 
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -317,7 +322,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId GitHub App installation ID
      * @return List of new and updated workflows
      */
-    protected List<Workflow> githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
+    protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
         // Grab Dockstore YML from GitHub
@@ -332,17 +337,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-            final List<Workflow> workflows = new ArrayList();
-            workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference,
-                    installationId, user, dockstoreYml));
-            workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference,
-                    installationId, user, dockstoreYml));
+            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml);
+            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml);
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             isSuccessful = true;
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
@@ -417,9 +418,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
+                Boolean publish = wf.getPublish();
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+
+                if (publish != null && workflow.getIsPublished() != publish) {
+                    LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+                    try {
+                        workflow = publishWorkflow(workflow, publish);
+                    } catch (CustomWebApplicationException ex) {
+                        LOG.warn("Could not set publish state from YML.", ex);
+                        lambdaEvent.setSuccess(false);
+                        lambdaEvent.setMessage(ex.getMessage());
+                    }
+                    lambdaEventDAO.create(lambdaEvent);
+                }
+
                 updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
@@ -447,8 +462,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 return updatedServices;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
+            final Boolean publish = service.getPublish();
+
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+
+            if (publish != null && workflow.getIsPublished() != publish) {
+                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+                try {
+                    workflow = publishWorkflow(workflow, publish);
+                } catch (CustomWebApplicationException ex) {
+                    LOG.warn("Could not set publish state from YML.", ex);
+                    lambdaEvent.setSuccess(false);
+                    lambdaEvent.setMessage(ex.getMessage());
+                }
+                lambdaEventDAO.create(lambdaEvent);
+            }
+
             updatedServices.add(workflow);
         }
         return updatedServices;
@@ -657,5 +687,61 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return installationAccessToken;
+    }
+
+    /**
+     * Publish or unpublish given workflow, if necessary.
+     * @param workflow
+     * @param publish
+     * @return
+     */
+    protected Workflow publishWorkflow(Workflow workflow, final boolean publish) {
+        if (workflow.getIsPublished() == publish) {
+            return workflow;
+        }
+
+        Workflow checker = workflow.getCheckerWorkflow();
+
+        if (workflow.isIsChecker()) {
+            String msg = "Cannot directly publish/unpublish a checker workflow.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (publish) {
+            boolean validTag = false;
+            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
+            for (WorkflowVersion workflowVersion : versions) {
+                if (workflowVersion.isValid()) {
+                    validTag = true;
+                    break;
+                }
+            }
+
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+                workflow.setIsPublished(true);
+                if (checker != null) {
+                    checker.setIsPublished(true);
+                }
+            } else {
+                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
+            if (workflow.getTopicId() == null) {
+                try {
+                    entryResource.createAndSetDiscourseTopic(workflow.getId());
+                } catch (CustomWebApplicationException ex) {
+                    LOG.error("Error adding discourse topic.", ex);
+                }
+            }
+        } else {
+            workflow.setIsPublished(false);
+            if (checker != null) {
+                checker.setIsPublished(false);
+            }
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
+        }
+        return workflow;
     }
 }

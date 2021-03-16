@@ -33,6 +33,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -89,7 +90,9 @@ public class DockstoreYamlTest {
         if (!workflowFoobar.isPresent()) {
             fail("Could not find workflow foobar");
         }
-        final YamlWorkflow workflow = workflowFoobar.get();
+
+        YamlWorkflow workflow = workflowFoobar.get();
+        assertTrue(workflow.getPublish());
         assertEquals("wdl", workflow.getSubclass());
         assertEquals("/Dockstore2.wdl", workflow.getPrimaryDescriptorPath());
         final List<String> testParameterFiles = workflow.getTestParameterFiles();
@@ -102,8 +105,15 @@ public class DockstoreYamlTest {
         final List<String> tags = filters.getTags();
         assertEquals(1, tags.size());
         assertEquals("gwas*", tags.get(0));
+
+        workflow = workflows.get(1);
+        assertFalse(workflow.getPublish());
+        workflow = workflows.get(2);
+        assertNull(workflow.getPublish());
+
         final Service12 service = dockstoreYaml.getService();
         assertNotNull(service);
+        assertTrue(service.getPublish());
     }
 
     @Test

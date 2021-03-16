@@ -163,36 +163,6 @@ public class DockerRepoResource
         this.toolDAO = new ToolDAO(sessionFactory);
     }
 
-    List<Tool> refreshToolsForUser(Long userId, String organization) {
-        refreshBitbucketToken(userId);
-
-        // Get user's quay and git tokens
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
-
-        // with Docker Hub support it is now possible that there is no quayToken
-        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
-
-        // Get a list of all image registries
-        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
-        final List<AbstractImageRegistry> allRegistries = factory.getAllRegistries();
-
-        // Get a list of all namespaces from all image registries
-        List<Tool> updatedTools = new ArrayList<>();
-        for (AbstractImageRegistry abstractImageRegistry : allRegistries) {
-            Registry registry = abstractImageRegistry.getRegistry();
-            LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
-
-            updatedTools.addAll(abstractImageRegistry
-                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
-                    gitlabToken, organization, eventDAO, dashboardPrefix));
-        }
-        return updatedTools;
-    }
-
     List<Tool> refreshToolsForUser(Long userId, String organization, String repository) {
         refreshBitbucketToken(userId);
 
@@ -956,18 +926,6 @@ public class DockerRepoResource
             //                throw ex;
             //            }
         }
-    }
-
-    /*
-     * TODO: This endpoint has been moved to metadata, though it still exists here to deal with the case of users trying to interact with this endpoint.
-     */
-    @GET
-    @Timed
-    @Path("/dockerRegistryList")
-    @Operation(operationId = "getDockerRegistries", description = "Get the list of docker registries supported on Dockstore.")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
-    public List<Registry.RegistryBean> getDockerRegistries() {
-        return rc.getResource(MetadataResource.class).getDockerRegistries();
     }
 
     @PUT

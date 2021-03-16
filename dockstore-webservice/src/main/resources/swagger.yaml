@@ -1322,23 +1322,6 @@ paths:
           description: "Invalid token value"
       security:
       - BEARER: []
-  /containers/dockerRegistryList:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the list of docker registries supported on Dockstore."
-      description: "Does not need authentication"
-      operationId: "getDockerRegistries"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/RegistryBean"
   /containers/hostedEntry:
     post:
       tags:
@@ -4743,12 +4726,8 @@ paths:
         required: false
         type: "string"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
   /workflows/hostedEntry:
@@ -7018,6 +6997,7 @@ definitions:
         - "PUSH"
         - "DELETE"
         - "INSTALL"
+        - "PUBLISH"
   LicenseInformation:
     type: "object"
     properties:
@@ -7957,6 +7937,7 @@ definitions:
         enum:
         - "NONE"
         - "TOS_VERSION_1"
+        - "TOS_VERSION_2"
       userProfiles:
         type: "object"
         description: "Profile information of the user retrieved from 3rd party sites\
