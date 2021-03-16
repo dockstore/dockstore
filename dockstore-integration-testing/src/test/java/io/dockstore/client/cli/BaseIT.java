@@ -61,6 +61,7 @@ public class BaseIT {
     protected static TestingPostgres testingPostgres;
     // This is not an admin
     static final String OTHER_USERNAME = "OtherUser";
+
     @Rule
     public final TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {

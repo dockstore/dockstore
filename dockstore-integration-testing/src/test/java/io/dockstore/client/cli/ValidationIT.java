@@ -274,7 +274,7 @@ public class ValidationIT extends BaseIT {
         // Register tool, should be valid
         DockstoreTool tool = getTool();
         tool = toolsApi.registerManual(tool);
-        Assert.assertNull(tool.getLicenseInformation().getLicenseName());
+        Assert.assertNotNull(tool.getLicenseInformation().getLicenseName());
         tool = toolsApi.refresh(tool.getId());
         Assert.assertTrue("Should be valid", isTagValid(tool, "master"));
 
