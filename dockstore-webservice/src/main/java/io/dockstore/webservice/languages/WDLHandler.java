@@ -71,6 +71,8 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final String WDL_PARSE_ERROR = "Unable to parse WDL workflow, ";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
+    private static final String UNSUPPORTED_WDL_VERSION = "version 1.1";
+
     public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
             throws ParseException {
         // Use matcher to get imports
@@ -163,7 +165,13 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
-                validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage());
+
+                if (wdlBridge.fileFirstLineStartsWithString(UNSUPPORTED_WDL_VERSION, tempMainDescriptor.getAbsolutePath())) {
+                    validationMessageObject.put(filepath, "WDL " + UNSUPPORTED_WDL_VERSION + " cannot be completely"
+                            + " parsed for metadata or validated at this time.");
+                } else {
+                    validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage());
+                }
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
                 version.setAuthor(null);
                 version.setDescriptionAndDescriptionSource(null, null);
@@ -269,20 +277,19 @@ public class WDLHandler implements LanguageHandlerInterface {
                 WdlBridge wdlBridge = new WdlBridge();
                 wdlBridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
 
-                String unsupportedVersion = "version 1.1";
-                if (wdlBridge.fileFirstLineStartsWithString(unsupportedVersion, tempMainDescriptor.getAbsolutePath())) {
-                    validationMessageObject.put(primaryDescriptorFilePath, "WDL version" + unsupportedVersion + " cannot be completely"
-                            + " validated at this time.");
-                    return new VersionTypeValidation(false, validationMessageObject);
+                if (Objects.equals(type, "tool")) {
+                    wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath(), primaryDescriptorFilePath);
                 } else {
-                    if (Objects.equals(type, "tool")) {
-                        wdlBridge.validateTool(tempMainDescriptor.getAbsolutePath(), primaryDescriptorFilePath);
-                    } else {
-                        wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
-                    }
+                    wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
+                WdlBridge wdlBridge = new WdlBridge();
+                if (wdlBridge.fileFirstLineStartsWithString(UNSUPPORTED_WDL_VERSION, tempMainDescriptor.getAbsolutePath())) {
+                    validationMessageObject.put(primaryDescriptorFilePath, "WDL " + UNSUPPORTED_WDL_VERSION + " cannot be completely"
+                            + " validated at this time." );
+                } else {
+                    validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
+                }
                 return new VersionTypeValidation(false, validationMessageObject);
             } catch (CustomWebApplicationException e) {
                 throw e;
@@ -442,7 +449,13 @@ public class WDLHandler implements LanguageHandlerInterface {
             // Get import files
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
         } catch (WdlParser.SyntaxError ex) {
-            final String exMsg = WDLHandler.WDL_PARSE_ERROR + ex.getMessage();
+            String exMsg = WDLHandler.WDL_PARSE_ERROR + ex.getMessage();
+
+            WdlBridge wdlBridge = new WdlBridge();
+            if (wdlBridge.fileFirstLineStartsWithString(UNSUPPORTED_WDL_VERSION, tempMainDescriptor.getAbsolutePath())) {
+                exMsg = "WDL " + UNSUPPORTED_WDL_VERSION + " cannot be completely parsed for content at this time.";
+            }
+
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
         } catch (IOException | NoSuchElementException ex) {
