@@ -72,7 +72,10 @@
     </changeSet>
     <changeSet author="ghogue" id="postgres11Migrations">
         <sql>
-            drop policy * on sourcefile;
+            drop policy select_frozenfiles on sourcefile;
+            drop policy insert_frozenfiles on sourcefile;
+            drop policy update_frozenfiles on sourcefile;
+            drop policy delete_frozenfiles on sourcefile;
         </sql>
         <modifyDataType columnName="id" newDataType="bigint" tableName="cloud_instance"/>
         <modifyDataType columnName="id" newDataType="bigint" tableName="collection"/>
