@@ -1087,7 +1087,7 @@ public class WorkflowIT extends BaseIT {
 
         workflow = workflowsApi.refresh(workflow.getId(), false);
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
-        WorkflowVersion version = workflowVersions.get(0);
+        WorkflowVersion version = workflowVersions.stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get();
         version.setHidden(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
 
