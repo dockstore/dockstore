@@ -1134,6 +1134,9 @@ public class DockerRepoResource
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
 
         Tool tool = toolDAO.findById(toolId);
+        if (tool == null) {
+            throw new CustomWebApplicationException("could not find tool", HttpStatus.SC_NOT_FOUND);
+        }
         if (tool.getIsPublished()) {
             checkEntry(tool);
         } else {
