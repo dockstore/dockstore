@@ -22,8 +22,6 @@ AndroidManifest.xml
 # vscode
 .vscode
 
-*
-
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 /target/
@@ -62,6 +60,5 @@ dockstore-integration-testing/src/test/resources/dockstoreTest.yml
 
 # The tarball of the above three confidential files
 dockstore-integration-testing/src/test/resources/secrets.tar
-
 
 dockstore-webservice/src/main/resources/openapi3/unsortedopenapi.yaml
