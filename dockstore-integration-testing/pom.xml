@@ -70,8 +70,8 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
             <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <!-- looks like these are excluded because they bring in duplicate liquibase.build.properties -->
             <exclusions>
-                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
                 <exclusion>
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-core</artifactId>
@@ -82,8 +82,8 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
             <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <!-- looks like these are excluded because they bring in duplicate liquibase.build.properties -->
             <exclusions>
-                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
                 <exclusion>
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-core</artifactId>

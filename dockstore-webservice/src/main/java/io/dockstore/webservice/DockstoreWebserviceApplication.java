@@ -163,6 +163,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String GA4GH_API_PATH_V2_BETA = "/api/ga4gh/v2";
     public static final String GA4GH_API_PATH_V2_FINAL = "/ga4gh/trs/v2";
     public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
+    public static final String DOCKSTORE_WEB_CACHE = "/tmp/dockstore-web-cache";
+    public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
+    public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
+
     public static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
@@ -222,16 +226,26 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 // let's try using the same cache each time
                 // not sure how corruptible/non-curruptable the cache is
                 // https://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/cache/DiskLruCache.java#L82 looks promising
-                cacheDir = Files.createDirectories(Paths.get("/tmp/dockstore-web-cache")).toFile();
+                cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE)).toFile();
             } catch (IOException e) {
                 LOG.error("Could no create or re-use web cache", e);
                 throw new RuntimeException(e);
             }
             cache = new Cache(cacheDir, cacheSize);
         }
+        try {
+            cache.initialize();
+        } catch (IOException e) {
+            LOG.error("Could not create web cache, initialization exception", e);
+            throw new RuntimeException(e);
+        }
         // match HttpURLConnection which does not have a timeout by default
-        okHttpClient = new OkHttpClient().newBuilder().cache(cache).connectTimeout(0, TimeUnit.SECONDS)
-                .readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        if (System.getenv("CIRCLE_SHA1") != null) {
+            builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName()));
+        }
+        okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
+                .writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
             URL.setURLStreamHandlerFactory(new ObsoleteUrlFactory(okHttpClient));
@@ -239,7 +253,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             if (factoryException.getMessage().contains("factory already defined")) {
                 LOG.debug("OkHttpClient already registered, skipping");
             } else {
-                LOG.error("Could no create web cache, factory exception", factoryException);
+                LOG.error("Could not create web cache, factory exception", factoryException);
                 throw new RuntimeException(factoryException);
             }
         }
@@ -325,7 +339,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
         environment.jersey().register(workflowResource);
-        final ServiceResource serviceResource = new ServiceResource(httpClient, hibernate.getSessionFactory(), configuration);
+        final ServiceResource serviceResource = new ServiceResource(httpClient, hibernate.getSessionFactory(), entryResource, configuration);
         environment.jersey().register(serviceResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
@@ -455,4 +469,5 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {
         return hibernate;
     }
+
 }
