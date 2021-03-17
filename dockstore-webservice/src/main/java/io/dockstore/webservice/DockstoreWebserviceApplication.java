@@ -99,6 +99,7 @@ import io.dockstore.webservice.resources.LambdaEventResource;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.NotificationResource;
 import io.dockstore.webservice.resources.OrganizationResource;
+import io.dockstore.webservice.resources.RefererHeaderLengthLimitFilter;
 import io.dockstore.webservice.resources.ServiceResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
@@ -430,6 +431,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // Filter used to log every request an admin user makes.
         environment.jersey().register(new AdminPrivilegesFilter());
+        // Filter used to deny requests where the referer header exceeds set limit
+        environment.jersey().register(new RefererHeaderLengthLimitFilter());
 
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);
