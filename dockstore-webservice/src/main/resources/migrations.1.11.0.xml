@@ -76,6 +76,8 @@
             drop policy insert_frozenfiles on sourcefile;
             drop policy update_frozenfiles on sourcefile;
             drop policy delete_frozenfiles on sourcefile;
+            drop policy update_frozenfiles on sourcefile;
+            drop policy delete_frozenfiles on version_sourcefile;
         </sql>
     </changeSet>
     <changeSet author="ghogue" id="postgres11Migrations">
@@ -101,6 +103,9 @@
             create policy insert_frozenfiles on sourcefile for insert with check (true);
             create policy update_frozenfiles on sourcefile for update using (not frozen) with check (true);
             create policy delete_frozenfiles on sourcefile for delete using (not frozen);
+            /* Don't allow a new file to be added to the version in the join table if any of the source files are already frozen (easier to query this way instead of querying two tables like above) */
+            create policy update_frozenfiles on version_sourcefile for update using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
+            create policy delete_frozenfiles on version_sourcefile for delete using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
         </sql>
     </changeSet>
 </databaseChangeLog>
