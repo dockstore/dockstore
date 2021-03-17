@@ -70,42 +70,4 @@
         <addForeignKeyConstraint baseColumnNames="cloudinstance_id" baseTableName="cloudinstance_supportedlanguages" constraintName="fk_cloudinstance_supportedlanguages" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cloud_instance"/>
         <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="cloud_instance" constraintName="fk_end_user_cloud_instance" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
-    <changeSet author="ghogue" id="postgres11MigrationsDropPolicies">
-        <sql>
-            drop policy select_frozenfiles on sourcefile;
-            drop policy insert_frozenfiles on sourcefile;
-            drop policy update_frozenfiles on sourcefile;
-            drop policy delete_frozenfiles on sourcefile;
-            drop policy update_frozenfiles on version_sourcefile;
-            drop policy delete_frozenfiles on version_sourcefile;
-        </sql>
-    </changeSet>
-    <changeSet author="ghogue" id="postgres11Migrations">
-        <modifyDataType columnName="id" newDataType="bigint" tableName="cloud_instance"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="collection"/>
-        <modifyDataType columnName="id" newDataType="int" tableName="collection_entry_version"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="deletedusername"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="enduser"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="event"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="fileformat"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="image"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="label"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="lambdaevent"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="organization"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="sourcefile"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="token"/>
-        <modifyDataType columnName="id" newDataType="bigint" tableName="validation"/>
-    </changeSet>
-    <changeSet author="ghogue" id="postgres11MigrationsCreatePolicies">
-        <sql>
-            /* all users can read the table, but cannot update or delete frozen files */
-            create policy select_frozenfiles on sourcefile for select using (true);
-            create policy insert_frozenfiles on sourcefile for insert with check (true);
-            create policy update_frozenfiles on sourcefile for update using (not frozen) with check (true);
-            create policy delete_frozenfiles on sourcefile for delete using (not frozen);
-            /* Don't allow a new file to be added to the version in the join table if any of the source files are already frozen (easier to query this way instead of querying two tables like above) */
-            create policy update_frozenfiles on version_sourcefile for update using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
-            create policy delete_frozenfiles on version_sourcefile for delete using (not (select sf.frozen from sourcefile sf where sourcefileid = sf.id));
-        </sql>
-    </changeSet>
 </databaseChangeLog>
