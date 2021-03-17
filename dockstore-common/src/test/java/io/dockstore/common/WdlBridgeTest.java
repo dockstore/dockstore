@@ -53,7 +53,9 @@ public class WdlBridgeTest {
         String filePath = file.getAbsolutePath();
         String sourceFilePath = "/scripts/mitochondria_m2_wdl/MitochondriaPipeline.wdl";
         ArrayList<Map<String, String>> metadata = wdlBridge.getMetadata(filePath, sourceFilePath);
-        Assert.assertEquals("There should be 4 sets of metadata (3 from tasks, 1 from workflow)", 4, metadata.size());
+        // Known number of metadata objects
+        final int knownMetadataObjectSize = 4;
+        assertEquals("There should be 4 sets of metadata (3 from tasks, 1 from workflow)", knownMetadataObjectSize, metadata.size());
         Assert.assertTrue("The metadata from a task should be gotten", metadata.get(0).containsValue("Removes alignment information while retaining recalibrated base qualities and original alignment tags"));
         Assert.assertTrue("The metadata from the main workflow should be gotten", metadata.get(2).containsValue("Takes in an hg38 bam or cram and outputs VCF of SNP/Indel calls on the mitochondria."));
     }
