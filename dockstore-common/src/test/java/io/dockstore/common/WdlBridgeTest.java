@@ -1,9 +1,11 @@
 package io.dockstore.common;
 
+import java.io.File;
 import java.util.Map;
 
 import io.dropwizard.testing.FixtureHelpers;
 import org.junit.Test;
+import wdl.draft3.parser.WdlParser;
 import wom.callable.ExecutableCallable;
 import wom.executable.WomBundle;
 
@@ -40,5 +42,14 @@ public class WdlBridgeTest {
         final ExecutableCallable executableCallable = wdlBridge.convertBundleToExecutableCallable(bundleFromContent);
         final Map<String, DockerParameter> callsToDockerMap = wdlBridge.getCallsToDockerMap(executableCallable);
         return callsToDockerMap;
+    }
+
+    @Test
+    public void testBooleanMetadata() throws WdlParser.SyntaxError {
+        WdlBridge wdlBridge = new WdlBridge();
+        File file = new File("src/test/resources/MitocondriaPipeline.wdl");
+        String filePath = file.getAbsolutePath();
+        String sourceFilePath = "/scripts/mitochondria_m2_wdl/MitochondriaPipeline.wdl";
+        wdlBridge.getMetadata(filePath, sourceFilePath);
     }
 }
