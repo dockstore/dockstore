@@ -26,7 +26,7 @@ public class RefererHeaderLengthLimitFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         if (requestContext != null) {
             List<String> refererHeader = requestContext.getHeaders().get("Referer");
-            if (!refererHeader.isEmpty()) {
+            if (refererHeader != null && !refererHeader.isEmpty()) {
                 String referer = refererHeader.get(0);
                 if (referer.length() > LENGTH_LIMIT) {
                     String msg = "Request exceeds url length limit.";
