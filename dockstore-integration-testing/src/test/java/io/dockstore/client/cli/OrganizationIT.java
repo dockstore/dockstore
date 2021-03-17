@@ -6,6 +6,7 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -16,6 +17,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
@@ -24,6 +26,7 @@ import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Workflow;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1713,18 +1716,18 @@ public class OrganizationIT extends BaseIT {
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, "");
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, 8L);
         // long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
         long toolsCount = collection.getToolsLength();
         assertEquals(1, toolsCount);
 
         //manually register a workflow
         WorkflowsApi workflowsApi = new WorkflowsApi(webClientUser2);
-        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", "WDL", "");
         //publish a workflow
         workflowsApi.publish(workflow.getId(), publishRequest);
         //add workflow to collection
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), "");
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), 8L);
         long workflowsCount = collection.getWorkflowsLength();
         assertEquals(1, workflowsCount);
     }
