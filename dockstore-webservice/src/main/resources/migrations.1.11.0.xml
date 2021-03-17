@@ -76,7 +76,7 @@
             drop policy insert_frozenfiles on sourcefile;
             drop policy update_frozenfiles on sourcefile;
             drop policy delete_frozenfiles on sourcefile;
-            drop policy update_frozenfiles on sourcefile;
+            drop policy update_frozenfiles on version_sourcefile;
             drop policy delete_frozenfiles on version_sourcefile;
         </sql>
     </changeSet>
