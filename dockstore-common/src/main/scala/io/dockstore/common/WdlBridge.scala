@@ -424,6 +424,18 @@ class WdlBridge {
     val fileContent = readFile(descriptorFilePath)
     LanguageFactoryUtil.simpleLooksParseable(List(lineStartString), List("#"))(fileContent)
   }
+
+
+  def getFirstCodeLine(descriptorFilePath: String): Option[String] = {
+    val commentIndicators = List("#")
+    val content = readFile(descriptorFilePath)
+    val fileWithoutInitialWhitespace = content.linesIterator.toList.dropWhile { l =>
+      l.forall(_.isWhitespace) || commentIndicators.exists(l.dropWhile(_.isWhitespace).startsWith(_))
+    }
+
+    val firstCodeLine = fileWithoutInitialWhitespace.headOption.map(_.dropWhile(_.isWhitespace))
+    firstCodeLine
+  }
 }
 
 object WdlBridge {

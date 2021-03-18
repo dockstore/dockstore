@@ -59,6 +59,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Option;
+import scala.tools.jline_embedded.internal.Log;
 import wdl.draft3.parser.WdlParser;
 
 /**
@@ -71,7 +73,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final String WDL_PARSE_ERROR = "Unable to parse WDL workflow, ";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
-    private static final String UNSUPPORTED_WDL_VERSION = "version 1.1";
+    private static final String LATEST_SUPPORTED_WDL_VERSION = "1.0";
 
     public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
             throws ParseException {
@@ -166,9 +168,10 @@ public class WDLHandler implements LanguageHandlerInterface {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
 
-                if (wdlBridge.fileFirstLineStartsWithString(UNSUPPORTED_WDL_VERSION, tempMainDescriptor.getAbsolutePath())) {
-                    validationMessageObject.put(filepath, "WDL " + UNSUPPORTED_WDL_VERSION + " cannot be completely"
-                            + " parsed for metadata or validated at this time.");
+                Optional<String> semVersionString = getSemanticVersionString(tempMainDescriptor.getAbsolutePath());
+                if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
+                    validationMessageObject.put(filepath, "WDL " + semVersionString.get() + " cannot be completely"
+                            + "parsed for metadata or validated at this time.");
                 } else {
                     validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage());
                 }
@@ -283,9 +286,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                     wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                WdlBridge wdlBridge = new WdlBridge();
-                if (wdlBridge.fileFirstLineStartsWithString(UNSUPPORTED_WDL_VERSION, tempMainDescriptor.getAbsolutePath())) {
-                    validationMessageObject.put(primaryDescriptorFilePath, "WDL " + UNSUPPORTED_WDL_VERSION + " cannot be completely"
+                Optional<String> semVersionString = getSemanticVersionString(tempMainDescriptor.getAbsolutePath());
+                if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
+                    validationMessageObject.put(primaryDescriptorFilePath, "WDL " + semVersionString.get() + " cannot be completely"
                             + " validated at this time.");
                 } else {
                     validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
@@ -450,12 +453,10 @@ public class WDLHandler implements LanguageHandlerInterface {
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
         } catch (WdlParser.SyntaxError ex) {
             String exMsg = WDLHandler.WDL_PARSE_ERROR + ex.getMessage();
-
-            WdlBridge wdlBridge = new WdlBridge();
-            if (wdlBridge.fileFirstLineStartsWithString(UNSUPPORTED_WDL_VERSION, tempMainDescriptor.getAbsolutePath())) {
-                exMsg = "WDL " + UNSUPPORTED_WDL_VERSION + " cannot be completely parsed for content at this time.";
+            Optional<String> semVersionString = getSemanticVersionString(tempMainDescriptor.getAbsolutePath());
+            if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
+                exMsg = "WDL version " + semVersionString.get() + " cannot be completely parsed for content at this time.";
             }
-
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
         } catch (IOException | NoSuchElementException ex) {
@@ -505,5 +506,44 @@ public class WDLHandler implements LanguageHandlerInterface {
             }
         }));
         return toolInfoMap;
+    }
+
+    /**
+     * Check if the input semantic version string is greater than the newest currently supported WDL semantic version string
+     * @param semVerString semantic version string to compare
+     * @return whether the input semantic version string is greater
+     */
+    protected static boolean versionIsGreaterThanCurrentlySupported(String semVerString) {
+        com.github.zafarkhaja.semver.Version semVer = com.github.zafarkhaja.semver.Version.valueOf(semVerString);
+        return semVer.greaterThan(com.github.zafarkhaja.semver.Version.valueOf(LATEST_SUPPORTED_WDL_VERSION));
+    }
+
+    /**
+     * Get the semantic version string from the WDL file
+     * @param primaryDescriptorPath path to the primary WDL descriptor
+     * @return the semantic version string, e.g. '1.0', which should be in the first code line, e.g. 'version 1.0'
+     */
+    protected static Optional<String> getSemanticVersionString(String primaryDescriptorPath) {
+        WdlBridge wdlBridge = new WdlBridge();
+        Option<String> firstCodeLine = wdlBridge.getFirstCodeLine(primaryDescriptorPath);
+        // https://www.scala-lang.org/files/archive/api/2.13.x/scala/jdk/javaapi/OptionConverters$.html
+        Optional<String> versionLine = Optional.ofNullable(firstCodeLine.getOrElse(null));
+        return Optional.ofNullable(versionLine.get().split("\\s+")[1]);
+    }
+
+    /**
+     * Determine whether the WDL version is greater than the current supported WDL version
+     * @param primaryDescriptorPath path to the primary WDL descriptor
+     * @return the semantic version string, e.g. '1.0', which should be in the first code line, e.g. 'version 1.0'
+     *  or if it is not found false
+     */
+    protected static boolean wdlVersionNotYetSupported(String primaryDescriptorPath) {
+        Optional<String> semVersionString = getSemanticVersionString(primaryDescriptorPath);
+        if (semVersionString.isPresent()) {
+            return versionIsGreaterThanCurrentlySupported(semVersionString.get());
+        } else {
+            Log.error("Could not find semantic version string for WDL descriptor");
+            return true;
+        }
     }
 }
