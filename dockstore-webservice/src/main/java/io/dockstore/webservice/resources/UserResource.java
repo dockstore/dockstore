@@ -818,7 +818,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .collect(Collectors.toList());
 
         scTokens.forEach(token -> {
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
             Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
             Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
 
@@ -1045,7 +1045,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
         if (scTokens.size() > 0) {
             Token scToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken);
             return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
         } else {
             return new HashMap<>();

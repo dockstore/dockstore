@@ -623,7 +623,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitHubToken
      */
     private void syncEntities(User user, Token gitHubToken) {
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken, client);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
 
         // Get all GitHub repositories for the user
         final Map<String, String> workflowGitUrl2Name = gitHubSourceCodeRepo.getWorkflowGitUrl2RepositoryId();

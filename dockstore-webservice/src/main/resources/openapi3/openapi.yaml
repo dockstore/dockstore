@@ -1398,6 +1398,7 @@ components:
           enum:
             - NONE
             - TOS_VERSION_1
+            - TOS_VERSION_2
           type: string
         tosversionAcceptanceDate:
           format: int64

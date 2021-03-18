@@ -276,7 +276,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             // create each type of repo and check its validity
             SourceCodeRepoInterface sourceCodeRepo = null;
             if (token != null) {
-                sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+                sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token);
             }
             boolean hasToken = token != null && token.getContent() != null;
             foundAtLeastOneToken = foundAtLeastOneToken || hasToken;
@@ -1868,6 +1868,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
+        if (workflow == null) {
+            throw new CustomWebApplicationException("could not find tool", HttpStatus.SC_NOT_FOUND);
+        }
         checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
@@ -1926,7 +1929,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         final Token gitToken = scTokens.get(0);
 
-        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
+        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken);
         final String tokenSource = gitToken.getTokenSource().toString();
         final String repository = organization + "/" + repositoryName;
 
@@ -1998,6 +2001,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkUser(foundUser, workflow);
         if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
             PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow.get(), StateManagerMode.DELETE);
+            eventDAO.deleteEventByEntryID(workflow.getId());
             workflowDAO.delete(workflow);
         } else {
             String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
