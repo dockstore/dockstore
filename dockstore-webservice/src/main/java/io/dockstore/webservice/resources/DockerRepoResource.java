@@ -270,7 +270,7 @@ public class DockerRepoResource
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
             .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+                gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
@@ -589,7 +589,7 @@ public class DockerRepoResource
         Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
-                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
         if (sourceCodeRepo != null) {
             sourceCodeRepo.checkSourceCodeValidity();
             String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
