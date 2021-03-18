@@ -17,6 +17,6 @@ import org.hibernate.SessionFactory;
 public class ServiceResource extends AbstractWorkflowResource<Service> {
 
     public ServiceResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
-        super(client, sessionFactory, entryResource, configuration, Service.class);
+        super(client, sessionFactory, entryResource, configuration);
     }
 }

@@ -163,7 +163,7 @@ public class DockerRepoResource
         this.toolDAO = new ToolDAO(sessionFactory);
     }
 
-    List<Tool> refreshToolsForUser(Long userId, String organization, String repository) {
+    void refreshToolsForUser(Long userId, String organization, String repository) {
         refreshBitbucketToken(userId);
 
         // Get user's quay and git tokens
@@ -181,7 +181,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Missing required Quay.io token", HttpStatus.SC_BAD_REQUEST);
         }
         QuayImageRegistry registry = new QuayImageRegistry(quayToken);
-        return registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+        registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, githubToken, bitbucketToken,
             gitlabToken, organization, eventDAO, dashboardPrefix, repository);
     }
 
@@ -269,7 +269,7 @@ public class DockerRepoResource
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+            .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
                 gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
 
         // Get all registries

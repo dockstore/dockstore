@@ -21,7 +21,6 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -32,7 +31,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
@@ -45,17 +43,11 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Tag(name = "lambdaEvents", description = ResourceConstants.LAMBDAEVENTS)
 public class LambdaEventResource {
     private final LambdaEventDAO lambdaEventDAO;
-    private final WorkflowDAO workflowDAO;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
-    private SessionFactory sessionFactory;
-    private final HttpClient client;
 
-    public LambdaEventResource(SessionFactory sessionFactory, HttpClient client) {
-        this.sessionFactory = sessionFactory;
-        this.client = client;
+    public LambdaEventResource(SessionFactory sessionFactory) {
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
-        this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
     }
