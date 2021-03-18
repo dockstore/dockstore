@@ -358,7 +358,7 @@ public class MetadataResource {
     @ApiResponse(description = "Cache performance information", content = @Content(mediaType = "application/json"))
     @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class)
     public Map<String, String> getCachePerformance() {
-        Cache cache = DockstoreWebserviceApplication.getCache();
+        Cache cache = DockstoreWebserviceApplication.getCache(null);
         Map<String, String> results = new HashMap<>();
         results.put("requestCount", String.valueOf(cache.requestCount()));
         results.put("networkCount", String.valueOf(cache.networkCount()));

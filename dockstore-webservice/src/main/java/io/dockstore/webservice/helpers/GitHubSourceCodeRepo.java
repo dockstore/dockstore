@@ -105,9 +105,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder().cache(DockstoreWebserviceApplication.getCache());
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), gitUsername));
         if (System.getenv("CIRCLE_SHA1") != null) {
-            builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), gitUsername));
+            // namespace cache by user when testing
+            builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
+        } else {
+            // use general cache
+            builder.cache(DockstoreWebserviceApplication.getCache(null));
         }
         OkHttpClient build = builder.build();
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
