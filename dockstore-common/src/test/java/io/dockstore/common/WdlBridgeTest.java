@@ -1,9 +1,13 @@
 package io.dockstore.common;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Map;
 
 import io.dropwizard.testing.FixtureHelpers;
+import org.junit.Assert;
 import org.junit.Test;
+import wdl.draft3.parser.WdlParser;
 import wom.callable.ExecutableCallable;
 import wom.executable.WomBundle;
 
@@ -40,5 +44,19 @@ public class WdlBridgeTest {
         final ExecutableCallable executableCallable = wdlBridge.convertBundleToExecutableCallable(bundleFromContent);
         final Map<String, DockerParameter> callsToDockerMap = wdlBridge.getCallsToDockerMap(executableCallable);
         return callsToDockerMap;
+    }
+
+    @Test
+    public void testBooleanMetadata() throws WdlParser.SyntaxError {
+        WdlBridge wdlBridge = new WdlBridge();
+        File file = new File("src/test/resources/MitocondriaPipeline.wdl");
+        String filePath = file.getAbsolutePath();
+        String sourceFilePath = "/scripts/mitochondria_m2_wdl/MitochondriaPipeline.wdl";
+        ArrayList<Map<String, String>> metadata = wdlBridge.getMetadata(filePath, sourceFilePath);
+        // Known number of metadata objects
+        final int knownMetadataObjectSize = 4;
+        assertEquals("There should be 4 sets of metadata (3 from tasks, 1 from workflow)", knownMetadataObjectSize, metadata.size());
+        Assert.assertTrue("The metadata from a task should be gotten", metadata.get(0).containsValue("Removes alignment information while retaining recalibrated base qualities and original alignment tags"));
+        Assert.assertTrue("The metadata from the main workflow should be gotten", metadata.get(2).containsValue("Takes in an hg38 bam or cram and outputs VCF of SNP/Indel calls on the mitochondria."));
     }
 }
