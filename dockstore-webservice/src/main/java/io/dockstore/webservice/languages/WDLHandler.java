@@ -74,7 +74,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final String WDL_PARSE_ERROR = "Unable to parse WDL workflow, ";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
-    // We must use a version string with format X.Y.Z
+    // We must use a version string with format X.Y.Z in order to use semver
     // See comment in versionIsGreaterThanCurrentlySupported
     private static final String LATEST_SUPPORTED_WDL_VERSION = "1.0.0";
 
@@ -512,21 +512,31 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     /**
-     * Check if the input semantic version string is greater than the newest currently supported WDL semantic version string
-     * @param semVerString semantic version string to compare
-     * @return whether the input semantic version string is greater
+     * Convert a possibly invalid semantic version string to a valid semantic version string
+     * @param semVerString semantic version string to convert
+     * @return a valid semantic version string
      */
-    protected static boolean versionIsGreaterThanCurrentlySupported(String semVerString) {
-        // according to https://semver.org/ a version string
+    public static String enhanceSemanticVersionString(String semVerString) {
+        // according to https://semver.org/
         // A normal version number MUST take the form X.Y.Z where X, Y, and Z are
         // non-negative integers, and MUST NOT contain leading zeroes.
-        // Unfortunately WDL uses an invalid version number, e.g. '1.0' without a third integer
-        // so we will have to fix it to use semver
-        // we use a regex to find out if the version string is incomplete, e.g. '1.0' or '1.0-foo' and
-        // add a '.0' to X.Y to make it X.Y.Z
-        // we match X.Y only at the beginning of the string
+        // Unfortunately WDL uses an invalid version number, e.g. '1.1' without
+        // a third integer so we will have to fix it so we can use semver
+        // We use a regex to find out if the version string is incomplete,
+        // e.g. '1.1' or '1.1-foo' and insert a '.0' after X.Y to make it X.Y.Z,
+        // e.g. '1.1.0' or '1.1.0-foo'
+        // We match X.Y only at the beginning of the string
         // https://stackoverflow.com/questions/45544010/regex-to-match-a-digit-not-followed-by-a-dot
-        semVerString = semVerString.replaceFirst("^(\\d+\\.\\d+)(?!\\.)(.*)", "$1\\.0$2");
+        return semVerString.replaceFirst("^(\\d+\\.\\d+)(?!\\.)(.*)", "$1\\.0$2");
+    }
+
+        /**
+         * Check if the input semantic version string is greater than the newest currently supported WDL semantic version string
+         * @param semVerString semantic version string to compare
+         * @return whether the input semantic version string is greater
+         */
+    public static boolean versionIsGreaterThanCurrentlySupported(String semVerString) {
+        semVerString = enhanceSemanticVersionString(semVerString);
 
         com.github.zafarkhaja.semver.Version semVer;
         try {
@@ -534,7 +544,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         } catch (IllegalArgumentException | UnexpectedCharacterException | LexerException | UnexpectedTokenException ex) {
             // https://github.com/zafarkhaja/jsemver#exception-handling
             // if semVer cannot parse the version string it is probably not a good version string
-            // Paradoxically semver will fail to parse the valid version string 'draft-3'
+            // Paradoxically semver would fail to parse the valid version string 'draft-3'
             // Fortunately 'draft-3' is not a newer version than currently supported version '1.0'
             // In general return false since we cannot determine if the version is greater than Dockstore's
             // currently supported WDL version
@@ -548,13 +558,13 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @param primaryDescriptorPath path to the primary WDL descriptor
      * @return the semantic version string, e.g. '1.0', which should be in the first code line, e.g. 'version 1.0' or 'draft-3'
      */
-    protected static Optional<String> getSemanticVersionString(String primaryDescriptorPath) {
+    public static Optional<String> getSemanticVersionString(String primaryDescriptorPath) {
         WdlBridge wdlBridge = new WdlBridge();
         Optional<String> firstCodeLine = wdlBridge.getFirstCodeLine(primaryDescriptorPath);
         // https://www.scala-lang.org/files/archive/api/2.13.x/scala/jdk/javaapi/OptionConverters$.html
-        // The WDL specification says that WDL descriptors from now on must have a version string as the first line
+        // The WDL specification says that WDL descriptors from now on must have
+        // a version string as the first line, e.g. 'version 1.0' or 'version draft-3'
         // https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#versioning
-        // E.g. 'version 1.0' or 'version draft-3'
         // however some very old WDL scripts may not have a version string line
         // Check to see if we found the first line of code and that it has two parts
         if (firstCodeLine.isPresent()) {
