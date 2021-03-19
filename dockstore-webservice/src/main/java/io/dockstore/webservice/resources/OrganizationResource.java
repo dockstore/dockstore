@@ -103,7 +103,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Operation(operationId = "getApprovedOrganizations", summary = "List all available organizations.", description = "List all organizations that have been approved by a curator or admin, sorted by number of stars.")
     public List<Organization> getApprovedOrganizations() {
         List<Organization> organizations = organizationDAO.findApprovedSortedByStar();
-        organizations.stream().forEach(org -> Hibernate.initialize(org.getAliases()));
+        organizations.stream().forEach(org -> {
+            Hibernate.initialize(org.getAliases());
+            org.setCollectionsLength(org.getCollections().size());
+        });
         return organizations;
     }
 

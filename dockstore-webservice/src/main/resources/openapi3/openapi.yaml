@@ -65,6 +65,27 @@ tags:
   - name: GA4GHV1
     description: A curated subset of resources proposed as a common standard for tool repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0) and is considered final (not subject to change)
 paths:
+  /aliases/workflow-versions/{alias}:
+    get:
+      tags:
+        - aliases
+      description: Retrieves workflow version path information by alias.
+      operationId: getWorkflowVersionPathInfoByAlias
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersionPathInfo'
+      security:
+        - bearer: []
   /aliases/workflow-versions/{workflowVersionId}:
     post:
       tags:
@@ -91,25 +112,27 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersion'
       security:
         - bearer: []
-  /aliases/workflow-versions/{alias}:
-    get:
+  /cloudInstances/{cloudInstanceId}:
+    delete:
       tags:
-        - aliases
-      description: Retrieves workflow version path information by alias.
-      operationId: getWorkflowVersionPathInfoByAlias
+        - Cloud Instances
+      summary: Delete a public cloud instance, admin only
+      operationId: deleteCloudInstance
       parameters:
-        - name: alias
+        - name: cloudInstanceId
           in: path
+          description: ID of cloud instance to delete
           required: true
           schema:
-            type: string
+            type: integer
+            format: int64
       responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkflowVersionPathInfo'
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+        "401":
+          description: Unauthorized
       security:
         - bearer: []
   /cloudInstances:
@@ -148,27 +171,66 @@ paths:
           description: Unauthorized
       security:
         - bearer: []
-  /cloudInstances/{cloudInstanceId}:
-    delete:
+  /organizations/{organizationId}/collections:
+    get:
       tags:
-        - Cloud Instances
-      summary: Delete a public cloud instance, admin only
-      operationId: deleteCloudInstance
+        - organizations
+      summary: Retrieve all collections for an organization.
+      description: Retrieve all collections for an organization. Supports optional authentication.
+      operationId: getCollectionsFromOrganization
       parameters:
-        - name: cloudInstanceId
+        - name: organizationId
           in: path
-          description: ID of cloud instance to delete
+          description: Organization ID.
           required: true
           schema:
             type: integer
             format: int64
+        - name: include
+          in: query
+          description: Included fields.
+          required: true
+          schema:
+            type: string
       responses:
-        "204":
-          description: No Content
-        "403":
-          description: Forbidden
-        "401":
-          description: Unauthorized
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+        - bearer: []
+    post:
+      tags:
+        - organizations
+      summary: Create a collection in the given organization.
+      description: Create a collection in the given organization.
+      operationId: createCollection
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Collection to register.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
       security:
         - bearer: []
   /organizations/collections/{collectionId}/aliases:
@@ -405,68 +467,6 @@ paths:
                 $ref: '#/components/schemas/Collection'
       security:
         - bearer: []
-  /organizations/{organizationId}/collections:
-    get:
-      tags:
-        - organizations
-      summary: Retrieve all collections for an organization.
-      description: Retrieve all collections for an organization. Supports optional authentication.
-      operationId: getCollectionsFromOrganization
-      parameters:
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: include
-          in: query
-          description: Included fields.
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Collection'
-      security:
-        - bearer: []
-    post:
-      tags:
-        - organizations
-      summary: Create a collection in the given organization.
-      description: Create a collection in the given organization.
-      operationId: createCollection
-      parameters:
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        description: Collection to register.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Collection'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-        - bearer: []
   /organizations/{organizationId}/collections/{collectionId}/description:
     get:
       tags:
@@ -533,84 +533,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-      security:
-        - bearer: []
-  /containers/{containerId}/users:
-    get:
-      tags:
-        - containers
-      description: Get users of a tool.
-      operationId: getUsers
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
-  /containers/{containerId}/starredUsers:
-    get:
-      tags:
-        - containers
-      description: Returns list of users who starred a tool.
-      operationId: getStarredUsers
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-  /containers/{containerId}/labels:
-    put:
-      tags:
-        - containers
-      description: Update the labels linked to a tool.
-      operationId: updateLabels
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: labels
-          in: query
-          schema:
-            type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
       security:
         - bearer: []
   /containers/{containerId}:
@@ -682,6 +604,109 @@ paths:
           description: default response
           content:
             application/json: {}
+      security:
+        - bearer: []
+  /containers/{containerId}/refresh:
+    get:
+      tags:
+        - containers
+      description: Refresh one particular tool.
+      operationId: refresh
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+      security:
+        - bearer: []
+  /containers/{containerId}/publish:
+    post:
+      tags:
+        - containers
+      description: Publish or unpublish a tool.
+      operationId: publish
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+      security:
+        - bearer: []
+  /containers/tags:
+    get:
+      tags:
+        - containers
+      description: List the tags for a tool.
+      operationId: tags
+      parameters:
+        - name: containerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - bearer: []
+  /containers/{containerId}/labels:
+    put:
+      tags:
+        - containers
+      description: Update the labels linked to a tool.
+      operationId: updateLabels
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: labels
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
       security:
         - bearer: []
   /containers/{toolId}/defaultVersion:
@@ -1244,64 +1269,16 @@ paths:
                 $ref: '#/components/schemas/Tool'
       security:
         - bearer: []
-  /containers/{containerId}/refresh:
+  /containers/{containerId}/users:
     get:
       tags:
         - containers
-      description: Refresh one particular tool.
-      operationId: refresh
+      description: Get users of a tool.
+      operationId: getUsers
       parameters:
         - name: containerId
           in: path
           required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-      security:
-        - bearer: []
-  /containers/{containerId}/publish:
-    post:
-      tags:
-        - containers
-      description: Publish or unpublish a tool.
-      operationId: publish
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/PublishRequest'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-      security:
-        - bearer: []
-  /containers/tags:
-    get:
-      tags:
-        - containers
-      description: List the tags for a tool.
-      operationId: tags
-      parameters:
-        - name: containerId
-          in: query
           schema:
             type: integer
             format: int64
@@ -1313,9 +1290,32 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tag'
+                  $ref: '#/components/schemas/User'
       security:
         - bearer: []
+  /containers/{containerId}/starredUsers:
+    get:
+      tags:
+        - containers
+      description: Returns list of users who starred a tool.
+      operationId: getStarredUsers
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
   /containers/path/{containerId}/tags:
     get:
       tags:
@@ -1518,32 +1518,6 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
       security:
         - bearer: []
-  /entries/{id}/aliases:
-    post:
-      tags:
-        - entries
-      description: Add aliases linked to a entry in Dockstore.
-      operationId: addAliases_2
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: aliases
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successfully added alias to entry
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Entry'
-      security:
-        - bearer: []
   /entries/{id}/collections:
     get:
       tags:
@@ -1664,6 +1638,32 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
         - bearer: []
+  /entries/{id}/aliases:
+    post:
+      tags:
+        - entries
+      description: Add aliases linked to a entry in Dockstore.
+      operationId: addAliases_2
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully added alias to entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - bearer: []
   /events:
     get:
       tags:
@@ -1703,42 +1703,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
-      security:
-        - bearer: []
-  /containers/hostedEntry:
-    post:
-      tags:
-        - hosted
-      description: Create a hosted tool.
-      operationId: createHostedTool_1
-      parameters:
-        - name: registry
-          in: query
-          schema:
-            type: string
-        - name: name
-          in: query
-          schema:
-            type: string
-        - name: descriptorType
-          in: query
-          schema:
-            type: string
-        - name: namespace
-          in: query
-          schema:
-            type: string
-        - name: entryName
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successfully created hosted entry
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Entry'
       security:
         - bearer: []
   /containers/hostedEntry/{entryId}:
@@ -1799,12 +1763,12 @@ paths:
                 $ref: '#/components/schemas/Tool'
       security:
         - bearer: []
-  /workflows/hostedEntry:
+  /containers/hostedEntry:
     post:
       tags:
         - hosted
-      description: Create a hosted workflow.
-      operationId: createHostedWorkflow_1
+      description: Create a hosted tool.
+      operationId: createHostedTool_1
       parameters:
         - name: registry
           in: query
@@ -1925,6 +1889,42 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
+  /workflows/hostedEntry:
+    post:
+      tags:
+        - hosted
+      description: Create a hosted workflow.
+      operationId: createHostedWorkflow_1
+      parameters:
+        - name: registry
+          in: query
+          schema:
+            type: string
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          schema:
+            type: string
+        - name: entryName
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully created hosted entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - bearer: []
   /lambdaEvents/{organization}:
     get:
       tags:
@@ -1959,6 +1959,20 @@ paths:
                   $ref: '#/components/schemas/LambdaEvent'
       security:
         - bearer: []
+  /metadata/config.json:
+    get:
+      tags:
+        - metadata
+      summary: Configuration for UI clients of the API
+      description: Configuration, NO authentication
+      operationId: getConfig
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
   /metadata/sitemap:
     get:
       tags:
@@ -2110,20 +2124,6 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/config.json:
-    get:
-      tags:
-        - metadata
-      summary: Configuration for UI clients of the API
-      description: Configuration, NO authentication
-      operationId: getConfig
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Config'
   /curation/notifications/{id}:
     get:
       tags:
@@ -2878,6 +2878,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
+  /auth/tokens/github:
+    post:
+      tags:
+        - tokens
+      description: Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.
+      operationId: addToken
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - bearer: []
   /auth/tokens/{tokenId}:
     get:
       tags:
@@ -3060,26 +3080,35 @@ paths:
                 $ref: '#/components/schemas/Token'
       security:
         - bearer: []
-  /auth/tokens/github:
-    post:
+  /toolTester/logs/search:
+    get:
       tags:
-        - tokens
-      description: Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.
-      operationId: addToken
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
+        - toolTester
+      summary: Search for ToolTester log files
+      operationId: search
+      parameters:
+        - name: tool_id
+          in: query
+          description: TRS Tool Id
+          required: true
+          schema:
+            type: string
+          example: '#workflow/github.com/dockstore/hello_world'
+        - name: tool_version_name
+          in: query
+          required: true
+          schema:
+            type: string
+          example: v1.0.0
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
-      security:
-        - bearer: []
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTesterLog'
   /toolTester/logs:
     get:
       tags:
@@ -3133,26 +3162,12 @@ paths:
             text/plain:
               schema:
                 type: string
-  /toolTester/logs/search:
+  /users/updateUserMetadata:
     get:
       tags:
-        - toolTester
-      summary: Search for ToolTester log files
-      operationId: search
-      parameters:
-        - name: tool_id
-          in: query
-          description: TRS Tool Id
-          required: true
-          schema:
-            type: string
-          example: '#workflow/github.com/dockstore/hello_world'
-        - name: tool_version_name
-          in: query
-          required: true
-          schema:
-            type: string
-          example: v1.0.0
+        - users
+      description: Update metadata of all users.
+      operationId: updateUserMetadata
       responses:
         default:
           description: default response
@@ -3161,7 +3176,31 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolTesterLog'
+                  $ref: '#/components/schemas/User'
+      security:
+        - bearer: []
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      description: Get user by id.
+      operationId: getSpecificUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - bearer: []
   /users/user:
     get:
       tags:
@@ -3189,66 +3228,6 @@ paths:
             application/json:
               schema:
                 type: boolean
-      security:
-        - bearer: []
-  /users/{userId}:
-    get:
-      tags:
-        - users
-      description: Get user by id.
-      operationId: getSpecificUser
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
-  /users/updateUserMetadata:
-    get:
-      tags:
-        - users
-      description: Update metadata of all users.
-      operationId: updateUserMetadata
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
-  /users/username/{username}:
-    get:
-      tags:
-        - users
-      description: Get a user by username.
-      operationId: listUser
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
       security:
         - bearer: []
   /users/user/memberships:
@@ -4028,6 +4007,27 @@ paths:
           description: Not Found
       security:
         - bearer: []
+  /users/username/{username}:
+    get:
+      tags:
+        - users
+      description: Get a user by username.
+      operationId: listUser
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - bearer: []
   /users/dockerRegistries:
     get:
       tags:
@@ -4099,12 +4099,12 @@ paths:
                   type: string
       security:
         - bearer: []
-  /workflows/{workflowId}/users:
+  /workflows/{workflowId}/refresh:
     get:
       tags:
         - workflows
-      description: Get users of a workflow.
-      operationId: getUsers_1
+      description: Refresh one particular workflow.
+      operationId: refresh_1
       parameters:
         - name: workflowId
           in: path
@@ -4112,27 +4112,88 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: hardRefresh
+          in: query
+          schema:
+            type: boolean
+            default: true
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
-  /workflows/{workflowId}/starredUsers:
+  /workflows/{workflowId}/refresh/{version}:
     get:
       tags:
         - workflows
-      description: Returns list of users who starred the given workflow.
-      operationId: getStarredUsers_1
+      description: Refresh one particular workflow version.
+      operationId: refreshVersion
       parameters:
         - name: workflowId
           in: path
           required: true
+          schema:
+            type: integer
+            format: int64
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: hardRefresh
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
+  /workflows/{workflowId}/publish:
+    post:
+      tags:
+        - workflows
+      description: Publish or unpublish a workflow.
+      operationId: publish_1
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
+  /workflows/versions:
+    get:
+      tags:
+        - workflows
+      description: List the versions for a published workflow.
+      operationId: tags_1
+      parameters:
+        - name: workflowId
+          in: query
           schema:
             type: integer
             format: int64
@@ -4142,10 +4203,11 @@ paths:
           content:
             application/json:
               schema:
-                uniqueItems: true
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/WorkflowVersion'
+      security:
+        - bearer: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -4479,82 +4541,53 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
-  /workflows/manualRegister:
-    post:
+  /workflows/{workflowId}/users:
+    get:
       tags:
         - workflows
-      description: Manually register a workflow.
-      operationId: manualRegister
+      description: Get users of a workflow.
+      operationId: getUsers_1
       parameters:
-        - name: workflowRegistry
-          in: query
+        - name: workflowId
+          in: path
+          required: true
           schema:
-            type: string
-        - name: workflowPath
-          in: query
-          schema:
-            type: string
-        - name: defaultWorkflowPath
-          in: query
-          schema:
-            type: string
-        - name: workflowName
-          in: query
-          schema:
-            type: string
-        - name: descriptorType
-          in: query
-          schema:
-            type: string
-        - name: defaultTestParameterFilePath
-          in: query
-          schema:
-            type: string
+            type: integer
+            format: int64
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
       security:
         - bearer: []
-  /workflows/github:
-    delete:
+  /workflows/{workflowId}/starredUsers:
+    get:
       tags:
         - workflows
-      description: Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.
-      operationId: handleGitHubBranchDeletion
+      description: Returns list of users who starred the given workflow.
+      operationId: getStarredUsers_1
       parameters:
-        - name: repository
-          in: query
-          description: Repository path (ex. dockstore/dockstore-ui2)
+        - name: workflowId
+          in: path
           required: true
           schema:
-            type: string
-        - name: username
-          in: query
-          description: Username of user on GitHub who triggered action
-          required: true
-          schema:
-            type: string
-        - name: gitReference
-          in: query
-          description: Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
-          required: true
-          schema:
-            type: string
-        - name: installationId
-          in: query
-          description: GitHub installation ID
-          required: true
-          schema:
-            type: string
+            type: integer
+            format: int64
       responses:
-        "418":
-          description: This code tells AWS Lambda not to retry.
-      security:
-        - bearer: []
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
   /workflows/{workflowId}/restub:
     get:
       tags:
@@ -5010,6 +5043,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+  /workflows/manualRegister:
+    post:
+      tags:
+        - workflows
+      description: Manually register a workflow.
+      operationId: manualRegister
+      parameters:
+        - name: workflowRegistry
+          in: query
+          schema:
+            type: string
+        - name: workflowPath
+          in: query
+          schema:
+            type: string
+        - name: defaultWorkflowPath
+          in: query
+          schema:
+            type: string
+        - name: workflowName
+          in: query
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          schema:
+            type: string
+        - name: defaultTestParameterFilePath
+          in: query
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
   /workflows/{workflowId}/workflowVersions:
     put:
       tags:
@@ -5405,113 +5478,40 @@ paths:
           description: This code tells AWS Lambda not to retry.
       security:
         - bearer: []
-  /workflows/{workflowId}/refresh:
-    get:
+  /workflows/github:
+    delete:
       tags:
         - workflows
-      description: Refresh one particular workflow.
-      operationId: refresh_1
+      description: Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.
+      operationId: handleGitHubBranchDeletion
       parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: hardRefresh
+        - name: repository
           in: query
-          schema:
-            type: boolean
-            default: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-  /workflows/{workflowId}/publish:
-    post:
-      tags:
-        - workflows
-      description: Publish or unpublish a workflow.
-      operationId: publish_1
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/PublishRequest'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-  /workflows/versions:
-    get:
-      tags:
-        - workflows
-      description: List the versions for a published workflow.
-      operationId: tags_1
-      parameters:
-        - name: workflowId
-          in: query
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkflowVersion'
-      security:
-        - bearer: []
-  /workflows/{workflowId}/refresh/{version}:
-    get:
-      tags:
-        - workflows
-      description: Refresh one particular workflow version.
-      operationId: refreshVersion
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: version
-          in: path
+          description: Repository path (ex. dockstore/dockstore-ui2)
           required: true
           schema:
             type: string
-        - name: hardRefresh
+        - name: username
           in: query
+          description: Username of user on GitHub who triggered action
+          required: true
           schema:
-            type: boolean
-            default: true
+            type: string
+        - name: gitReference
+          in: query
+          description: Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
+          required: true
+          schema:
+            type: string
+        - name: installationId
+          in: query
+          description: GitHub installation ID
+          required: true
+          schema:
+            type: string
       responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
+        "418":
+          description: This code tells AWS Lambda not to retry.
       security:
         - bearer: []
   /api/ga4gh/v2/extended/tools/{organization}:
@@ -5593,22 +5593,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolV1'
-  /api/ga4gh/v2/extended/organizations:
-    get:
-      tags:
-        - extendedGA4GH
-      summary: List all organizations
-      description: This endpoint returns list of all organizations.
-      operationId: entriesOrgsGet
-      responses:
-        "200":
-          description: An array of organizations' names.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       tags:
@@ -5631,6 +5615,22 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolV1'
+  /api/ga4gh/v2/extended/organizations:
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List all organizations
+      description: This endpoint returns list of all organizations.
+      operationId: entriesOrgsGet
+      responses:
+        "200":
+          description: An array of organizations' names.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
     post:
       tags:
@@ -5732,64 +5732,112 @@ paths:
                   $ref: '#/components/schemas/ToolClass'
       security:
         - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
+  /ga4gh/trs/v2/tools:
     get:
       tags:
         - GA4GHV20
-      summary: Get a list of test JSONs
-      description: Get a list of test JSONs (these allow you to execute the tool successfully) suitable for use with this descriptor type.
-      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      summary: List all tools
+      description: 'This endpoint returns all tools available or a filtered subset using metadata query parameters. '
+      operationId: toolsGet
       parameters:
-        - name: type
-          in: path
-          description: The type of the underlying descriptor. Allowable values include "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example, "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would return a bare JSON list with the content of the tests.
-          required: true
-          schema:
-            type: string
         - name: id
-          in: path
+          in: query
           description: A unique identifier of the tool, scoped to this registry, for example `123456`.
-          required: true
           schema:
             type: string
-        - name: version_id
-          in: path
-          description: An identifier of the tool version for this particular tool registry, for example `v1`.
-          required: true
+        - name: alias
+          in: query
+          description: Support for this parameter is optional for tool registries that support aliases. If provided will only return entries with the given alias.
           schema:
             type: string
+        - name: toolClass
+          in: query
+          description: Filter tools by the name of the subclass (#/definitions/ToolClass)
+          schema:
+            type: string
+            enum:
+              - CommandLineTool
+              - Workflow
+        - name: descriptorType
+          in: query
+          description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+              - NFL
+              - SERVICE
+              - GALAXY
+        - name: registry
+          in: query
+          description: The image registry that contains the image.
+          schema:
+            type: string
+        - name: organization
+          in: query
+          description: The organization in the registry that published the image.
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: The name of the image.
+          schema:
+            type: string
+        - name: toolname
+          in: query
+          description: The name of the tool.
+          schema:
+            type: string
+        - name: description
+          in: query
+          description: The description of the tool.
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: The author of the tool (TODO a thought occurs, are we assuming that the author of the CWL and the image are the same?).
+          schema:
+            type: string
+        - name: checker
+          in: query
+          description: Return only checker workflows.
+          schema:
+            type: boolean
+        - name: offset
+          in: query
+          description: Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Amount of records to return in a given page.
+          schema:
+            type: integer
+            format: int32
       responses:
         "200":
-          description: The tool test JSON response.
+          description: An array of Tools that match the filter.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
+                  $ref: '#/components/schemas/Tool'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileWrapper'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
+                  $ref: '#/components/schemas/Tool'
       security:
         - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
+  /ga4gh/trs/v2/tools/{id}:
     get:
       tags:
         - GA4GHV20
-      summary: Get the container specification(s) for the specified image.
-      description: Returns the container specifications(s) for the specified image. For example, a CWL CommandlineTool can be associated with one specification for a container, a CWL Workflow can be associated with multiple specifications for containers.
-      operationId: toolsIdVersionsVersionIdContainerfileGet
+      summary: List one specific tool, acts as an anchor for self references
+      description: This endpoint returns one specific tool (which has ToolVersions nested inside it).
+      operationId: toolsIdGet
       parameters:
         - name: id
           in: path
@@ -5797,28 +5845,18 @@ paths:
           required: true
           schema:
             type: string
-        - name: version_id
-          in: path
-          description: An identifier of the tool version for this particular tool registry, for example `v1`.
-          required: true
-          schema:
-            type: string
       responses:
         "200":
-          description: The tool payload.
+          description: A tool.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/Tool'
             text/plain:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FileWrapper'
+                $ref: '#/components/schemas/Tool'
         "404":
-          description: There are no container specifications for this tool.
+          description: The tool can not be found.
           content:
             application/json:
               schema:
@@ -5999,112 +6037,64 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - BEARER: []
-  /ga4gh/trs/v2/tools:
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
         - GA4GHV20
-      summary: List all tools
-      description: 'This endpoint returns all tools available or a filtered subset using metadata query parameters. '
-      operationId: toolsGet
+      summary: Get a list of test JSONs
+      description: Get a list of test JSONs (these allow you to execute the tool successfully) suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
+        - name: type
+          in: path
+          description: The type of the underlying descriptor. Allowable values include "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For example, "CWL" would return an list of ToolTests objects while "PLAIN_CWL" would return a bare JSON list with the content of the tests.
+          required: true
+          schema:
+            type: string
         - name: id
-          in: query
+          in: path
           description: A unique identifier of the tool, scoped to this registry, for example `123456`.
+          required: true
           schema:
             type: string
-        - name: alias
-          in: query
-          description: Support for this parameter is optional for tool registries that support aliases. If provided will only return entries with the given alias.
+        - name: version_id
+          in: path
+          description: An identifier of the tool version for this particular tool registry, for example `v1`.
+          required: true
           schema:
             type: string
-        - name: toolClass
-          in: query
-          description: Filter tools by the name of the subclass (#/definitions/ToolClass)
-          schema:
-            type: string
-            enum:
-              - CommandLineTool
-              - Workflow
-        - name: descriptorType
-          in: query
-          description: Filter tools by the name of the descriptor type (#/definitions/DescriptorType)
-          schema:
-            type: string
-            enum:
-              - CWL
-              - WDL
-              - NFL
-              - SERVICE
-              - GALAXY
-        - name: registry
-          in: query
-          description: The image registry that contains the image.
-          schema:
-            type: string
-        - name: organization
-          in: query
-          description: The organization in the registry that published the image.
-          schema:
-            type: string
-        - name: name
-          in: query
-          description: The name of the image.
-          schema:
-            type: string
-        - name: toolname
-          in: query
-          description: The name of the tool.
-          schema:
-            type: string
-        - name: description
-          in: query
-          description: The description of the tool.
-          schema:
-            type: string
-        - name: author
-          in: query
-          description: The author of the tool (TODO a thought occurs, are we assuming that the author of the CWL and the image are the same?).
-          schema:
-            type: string
-        - name: checker
-          in: query
-          description: Return only checker workflows.
-          schema:
-            type: boolean
-        - name: offset
-          in: query
-          description: Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Amount of records to return in a given page.
-          schema:
-            type: integer
-            format: int32
       responses:
         "200":
-          description: An array of Tools that match the filter.
+          description: The tool test JSON response.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/FileWrapper'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
       security:
         - BEARER: []
-  /ga4gh/trs/v2/tools/{id}:
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/containerfile:
     get:
       tags:
         - GA4GHV20
-      summary: List one specific tool, acts as an anchor for self references
-      description: This endpoint returns one specific tool (which has ToolVersions nested inside it).
-      operationId: toolsIdGet
+      summary: Get the container specification(s) for the specified image.
+      description: Returns the container specifications(s) for the specified image. For example, a CWL CommandlineTool can be associated with one specification for a container, a CWL Workflow can be associated with multiple specifications for containers.
+      operationId: toolsIdVersionsVersionIdContainerfileGet
       parameters:
         - name: id
           in: path
@@ -6112,18 +6102,28 @@ paths:
           required: true
           schema:
             type: string
+        - name: version_id
+          in: path
+          description: An identifier of the tool version for this particular tool registry, for example `v1`.
+          required: true
+          schema:
+            type: string
       responses:
         "200":
-          description: A tool.
+          description: The tool payload.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
-                $ref: '#/components/schemas/Tool'
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileWrapper'
         "404":
-          description: The tool can not be found.
+          description: There are no container specifications for this tool.
           content:
             application/json:
               schema:
@@ -6184,45 +6184,80 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - BEARER: []
-  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/tests:
+  /api/ga4gh/v1/tools:
     get:
       tags:
         - GA4GHV1
-      summary: Get an array of test JSONs suitable for use with this descriptor type.
-      operationId: testsGetV1
+      summary: List all tools
+      description: This endpoint returns all tools available or a filtered subset using metadata query parameters.
+      operationId: toolsGetV1
       parameters:
-        - name: type
-          in: path
-          required: true
-          schema:
-            type: string
         - name: id
-          in: path
-          required: true
+          in: query
           schema:
             type: string
-        - name: version_id
+        - name: registry
+          in: query
+          schema:
+            type: string
+        - name: organization
+          in: query
+          schema:
+            type: string
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: toolname
+          in: query
+          schema:
+            type: string
+        - name: description
+          in: query
+          schema:
+            type: string
+        - name: author
+          in: query
+          schema:
+            type: string
+        - name: offset
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: An array of Tools that match the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+  /api/ga4gh/v1/tools/{id}:
+    get:
+      tags:
+        - GA4GHV1
+      summary: List one specific tool, acts as an anchor for self references
+      description: This endpoint returns one specific tool (which has ToolVersions nested inside it)
+      operationId: toolsIdGetV1
+      parameters:
+        - name: id
           in: path
           required: true
           schema:
             type: string
       responses:
         "200":
-          description: The tool test JSON response.
+          description: A tool.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolTestsV1'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolTestsV1'
+                $ref: '#/components/schemas/ToolV1'
   /api/ga4gh/v1/tools/{id}/versions:
     get:
       tags:
@@ -6372,82 +6407,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToolDescriptor'
-  /api/ga4gh/v1/tools:
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
         - GA4GHV1
-      summary: List all tools
-      description: This endpoint returns all tools available or a filtered subset using metadata query parameters.
-      operationId: toolsGetV1
+      summary: Get an array of test JSONs suitable for use with this descriptor type.
+      operationId: testsGetV1
       parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
         - name: id
-          in: query
+          in: path
+          required: true
           schema:
             type: string
-        - name: registry
-          in: query
-          schema:
-            type: string
-        - name: organization
-          in: query
-          schema:
-            type: string
-        - name: name
-          in: query
-          schema:
-            type: string
-        - name: toolname
-          in: query
-          schema:
-            type: string
-        - name: description
-          in: query
-          schema:
-            type: string
-        - name: author
-          in: query
-          schema:
-            type: string
-        - name: offset
-          in: query
-          schema:
-            type: string
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            format: int32
-      responses:
-        "200":
-          description: An array of Tools that match the filter.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolV1'
-  /api/ga4gh/v1/tools/{id}:
-    get:
-      tags:
-        - GA4GHV1
-      summary: List one specific tool, acts as an anchor for self references
-      description: This endpoint returns one specific tool (which has ToolVersions nested inside it)
-      operationId: toolsIdGetV1
-      parameters:
-        - name: id
+        - name: version_id
           in: path
           required: true
           schema:
             type: string
       responses:
         "200":
-          description: A tool.
+          description: The tool test JSON response.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ToolV1'
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTestsV1'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTestsV1'
 components:
   schemas:
+    WorkflowVersionPathInfo:
+      type: object
+      properties:
+        fullWorkflowPath:
+          type: string
+        tagName:
+          type: string
     Alias:
       type: object
       properties:
@@ -6918,13 +6925,6 @@ components:
           type: string
         workingDirectory:
           type: string
-    WorkflowVersionPathInfo:
-      type: object
-      properties:
-        fullWorkflowPath:
-          type: string
-        tagName:
-          type: string
     CloudInstance:
       type: object
       properties:
@@ -7171,6 +7171,11 @@ components:
           items:
             $ref: '#/components/schemas/ToolVersion'
       description: A tool (or described tool) is defined as a tuple of a descriptor file (which potentially consists of multiple files), a set of container images, and a set of instructions for creating those images.
+    PublishRequest:
+      type: object
+      properties:
+        publish:
+          type: boolean
     SourceFile:
       required:
         - absolutePath
@@ -7233,11 +7238,39 @@ components:
       properties:
         star:
           type: boolean
-    PublishRequest:
+    CollectionOrganization:
       type: object
       properties:
-        publish:
+        collectionDisplayName:
+          type: string
+        collectionId:
+          type: integer
+          format: int64
+        collectionName:
+          type: string
+        organizationDisplayName:
+          type: string
+        organizationId:
+          type: integer
+          format: int64
+        organizationName:
+          type: string
+    VersionVerifiedPlatform:
+      type: object
+      properties:
+        metadata:
+          type: string
+        path:
+          type: string
+        platformVersion:
+          type: string
+        source:
+          type: string
+        verified:
           type: boolean
+        versionId:
+          type: integer
+          format: int64
     Entry:
       type: object
       properties:
@@ -7321,50 +7354,145 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Version'
-    CollectionOrganization:
-      type: object
-      properties:
-        collectionDisplayName:
-          type: string
-        collectionId:
-          type: integer
-          format: int64
-        collectionName:
-          type: string
-        organizationDisplayName:
-          type: string
-        organizationId:
-          type: integer
-          format: int64
-        organizationName:
-          type: string
-    VersionVerifiedPlatform:
-      type: object
-      properties:
-        metadata:
-          type: string
-        path:
-          type: string
-        platformVersion:
-          type: string
-        source:
-          type: string
-        verified:
-          type: boolean
-        versionId:
-          type: integer
-          format: int64
     BioWorkflow:
       type: object
-      allOf:
-        - $ref: '#/components/schemas/Workflow'
-        - type: object
-          properties:
-            is_checker:
-              type: boolean
-            parent_id:
-              type: integer
-              format: int64
+      properties:
+        descriptorType:
+          type: string
+          enum:
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        author:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
+        dbCreateDate:
+          type: integer
+          format: int64
+        dbUpdateDate:
+          type: integer
+          format: int64
+        defaultTestParameterFilePath:
+          type: string
+        defaultVersion:
+          type: string
+        description:
+          type: string
+        descriptorTypeSubclass:
+          type: string
+          enum:
+            - docker-compose
+            - helm
+            - swarm
+            - kubernetes
+            - n/a
+        email:
+          type: string
+        forumUrl:
+          maxLength: 256
+          minLength: 0
+          type: string
+        full_workflow_path:
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        is_checker:
+          type: boolean
+        is_published:
+          type: boolean
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        lastUpdated:
+          type: integer
+          format: int64
+        last_modified:
+          type: integer
+          format: int32
+        last_modified_date:
+          type: integer
+          format: int64
+        licenseInformation:
+          $ref: '#/components/schemas/LicenseInformation'
+        metadataFromEntry:
+          $ref: '#/components/schemas/Workflow'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        mode:
+          type: string
+          enum:
+            - FULL
+            - STUB
+            - HOSTED
+            - DOCKSTORE_YML
+        organization:
+          type: string
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        parent_id:
+          type: integer
+          format: int64
+        path:
+          type: string
+        repository:
+          type: string
+        sourceControl:
+          type: string
+          enum:
+            - dockstore.org
+            - github.com
+            - bitbucket.org
+            - gitlab.com
+        source_control_provider:
+          type: string
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        topicId:
+          type: integer
+          format: int64
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        workflowName:
+          type: string
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowVersion'
+        workflow_path:
+          type: string
     Event:
       type: object
       properties:
@@ -7676,35 +7804,6 @@ components:
             - DELETE
             - INSTALL
             - PUBLISH
-    SourceControlBean:
-      type: object
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
-    RegistryBean:
-      type: object
-      properties:
-        customDockerPath:
-          type: string
-        dockerPath:
-          type: string
-        enum:
-          type: string
-        friendlyName:
-          type: string
-        privateOnly:
-          type: string
-        url:
-          type: string
-    DescriptorLanguageBean:
-      type: object
-      properties:
-        friendlyName:
-          type: string
-        value:
-          type: string
     Config:
       type: object
       properties:
@@ -7785,6 +7884,35 @@ components:
         zenodoRedirectPath:
           type: string
         zenodoScope:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
+          type: string
+    RegistryBean:
+      type: object
+      properties:
+        customDockerPath:
+          type: string
+        dockerPath:
+          type: string
+        enum:
+          type: string
+        friendlyName:
+          type: string
+        privateOnly:
+          type: string
+        url:
+          type: string
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        friendlyName:
+          type: string
+        value:
           type: string
     Notification:
       type: object
@@ -8110,22 +8238,6 @@ components:
           description: Version of the service being described. Semantic versioning is recommended, but other identifiers, such as dates or commit hashes, are also allowed. The version should be changed whenever the service is updated.
           example: 1.0.0
       description: GA4GH service
-    FileWrapper:
-      type: object
-      properties:
-        checksum:
-          type: array
-          description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
-          example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
-          items:
-            $ref: '#/components/schemas/Checksum'
-        content:
-          type: string
-          description: The content of the file itself. One of url or content is required.
-        url:
-          type: string
-          description: Optional url to the underlying content, should include version information, and can include a git hash.  Note that this URL should resolve to the raw unwrapped content that would otherwise be available in content. One of url or content is required.
-      description: 'A file provides content for one of - A tool descriptor is a metadata document that describes one or more tools. - A tool document that describes how to test with one or more sample test JSON. - A containerfile is a document that describes how to build a particular container image. Examples include Dockerfiles for creating Docker images and Singularity recipes for Singularity images '
     ImageData:
       type: object
       properties:
@@ -8225,6 +8337,22 @@ components:
             type: string
             description: Source of metadata that can support a verified tool, such as an email or URL.
       description: A tool version describes a particular iteration of a tool as described by a reference to a specific image and/or documents.
+    FileWrapper:
+      type: object
+      properties:
+        checksum:
+          type: array
+          description: 'A production (immutable) tool version is required to have a hashcode. Not required otherwise, but might be useful to detect changes. '
+          example: '[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182, type=sha256}]'
+          items:
+            $ref: '#/components/schemas/Checksum'
+        content:
+          type: string
+          description: The content of the file itself. One of url or content is required.
+        url:
+          type: string
+          description: Optional url to the underlying content, should include version information, and can include a git hash.  Note that this URL should resolve to the raw unwrapped content that would otherwise be available in content. One of url or content is required.
+      description: 'A file provides content for one of - A tool descriptor is a metadata document that describes one or more tools. - A tool document that describes how to test with one or more sample test JSON. - A containerfile is a document that describes how to build a particular container image. Examples include Dockerfiles for creating Docker images and Singularity recipes for Singularity images '
     ToolFile:
       type: object
       properties:
@@ -8239,13 +8367,6 @@ components:
         path:
           type: string
           description: Relative path of the file.  A descriptor's path can be used with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
-    ToolTestsV1:
-      type: object
-      properties:
-        test:
-          type: string
-        url:
-          type: string
     ToolDockerfile:
       type: object
       properties:
@@ -8268,6 +8389,13 @@ components:
             - NFL
             - SERVICE
             - GXFORMAT2
+        url:
+          type: string
+    ToolTestsV1:
+      type: object
+      properties:
+        test:
+          type: string
         url:
           type: string
   securitySchemes:
