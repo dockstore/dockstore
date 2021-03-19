@@ -58,6 +58,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -1485,6 +1486,23 @@ public class GeneralIT extends BaseIT {
         publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
         Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
 
+    }
+
+    /**
+     * This tests a not found zip file
+     */
+    @Test
+    public void sillyContainerZipFile() throws IOException {
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+        boolean success = false;
+        try {
+            anonContainersApi.getToolZip(100000000L, 1000000L);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_NOT_FOUND);
+            success = true;
+        }
+        assertTrue("should have got 404", success);
     }
 
     /**

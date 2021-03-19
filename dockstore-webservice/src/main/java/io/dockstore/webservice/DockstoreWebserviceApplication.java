@@ -242,7 +242,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // match HttpURLConnection which does not have a timeout by default
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
         if (System.getenv("CIRCLE_SHA1") != null) {
-            builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName()));
+            builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName(), "central"));
         }
         okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
                 .writeTimeout(0, TimeUnit.SECONDS).build();

@@ -18,9 +18,11 @@ public class CacheHitListener extends EventListener {
     private static final Logger LOG = LoggerFactory.getLogger(CacheHitListener.class);
 
     private final String listenerTag;
+    private final String username;
 
-    public CacheHitListener(String listenerTag) {
+    public CacheHitListener(String listenerTag, String username) {
         this.listenerTag = listenerTag;
+        this.username = username;
     }
 
     @Override
@@ -37,9 +39,9 @@ public class CacheHitListener extends EventListener {
     public void cacheMiss(@NotNull Call call) {
         String endpointCalled = ((RealCall)call).getOriginalRequest().url().toString();
         if (!endpointCalled.contains("rate_limit")) {
-            LOG.info(listenerTag + " cacheMiss for : " + endpointCalled);
+            LOG.debug(listenerTag + " cacheMiss for : " + endpointCalled);
             try {
-                FileUtils.writeStringToFile(DockstoreWebserviceApplication.CACHE_MISS_LOG_FILE, endpointCalled + "\n",
+                FileUtils.writeStringToFile(DockstoreWebserviceApplication.CACHE_MISS_LOG_FILE, listenerTag + ',' + username + ',' + endpointCalled + '\n',
                         StandardCharsets.UTF_8, true);
             } catch (IOException e) {
                 LOG.error("could not write cache miss to log", e);

@@ -199,7 +199,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
             } catch (IOException e) {
                 LOG.error("Could not create elastic search index", e);
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Search indexing failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             return Response.ok().entity(published.size()).build();
         }
@@ -235,14 +235,17 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
                 int statusCode = e.getResponse().getStatusLine().getStatusCode();
                 LOG.error("Could not use Elasticsearch search", e);
+                // Provide a minimal amount of error information in the browser console as outlined by
+                // https://ucsc-cgl.atlassian.net/browse/SEAB-2128
+                String reasonPhrase = e.getResponse().getStatusLine().getReasonPhrase();
                 if (ArrayUtils.contains(codesToResurface, statusCode)) {
-                    throw new CustomWebApplicationException(e.getMessage(), statusCode);
+                    throw new CustomWebApplicationException(reasonPhrase, statusCode);
                 } else {
-                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    throw new CustomWebApplicationException(reasonPhrase, HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } catch (IOException e2) {
                 LOG.error("Could not use Elasticsearch search", e2);
-                throw new CustomWebApplicationException(e2.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Search failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
         return Response.ok().entity(0).build();

@@ -21,7 +21,6 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -386,14 +385,14 @@ public abstract class AbstractImageRegistry {
             }
 
             dockerHubTag = gson.fromJson(manifestJSON, DockerHubTag.class);
-            List<Results> results = Arrays.asList(dockerHubTag.getResults());
+            Results[] results = dockerHubTag.getResults();
 
             try {
                 for (Results r : results) {
                     final Tag tag = new Tag();
                     tag.setName(r.getName());
 
-                    List<DockerHubImage> dockerHubImages = Arrays.asList(r.getImages());
+                    DockerHubImage[] dockerHubImages = r.getImages();
                     List<Checksum> checksums = new ArrayList<>();
                     // For every version, DockerHub can provide multiple images, one for each architecture
                     for (DockerHubImage i : dockerHubImages) {

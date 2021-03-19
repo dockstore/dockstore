@@ -47,7 +47,7 @@ public final class SourceCodeRepoFactory {
         return new GitHubSourceCodeRepo("dockstore", token);
     }
 
-    public static SourceCodeRepoInterface createSourceCodeRepo(Token token, HttpClient client) {
+    public static SourceCodeRepoInterface createSourceCodeRepo(Token token) {
         SourceCodeRepoInterface repo;
         if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
             repo = new GitHubSourceCodeRepo(token.getUsername(), token.getContent());

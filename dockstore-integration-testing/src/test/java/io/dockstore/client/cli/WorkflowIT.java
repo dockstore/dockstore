@@ -85,6 +85,7 @@ import io.swagger.model.DescriptorType;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -549,6 +550,23 @@ public class WorkflowIT extends BaseIT {
         assertTrue("zip file seems incorrect",
             zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
         tempZip2.deleteOnExit();
+    }
+
+    /**
+     * This tests a not found zip file
+     */
+    @Test
+    public void sillyWorkflowZipFile() throws IOException {
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
+        WorkflowsApi anonWorkflowApi = new WorkflowsApi(anonWebClient);
+        boolean success = false;
+        try {
+            anonWorkflowApi.getWorkflowZip(100000000L, 1000000L);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_NOT_FOUND);
+            success = true;
+        }
+        assertTrue("should have got 404", success);
     }
 
     /**
