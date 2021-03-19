@@ -134,11 +134,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
 
         final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
-        final String gitHubTokenContent = getToken(tokens, TokenType.GITHUB_COM);
+        Token gitHubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
         final String gitlabTokenContent = getToken(tokens, TokenType.GITLAB_COM);
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(gitUrl, client, bitbucketTokenContent, gitlabTokenContent, gitHubTokenContent);
+            .createSourceCodeRepo(gitUrl, client, bitbucketTokenContent, gitlabTokenContent, gitHubToken);
         if (sourceCodeRepo == null) {
             throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
         }

@@ -194,7 +194,7 @@ public abstract class AbstractImageRegistry {
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
 
@@ -241,7 +241,7 @@ public abstract class AbstractImageRegistry {
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
+                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
 

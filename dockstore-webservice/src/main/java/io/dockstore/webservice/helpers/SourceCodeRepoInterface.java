@@ -68,6 +68,7 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
     public static final int BYTES_IN_KB = 1024;
+    @Deprecated
     String gitUsername;
 
     /**
