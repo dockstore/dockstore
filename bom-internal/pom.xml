@@ -55,7 +55,7 @@ POM as their parent.
         <jersey-version>2.31</jersey-version>
         <junit-version>4.13.1</junit-version>
         <logback.version>1.2.3</logback.version>
-        <aws.version>2.5.25</aws.version>
+        <aws.version>2.16.22</aws.version>
         <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.2.5</postgresql.version>
         <mockito.version>2.28.2</mockito.version>
@@ -66,7 +66,7 @@ POM as their parent.
         <httpcomponents.version>4.5.13</httpcomponents.version>
         <httpcore.version>4.4.14</httpcore.version>
         <jetty-servlet.version>9.4.36.v20210114</jetty-servlet.version>
-        <netty.version>4.1.36.Final</netty.version>
+        <netty.version>4.1.60.Final</netty.version>
         <scala.version>2.12.13</scala.version>
         <cromwell.version>57</cromwell.version>
         <jackson.version>2.12.1</jackson.version>
@@ -179,7 +179,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.typesafe.netty</groupId>
                 <artifactId>netty-reactive-streams</artifactId>
-                <version>2.0.3</version>
+                <version>2.0.4</version>
             </dependency>
             <dependency>
                 <groupId>com.chuusai</groupId>
@@ -284,7 +284,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams</artifactId>
-                <version>1.0.2</version>
+                <version>1.0.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
