@@ -264,7 +264,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             // namespace cache when testing on circle ci
             cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE + (suffix == null ? "" : "/" + suffix))).toFile();
         } catch (IOException e) {
-            LOG.error("Could no create or re-use web cache", e);
+            LOG.error("Could not create or re-use web cache", e);
             throw new RuntimeException(e);
         }
         return new Cache(cacheDir, cacheSize);
