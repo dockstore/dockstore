@@ -107,10 +107,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param githubTokenContent authorization token
      */
     public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
-        this.gitUsername = githubTokenUsername;
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), gitUsername));
+        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
         if (System.getenv("CIRCLE_SHA1") != null) {
             // namespace cache by user when testing
             builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
