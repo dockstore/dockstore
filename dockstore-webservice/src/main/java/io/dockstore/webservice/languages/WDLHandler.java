@@ -530,11 +530,11 @@ public class WDLHandler implements LanguageHandlerInterface {
         return semVerString.replaceFirst("^(\\d+\\.\\d+)(?!\\.)(.*)", "$1\\.0$2");
     }
 
-        /**
-         * Check if the input semantic version string is greater than the newest currently supported WDL semantic version string
-         * @param semVerString semantic version string to compare
-         * @return whether the input semantic version string is greater
-         */
+    /**
+     * Check if the input semantic version string is greater than the newest currently supported WDL semantic version string
+     * @param semVerString semantic version string to compare
+     * @return whether the input semantic version string is greater
+     */
     public static boolean versionIsGreaterThanCurrentlySupported(String semVerString) {
         semVerString = enhanceSemanticVersionString(semVerString);
 
