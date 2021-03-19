@@ -415,18 +415,11 @@ class WdlBridge {
     */
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
 
-
   /**
-    * Determine whether the the first line in the file starts with the specified string
-    * @param lineStartString String to search for at beginning of first line, e.g. 'version 1.1'
-    * @return Boolean indicating a the first line starts with the string
+    * Get the the first non comment line in the file
+    * @param descriptorFilePath path to the file to read
+    * @return Optional string containing the first line of code in the file
     */
-  def fileFirstLineStartsWithString(lineStartString: String, descriptorFilePath: String): Boolean = {
-    val fileContent = readFile(descriptorFilePath)
-    LanguageFactoryUtil.simpleLooksParseable(List(lineStartString), List("#"))(fileContent)
-  }
-
-
   def getFirstCodeLine(descriptorFilePath: String): Optional[String] = {
     val commentIndicators = List("#")
     val content = readFile(descriptorFilePath)
