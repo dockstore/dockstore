@@ -30,6 +30,7 @@ import wom.graph._
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
 import java.nio.file.{Files, Paths}
 import java.util
+import java.util.Optional
 
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters._
@@ -426,7 +427,7 @@ class WdlBridge {
   }
 
 
-  def getFirstCodeLine(descriptorFilePath: String): Option[String] = {
+  def getFirstCodeLine(descriptorFilePath: String): Optional[String] = {
     val commentIndicators = List("#")
     val content = readFile(descriptorFilePath)
     val fileWithoutInitialWhitespace = content.linesIterator.toList.dropWhile { l =>
@@ -434,7 +435,7 @@ class WdlBridge {
     }
 
     val firstCodeLine = fileWithoutInitialWhitespace.headOption.map(_.dropWhile(_.isWhitespace))
-    firstCodeLine
+    Optional.ofNullable(firstCodeLine.orNull)
   }
 }
 
