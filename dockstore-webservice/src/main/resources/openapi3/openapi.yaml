@@ -65,27 +65,6 @@ tags:
   - name: GA4GHV1
     description: A curated subset of resources proposed as a common standard for tool repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0) and is considered final (not subject to change)
 paths:
-  /aliases/workflow-versions/{alias}:
-    get:
-      tags:
-        - aliases
-      description: Retrieves workflow version path information by alias.
-      operationId: getWorkflowVersionPathInfoByAlias
-      parameters:
-        - name: alias
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkflowVersionPathInfo'
-      security:
-        - bearer: []
   /aliases/workflow-versions/{workflowVersionId}:
     post:
       tags:
@@ -109,7 +88,28 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
+      security:
+        - bearer: []
+  /aliases/workflow-versions/{alias}:
+    get:
+      tags:
+        - aliases
+      description: Retrieves workflow version path information by alias.
+      operationId: getWorkflowVersionPathInfoByAlias
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersionPathInfo'
       security:
         - bearer: []
   /cloudInstances/{cloudInstanceId}:
@@ -557,56 +557,6 @@ paths:
                 $ref: '#/components/schemas/Tool'
       security:
         - bearer: []
-  /containers/{containerId}/publish:
-    post:
-      tags:
-        - containers
-      description: Publish or unpublish a tool.
-      operationId: publish
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/PublishRequest'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-      security:
-        - bearer: []
-  /containers/tags:
-    get:
-      tags:
-        - containers
-      description: List the tags for a tool.
-      operationId: tags
-      parameters:
-        - name: containerId
-          in: query
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tag'
-      security:
-        - bearer: []
   /containers/{containerId}:
     get:
       tags:
@@ -678,6 +628,161 @@ paths:
             application/json: {}
       security:
         - bearer: []
+  /containers/{containerId}/publish:
+    post:
+      tags:
+        - containers
+      description: Publish or unpublish a tool.
+      operationId: publish
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+      security:
+        - bearer: []
+  /containers/tags:
+    get:
+      tags:
+        - containers
+      description: List the tags for a tool.
+      operationId: tags
+      parameters:
+        - name: containerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - bearer: []
+  /containers/{containerId}/users:
+    get:
+      tags:
+        - containers
+      description: Get users of a tool.
+      operationId: getUsers
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - bearer: []
+  /containers/{containerId}/starredUsers:
+    get:
+      tags:
+        - containers
+      description: Returns list of users who starred a tool.
+      operationId: getStarredUsers
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /containers/{containerId}/labels:
+    put:
+      tags:
+        - containers
+      description: Update the labels linked to a tool.
+      operationId: updateLabels
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: labels
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+      security:
+        - bearer: []
+  /containers/{toolId}/defaultVersion:
+    put:
+      tags:
+        - containers
+      description: Update the default version of the given tool.
+      operationId: updateDefaultVersion
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+      security:
+        - bearer: []
   /containers/{containerId}/updateTagPaths:
     put:
       tags:
@@ -726,84 +831,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Tool'
-  /containers/{containerId}/star:
-    put:
-      tags:
-        - containers
-      description: Star a tool.
-      operationId: starEntry
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/StarRequest'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-        - bearer: []
-  /containers/{containerId}/dockerfile:
-    get:
-      tags:
-        - containers
-      description: Get the corresponding Dockerfile.
-      operationId: dockerfile
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tag
-          in: query
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-      security:
-        - bearer: []
-  /containers/{toolId}/defaultVersion:
-    put:
-      tags:
-        - containers
-      description: Update the default version of the given tool.
-      operationId: updateDefaultVersion
-      parameters:
-        - name: toolId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-      security:
-        - bearer: []
   /containers/schema/{containerId}/published:
     get:
       tags:
@@ -981,6 +1008,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
+  /containers/{containerId}/dockerfile:
+    get:
+      tags:
+        - containers
+      description: Get the corresponding Dockerfile.
+      operationId: dockerfile
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+      security:
+        - bearer: []
   /containers/{containerId}/primaryDescriptor:
     get:
       tags:
@@ -1191,6 +1244,31 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
       security:
         - bearer: []
+  /containers/{containerId}/star:
+    put:
+      tags:
+        - containers
+      description: Star a tool.
+      operationId: starEntry
+      parameters:
+        - name: containerId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/StarRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+        - bearer: []
   /containers/{toolId}/zip/{tagId}:
     get:
       tags:
@@ -1229,84 +1307,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-      security:
-        - bearer: []
-  /containers/{containerId}/users:
-    get:
-      tags:
-        - containers
-      description: Get users of a tool.
-      operationId: getUsers
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
-  /containers/{containerId}/starredUsers:
-    get:
-      tags:
-        - containers
-      description: Returns list of users who starred a tool.
-      operationId: getStarredUsers
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-  /containers/{containerId}/labels:
-    put:
-      tags:
-        - containers
-      description: Update the labels linked to a tool.
-      operationId: updateLabels
-      parameters:
-        - name: containerId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: labels
-          in: query
-          schema:
-            type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
       responses:
         default:
           description: default response
@@ -1518,6 +1518,32 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
       security:
         - bearer: []
+  /entries/{id}/aliases:
+    post:
+      tags:
+        - entries
+      description: Add aliases linked to a entry in Dockstore.
+      operationId: addAliases_2
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully added alias to entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - bearer: []
   /entries/{id}/collections:
     get:
       tags:
@@ -1638,32 +1664,6 @@ paths:
                 $ref: '#/components/schemas/Entry'
       security:
         - bearer: []
-  /entries/{id}/aliases:
-    post:
-      tags:
-        - entries
-      description: Add aliases linked to a entry in Dockstore.
-      operationId: addAliases_2
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: aliases
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successfully added alias to entry
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Entry'
-      security:
-        - bearer: []
   /events:
     get:
       tags:
@@ -1703,6 +1703,42 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
+      security:
+        - bearer: []
+  /containers/hostedEntry:
+    post:
+      tags:
+        - hosted
+      description: Create a hosted tool.
+      operationId: createHostedTool_1
+      parameters:
+        - name: registry
+          in: query
+          schema:
+            type: string
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          schema:
+            type: string
+        - name: entryName
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully created hosted entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
       security:
         - bearer: []
   /containers/hostedEntry/{entryId}:
@@ -1763,12 +1799,12 @@ paths:
                 $ref: '#/components/schemas/Tool'
       security:
         - bearer: []
-  /containers/hostedEntry:
+  /workflows/hostedEntry:
     post:
       tags:
         - hosted
-      description: Create a hosted tool.
-      operationId: createHostedTool_1
+      description: Create a hosted workflow.
+      operationId: createHostedWorkflow_1
       parameters:
         - name: registry
           in: query
@@ -1889,42 +1925,6 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
-  /workflows/hostedEntry:
-    post:
-      tags:
-        - hosted
-      description: Create a hosted workflow.
-      operationId: createHostedWorkflow_1
-      parameters:
-        - name: registry
-          in: query
-          schema:
-            type: string
-        - name: name
-          in: query
-          schema:
-            type: string
-        - name: descriptorType
-          in: query
-          schema:
-            type: string
-        - name: namespace
-          in: query
-          schema:
-            type: string
-        - name: entryName
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successfully created hosted entry
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Entry'
-      security:
-        - bearer: []
   /lambdaEvents/{organization}:
     get:
       tags:
@@ -1973,6 +1973,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+  /metadata/sitemap:
+    get:
+      tags:
+        - metadata
+      summary: List all available workflow, tool, organization, and collection paths.
+      description: List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication
+      operationId: sitemap
+      responses:
+        default:
+          description: default response
+          content:
+            text/html:
+              schema:
+                type: string
+            text/xml:
+              schema:
+                type: string
+  /metadata/rss:
+    get:
+      tags:
+        - metadata
+      summary: List all published tools and workflows in creation order
+      description: List all published tools and workflows in creation order, NO authentication
+      operationId: rssFeed
+      responses:
+        default:
+          description: default response
+          content:
+            text/xml:
+              schema:
+                type: string
   /metadata/runner_dependencies:
     get:
       tags:
@@ -2093,37 +2124,6 @@ paths:
           content:
             text/html: {}
             text/xml: {}
-  /metadata/sitemap:
-    get:
-      tags:
-        - metadata
-      summary: List all available workflow, tool, organization, and collection paths.
-      description: List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections. NO authentication
-      operationId: sitemap
-      responses:
-        default:
-          description: default response
-          content:
-            text/html:
-              schema:
-                type: string
-            text/xml:
-              schema:
-                type: string
-  /metadata/rss:
-    get:
-      tags:
-        - metadata
-      summary: List all published tools and workflows in creation order
-      description: List all published tools and workflows in creation order, NO authentication
-      operationId: rssFeed
-      responses:
-        default:
-          description: default response
-          content:
-            text/xml:
-              schema:
-                type: string
   /curation/notifications/{id}:
     get:
       tags:
@@ -2225,30 +2225,6 @@ paths:
                 $ref: '#/components/schemas/Notification'
       security:
         - bearer: []
-  /organizations/{organizationId}/approve:
-    post:
-      tags:
-        - organizations
-      summary: Approve an organization.
-      description: Approve the organization with the given id. Admin/curator only.
-      operationId: approveOrganization
-      parameters:
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-        - bearer: []
   /organizations:
     get:
       tags:
@@ -2287,13 +2263,13 @@ paths:
                 $ref: '#/components/schemas/Organization'
       security:
         - bearer: []
-  /organizations/{organizationId}/description:
-    get:
+  /organizations/{organizationId}/approve:
+    post:
       tags:
         - organizations
-      summary: Retrieve an organization description by organization ID.
-      description: Retrieve an organization description by organization ID. Supports optional authentication.
-      operationId: getOrganizationDescription
+      summary: Approve an organization.
+      description: Approve the organization with the given id. Admin/curator only.
+      operationId: approveOrganization
       parameters:
         - name: organizationId
           in: path
@@ -2308,15 +2284,16 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/Organization'
       security:
         - bearer: []
-    put:
+  /organizations/{organizationId}/reject:
+    post:
       tags:
         - organizations
-      summary: Update an organization's description.
-      description: Update an organization's description. Expects description in markdown format.
-      operationId: updateOrganizationDescription
+      summary: Reject an organization.
+      description: Reject the organization with the given id. Admin/curator only.
+      operationId: rejectOrganization
       parameters:
         - name: organizationId
           in: path
@@ -2325,13 +2302,53 @@ paths:
           schema:
             type: integer
             format: int64
-      requestBody:
-        description: Organization's description in markdown.
-        content:
-          '*/*':
-            schema:
-              type: string
-        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+        - bearer: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+        - organizations
+      summary: Re-request an organization review.
+      description: Re-request a review of the given organization. Requires the organization to be rejected.
+      operationId: requestOrganizationReview
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+        - bearer: []
+  /organizations/name/{name}:
+    get:
+      tags:
+        - organizations
+      summary: Retrieve an organization by name.
+      description: Retrieve an organization by name. Supports optional authentication.
+      operationId: getOrganizationByName
+      parameters:
+        - name: name
+          in: path
+          description: Organization name.
+          required: true
+          schema:
+            type: string
       responses:
         default:
           description: default response
@@ -2418,36 +2435,13 @@ paths:
           description: FORBIDDEN
       security:
         - bearer: []
-  /organizations/name/{name}:
+  /organizations/{organizationId}/description:
     get:
       tags:
         - organizations
-      summary: Retrieve an organization by name.
-      description: Retrieve an organization by name. Supports optional authentication.
-      operationId: getOrganizationByName
-      parameters:
-        - name: name
-          in: path
-          description: Organization name.
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-        - bearer: []
-  /organizations/{organizationId}/request:
-    post:
-      tags:
-        - organizations
-      summary: Re-request an organization review.
-      description: Re-request a review of the given organization. Requires the organization to be rejected.
-      operationId: requestOrganizationReview
+      summary: Retrieve an organization description by organization ID.
+      description: Retrieve an organization description by organization ID. Supports optional authentication.
+      operationId: getOrganizationDescription
       parameters:
         - name: organizationId
           in: path
@@ -2462,16 +2456,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
+                type: string
       security:
         - bearer: []
-  /organizations/{organizationId}/reject:
-    post:
+    put:
       tags:
         - organizations
-      summary: Reject an organization.
-      description: Reject the organization with the given id. Admin/curator only.
-      operationId: rejectOrganization
+      summary: Update an organization's description.
+      description: Update an organization's description. Expects description in markdown format.
+      operationId: updateOrganizationDescription
       parameters:
         - name: organizationId
           in: path
@@ -2480,6 +2473,13 @@ paths:
           schema:
             type: integer
             format: int64
+      requestBody:
+        description: Organization's description in markdown.
+        content:
+          '*/*':
+            schema:
+              type: string
+        required: true
       responses:
         default:
           description: default response
@@ -3162,6 +3162,57 @@ paths:
             text/plain:
               schema:
                 type: string
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      description: Get user by id.
+      operationId: getSpecificUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - bearer: []
+  /users/user:
+    get:
+      tags:
+        - users
+      description: Get the logged-in user.
+      operationId: getUser
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - bearer: []
+    delete:
+      tags:
+        - users
+      description: Delete user if possible.
+      operationId: selfDestruct
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: boolean
+      security:
+        - bearer: []
   /users/updateUserMetadata:
     get:
       tags:
@@ -3251,35 +3302,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
-  /users/user:
-    get:
-      tags:
-        - users
-      description: Get the logged-in user.
-      operationId: getUser
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
-    delete:
-      tags:
-        - users
-      description: Delete user if possible.
-      operationId: selfDestruct
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: boolean
       security:
         - bearer: []
   /users/user/{userId}:
@@ -4006,28 +4028,6 @@ paths:
           description: Not Found
       security:
         - bearer: []
-  /users/{userId}:
-    get:
-      tags:
-        - users
-      description: Get user by id.
-      operationId: getSpecificUser
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
   /users/dockerRegistries:
     get:
       tags:
@@ -4126,6 +4126,38 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
+  /workflows/{workflowId}/refresh/{version}:
+    get:
+      tags:
+        - workflows
+      description: Refresh one particular workflow version.
+      operationId: refreshVersion
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: hardRefresh
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
   /workflows/{workflowId}/publish:
     post:
       tags:
@@ -4176,12 +4208,12 @@ paths:
                   $ref: '#/components/schemas/WorkflowVersion'
       security:
         - bearer: []
-  /workflows/{workflowId}/refresh/{version}:
+  /workflows/{workflowId}/users:
     get:
       tags:
         - workflows
-      description: Refresh one particular workflow version.
-      operationId: refreshVersion
+      description: Get users of a workflow.
+      operationId: getUsers_1
       parameters:
         - name: workflowId
           in: path
@@ -4189,16 +4221,62 @@ paths:
           schema:
             type: integer
             format: int64
-        - name: version
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - bearer: []
+  /workflows/{workflowId}/starredUsers:
+    get:
+      tags:
+        - workflows
+      description: Returns list of users who starred the given workflow.
+      operationId: getStarredUsers_1
+      parameters:
+        - name: workflowId
           in: path
           required: true
           schema:
-            type: string
-        - name: hardRefresh
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /workflows/{workflowId}/labels:
+    put:
+      tags:
+        - workflows
+      description: Update the labels linked to a workflow.
+      operationId: updateLabels_1
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: labels
           in: query
           schema:
-            type: boolean
-            default: true
+            type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
       responses:
         default:
           description: default response
@@ -4206,31 +4284,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-  /workflows/{workflowId}/star:
-    put:
-      tags:
-        - workflows
-      description: Star a workflow.
-      operationId: starEntry_1
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/StarRequest'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
       security:
         - bearer: []
   /workflows/{workflowId}/defaultVersion:
@@ -4458,6 +4511,54 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
       security:
         - bearer: []
+  /workflows/{workflowId}/star:
+    put:
+      tags:
+        - workflows
+      description: Star a workflow.
+      operationId: starEntry_1
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/StarRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+        - bearer: []
+  /workflows/{workflowId}/restub:
+    get:
+      tags:
+        - workflows
+      summary: Restub a workflow
+      description: Restub a workflow
+      operationId: restub
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
   /workflows/{workflowId}:
     get:
       tags:
@@ -4501,107 +4602,6 @@ paths:
           '*/*':
             schema:
               $ref: '#/components/schemas/Workflow'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-  /workflows/{workflowId}/users:
-    get:
-      tags:
-        - workflows
-      description: Get users of a workflow.
-      operationId: getUsers_1
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-      security:
-        - bearer: []
-  /workflows/{workflowId}/starredUsers:
-    get:
-      tags:
-        - workflows
-      description: Returns list of users who starred the given workflow.
-      operationId: getStarredUsers_1
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-  /workflows/{workflowId}/labels:
-    put:
-      tags:
-        - workflows
-      description: Update the labels linked to a workflow.
-      operationId: updateLabels_1
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: labels
-          in: query
-          schema:
-            type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-  /workflows/{workflowId}/restub:
-    get:
-      tags:
-        - workflows
-      summary: Restub a workflow
-      description: Restub a workflow
-      operationId: restub
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
       responses:
         default:
           description: default response
@@ -5514,85 +5514,6 @@ paths:
           description: This code tells AWS Lambda not to retry.
       security:
         - bearer: []
-  /api/ga4gh/v2/extended/tools/entry/_search:
-    post:
-      tags:
-        - extendedGA4GH
-      summary: Search the tools and workflows indices.
-      description: This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
-      operationId: toolsIndexSearch
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        "200":
-          description: An elastic search result.
-          content:
-            application/json:
-              schema:
-                type: string
-  /api/ga4gh/v2/extended/tools/{organization}:
-    get:
-      tags:
-        - extendedGA4GH
-      summary: List tools of an organization
-      description: This endpoint returns tools of an organization.
-      operationId: toolsOrgGet
-      parameters:
-        - name: organization
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: An array of Tools of the input organization.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolV1'
-  /api/ga4gh/v2/extended/tools/index:
-    post:
-      tags:
-        - extendedGA4GH
-      summary: Update the workflows and tools indices
-      description: This endpoint updates the indices for all published tools and workflows.
-      operationId: Update the workflows and tools indices
-      responses:
-        "200":
-          description: Workflows and tools indices populated with entries.
-          content:
-            text/plain:
-              schema:
-                type: integer
-      security:
-        - bearer: []
-  /api/ga4gh/v2/extended/workflows/{organization}:
-    get:
-      tags:
-        - extendedGA4GH
-      summary: List workflows of an organization
-      description: This endpoint returns workflows of an organization.
-      operationId: workflowsOrgGet
-      parameters:
-        - name: organization
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: An array of Tools of the input organization.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolV1'
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       tags:
@@ -5696,6 +5617,85 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - bearer: []
+  /api/ga4gh/v2/extended/tools/{organization}:
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List tools of an organization
+      description: This endpoint returns tools of an organization.
+      operationId: toolsOrgGet
+      parameters:
+        - name: organization
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+  /api/ga4gh/v2/extended/tools/entry/_search:
+    post:
+      tags:
+        - extendedGA4GH
+      summary: Search the tools and workflows indices.
+      description: This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
+      operationId: toolsIndexSearch
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          description: An elastic search result.
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/ga4gh/v2/extended/tools/index:
+    post:
+      tags:
+        - extendedGA4GH
+      summary: Update the workflows and tools indices
+      description: This endpoint updates the indices for all published tools and workflows.
+      operationId: Update the workflows and tools indices
+      responses:
+        "200":
+          description: Workflows and tools indices populated with entries.
+          content:
+            text/plain:
+              schema:
+                type: integer
+      security:
+        - bearer: []
+  /api/ga4gh/v2/extended/workflows/{organization}:
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List workflows of an organization
+      description: This endpoint returns workflows of an organization.
+      operationId: workflowsOrgGet
+      parameters:
+        - name: organization
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
   /ga4gh/trs/v2/service-info:
     get:
       tags:
@@ -6448,25 +6448,11 @@ paths:
                   $ref: '#/components/schemas/ToolTestsV1'
 components:
   schemas:
-    WorkflowVersionPathInfo:
-      type: object
-      properties:
-        fullWorkflowPath:
-          type: string
-        tagName:
-          type: string
     Alias:
       type: object
       properties:
         content:
           type: string
-    Aliasable:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
     Checksum:
       required:
         - checksum
@@ -6925,6 +6911,20 @@ components:
           type: string
         workingDirectory:
           type: string
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+    WorkflowVersionPathInfo:
+      type: object
+      properties:
+        fullWorkflowPath:
+          type: string
+        tagName:
+          type: string
     CloudInstance:
       type: object
       properties:
@@ -7182,11 +7182,6 @@ components:
       properties:
         publish:
           type: boolean
-    StarRequest:
-      type: object
-      properties:
-        star:
-          type: boolean
     SourceFile:
       required:
         - absolutePath
@@ -7244,39 +7239,11 @@ components:
           type: string
         verified:
           type: boolean
-    CollectionOrganization:
+    StarRequest:
       type: object
       properties:
-        collectionDisplayName:
-          type: string
-        collectionId:
-          type: integer
-          format: int64
-        collectionName:
-          type: string
-        organizationDisplayName:
-          type: string
-        organizationId:
-          type: integer
-          format: int64
-        organizationName:
-          type: string
-    VersionVerifiedPlatform:
-      type: object
-      properties:
-        metadata:
-          type: string
-        path:
-          type: string
-        platformVersion:
-          type: string
-        source:
-          type: string
-        verified:
+        star:
           type: boolean
-        versionId:
-          type: integer
-          format: int64
     Entry:
       type: object
       properties:
@@ -7360,145 +7327,50 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Version'
-    BioWorkflow:
+    CollectionOrganization:
       type: object
       properties:
-        descriptorType:
+        collectionDisplayName:
           type: string
-          enum:
-            - CWL
-            - WDL
-            - gxformat2
-            - SWL
-            - NFL
-            - service
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
-        author:
-          type: string
-        checker_id:
+        collectionId:
           type: integer
           format: int64
-        conceptDoi:
+        collectionName:
           type: string
-        dbCreateDate:
+        organizationDisplayName:
+          type: string
+        organizationId:
           type: integer
           format: int64
-        dbUpdateDate:
-          type: integer
-          format: int64
-        defaultTestParameterFilePath:
+        organizationName:
           type: string
-        defaultVersion:
+    VersionVerifiedPlatform:
+      type: object
+      properties:
+        metadata:
           type: string
-        description:
-          type: string
-        descriptorTypeSubclass:
-          type: string
-          enum:
-            - docker-compose
-            - helm
-            - swarm
-            - kubernetes
-            - n/a
-        email:
-          type: string
-        forumUrl:
-          maxLength: 256
-          minLength: 0
-          type: string
-        full_workflow_path:
-          type: string
-        gitUrl:
-          type: string
-        has_checker:
-          type: boolean
-        id:
-          type: integer
-          format: int64
-        input_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        is_checker:
-          type: boolean
-        is_published:
-          type: boolean
-        labels:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/Label'
-        lastUpdated:
-          type: integer
-          format: int64
-        last_modified:
-          type: integer
-          format: int32
-        last_modified_date:
-          type: integer
-          format: int64
-        licenseInformation:
-          $ref: '#/components/schemas/LicenseInformation'
-        metadataFromEntry:
-          $ref: '#/components/schemas/Workflow'
-        metadataFromVersion:
-          $ref: '#/components/schemas/Version'
-        mode:
-          type: string
-          enum:
-            - FULL
-            - STUB
-            - HOSTED
-            - DOCKSTORE_YML
-        organization:
-          type: string
-        output_file_formats:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/FileFormat'
-        parent_id:
-          type: integer
-          format: int64
         path:
           type: string
-        repository:
+        platformVersion:
           type: string
-        sourceControl:
+        source:
           type: string
-          enum:
-            - dockstore.org
-            - github.com
-            - bitbucket.org
-            - gitlab.com
-        source_control_provider:
-          type: string
-        starredUsers:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        topicId:
+        verified:
+          type: boolean
+        versionId:
           type: integer
           format: int64
-        users:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        workflowName:
-          type: string
-        workflowVersions:
-          uniqueItems: true
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkflowVersion'
-        workflow_path:
-          type: string
+    BioWorkflow:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Workflow'
+        - type: object
+          properties:
+            is_checker:
+              type: boolean
+            parent_id:
+              type: integer
+              format: int64
     Event:
       type: object
       properties:
