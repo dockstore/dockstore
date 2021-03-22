@@ -7270,7 +7270,6 @@ definitions:
     properties:
       publish:
         type: "boolean"
-        readOnly: true
   RegistryBean:
     type: "object"
     properties:
