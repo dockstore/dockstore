@@ -112,29 +112,6 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersionPathInfo'
       security:
         - bearer: []
-  /cloudInstances/{cloudInstanceId}:
-    delete:
-      tags:
-        - Cloud Instances
-      summary: Delete a public cloud instance, admin only
-      operationId: deleteCloudInstance
-      parameters:
-        - name: cloudInstanceId
-          in: path
-          description: ID of cloud instance to delete
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        "204":
-          description: No Content
-        "403":
-          description: Forbidden
-        "401":
-          description: Unauthorized
-      security:
-        - bearer: []
   /cloudInstances:
     get:
       tags:
@@ -162,6 +139,29 @@ paths:
             schema:
               $ref: '#/components/schemas/CloudInstance'
         required: true
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+        "401":
+          description: Unauthorized
+      security:
+        - bearer: []
+  /cloudInstances/{cloudInstanceId}:
+    delete:
+      tags:
+        - Cloud Instances
+      summary: Delete a public cloud instance, admin only
+      operationId: deleteCloudInstance
+      parameters:
+        - name: cloudInstanceId
+          in: path
+          description: ID of cloud instance to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         "204":
           description: No Content
@@ -628,6 +628,29 @@ paths:
             application/json: {}
       security:
         - bearer: []
+  /containers/tags:
+    get:
+      tags:
+        - containers
+      description: List the tags for a tool.
+      operationId: tags
+      parameters:
+        - name: containerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - bearer: []
   /containers/{containerId}/publish:
     post:
       tags:
@@ -653,29 +676,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Tool'
-      security:
-        - bearer: []
-  /containers/tags:
-    get:
-      tags:
-        - containers
-      description: List the tags for a tool.
-      operationId: tags
-      parameters:
-        - name: containerId
-          in: query
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tag'
       security:
         - bearer: []
   /containers/{containerId}/users:
@@ -1518,32 +1518,6 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
       security:
         - bearer: []
-  /entries/{id}/aliases:
-    post:
-      tags:
-        - entries
-      description: Add aliases linked to a entry in Dockstore.
-      operationId: addAliases_2
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: aliases
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successfully added alias to entry
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Entry'
-      security:
-        - bearer: []
   /entries/{id}/collections:
     get:
       tags:
@@ -1658,6 +1632,32 @@ paths:
       responses:
         default:
           description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - bearer: []
+  /entries/{id}/aliases:
+    post:
+      tags:
+        - entries
+      description: Add aliases linked to a entry in Dockstore.
+      operationId: addAliases_2
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully added alias to entry
           content:
             application/json:
               schema:
@@ -2225,6 +2225,240 @@ paths:
                 $ref: '#/components/schemas/Notification'
       security:
         - bearer: []
+  /organizations/{organizationId}/users/{username}:
+    put:
+      tags:
+        - organizations
+      summary: Add a user role to an organization.
+      description: Add a user role to an organization.
+      operationId: addUserToOrgByUsername
+      parameters:
+        - name: username
+          in: path
+          description: User to add to org.
+          required: true
+          schema:
+            type: string
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: Role of user.
+        content:
+          '*/*':
+            schema:
+              type: string
+              enum:
+                - MAINTAINER
+                - MEMBER
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+        - bearer: []
+  /organizations/{organizationId}/user:
+    put:
+      tags:
+        - organizations
+      summary: Add a user role to an organization.
+      description: Add a user role to an organization.
+      operationId: addUserToOrg
+      parameters:
+        - name: role
+          in: query
+          description: Role of user.
+          required: true
+          schema:
+            type: string
+            enum:
+              - ADMIN
+              - MAINTAINER
+              - MEMBER
+        - name: userId
+          in: query
+          description: User ID of user to add to organization.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+        - bearer: []
+    post:
+      tags:
+        - organizations
+      summary: Update a user role in an organization.
+      description: Update a user role in an organization.
+      operationId: updateUserRole
+      parameters:
+        - name: role
+          in: query
+          description: Role of user.
+          required: true
+          schema:
+            type: string
+            enum:
+              - ADMIN
+              - MAINTAINER
+              - MEMBER
+        - name: userId
+          in: query
+          description: User ID of user to add to organization.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUser'
+      security:
+        - bearer: []
+    delete:
+      tags:
+        - organizations
+      summary: Remove a user from an organization.
+      description: Remove a user from an organization.
+      operationId: deleteUserRole
+      parameters:
+        - name: userId
+          in: query
+          description: User ID of user to add to organization.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+        - bearer: []
+  /organizations/{organizationId}/invitation:
+    post:
+      tags:
+        - organizations
+      summary: Accept or reject an organization invitation.
+      description: Accept or reject an organization invitation. True accepts the invitation, false rejects the invitation.
+      operationId: acceptOrRejectInvitation
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: accept
+          in: query
+          description: Accept or reject.
+          required: true
+          schema:
+            type: boolean
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+        - bearer: []
+  /organizations/{organizationId}/aliases:
+    post:
+      tags:
+        - organizations
+      summary: Add aliases linked to a listing in Dockstore.
+      description: Add aliases linked to a listing in Dockstore. Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
+      operationId: addOrganizationAliases_1
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully created organization alias
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+      security:
+        - bearer: []
+  /organizations/{alias}/aliases:
+    get:
+      tags:
+        - organizations
+      summary: Retrieve an organization by alias.
+      description: Retrieve an organization by alias.
+      operationId: getOrganizationByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias.
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
   /organizations:
     get:
       tags:
@@ -2644,240 +2878,6 @@ paths:
                   $ref: '#/components/schemas/Organization'
       security:
         - bearer: []
-  /organizations/{organizationId}/users/{username}:
-    put:
-      tags:
-        - organizations
-      summary: Add a user role to an organization.
-      description: Add a user role to an organization.
-      operationId: addUserToOrgByUsername
-      parameters:
-        - name: username
-          in: path
-          description: User to add to org.
-          required: true
-          schema:
-            type: string
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        description: Role of user.
-        content:
-          '*/*':
-            schema:
-              type: string
-              enum:
-                - MAINTAINER
-                - MEMBER
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationUser'
-      security:
-        - bearer: []
-  /organizations/{organizationId}/user:
-    put:
-      tags:
-        - organizations
-      summary: Add a user role to an organization.
-      description: Add a user role to an organization.
-      operationId: addUserToOrg
-      parameters:
-        - name: role
-          in: query
-          description: Role of user.
-          required: true
-          schema:
-            type: string
-            enum:
-              - ADMIN
-              - MAINTAINER
-              - MEMBER
-        - name: userId
-          in: query
-          description: User ID of user to add to organization.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationUser'
-      security:
-        - bearer: []
-    post:
-      tags:
-        - organizations
-      summary: Update a user role in an organization.
-      description: Update a user role in an organization.
-      operationId: updateUserRole
-      parameters:
-        - name: role
-          in: query
-          description: Role of user.
-          required: true
-          schema:
-            type: string
-            enum:
-              - ADMIN
-              - MAINTAINER
-              - MEMBER
-        - name: userId
-          in: query
-          description: User ID of user to add to organization.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OrganizationUser'
-      security:
-        - bearer: []
-    delete:
-      tags:
-        - organizations
-      summary: Remove a user from an organization.
-      description: Remove a user from an organization.
-      operationId: deleteUserRole
-      parameters:
-        - name: userId
-          in: query
-          description: User ID of user to add to organization.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-        - bearer: []
-  /organizations/{organizationId}/invitation:
-    post:
-      tags:
-        - organizations
-      summary: Accept or reject an organization invitation.
-      description: Accept or reject an organization invitation. True accepts the invitation, false rejects the invitation.
-      operationId: acceptOrRejectInvitation
-      parameters:
-        - name: organizationId
-          in: path
-          description: Organization ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: accept
-          in: query
-          description: Accept or reject.
-          required: true
-          schema:
-            type: boolean
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-        - bearer: []
-  /organizations/{organizationId}/aliases:
-    post:
-      tags:
-        - organizations
-      summary: Add aliases linked to a listing in Dockstore.
-      description: Add aliases linked to a listing in Dockstore. Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
-      operationId: addOrganizationAliases_1
-      parameters:
-        - name: organizationId
-          in: path
-          description: Organization to modify.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: aliases
-          in: query
-          description: Comma-delimited list of aliases.
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successfully created organization alias
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-      security:
-        - bearer: []
-  /organizations/{alias}/aliases:
-    get:
-      tags:
-        - organizations
-      summary: Retrieve an organization by alias.
-      description: Retrieve an organization by alias.
-      operationId: getOrganizationByAlias
-      parameters:
-        - name: alias
-          in: path
-          description: Alias.
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
   /auth/tokens/github:
     post:
       tags:
@@ -4126,6 +4126,56 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
+  /workflows/versions:
+    get:
+      tags:
+        - workflows
+      description: List the versions for a published workflow.
+      operationId: tags_1
+      parameters:
+        - name: workflowId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+      security:
+        - bearer: []
+  /workflows/{workflowId}/publish:
+    post:
+      tags:
+        - workflows
+      description: Publish or unpublish a workflow.
+      operationId: publish_1
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
   /workflows/{workflowId}/refresh/{version}:
     get:
       tags:
@@ -4158,12 +4208,12 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
-  /workflows/{workflowId}/publish:
-    post:
+  /workflows/{workflowId}/zip/{workflowVersionId}:
+    get:
       tags:
         - workflows
-      description: Publish or unpublish a workflow.
-      operationId: publish_1
+      description: Download a ZIP file of a workflow and all associated files.
+      operationId: getWorkflowZip
       parameters:
         - name: workflowId
           in: path
@@ -4171,29 +4221,9 @@ paths:
           schema:
             type: integer
             format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/PublishRequest'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-  /workflows/versions:
-    get:
-      tags:
-        - workflows
-      description: List the versions for a published workflow.
-      operationId: tags_1
-      parameters:
-        - name: workflowId
-          in: query
+        - name: workflowVersionId
+          in: path
+          required: true
           schema:
             type: integer
             format: int64
@@ -4201,11 +4231,43 @@ paths:
         default:
           description: default response
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkflowVersion'
+            application/zip: {}
+      security:
+        - bearer: []
+  /workflows/github:
+    delete:
+      tags:
+        - workflows
+      description: Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.
+      operationId: handleGitHubBranchDeletion
+      parameters:
+        - name: repository
+          in: query
+          description: Repository path (ex. dockstore/dockstore-ui2)
+          required: true
+          schema:
+            type: string
+        - name: username
+          in: query
+          description: Username of user on GitHub who triggered action
+          required: true
+          schema:
+            type: string
+        - name: gitReference
+          in: query
+          description: Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
+          required: true
+          schema:
+            type: string
+        - name: installationId
+          in: query
+          description: GitHub installation ID
+          required: true
+          schema:
+            type: string
+      responses:
+        "418":
+          description: This code tells AWS Lambda not to retry.
       security:
         - bearer: []
   /workflows/{workflowId}/users:
@@ -4255,6 +4317,91 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+  /workflows/{workflowId}/tools/{workflowVersionId}:
+    get:
+      tags:
+        - workflows
+      description: Get the Tools for a given workflow version.
+      operationId: getTableToolContent
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - bearer: []
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
+    get:
+      tags:
+        - workflows
+      description: Retrieve sourcefiles for an entry's version
+      operationId: getWorkflowVersionsSourcefiles
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to retrieve the version from.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          description: Workflow version to retrieve the version from.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: fileTypes
+          in: query
+          description: List of file types to filter sourcefiles by
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - DOCKSTORE_CWL
+                - DOCKSTORE_WDL
+                - DOCKERFILE
+                - CWL_TEST_JSON
+                - WDL_TEST_JSON
+                - NEXTFLOW
+                - NEXTFLOW_CONFIG
+                - NEXTFLOW_TEST_PARAMS
+                - DOCKSTORE_YML
+                - DOCKSTORE_SERVICE_YML
+                - DOCKSTORE_SERVICE_TEST_JSON
+                - DOCKSTORE_SERVICE_OTHER
+                - DOCKSTORE_GXFORMAT2
+                - GXFORMAT2_TEST_FILE
+                - DOCKSTORE_SWL
+                - SWL_TEST_JSON
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+      security:
+        - bearer: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -4536,29 +4683,6 @@ paths:
             application/json: {}
       security:
         - bearer: []
-  /workflows/{workflowId}/restub:
-    get:
-      tags:
-        - workflows
-      summary: Restub a workflow
-      description: Restub a workflow
-      operationId: restub
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
   /workflows/{workflowId}:
     get:
       tags:
@@ -4602,6 +4726,29 @@ paths:
           '*/*':
             schema:
               $ref: '#/components/schemas/Workflow'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
+  /workflows/{workflowId}/restub:
+    get:
+      tags:
+        - workflows
+      summary: Restub a workflow
+      description: Restub a workflow
+      operationId: restub
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         default:
           description: default response
@@ -5143,91 +5290,6 @@ paths:
                 type: string
       security:
         - bearer: []
-  /workflows/{workflowId}/tools/{workflowVersionId}:
-    get:
-      tags:
-        - workflows
-      description: Get the Tools for a given workflow version.
-      operationId: getTableToolContent
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: workflowVersionId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
-      security:
-        - bearer: []
-  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
-    get:
-      tags:
-        - workflows
-      description: Retrieve sourcefiles for an entry's version
-      operationId: getWorkflowVersionsSourcefiles
-      parameters:
-        - name: workflowId
-          in: path
-          description: Workflow to retrieve the version from.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: workflowVersionId
-          in: path
-          description: Workflow version to retrieve the version from.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: fileTypes
-          in: query
-          description: List of file types to filter sourcefiles by
-          schema:
-            type: array
-            items:
-              type: string
-              enum:
-                - DOCKSTORE_CWL
-                - DOCKSTORE_WDL
-                - DOCKERFILE
-                - CWL_TEST_JSON
-                - WDL_TEST_JSON
-                - NEXTFLOW
-                - NEXTFLOW_CONFIG
-                - NEXTFLOW_TEST_PARAMS
-                - DOCKSTORE_YML
-                - DOCKSTORE_SERVICE_YML
-                - DOCKSTORE_SERVICE_TEST_JSON
-                - DOCKSTORE_SERVICE_OTHER
-                - DOCKSTORE_GXFORMAT2
-                - GXFORMAT2_TEST_FILE
-                - DOCKSTORE_SWL
-                - SWL_TEST_JSON
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-      security:
-        - bearer: []
   /workflows/{workflowId}/descriptorType:
     post:
       tags:
@@ -5253,88 +5315,6 @@ paths:
               - SWL
               - NFL
               - service
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-  /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
-    post:
-      tags:
-        - workflows
-      description: Register a checker workflow and associates it with the given tool/workflow.
-      operationId: registerCheckerWorkflow
-      parameters:
-        - name: checkerWorkflowPath
-          in: query
-          schema:
-            type: string
-        - name: testParameterPath
-          in: query
-          schema:
-            type: string
-        - name: entryId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: descriptorType
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Entry'
-      security:
-        - bearer: []
-  /workflows/{workflowId}/zip/{workflowVersionId}:
-    get:
-      tags:
-        - workflows
-      description: Download a ZIP file of a workflow and all associated files.
-      operationId: getWorkflowZip
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: workflowVersionId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/zip: {}
-      security:
-        - bearer: []
-  /workflows/{alias}/aliases:
-    get:
-      tags:
-        - workflows
-      description: Retrieves a workflow by alias.
-      operationId: getWorkflowByAlias
-      parameters:
-        - name: alias
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         default:
           description: default response
@@ -5451,6 +5431,62 @@ paths:
             application/json: {}
       security:
         - bearer: []
+  /workflows/{alias}/aliases:
+    get:
+      tags:
+        - workflows
+      description: Retrieves a workflow by alias.
+      operationId: getWorkflowByAlias
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
+  /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
+    post:
+      tags:
+        - workflows
+      description: Register a checker workflow and associates it with the given tool/workflow.
+      operationId: registerCheckerWorkflow
+      parameters:
+        - name: checkerWorkflowPath
+          in: query
+          schema:
+            type: string
+        - name: testParameterPath
+          in: query
+          schema:
+            type: string
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: descriptorType
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - bearer: []
   /workflows/github/install:
     post:
       tags:
@@ -5478,42 +5514,85 @@ paths:
           description: This code tells AWS Lambda not to retry.
       security:
         - bearer: []
-  /workflows/github:
-    delete:
+  /api/ga4gh/v2/extended/tools/{organization}:
+    get:
       tags:
-        - workflows
-      description: Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.
-      operationId: handleGitHubBranchDeletion
+        - extendedGA4GH
+      summary: List tools of an organization
+      description: This endpoint returns tools of an organization.
+      operationId: toolsOrgGet
       parameters:
-        - name: repository
-          in: query
-          description: Repository path (ex. dockstore/dockstore-ui2)
-          required: true
-          schema:
-            type: string
-        - name: username
-          in: query
-          description: Username of user on GitHub who triggered action
-          required: true
-          schema:
-            type: string
-        - name: gitReference
-          in: query
-          description: Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0
-          required: true
-          schema:
-            type: string
-        - name: installationId
-          in: query
-          description: GitHub installation ID
+        - name: organization
+          in: path
           required: true
           schema:
             type: string
       responses:
-        "418":
-          description: This code tells AWS Lambda not to retry.
+        "200":
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+  /api/ga4gh/v2/extended/tools/entry/_search:
+    post:
+      tags:
+        - extendedGA4GH
+      summary: Search the tools and workflows indices.
+      description: This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
+      operationId: toolsIndexSearch
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          description: An elastic search result.
+          content:
+            application/json:
+              schema:
+                type: string
+  /api/ga4gh/v2/extended/tools/index:
+    post:
+      tags:
+        - extendedGA4GH
+      summary: Update the workflows and tools indices
+      description: This endpoint updates the indices for all published tools and workflows.
+      operationId: Update the workflows and tools indices
+      responses:
+        "200":
+          description: Workflows and tools indices populated with entries.
+          content:
+            text/plain:
+              schema:
+                type: integer
       security:
         - bearer: []
+  /api/ga4gh/v2/extended/workflows/{organization}:
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List workflows of an organization
+      description: This endpoint returns workflows of an organization.
+      operationId: workflowsOrgGet
+      parameters:
+        - name: organization
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       tags:
@@ -5617,85 +5696,6 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - bearer: []
-  /api/ga4gh/v2/extended/tools/{organization}:
-    get:
-      tags:
-        - extendedGA4GH
-      summary: List tools of an organization
-      description: This endpoint returns tools of an organization.
-      operationId: toolsOrgGet
-      parameters:
-        - name: organization
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: An array of Tools of the input organization.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolV1'
-  /api/ga4gh/v2/extended/tools/entry/_search:
-    post:
-      tags:
-        - extendedGA4GH
-      summary: Search the tools and workflows indices.
-      description: This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.
-      operationId: toolsIndexSearch
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        "200":
-          description: An elastic search result.
-          content:
-            application/json:
-              schema:
-                type: string
-  /api/ga4gh/v2/extended/tools/index:
-    post:
-      tags:
-        - extendedGA4GH
-      summary: Update the workflows and tools indices
-      description: This endpoint updates the indices for all published tools and workflows.
-      operationId: Update the workflows and tools indices
-      responses:
-        "200":
-          description: Workflows and tools indices populated with entries.
-          content:
-            text/plain:
-              schema:
-                type: integer
-      security:
-        - bearer: []
-  /api/ga4gh/v2/extended/workflows/{organization}:
-    get:
-      tags:
-        - extendedGA4GH
-      summary: List workflows of an organization
-      description: This endpoint returns workflows of an organization.
-      operationId: workflowsOrgGet
-      parameters:
-        - name: organization
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: An array of Tools of the input organization.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolV1'
   /ga4gh/trs/v2/service-info:
     get:
       tags:
@@ -7244,6 +7244,39 @@ components:
       properties:
         star:
           type: boolean
+    CollectionOrganization:
+      type: object
+      properties:
+        collectionDisplayName:
+          type: string
+        collectionId:
+          type: integer
+          format: int64
+        collectionName:
+          type: string
+        organizationDisplayName:
+          type: string
+        organizationId:
+          type: integer
+          format: int64
+        organizationName:
+          type: string
+    VersionVerifiedPlatform:
+      type: object
+      properties:
+        metadata:
+          type: string
+        path:
+          type: string
+        platformVersion:
+          type: string
+        source:
+          type: string
+        verified:
+          type: boolean
+        versionId:
+          type: integer
+          format: int64
     Entry:
       type: object
       properties:
@@ -7327,39 +7360,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Version'
-    CollectionOrganization:
-      type: object
-      properties:
-        collectionDisplayName:
-          type: string
-        collectionId:
-          type: integer
-          format: int64
-        collectionName:
-          type: string
-        organizationDisplayName:
-          type: string
-        organizationId:
-          type: integer
-          format: int64
-        organizationName:
-          type: string
-    VersionVerifiedPlatform:
-      type: object
-      properties:
-        metadata:
-          type: string
-        path:
-          type: string
-        platformVersion:
-          type: string
-        source:
-          type: string
-        verified:
-          type: boolean
-        versionId:
-          type: integer
-          format: int64
     BioWorkflow:
       type: object
       allOf:

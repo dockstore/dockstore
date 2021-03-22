@@ -6,10 +6,8 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-// import io.dockstore.common.DescriptorLanguage;
-// import io.dockstore.common.SourceControl;
-// import io.dockstore.common.DescriptorLanguage;
-// import io.dockstore.common.SourceControl;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -20,8 +18,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
-// import io.swagger.client.api.WorkflowsApi;
-// import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
@@ -30,8 +27,8 @@ import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
-// import io.swagger.client.model.Workflow;
-// import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1692,10 +1689,55 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
-     * Tests that we are getting the number of workflows and tools correctly
+     * Tests that we are getting the number of workflows correctly
      */
     @Test
-    public void testWorkflowsToolsLength() {
+    public void testWorkflowsLength(){
+        // Setup user who creates Organization and collection
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
+
+        //set up admin user
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        //manually register and then publish this workflow
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowApi
+                .manualRegister("github", "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", "wdl",
+                        "");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+
+        workflowApi.refresh(workflowByPathGithub.getId(), false);
+        workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+
+        long orgId = organization.getId();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(orgId, stubCollection);
+
+        long collectionId = collection.getId();
+
+        // Approve the org
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        // Add tool to collection
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
+
+        Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
+        long workflowsCount = addedCollection.getWorkflowsLength();
+        assertEquals(1, workflowsCount);
+    }
+
+    /**
+     * Tests that we are getting the number of tools correctly
+     */
+    @Test
+    public void testToolsLength() {
         // Setup user who creates Organization and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
@@ -1715,7 +1757,7 @@ public class OrganizationIT extends BaseIT {
         long collectionId = collection.getId();
 
         // Approve the org
-        organization = organizationsApiAdmin.approveOrganization(organization.getId());
+        organizationsApiAdmin.approveOrganization(organization.getId());
 
         // Publish a tool
         long entryId = 2;
@@ -1726,29 +1768,11 @@ public class OrganizationIT extends BaseIT {
         // Add tool to collection
         organizationsApi.addEntryToCollection(orgId, collectionId, entryId, null);
 
-        //manually register a workflow
-        //WorkflowsApi workflowsApi = new WorkflowsApi(webClientUser2);
-        //workflowsApi.manualRegister("GITHUB", "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "test", "WDL", "");
-        //Workflow workflow = workflowsApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/dockstore.wdl", "",
-        //         DescriptorLanguage.WDL.getShortName(), "");
-        //workflow = workflowsApi.refresh(workflow.getId(), false);
-        //System.out.println(workflow.getId());
-        //workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
-        //organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), null);
-
-        //add a published workflow to collection
-        //ApiClient client = getWebClient();
-        //WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        //Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null, false, null);
-        //long workflowId = workflow.getId();
-        //organizationsApi.addEntryToCollection(orgId, collectionId, 5705L, null);
         Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
 
         long toolsCount = addedCollection.getToolsLength();
-        //long workflowsCount = addedCollection.getWorkflowsLength();
 
         assertEquals(1, toolsCount);
-        //assertEquals(1, workflowsCount);
     }
 
     /**
