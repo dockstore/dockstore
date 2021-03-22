@@ -17,34 +17,19 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import io.dockstore.client.cli.nested.AbstractEntryClient;
-import io.dockstore.client.cli.nested.LanguageClientFactory;
-import io.dockstore.client.cli.nested.LanguageClientInterface;
-import io.dockstore.client.cli.nested.ToolClient;
-import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LanguageHandlerHelper;
-import io.dockstore.common.WDLFileProvisioning;
 import io.dockstore.common.WdlBridge;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiException;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
 import wdl.draft3.parser.WdlParser;
 
 /**
