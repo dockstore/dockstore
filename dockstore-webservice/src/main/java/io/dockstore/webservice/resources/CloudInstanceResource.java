@@ -46,7 +46,6 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/")
     @Operation(operationId = "getCloudInstances", summary = "Get all known public cloud instances")
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
@@ -71,7 +70,6 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/")
     @RolesAllowed({ "admin" })
     @Operation(operationId = "postCloudInstance", summary = "Add a new public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
