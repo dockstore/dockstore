@@ -65,7 +65,8 @@ POM as their parent.
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <httpcomponents.version>4.5.13</httpcomponents.version>
         <httpcore.version>4.4.14</httpcore.version>
-        <jetty-servlet.version>9.4.37.v20210219</jetty-servlet.version>
+        <!-- ahead of dropwizard tested version due to https://github.com/eclipse/jetty.project/issues/6001 -->
+        <jetty-servlet.version>9.4.38.v20210224</jetty-servlet.version>
         <netty.version>4.1.60.Final</netty.version>
         <scala.version>2.12.13</scala.version>
         <cromwell.version>57</cromwell.version>
@@ -904,6 +905,16 @@ POM as their parent.
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlets</artifactId>
+                <version>${jetty-servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util-ajax</artifactId>
+                <version>${jetty-servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-security</artifactId>
                 <version>${jetty-servlet.version}</version>
             </dependency>
             <dependency>
