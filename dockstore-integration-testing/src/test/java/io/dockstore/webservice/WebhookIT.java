@@ -26,7 +26,6 @@ import java.util.Optional;
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
-import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -480,7 +479,7 @@ public class WebhookIT extends BaseIT {
         } catch (io.dockstore.openapi.client.ApiException e) {
             assertEquals("Cannot change descriptor type of a valid workflow", e.getMessage());
         }
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         client.publish(workflow.getId(), publishRequest);
         try {
             workflowsApi.updateDescriptorType(workflow.getId(), DescriptorLanguage.WDL.toString());

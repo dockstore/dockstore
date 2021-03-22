@@ -31,7 +31,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:dockstore/dockstore.git</github.url>
 
-        <dockstore-client.version>1.10.0</dockstore-client.version>
         <!--
         The following properties are mostly used in the plugins section
         as the versions for the dependency section are provided

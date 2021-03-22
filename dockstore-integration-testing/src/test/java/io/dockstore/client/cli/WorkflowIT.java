@@ -204,7 +204,7 @@ public class WorkflowIT extends BaseIT {
 
         // Publish
         if (toPublish) {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         }
         assertEquals(workflow.isIsPublished(), toPublish);
         return workflow;
@@ -380,7 +380,7 @@ public class WorkflowIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
         assertTrue("could not get content via optional auth", adminToolDescriptor != null && !adminToolDescriptor.getContent().isEmpty());
 
-        workflowApi.publish(refreshGithub.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(refreshGithub.getId(), CommonTestUtilities.createPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
         FileWrapper toolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
@@ -521,7 +521,7 @@ public class WorkflowIT extends BaseIT {
 
         // Download unpublished workflow version
         workflowApi.getWorkflowZip(workflowId, versionId);
-        byte[] arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        byte[] arbitraryURL = CommonTestUtilities.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, webClient);
         File tempZip = File.createTempFile("temp", "zip");
         Path write = Files.write(tempZip.toPath(), arbitraryURL);
@@ -532,7 +532,7 @@ public class WorkflowIT extends BaseIT {
         // should not be able to get zip anonymously before publication
         boolean thrownException = false;
         try {
-            SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+            CommonTestUtilities.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
             }, CommonTestUtilities.getWebClient(false, null, testingPostgres));
         } catch (Exception e) {
             thrownException = true;
@@ -541,8 +541,8 @@ public class WorkflowIT extends BaseIT {
         tempZip.deleteOnExit();
 
         // Download published workflow version
-        workflowApi.publish(workflowId, SwaggerUtility.createPublishRequest(true));
-        arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        workflowApi.publish(workflowId, CommonTestUtilities.createPublishRequest(true));
+        arbitraryURL = CommonTestUtilities.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, CommonTestUtilities.getWebClient(false, null, testingPostgres));
         File tempZip2 = File.createTempFile("temp", "zip");
         write = Files.write(tempZip2.toPath(), arbitraryURL);
@@ -614,7 +614,7 @@ public class WorkflowIT extends BaseIT {
         }
 
         // Publish
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         ownerWorkflowApi.publish(workflowId, publishRequest);
 
         // Try downloading published
@@ -679,7 +679,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
         Workflow refresh = registerGatkSvWorkflow(ownerWorkflowApi);
-        ownerWorkflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(true));
+        ownerWorkflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(true));
         final List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(refresh.getWorkflowVersions().stream()
                 .filter(workflowVersion -> GATK_SV_TAG.equals(workflowVersion.getName())).findFirst().get().getId());
         final Ga4GhApi ga4GhApi = new Ga4GhApi(ownerWebClient);
@@ -721,7 +721,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.getWorkflowZip(refresh.getId(), versionId);
 
         // Publish the workflow
-        workflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Owner should still have access
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
@@ -730,7 +730,7 @@ public class WorkflowIT extends BaseIT {
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
 
         // Unpublish the workflow
-        workflowApi.publish(refresh.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(false));
 
         // should not be able to download properly with incorrect credentials because the entry is not published
         try {
@@ -883,7 +883,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
         workflowApi.refresh(mtaNf.getId(), false);
         // publish this way? (why is the auto-generated variable private?)
-        workflowApi.publish(mtaNf.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(mtaNf.getId(), CommonTestUtilities.createPublishRequest(true));
         mtaNf = workflowApi.getWorkflow(mtaNf.getId(), null);
         Assert.assertTrue("a workflow lacks a date", mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0);
         assertNotNull("Nextflow workflow not found after update", mtaNf);
@@ -982,7 +982,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.refresh(workflowByPath.getId(), false);
 
         // publish one
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
         assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(),
             1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
@@ -1030,7 +1030,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
@@ -1422,7 +1422,7 @@ public class WorkflowIT extends BaseIT {
 
         workflowApi.refresh(workflowByPathGithub.getId(), false);
         Assert.assertEquals("GNU General Public License v3.0", workflowByPathGithub.getLicenseInformation().getLicenseName());
-        workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
@@ -1450,7 +1450,7 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
 
         workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
@@ -1487,7 +1487,7 @@ public class WorkflowIT extends BaseIT {
         registeredTool = toolApi.refresh(registeredTool.getId());
 
         // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(registeredTool.getId(), publishRequest);
 
         // look that branches and tags are typed correctly for tools
@@ -1663,7 +1663,7 @@ public class WorkflowIT extends BaseIT {
             .secondaryDescriptors(workflow.getId(), "rootTest", DescriptorLanguage.CWL.toString());
         assertEquals("should find 3 imports, found " + newRootImports.size(), 3, newRootImports.size());
 
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
         FileWrapper toolDescriptor = ga4Ghv2Api
@@ -1768,12 +1768,12 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         Workflow md5workflow = workflowApi.manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker",
             "/checker-workflow-wrapping-workflow.cwl", "test", "cwl", null);
         workflowApi.refresh(md5workflow.getId(), false);
-        workflowApi.publish(md5workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(md5workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // give the workflow a few aliases
         EntriesApi genericApi = new EntriesApi(webClient);
@@ -1882,7 +1882,7 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
 
         // Publish workflow, which will also add a topic
-        userWorkflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        userWorkflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Should not be able to create a topic for the same workflow
         try {
@@ -1893,8 +1893,8 @@ public class WorkflowIT extends BaseIT {
         }
 
         // Unpublish and publish, should not throw error
-        Workflow unpublishedWf = userWorkflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
-        Workflow publishedWf = userWorkflowsApi.publish(unpublishedWf.getId(), SwaggerUtility.createPublishRequest(true));
+        Workflow unpublishedWf = userWorkflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
+        Workflow publishedWf = userWorkflowsApi.publish(unpublishedWf.getId(), CommonTestUtilities.createPublishRequest(true));
         assertEquals("Topic id should remain the same.", unpublishedWf.getTopicId(), publishedWf.getTopicId());
     }
 
@@ -1949,7 +1949,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion workflowVersion2 = optionalWorkflowVersion2.get();
         // Check validation works.  It should be valid
         Assert.assertTrue(workflowVersion2.isValid());
-        userWorkflowsApi.publish(workflowByPathGithub2.getId(), SwaggerUtility.createPublishRequest(true));
+        userWorkflowsApi.publish(workflowByPathGithub2.getId(), CommonTestUtilities.createPublishRequest(true));
     }
 
     private Workflow registerGatkSvWorkflow(WorkflowsApi ownerWorkflowApi) {
@@ -1968,7 +1968,7 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
@@ -2018,7 +2018,7 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion = workflow.getWorkflowVersions().stream()
@@ -2167,7 +2167,7 @@ public class WorkflowIT extends BaseIT {
         }
 
         // sourcefiles can be viewed by others once published
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(1, sourceFiles.size());
