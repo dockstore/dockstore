@@ -1353,7 +1353,7 @@ public class OrganizationIT extends BaseIT {
         // Publish a tool
         long entryId = 2;
         ContainersApi containersApi = new ContainersApi(webClientUser2);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
 
         // Able to retrieve the collection and organization an entry is part of, even if there aren't any
@@ -1404,7 +1404,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be 2 events of type ADD_TO_COLLECTION, there are " + count3, 2, count3);
 
         // Unpublish tool
-        PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+        PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
         containersApi.publish(entryId, unpublishRequest);
 
         // Collection should have one tool returned

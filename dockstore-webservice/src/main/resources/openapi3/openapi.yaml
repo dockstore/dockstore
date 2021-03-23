@@ -3912,6 +3912,37 @@ paths:
         - bearer: []
       tags:
         - curation
+  /entries/{entryId}/exportToOrcid:
+    post:
+      description: Export entry to ORCID
+      operationId: exportToORCID
+      parameters:
+        - description: The id of the entry to export.
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Optional version ID of the entry version to export.
+          in: query
+          name: versionId
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+        - bearer: []
+      tags:
+        - entries
   /entries/{entryId}/verifiedPlatforms:
     get:
       description: Get the verified platforms for each version of an entry.

@@ -105,3 +105,7 @@ uiConfig:
   cwlVisualizerUri: https://view.commonwl.org
 
   gitHubAppInstallationUrl: https://github.com/apps/dockstore-testing-application
+
+  orcidAuthUrl: https://sandbox.orcid.org/oauth/authorize
+  orcidScope: /activities/update
+  orcidRedirectPath: /auth/orcid.org

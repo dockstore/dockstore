@@ -89,8 +89,8 @@ public class CheckerWorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         ContainersApi containersApi = new ContainersApi(webClient);
 
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        final PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        final PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
 
         // Manually register a tool
         DockstoreTool newTool = new DockstoreTool();
@@ -296,8 +296,8 @@ public class CheckerWorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        final PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        final PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
 
         // Manually register a workflow
         Workflow githubWorkflow = workflowApi
@@ -389,8 +389,8 @@ public class CheckerWorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        final PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        final PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
 
         // Manually register a workflow
         Workflow githubWorkflow = workflowApi
