@@ -235,6 +235,151 @@ components:
         value:
           type: string
       type: object
+    DockstoreTool:
+      properties:
+        aliases:
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+          type: object
+        author:
+          type: string
+        checker_id:
+          format: int64
+          type: integer
+        conceptDoi:
+          type: string
+        custom_docker_registry_path:
+          type: string
+        customerDockerRegistryPath:
+          type: string
+          writeOnly: true
+        dbCreateDate:
+          format: int64
+          type: integer
+        dbUpdateDate:
+          format: int64
+          type: integer
+        defaultCWLTestParameterFile:
+          type: string
+        defaultVersion:
+          type: string
+        defaultWDLTestParameterFile:
+          type: string
+        default_cwl_path:
+          type: string
+        default_dockerfile_path:
+          type: string
+        default_wdl_path:
+          type: string
+        description:
+          type: string
+        descriptorType:
+          items:
+            type: string
+          type: array
+        email:
+          type: string
+        forumUrl:
+          maxLength: 256
+          minLength: 0
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        input_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        is_published:
+          type: boolean
+        labels:
+          items:
+            $ref: '#/components/schemas/Label'
+          type: array
+          uniqueItems: true
+        lastBuild:
+          format: date-time
+          type: string
+        lastUpdated:
+          format: int64
+          type: integer
+        last_modified:
+          format: int32
+          type: integer
+        last_modified_date:
+          format: int64
+          type: integer
+        licenseInformation:
+          $ref: '#/components/schemas/LicenseInformation'
+        metadataFromEntry:
+          $ref: '#/components/schemas/DockstoreTool'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        mode:
+          enum:
+            - AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+            - AUTO_DETECT_QUAY_TAGS_WITH_MIXED
+            - MANUAL_IMAGE_PATH
+            - HOSTED
+          type: string
+        name:
+          type: string
+        namespace:
+          type: string
+        output_file_formats:
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          type: array
+          uniqueItems: true
+        path:
+          type: string
+        private_access:
+          type: boolean
+        registry:
+          enum:
+            - QUAY_IO
+            - DOCKER_HUB
+            - GITLAB
+            - AMAZON_ECR
+            - SEVEN_BRIDGES
+          type: string
+        registry_string:
+          type: string
+        starredUsers:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        tags:
+          items:
+            $ref: '#/components/schemas/Tag'
+          type: array
+          uniqueItems: true
+        tool_maintainer_email:
+          type: string
+        tool_path:
+          type: string
+        toolname:
+          type: string
+        topicId:
+          format: int64
+          type: integer
+        users:
+          items:
+            $ref: '#/components/schemas/User'
+          type: array
+          uniqueItems: true
+        workflowVersions:
+          items:
+            $ref: '#/components/schemas/Tag'
+          type: array
+          uniqueItems: true
+      type: object
     Entry:
       properties:
         aliases:
@@ -446,7 +591,7 @@ components:
         organization:
           $ref: '#/components/schemas/Organization'
         tool:
-          $ref: '#/components/schemas/Tool'
+          $ref: '#/components/schemas/DockstoreTool'
         type:
           enum:
             - CREATE_ORG
@@ -594,6 +739,7 @@ components:
             - PUSH
             - DELETE
             - INSTALL
+            - PUBLISH
           type: string
       type: object
     Language:
@@ -1877,7 +2023,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
@@ -2676,7 +2822,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -2698,7 +2844,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
                 type: array
           description: default response
       tags:
@@ -2722,7 +2868,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -2747,7 +2893,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       tags:
         - containers
@@ -2792,7 +2938,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
                 type: array
           description: default response
       security:
@@ -2815,7 +2961,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
                 type: array
           description: default response
       security:
@@ -2858,7 +3004,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
                 type: array
           description: default response
       tags:
@@ -2871,13 +3017,13 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/Tool'
+              $ref: '#/components/schemas/DockstoreTool'
       responses:
         default:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -2943,7 +3089,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -2988,7 +3134,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -3008,13 +3154,13 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/Tool'
+              $ref: '#/components/schemas/DockstoreTool'
       responses:
         default:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -3106,7 +3252,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -3163,7 +3309,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -3185,7 +3331,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -3576,13 +3722,13 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/Tool'
+              $ref: '#/components/schemas/DockstoreTool'
       responses:
         default:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -3633,7 +3779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
           description: default response
       security:
         - bearer: []
@@ -3766,6 +3912,37 @@ paths:
         - bearer: []
       tags:
         - curation
+  /entries/{entryId}/exportToOrcid:
+    post:
+      description: Export entry to ORCID
+      operationId: exportToORCID
+      parameters:
+        - description: The id of the entry to export.
+          in: path
+          name: entryId
+          required: true
+          schema:
+            format: int64
+            type: integer
+        - description: Optional version ID of the entry version to export.
+          in: query
+          name: versionId
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+        - bearer: []
+      tags:
+        - entries
   /entries/{entryId}/verifiedPlatforms:
     get:
       description: Get the verified platforms for each version of an entry.
@@ -6457,7 +6634,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
                 type: array
           description: default response
       security:
@@ -6481,7 +6658,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
                 type: array
           description: default response
       security:
@@ -6514,7 +6691,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
                 type: array
           description: default response
       security:
@@ -6765,11 +6942,7 @@ paths:
       responses:
         default:
           content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Workflow'
-                type: array
+            application/json: {}
           description: default response
       security:
         - bearer: []

@@ -109,7 +109,8 @@ class WdlBridge {
           val workflowCallable = callable._2
           val workflowInstance = workflowCallable.asInstanceOf[WorkflowDefinition]
           val workflowMetadata = workflowInstance.meta
-          val convertedWorkflowMap = workflowMetadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
+          // Metadata is sometimes not a string (booleans for example), ignoring those
+          val convertedWorkflowMap = workflowMetadata.collect{ case (k, v) if v.isInstanceOf[MetaValueElementString] => (k, v.asInstanceOf[MetaValueElementString].value)}
           val metadata = JavaConverters.mapAsJavaMap(convertedWorkflowMap)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)

@@ -20,9 +20,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import javax.ws.rs.core.GenericType;
+
+import com.google.gson.Gson;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.Container;
@@ -31,6 +36,7 @@ import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
+import io.swagger.client.model.PublishRequest;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -364,5 +370,29 @@ public final class CommonTestUtilities {
                 System.err.println("Problems restarting Docker container");
             }
         }
+    }
+
+    // These two functions are duplicated from SwaggerUtility in dockstore-client to prevent importing dockstore-client
+    // This cannot be moved to dockstore-common because PublishRequest requires built dockstore-webservice
+
+    /**
+     * These serialization/deserialization hacks should not be necessary.
+     * Why does this version of codegen remove the setters?
+     * Probably because someone dun goof'd the restful implementation of publish
+     * @param bool
+     * @return
+     */
+    public static PublishRequest createPublishRequest(Boolean bool) {
+        Map<String, Object> publishRequest = new HashMap<>();
+        publishRequest.put("publish", bool);
+        Gson gson = new Gson();
+        String s = gson.toJson(publishRequest);
+        return gson.fromJson(s, PublishRequest.class);
+    }
+
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+        return client
+                .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
+                        new String[] { "BEARER" }, type).getData();
     }
 }

@@ -126,7 +126,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Publish
         if (toPublish) {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
             assertTrue(workflow.isIsPublished());
         }
         return workflow;
@@ -248,13 +248,13 @@ public class GeneralWorkflowIT extends BaseIT {
         assertTrue("there should be at least 4 versions, there are " + count4, 4 <= count4);
 
         // attempt to publish it
-        workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 1 published entry, there are " + count5, 1, count5);
 
         // unpublish
-        workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
         final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", long.class);
         assertEquals("there should be 0 published entries, there are " + count6, 0, count6);
@@ -421,7 +421,7 @@ public class GeneralWorkflowIT extends BaseIT {
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // Publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Restub
         try {
@@ -532,10 +532,10 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Unpublish workflow
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
         // Restub
         workflow = workflowsApi.restub(workflow.getId());
@@ -808,14 +808,14 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("testAuthor", workflow.getAuthor());
         assertEquals("testEmail", workflow.getEmail());
         // Unpublish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
         // Alter workflow so that it has no valid tags
         testingPostgres.runUpdateStatement("UPDATE workflowversion SET valid='f'");
 
         // Now you shouldn't be able to publish the workflow
         try {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -860,10 +860,10 @@ public class GeneralWorkflowIT extends BaseIT {
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Can now publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // unpublish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
 
         // Set paths to invalid
         workflow.setWorkflowPath("thisisnotarealpath.wdl");
@@ -876,7 +876,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // should now not be able to publish
         try {
-            workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
@@ -1014,7 +1014,7 @@ public class GeneralWorkflowIT extends BaseIT {
         });
 
         // publish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         final long count4 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
@@ -1022,7 +1022,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("there should be 1 published workflow, there are " + count4, 1, count4);
 
         // unpublish
-        workflow = workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
+        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count5 = testingPostgres.runSelectStatement(
             "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString()
                 + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",

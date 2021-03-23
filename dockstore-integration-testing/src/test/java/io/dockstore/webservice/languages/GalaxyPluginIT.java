@@ -24,7 +24,6 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import io.dockstore.client.cli.BaseIT;
-import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
@@ -182,8 +181,8 @@ public class GalaxyPluginIT {
                         "", DescriptorLanguage.GXFORMAT2.getShortName(), "");
         workflowApi.refresh(wdlWorkflow.getId(), false);
         workflowApi.refresh(galaxyWorkflow.getId(), false);
-        workflowApi.publish(wdlWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
-        workflowApi.publish(galaxyWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(wdlWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.publish(galaxyWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         io.dockstore.openapi.client.ApiClient newWebClient = new io.dockstore.openapi.client.ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");

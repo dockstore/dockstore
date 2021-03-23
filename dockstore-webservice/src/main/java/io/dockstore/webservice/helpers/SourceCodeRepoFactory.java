@@ -44,13 +44,13 @@ public final class SourceCodeRepoFactory {
 
     public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
         // The gitUsername doesn't seem to matter
-        return new GitHubSourceCodeRepo("dockstore", token);
+        return new GitHubSourceCodeRepo("dockstore", token, "JWT");
     }
 
     public static SourceCodeRepoInterface createSourceCodeRepo(Token token) {
         SourceCodeRepoInterface repo;
         if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
-            repo = new GitHubSourceCodeRepo(token.getUsername(), token.getContent());
+            repo = new GitHubSourceCodeRepo(token.getUsername(), token.getContent(), token.getUsername());
         } else if (Objects.equals(token.getTokenSource(), TokenType.BITBUCKET_ORG)) {
             repo = new BitBucketSourceCodeRepo(token.getUsername(), token.getContent());
         } else if (Objects.equals(token.getTokenSource(), TokenType.GITLAB_COM)) {
@@ -65,7 +65,7 @@ public final class SourceCodeRepoFactory {
     }
 
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
-            String gitlabTokenContent, String githubTokenContent) {
+            String gitlabTokenContent, Token githubToken) {
 
         Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
 
@@ -78,7 +78,7 @@ public final class SourceCodeRepoFactory {
 
         SourceCodeRepoInterface repo;
         if (SourceControl.GITHUB.toString().equals(source)) {
-            repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent);
+            repo = new GitHubSourceCodeRepo(gitUsername, githubToken.getContent(), githubToken.getUsername());
         } else if (SourceControl.BITBUCKET.toString().equals(source)) {
             if (bitbucketTokenContent != null) {
                 repo = new BitBucketSourceCodeRepo(gitUsername, bitbucketTokenContent);
@@ -106,11 +106,11 @@ public final class SourceCodeRepoFactory {
      * @param gitUrl    Git URL to identify which SourceCodeRepo to return
      * @param bitbucketTokenContent The user's Bitbucket token if it exists, null otherwise
      * @param gitlabTokenContent    The user's GitLab token if it exists, null otherwise
-     * @param githubTokenContent    The user's GitHub token if it exists, null otherwise
+     * @param githubToken    The user's GitHub token if it exists, null otherwise
      * @return  a SourceCode repo if a token exists, null otherwise
      */
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, String bitbucketTokenContent,
-            String gitlabTokenContent, String githubTokenContent) {
+            String gitlabTokenContent, Token githubToken) {
         Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
         if (repoUrlMap == null) {
             return null;
@@ -118,7 +118,7 @@ public final class SourceCodeRepoFactory {
         String source = repoUrlMap.get("Source");
         String gitUsername = repoUrlMap.get("Username");
         if (SourceControl.GITHUB.toString().equals(source)) {
-            return githubTokenContent != null ? new GitHubSourceCodeRepo(gitUsername, githubTokenContent) : null;
+            return githubToken != null ? new GitHubSourceCodeRepo(gitUsername, githubToken.getContent(), githubToken.getUsername()) : null;
         } else if (SourceControl.BITBUCKET.toString().equals(source)) {
             return bitbucketTokenContent != null ? new BitBucketSourceCodeRepo(gitUsername, bitbucketTokenContent) : null;
         } else if (SourceControl.GITLAB.toString().equals(source)) {

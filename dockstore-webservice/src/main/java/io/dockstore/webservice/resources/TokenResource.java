@@ -17,6 +17,8 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -116,7 +118,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
-    private static final String ORCID_URL = "https://orcid.org/";
     private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_2;
     private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
@@ -141,11 +142,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String googleClientSecret;
     private final String orcidClientID;
     private final String orcidClientSecret;
+    private final String orcidScope;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     private final String orcidSummary = "Add a new orcid.org token";
     private final String orcidDescription = "Using OAuth code from ORCID, request and store tokens from ORCID API";
+    private String orcidUrl = null;
 
     public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, DeletedUsernameDAO deletedUsernameDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
             DockstoreWebserviceConfiguration configuration) {
@@ -167,9 +170,17 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
         this.orcidClientID = configuration.getOrcidClientID();
+        this.orcidScope = configuration.getUiConfig().getOrcidScope();
         this.orcidClientSecret = configuration.getOrcidClientSecret();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
+        try {
+            URL orcidAuthUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
+            // orcidUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
+            orcidUrl = orcidAuthUrl.getProtocol() + "://" + orcidAuthUrl.getHost() + "/";
+        } catch (MalformedURLException e) {
+            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
+        }
     }
 
     @GET
@@ -684,12 +695,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                JSON_FACTORY, new GenericUrl(ORCID_URL + "oauth/token"),
+                JSON_FACTORY, new GenericUrl(orcidUrl + "oauth/token"),
                 new ClientParametersAuthentication(orcidClientID, orcidClientSecret), orcidClientID,
-                ORCID_URL + "/authorize").build();
+                orcidUrl + "/authorize").build();
 
         try {
-            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList("/authenticate"))
+            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList(orcidScope))
                     .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();

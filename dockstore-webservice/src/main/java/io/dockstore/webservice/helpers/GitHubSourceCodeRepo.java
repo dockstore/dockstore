@@ -102,19 +102,30 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
 
-    public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
+    /**
+     *
+     * @param githubTokenUsername the username for githubTokenContent
+     * @param gitUsername deprecate this, this is more accurately, the github organization for a specific repository when this class was used for one repo at a time, weird
+     * @param githubTokenContent authorization token
+     */
+    public GitHubSourceCodeRepo(@Deprecated String gitUsername, String githubTokenContent, String githubTokenUsername) {
         this.gitUsername = gitUsername;
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder().cache(DockstoreWebserviceApplication.getCache());
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
         if (System.getenv("CIRCLE_SHA1") != null) {
-            builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), gitUsername));
+            // namespace cache by user when testing
+            builder.cache(DockstoreWebserviceApplication.getCache(githubTokenUsername));
+        } else {
+            // use general cache
+            builder.cache(DockstoreWebserviceApplication.getCache(null));
         }
         OkHttpClient build = builder.build();
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
 
         HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(new WaitReporter(gitUsername))
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername).withRateLimitHandler(new WaitReporter(githubTokenUsername))
                     .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
