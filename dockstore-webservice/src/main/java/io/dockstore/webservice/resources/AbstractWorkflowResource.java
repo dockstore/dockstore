@@ -308,7 +308,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId GitHub App installation ID
      * @return List of new and updated workflows
      */
-    protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
+    protected List<Workflow> githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
         // Grab Dockstore YML from GitHub
@@ -323,13 +323,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml);
+            final List<Workflow> workflows = new ArrayList();
+            workflows.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml));
+            workflows.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml));
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             isSuccessful = true;
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
+            return workflows;
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
@@ -563,30 +565,30 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
-            Optional<WorkflowVersion> existingWorkflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.equals(remoteWorkflowVersion)).findFirst();
-
+            WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
-            if (existingWorkflowVersion.isPresent()) {
+            if (existingWorkflowVersion != null) {
                 // Copy over workflow version level information
-                existingWorkflowVersion.get().setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
-                existingWorkflowVersion.get().setLastModified(remoteWorkflowVersion.getLastModified());
-                existingWorkflowVersion.get().setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
-                existingWorkflowVersion.get().setAliases(remoteWorkflowVersion.getAliases());
-                existingWorkflowVersion.get().setSubClass(remoteWorkflowVersion.getSubClass());
-                existingWorkflowVersion.get().setCommitID(remoteWorkflowVersion.getCommitID());
-                existingWorkflowVersion.get().setDagJson(null);
-                existingWorkflowVersion.get().setToolTableJson(null);
-                existingWorkflowVersion.get().setReferenceType(remoteWorkflowVersion.getReferenceType());
-                existingWorkflowVersion.get().setValid(remoteWorkflowVersion.isValid());
+                existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
+                existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
+                existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
+                existingWorkflowVersion.setAliases(remoteWorkflowVersion.getAliases());
+                existingWorkflowVersion.setSubClass(remoteWorkflowVersion.getSubClass());
+                existingWorkflowVersion.setCommitID(remoteWorkflowVersion.getCommitID());
+                existingWorkflowVersion.setDagJson(null);
+                existingWorkflowVersion.setToolTableJson(null);
+                existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
+                existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
 
-                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion.get(), remoteWorkflowVersion);
+                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
             } else {
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
             }
 
-            Optional<WorkflowVersion> addedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), remoteWorkflowVersion.getName())).findFirst();
-            addedVersion.ifPresent(workflowVersion -> gitHubSourceCodeRepo
-                    .updateVersionMetadata(workflowVersion.getWorkflowPath(), workflowVersion, workflow.getDescriptorType(), repository));
+            WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
+            if (addedVersion != null) {
+                gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
+            }
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {

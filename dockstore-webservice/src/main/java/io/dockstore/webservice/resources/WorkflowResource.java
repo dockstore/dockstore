@@ -1893,13 +1893,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
         @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
         @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
-        githubWebhookRelease(repository, username, gitReference, installationId);
+        return githubWebhookRelease(repository, username, gitReference, installationId);
     }
 
     @POST
