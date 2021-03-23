@@ -74,9 +74,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final String WDL_PARSE_ERROR = "Unable to parse WDL workflow, ";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
 
-    // We must use a version string with format X.Y.Z in order to use semver
-    // See comment in versionIsGreaterThanCurrentlySupported
-    private static final String LATEST_SUPPORTED_WDL_VERSION = "1.0.0";
+    private static final String LATEST_SUPPORTED_WDL_VERSION = "1.0";
 
     public static void checkForRecursiveLocalImports(String content, Set<SourceFile> sourceFiles, Set<String> absolutePaths, String parent)
             throws ParseException {
@@ -537,7 +535,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             // currently supported WDL version
             return false;
         }
-        return semVer.greaterThan(com.github.zafarkhaja.semver.Version.valueOf(LATEST_SUPPORTED_WDL_VERSION));
+        return semVer.greaterThan(com.github.zafarkhaja.semver.Version.valueOf(
+                enhanceSemanticVersionString(LATEST_SUPPORTED_WDL_VERSION)));
     }
 
     /**
