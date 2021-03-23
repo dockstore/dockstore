@@ -6,8 +6,6 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -28,7 +26,6 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1692,7 +1689,7 @@ public class OrganizationIT extends BaseIT {
      * Tests that we are getting the number of workflows correctly
      */
     @Test
-    public void testWorkflowsLength(){
+    public void testWorkflowsLength() {
         // Setup user who creates Organization and collection
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
