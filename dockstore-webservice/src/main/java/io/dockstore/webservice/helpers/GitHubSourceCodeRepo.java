@@ -99,6 +99,7 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
  */
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
+    public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit, please wait til ";
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
 
@@ -312,7 +313,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
                 ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
-                throw new CustomWebApplicationException("Out of GitHub rate limit, please wait till " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
         } catch (IOException e) {

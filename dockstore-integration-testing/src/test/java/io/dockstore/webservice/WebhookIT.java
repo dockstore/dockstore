@@ -695,4 +695,18 @@ public class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertFalse(workflow.isIsPublished());
     }
+
+    @Test
+    public void testRetry() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+        try {
+            client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
+            fail("Should not succeed");
+        } catch (ApiException ex) {
+            System.out.println(ex.getCode());
+        }
+
+    }
 }

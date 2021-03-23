@@ -325,10 +325,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-        final List<Token> tokens = this.tokenDAO.findGithubByUserId(user.getId());
-        final Token token = tokens.get(0);
         // Grab Dockstore YML from GitHub
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(token.getContent());
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
 
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
         GHRateLimit endRateLimit;
@@ -339,8 +337,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-//            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, token.getContent(), user, dockstoreYml);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, token.getContent(), user, dockstoreYml);
+            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml);
+            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml);
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -358,7 +356,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             lambdaEvent.setMessage(errorMessage);
             lambdaEventDAO.create(lambdaEvent);
             sessionFactory.getCurrentSession().getTransaction().commit();
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
         } catch (Exception ex) {
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
@@ -372,6 +370,32 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    /**
+     * Determines whether to signal lambda to try again
+     * @param ex
+     * @return
+     */
+    private int statusCodeForLambda(Exception ex) {
+        if (isRateLimitError(ex)) {
+            // See https://github.com/dockstore/lambda/blob/4a80bf444b00ff292a81f119cd1225013d3904c8/upsertGitHubTag-f79c4f36-3e61-43f4-8f6c-0b2e0e9774d7/deployment/index.js#L282
+            // Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
+            LOG.info("GitHub rate limit hit, signaling lambda to retry.");
+            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        }
+        return LAMBDA_FAILURE;
+    }
+
+    private boolean isRateLimitError(Exception ex) {
+        if (ex instanceof CustomWebApplicationException) {
+            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+            final String errorMessage = customWebAppEx.getErrorMessage();
+            if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
