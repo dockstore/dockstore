@@ -175,7 +175,7 @@ public class SwaggerClientIT extends BaseIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
         thrown.expect(ApiException.class);
         containersApi.publish(containerId, pub);
     }
@@ -463,7 +463,7 @@ public class SwaggerClientIT extends BaseIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
 
         container = containersApi.publish(containerId, pub);
         assertTrue(container.isIsPublished());
@@ -471,7 +471,7 @@ public class SwaggerClientIT extends BaseIT {
         containers = containersApi.allPublishedContainers(null, null, null, null, null);
         assertEquals(2, containers.size());
 
-        pub = SwaggerUtility.createPublishRequest(false);
+        pub = CommonTestUtilities.createPublishRequest(false);
 
         container = containersApi.publish(containerId, pub);
         assertFalse(container.isIsPublished());
@@ -528,7 +528,7 @@ public class SwaggerClientIT extends BaseIT {
         long containerId = container.getId();
         assertEquals(1, containerId);
 
-        containersApi.publish(containerId, SwaggerUtility.createPublishRequest(false));
+        containersApi.publish(containerId, CommonTestUtilities.createPublishRequest(false));
         final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME, testingPostgres);
         assertNotNull(new UsersApi(otherWebClient).getUser());
         boolean expectedFailure = false;
@@ -578,7 +578,7 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         ApiClient adminApiClient = getAdminWebClient();
         WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminApiClient);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(false);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(false);
         adminWorkflowsApi.publish(11L, publishRequest);
         try {
             workflowsApi.starEntry(11L, STAR_REQUEST);
@@ -874,7 +874,7 @@ public class SwaggerClientIT extends BaseIT {
         assertTrue(deleteVersionFromWorkflow1.getWorkflowVersions().size() == 0);
 
         // Publishing the workflow should fail
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         try {
             user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
             Assert.fail("User 2 can unexpectedly publish a read/write workflow");

@@ -401,7 +401,7 @@ public class GeneralIT extends BaseIT {
         List<Tag> tags = tool.getWorkflowVersions();
         verifySourcefileChecksumsSaved(tags);
 
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         // Dockerfile
         List<FileWrapper> fileWrappers = ga4Ghv20Api.toolsIdVersionsVersionIdContainerfileGet("quay.io/dockstoretestuser2/quayandgithub/alternate", "master");
@@ -470,7 +470,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // verified platforms can be viewed by others once published
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         workflowApi.publish(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(1, versionsVerified.size());
@@ -544,7 +544,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // file types can be viewed by others once published
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         workflowApi.publish(workflow.getId(), publishRequest);
         fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
@@ -1061,7 +1061,7 @@ public class GeneralIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         tool = toolApi.refresh(tool.getId());
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
 
@@ -1471,7 +1471,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // Publish tool
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(refresh.getId(), publishRequest);
 
         // Get published tool by alias as owner
@@ -1549,7 +1549,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // Publish
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         ownerContainersApi.publish(toolId, publishRequest);
 
         // Try downloading published
