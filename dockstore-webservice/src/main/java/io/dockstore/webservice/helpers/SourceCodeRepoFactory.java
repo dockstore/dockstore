@@ -44,7 +44,9 @@ public final class SourceCodeRepoFactory {
 
     public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
         // The gitUsername doesn't seem to matter
-        return new GitHubSourceCodeRepo("dockstore", token, "JWT");
+        final GitHubSourceCodeRepo repo = new GitHubSourceCodeRepo("dockstore", token, "JWT");
+        repo.checkSourceCodeValidity();
+        return repo;
     }
 
     public static SourceCodeRepoInterface createSourceCodeRepo(Token token) {

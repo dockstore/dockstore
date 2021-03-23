@@ -325,13 +325,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-        // Grab Dockstore YML from GitHub
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-
-        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = null;
         GHRateLimit endRateLimit;
+        GHRateLimit startRateLimit = null;
         boolean isSuccessful = false;
         try {
+            // Grab Dockstore YML from GitHub
+            gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+
+            startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
@@ -345,8 +347,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             isSuccessful = true;
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
+            if (gitHubSourceCodeRepo != null) {
+                endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+                gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
+            }
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
@@ -358,8 +362,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
         } catch (Exception ex) {
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
+            if (gitHubSourceCodeRepo != null) {
+                endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+                gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
+            }
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
             sessionFactory.getCurrentSession().clear();
@@ -378,16 +384,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return
      */
     private int statusCodeForLambda(Exception ex) {
-        if (isRateLimitError(ex)) {
-            // See https://github.com/dockstore/lambda/blob/4a80bf444b00ff292a81f119cd1225013d3904c8/upsertGitHubTag-f79c4f36-3e61-43f4-8f6c-0b2e0e9774d7/deployment/index.js#L282
-            // Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
+        if (isGitHubRateLimitError(ex)) {
+            // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
             LOG.info("GitHub rate limit hit, signaling lambda to retry.");
             return HttpStatus.SC_INTERNAL_SERVER_ERROR;
         }
         return LAMBDA_FAILURE;
     }
 
-    private boolean isRateLimitError(Exception ex) {
+    private boolean isGitHubRateLimitError(Exception ex) {
         if (ex instanceof CustomWebApplicationException) {
             final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
             final String errorMessage = customWebAppEx.getErrorMessage();
