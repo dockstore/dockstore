@@ -189,8 +189,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         new DockstoreWebserviceApplication().run(args);
     }
 
-    public static Cache getCache() {
-        return cache;
+    public static Cache getCache(String cacheNamespace) {
+        if (cacheNamespace == null) {
+            return cache;
+        } else {
+            return generateCache(cacheNamespace);
+        }
     }
 
     @Override
@@ -220,18 +224,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         bootstrap.addBundle(new MultiPartBundle());
 
         if (cache == null) {
-            int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
-            final File cacheDir;
-            try {
-                // let's try using the same cache each time
-                // not sure how corruptible/non-curruptable the cache is
-                // https://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/cache/DiskLruCache.java#L82 looks promising
-                cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE)).toFile();
-            } catch (IOException e) {
-                LOG.error("Could no create or re-use web cache", e);
-                throw new RuntimeException(e);
-            }
-            cache = new Cache(cacheDir, cacheSize);
+            cache = generateCache(null);
         }
         try {
             cache.initialize();
@@ -242,7 +235,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // match HttpURLConnection which does not have a timeout by default
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
         if (System.getenv("CIRCLE_SHA1") != null) {
-            builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName()));
+            builder.eventListener(new CacheHitListener(DockstoreWebserviceApplication.class.getSimpleName(), "central"));
         }
         okHttpClient = builder.cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS)
                 .writeTimeout(0, TimeUnit.SECONDS).build();
@@ -257,6 +250,21 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 throw new RuntimeException(factoryException);
             }
         }
+    }
+
+    private static Cache generateCache(String suffix) {
+        int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
+        final File cacheDir;
+        try {
+            // let's try using the same cache each time
+            // not sure how corruptible/non-curruptable the cache is
+            // namespace cache when testing on circle ci
+            cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE + (suffix == null ? "" : "/" + suffix))).toFile();
+        } catch (IOException e) {
+            LOG.error("Could no create or re-use web cache", e);
+            throw new RuntimeException(e);
+        }
+        return new Cache(cacheDir, cacheSize);
     }
 
     private static void configureMapper(ObjectMapper objectMapper) {
@@ -334,7 +342,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(toolDAO, versionDAO, configuration);
+        final EntryResource entryResource = new EntryResource(tokenDAO, toolDAO, versionDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);

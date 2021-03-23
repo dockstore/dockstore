@@ -17,6 +17,8 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -100,19 +102,30 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
 
-    public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
+    /**
+     *
+     * @param githubTokenUsername the username for githubTokenContent
+     * @param gitUsername deprecate this, this is more accurately, the github organization for a specific repository when this class was used for one repo at a time, weird
+     * @param githubTokenContent authorization token
+     */
+    public GitHubSourceCodeRepo(@Deprecated String gitUsername, String githubTokenContent, String githubTokenUsername) {
         this.gitUsername = gitUsername;
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder().cache(DockstoreWebserviceApplication.getCache());
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
         if (System.getenv("CIRCLE_SHA1") != null) {
-            builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName()));
+            // namespace cache by user when testing
+            builder.cache(DockstoreWebserviceApplication.getCache(githubTokenUsername));
+        } else {
+            // use general cache
+            builder.cache(DockstoreWebserviceApplication.getCache(null));
         }
         OkHttpClient build = builder.build();
         ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
 
         HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT)
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername).withRateLimitHandler(new WaitReporter(githubTokenUsername))
                     .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -1046,5 +1059,37 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml, Optional.empty());
+    }
+
+    // based on RateLimitHandler.WAIT
+    private static final class WaitReporter extends RateLimitHandler {
+
+        static final int DEFAULT_TIME = 10_000;
+        static final int MILLISECONDS = 1_000;
+
+        private final String username;
+
+        private WaitReporter(String username) {
+            this.username = username;
+        }
+
+        @Override
+        public void onError(IOException e, HttpURLConnection uc) throws IOException {
+            try {
+                LOG.error(username + " ran into a rate limit issue with github");
+                Thread.sleep(parseWaitTime(uc));
+            } catch (InterruptedException x) {
+                throw (InterruptedIOException) new InterruptedIOException().initCause(e);
+            }
+        }
+
+        private long parseWaitTime(HttpURLConnection uc) {
+            String v = uc.getHeaderField("X-RateLimit-Reset");
+            if (v == null) {
+                return DEFAULT_TIME; // can't tell
+            }
+
+            return Math.max(DEFAULT_TIME, Long.parseLong(v) * MILLISECONDS - System.currentTimeMillis());
+        }
     }
 }

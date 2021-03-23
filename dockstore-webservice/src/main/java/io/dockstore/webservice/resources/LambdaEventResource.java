@@ -76,7 +76,7 @@ public class LambdaEventResource {
             throw new CustomWebApplicationException("You do not have GitHub connected to your account.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken.get(0), client);
+        GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken.get(0));
         Set<String> organizations = sourceCodeRepoInterface.getMyOrganizations();
         if (!organizations.contains(organization)) {
             throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_UNAUTHORIZED);

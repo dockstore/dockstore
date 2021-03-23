@@ -157,7 +157,7 @@ jobs:
     steps: # a collection of executable commands
       - checkout
       - restore_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_VERSION }}
+          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
       - run:
           name: Install yq
           command: |
@@ -213,7 +213,7 @@ jobs:
             - ~/.m2
           key: dockstore-java-{{ checksum "pom.xml" }}
       - save_cache:
-          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_VERSION }}
+          key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
           paths:
             - /tmp/dockstore-web-cache
       - run:
@@ -237,6 +237,9 @@ jobs:
           command: |
             cp dockstore-webservice/src/main/resources/swagger.yaml /tmp/artifacts
             cp dockstore-webservice/src/main/resources/openapi3/openapi.yaml /tmp/artifacts
+      - run:
+          name: Move cache miss log
+          command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
       - setup_remote_docker
@@ -312,7 +315,7 @@ commands:
             sudo apt update
             sudo apt install -y postgresql-client
       - restore_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_VERSION }}
+          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
     steps:
       - run:
@@ -356,7 +359,7 @@ commands:
   save_test_results:
     steps:
       - save_cache:
-          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_VERSION }}
+          key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
           paths:
             - /tmp/dockstore-web-cache
       - run:

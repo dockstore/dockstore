@@ -88,7 +88,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
       security:
         - bearer: []
   /aliases/workflow-versions/{alias}:
@@ -110,6 +110,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WorkflowVersionPathInfo'
+      security:
+        - bearer: []
+  /cloudInstances/{cloudInstanceId}:
+    delete:
+      tags:
+        - Cloud Instances
+      summary: Delete a public cloud instance, admin only
+      operationId: deleteCloudInstance
+      parameters:
+        - name: cloudInstanceId
+          in: path
+          description: ID of cloud instance to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+        "401":
+          description: Unauthorized
       security:
         - bearer: []
   /cloudInstances:
@@ -139,29 +162,6 @@ paths:
             schema:
               $ref: '#/components/schemas/CloudInstance'
         required: true
-      responses:
-        "204":
-          description: No Content
-        "403":
-          description: Forbidden
-        "401":
-          description: Unauthorized
-      security:
-        - bearer: []
-  /cloudInstances/{cloudInstanceId}:
-    delete:
-      tags:
-        - Cloud Instances
-      summary: Delete a public cloud instance, admin only
-      operationId: deleteCloudInstance
-      parameters:
-        - name: cloudInstanceId
-          in: path
-          description: ID of cloud instance to delete
-          required: true
-          schema:
-            type: integer
-            format: int64
       responses:
         "204":
           description: No Content
@@ -554,7 +554,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/{containerId}:
@@ -580,7 +580,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
     put:
@@ -599,14 +599,14 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/Tool'
+              $ref: '#/components/schemas/DockstoreTool'
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
     delete:
@@ -675,7 +675,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/{containerId}/users:
@@ -725,53 +725,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /containers/{toolId}/zip/{tagId}:
-    get:
-      tags:
-        - containers
-      description: Download a ZIP file of a tool and all associated files.
-      operationId: getToolZip
-      parameters:
-        - name: toolId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: tagId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/zip: {}
-      security:
-        - bearer: []
-  /containers/{alias}/aliases:
-    get:
-      tags:
-        - containers
-      description: Retrieves a tool by alias.
-      operationId: getToolByAlias
-      parameters:
-        - name: alias
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-      security:
-        - bearer: []
   /containers/{containerId}/labels:
     put:
       tags:
@@ -800,7 +753,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/{toolId}/defaultVersion:
@@ -827,7 +780,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/{containerId}/updateTagPaths:
@@ -847,14 +800,14 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/Tool'
+              $ref: '#/components/schemas/DockstoreTool'
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/namespace/{namespace}/published:
@@ -877,7 +830,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
   /containers/schema/{containerId}/published:
     get:
       tags:
@@ -910,14 +863,14 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/Tool'
+              $ref: '#/components/schemas/DockstoreTool'
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/published:
@@ -960,7 +913,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
   /containers/path/{repository}/published:
     get:
       tags:
@@ -981,7 +934,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/path/{repository}:
@@ -1004,7 +957,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/path/tool/{repository}:
@@ -1029,7 +982,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/path/tool/{repository}/published:
@@ -1054,7 +1007,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
   /containers/{containerId}/dockerfile:
     get:
       tags:
@@ -1314,6 +1267,53 @@ paths:
           description: default response
           content:
             application/json: {}
+      security:
+        - bearer: []
+  /containers/{toolId}/zip/{tagId}:
+    get:
+      tags:
+        - containers
+      description: Download a ZIP file of a tool and all associated files.
+      operationId: getToolZip
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/zip: {}
+      security:
+        - bearer: []
+  /containers/{alias}/aliases:
+    get:
+      tags:
+        - containers
+      description: Retrieves a tool by alias.
+      operationId: getToolByAlias
+      parameters:
+        - name: alias
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /containers/path/{containerId}/tags:
@@ -1641,6 +1641,37 @@ paths:
                     - SWL_TEST_JSON
       security:
         - bearer: []
+  /entries/{entryId}/exportToOrcid:
+    post:
+      tags:
+        - entries
+      description: Export entry to ORCID
+      operationId: exportToORCID
+      parameters:
+        - name: entryId
+          in: path
+          description: The id of the entry to export.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: versionId
+          in: query
+          description: Optional version ID of the entry version to export.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+        "404":
+          description: Not Found
+        "400":
+          description: Bad Request
+      security:
+        - bearer: []
   /entries/{id}/topic:
     post:
       tags:
@@ -1705,42 +1736,6 @@ paths:
                   $ref: '#/components/schemas/Event'
       security:
         - bearer: []
-  /containers/hostedEntry:
-    post:
-      tags:
-        - hosted
-      description: Create a hosted tool.
-      operationId: createHostedTool_1
-      parameters:
-        - name: registry
-          in: query
-          schema:
-            type: string
-        - name: name
-          in: query
-          schema:
-            type: string
-        - name: descriptorType
-          in: query
-          schema:
-            type: string
-        - name: namespace
-          in: query
-          schema:
-            type: string
-        - name: entryName
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successfully created hosted entry
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Entry'
-      security:
-        - bearer: []
   /containers/hostedEntry/{entryId}:
     delete:
       tags:
@@ -1796,7 +1791,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - bearer: []
+  /containers/hostedEntry:
+    post:
+      tags:
+        - hosted
+      description: Create a hosted tool.
+      operationId: createHostedTool_1
+      parameters:
+        - name: registry
+          in: query
+          schema:
+            type: string
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          schema:
+            type: string
+        - name: entryName
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully created hosted entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
       security:
         - bearer: []
   /workflows/hostedEntry/{entryId}:
@@ -2028,18 +2059,18 @@ paths:
           description: The tool runner
           schema:
             type: string
-            default: cwltool
             enum:
               - cwltool
+            default: cwltool
         - name: output
           in: query
           description: Response type
           schema:
             type: string
-            default: text
             enum:
               - json
               - text
+            default: text
       responses:
         default:
           description: The requirements.txt file
@@ -3392,7 +3423,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /users/{userId}/workflows/published:
@@ -3449,7 +3480,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /users/{userId}/workflows:
@@ -3552,7 +3583,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
+                  $ref: '#/components/schemas/DockstoreTool'
       security:
         - bearer: []
   /users/users/organizations:
@@ -4028,23 +4059,6 @@ paths:
           description: Not Found
       security:
         - bearer: []
-  /users/dockerRegistries:
-    get:
-      tags:
-        - users
-      description: Get all of the Docker registries accessible to the logged-in user.
-      operationId: getUserDockerRegistries
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-      security:
-        - bearer: []
   /users/dockerRegistries/{dockerRegistry}/organizations:
     get:
       tags:
@@ -4058,6 +4072,23 @@ paths:
           required: true
           schema:
             type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+      security:
+        - bearer: []
+  /users/dockerRegistries:
+    get:
+      tags:
+        - users
+      description: Get all of the Docker registries accessible to the logged-in user.
+      operationId: getUserDockerRegistries
       responses:
         default:
           description: default response
@@ -4255,58 +4286,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /workflows/{workflowId}:
-    get:
-      tags:
-        - workflows
-      description: Retrieve a workflow
-      operationId: getWorkflow
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: include
-          in: query
-          schema:
-            type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
-    put:
-      tags:
-        - workflows
-      description: Update the workflow with the given workflow.
-      operationId: updateWorkflow
-      parameters:
-        - name: workflowId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/Workflow'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-      security:
-        - bearer: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -4586,6 +4565,58 @@ paths:
           description: default response
           content:
             application/json: {}
+      security:
+        - bearer: []
+  /workflows/{workflowId}:
+    get:
+      tags:
+        - workflows
+      description: Retrieve a workflow
+      operationId: getWorkflow
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: include
+          in: query
+          schema:
+            type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - bearer: []
+    put:
+      tags:
+        - workflows
+      description: Update the workflow with the given workflow.
+      operationId: updateWorkflow
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
       security:
         - bearer: []
   /workflows/{workflowId}/restub:
@@ -5514,6 +5545,28 @@ paths:
           description: This code tells AWS Lambda not to retry.
       security:
         - bearer: []
+  /api/ga4gh/v2/extended/tools/{organization}:
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List tools of an organization
+      description: This endpoint returns tools of an organization.
+      operationId: toolsOrgGet
+      parameters:
+        - name: organization
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
   /api/ga4gh/v2/extended/tools/entry/_search:
     post:
       tags:
@@ -5571,22 +5624,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolV1'
-  /api/ga4gh/v2/extended/organizations:
-    get:
-      tags:
-        - extendedGA4GH
-      summary: List all organizations
-      description: This endpoint returns list of all organizations.
-      operationId: entriesOrgsGet
-      responses:
-        "200":
-          description: An array of organizations' names.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       tags:
@@ -5609,6 +5646,22 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolV1'
+  /api/ga4gh/v2/extended/organizations:
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List all organizations
+      description: This endpoint returns list of all organizations.
+      operationId: entriesOrgsGet
+      responses:
+        "200":
+          description: An array of organizations' names.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
   /api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}:
     post:
       tags:
@@ -5674,28 +5727,6 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - bearer: []
-  /api/ga4gh/v2/extended/tools/{organization}:
-    get:
-      tags:
-        - extendedGA4GH
-      summary: List tools of an organization
-      description: This endpoint returns tools of an organization.
-      operationId: toolsOrgGet
-      parameters:
-        - name: organization
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: An array of Tools of the input organization.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolV1'
   /ga4gh/trs/v2/service-info:
     get:
       tags:
@@ -5829,57 +5860,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Tool'
-      security:
-        - BEARER: []
-  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
-    get:
-      tags:
-        - GA4GHV20
-      summary: Get a list of objects that contain the relative path and file type
-      description: 'Get a list of objects that contain the relative path and file type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path : .+} endpoint.'
-      operationId: toolsIdVersionsVersionIdTypeFilesGet
-      parameters:
-        - name: type
-          in: path
-          description: The output type of the descriptor. Examples of allowable values are "CWL", "WDL", and "NFL".
-          required: true
-          schema:
-            type: string
-        - name: id
-          in: path
-          description: A unique identifier of the tool, scoped to this registry, for example `123456`.
-          required: true
-          schema:
-            type: string
-        - name: version_id
-          in: path
-          description: An identifier of the tool version for this particular tool registry, for example `v1`.
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The array of File JSON responses.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolFile'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ToolFile'
-        "404":
-          description: The tool can not be output in the specified type.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/Error'
       security:
         - BEARER: []
   /ga4gh/trs/v2/tools/{id}:
@@ -6184,6 +6164,57 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - BEARER: []
+  /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      tags:
+        - GA4GHV20
+      summary: Get a list of objects that contain the relative path and file type
+      description: 'Get a list of objects that contain the relative path and file type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path : .+} endpoint.'
+      operationId: toolsIdVersionsVersionIdTypeFilesGet
+      parameters:
+        - name: type
+          in: path
+          description: The output type of the descriptor. Examples of allowable values are "CWL", "WDL", and "NFL".
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: A unique identifier of the tool, scoped to this registry, for example `123456`.
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: An identifier of the tool version for this particular tool registry, for example `v1`.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The array of File JSON responses.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+        "404":
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BEARER: []
   /api/ga4gh/v1/tools:
     get:
       tags:
@@ -6453,13 +6484,6 @@ components:
       properties:
         content:
           type: string
-    Aliasable:
-      type: object
-      properties:
-        aliases:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Alias'
     Checksum:
       required:
         - checksum
@@ -6918,6 +6942,13 @@ components:
           type: string
         workingDirectory:
           type: string
+    Aliasable:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
     WorkflowVersionPathInfo:
       type: object
       properties:
@@ -7026,6 +7057,151 @@ components:
           format: int64
         versionName:
           type: string
+    DockstoreTool:
+      type: object
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        author:
+          type: string
+        checker_id:
+          type: integer
+          format: int64
+        conceptDoi:
+          type: string
+        custom_docker_registry_path:
+          type: string
+        customerDockerRegistryPath:
+          type: string
+          writeOnly: true
+        dbCreateDate:
+          type: integer
+          format: int64
+        dbUpdateDate:
+          type: integer
+          format: int64
+        defaultCWLTestParameterFile:
+          type: string
+        defaultVersion:
+          type: string
+        defaultWDLTestParameterFile:
+          type: string
+        default_cwl_path:
+          type: string
+        default_dockerfile_path:
+          type: string
+        default_wdl_path:
+          type: string
+        description:
+          type: string
+        descriptorType:
+          type: array
+          items:
+            type: string
+        email:
+          type: string
+        forumUrl:
+          maxLength: 256
+          minLength: 0
+          type: string
+        gitUrl:
+          type: string
+        has_checker:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        input_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        is_published:
+          type: boolean
+        labels:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        lastBuild:
+          type: string
+          format: date-time
+        lastUpdated:
+          type: integer
+          format: int64
+        last_modified:
+          type: integer
+          format: int32
+        last_modified_date:
+          type: integer
+          format: int64
+        licenseInformation:
+          $ref: '#/components/schemas/LicenseInformation'
+        metadataFromEntry:
+          $ref: '#/components/schemas/DockstoreTool'
+        metadataFromVersion:
+          $ref: '#/components/schemas/Version'
+        mode:
+          type: string
+          enum:
+            - AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+            - AUTO_DETECT_QUAY_TAGS_WITH_MIXED
+            - MANUAL_IMAGE_PATH
+            - HOSTED
+        name:
+          type: string
+        namespace:
+          type: string
+        output_file_formats:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+        path:
+          type: string
+        private_access:
+          type: boolean
+        registry:
+          type: string
+          enum:
+            - QUAY_IO
+            - DOCKER_HUB
+            - GITLAB
+            - AMAZON_ECR
+            - SEVEN_BRIDGES
+        registry_string:
+          type: string
+        starredUsers:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        tags:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        tool_maintainer_email:
+          type: string
+        tool_path:
+          type: string
+        toolname:
+          type: string
+        topicId:
+          type: integer
+          format: int64
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        workflowVersions:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
     Tag:
       type: object
       properties:
@@ -7128,55 +7304,6 @@ components:
           type: string
         workingDirectory:
           type: string
-    Tool:
-      required:
-        - id
-        - organization
-        - toolclass
-        - url
-        - versions
-      type: object
-      properties:
-        aliases:
-          type: array
-          description: Support for this parameter is optional for tool registries that support aliases. A list of strings that can be used to identify this tool which could be  straight up URLs.  This can be used to expose alternative ids (such as GUIDs) for a tool for registries. Can be used to match tools across registries.
-          items:
-            type: string
-            description: Support for this parameter is optional for tool registries that support aliases. A list of strings that can be used to identify this tool which could be  straight up URLs.  This can be used to expose alternative ids (such as GUIDs) for a tool for registries. Can be used to match tools across registries.
-        checker_url:
-          type: string
-          description: Optional url to the checker tool that will exit successfully if this tool produced the expected result given test data.
-        description:
-          type: string
-          description: The description of the tool.
-        has_checker:
-          type: boolean
-          description: Whether this tool has a checker tool associated with it.
-        id:
-          type: string
-          description: A unique identifier of the tool, scoped to this registry.
-          example: "123456"
-        meta_version:
-          type: string
-          description: The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
-        name:
-          type: string
-          description: The name of the tool.
-        organization:
-          type: string
-          description: The organization that published the image.
-        toolclass:
-          $ref: '#/components/schemas/ToolClass'
-        url:
-          type: string
-          description: The URL for this tool in this registry.
-          example: http://agora.broadinstitute.org/tools/123456
-        versions:
-          type: array
-          description: A list of versions for this tool.
-          items:
-            $ref: '#/components/schemas/ToolVersion'
-      description: A tool (or described tool) is defined as a tuple of a descriptor file (which potentially consists of multiple files), a set of container images, and a set of instructions for creating those images.
     PublishRequest:
       type: object
       properties:
@@ -7518,7 +7645,7 @@ components:
         organization:
           $ref: '#/components/schemas/Organization'
         tool:
-          $ref: '#/components/schemas/Tool'
+          $ref: '#/components/schemas/DockstoreTool'
         type:
           type: string
           enum:
@@ -8270,6 +8397,55 @@ components:
           type: string
           description: Last time the container was updated.
       description: Describes one container image.
+    Tool:
+      required:
+        - id
+        - organization
+        - toolclass
+        - url
+        - versions
+      type: object
+      properties:
+        aliases:
+          type: array
+          description: Support for this parameter is optional for tool registries that support aliases. A list of strings that can be used to identify this tool which could be  straight up URLs.  This can be used to expose alternative ids (such as GUIDs) for a tool for registries. Can be used to match tools across registries.
+          items:
+            type: string
+            description: Support for this parameter is optional for tool registries that support aliases. A list of strings that can be used to identify this tool which could be  straight up URLs.  This can be used to expose alternative ids (such as GUIDs) for a tool for registries. Can be used to match tools across registries.
+        checker_url:
+          type: string
+          description: Optional url to the checker tool that will exit successfully if this tool produced the expected result given test data.
+        description:
+          type: string
+          description: The description of the tool.
+        has_checker:
+          type: boolean
+          description: Whether this tool has a checker tool associated with it.
+        id:
+          type: string
+          description: A unique identifier of the tool, scoped to this registry.
+          example: "123456"
+        meta_version:
+          type: string
+          description: The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
+        name:
+          type: string
+          description: The name of the tool.
+        organization:
+          type: string
+          description: The organization that published the image.
+        toolclass:
+          $ref: '#/components/schemas/ToolClass'
+        url:
+          type: string
+          description: The URL for this tool in this registry.
+          example: http://agora.broadinstitute.org/tools/123456
+        versions:
+          type: array
+          description: A list of versions for this tool.
+          items:
+            $ref: '#/components/schemas/ToolVersion'
+      description: A tool (or described tool) is defined as a tuple of a descriptor file (which potentially consists of multiple files), a set of container images, and a set of instructions for creating those images.
     ToolVersion:
       required:
         - id
@@ -8340,20 +8516,6 @@ components:
             type: string
             description: Source of metadata that can support a verified tool, such as an email or URL.
       description: A tool version describes a particular iteration of a tool as described by a reference to a specific image and/or documents.
-    ToolFile:
-      type: object
-      properties:
-        file_type:
-          type: string
-          enum:
-            - TEST_FILE
-            - PRIMARY_DESCRIPTOR
-            - SECONDARY_DESCRIPTOR
-            - CONTAINERFILE
-            - OTHER
-        path:
-          type: string
-          description: Relative path of the file.  A descriptor's path can be used with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
     FileWrapper:
       type: object
       properties:
@@ -8370,6 +8532,20 @@ components:
           type: string
           description: Optional url to the underlying content, should include version information, and can include a git hash.  Note that this URL should resolve to the raw unwrapped content that would otherwise be available in content. One of url or content is required.
       description: 'A file provides content for one of - A tool descriptor is a metadata document that describes one or more tools. - A tool document that describes how to test with one or more sample test JSON. - A containerfile is a document that describes how to build a particular container image. Examples include Dockerfiles for creating Docker images and Singularity recipes for Singularity images '
+    ToolFile:
+      type: object
+      properties:
+        file_type:
+          type: string
+          enum:
+            - TEST_FILE
+            - PRIMARY_DESCRIPTOR
+            - SECONDARY_DESCRIPTOR
+            - CONTAINERFILE
+            - OTHER
+        path:
+          type: string
+          description: Relative path of the file.  A descriptor's path can be used with the GA4GH .../{type}/descriptor/{relative_path} endpoint.
     ToolDockerfile:
       type: object
       properties:

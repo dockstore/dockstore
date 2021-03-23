@@ -16,6 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -174,12 +175,18 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             final Map<String, Object> maps = ((CompleteLanguageInterface)minimalLanguageInterface)
                 .loadCytoscapeElements(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
             return Optional.of(gson.toJson(maps));
-        } else if (type == Type.TOOLS &&  minimalLanguageInterface instanceof CompleteLanguageInterface) {
+        } else if (type == Type.TOOLS && minimalLanguageInterface instanceof CompleteLanguageInterface) {
             // TODO: hook up tools here for Galaxy
-            final List<CompleteLanguageInterface.RowData> rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
-                .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            List<CompleteLanguageInterface.RowData> rowData = new ArrayList<>();
+            try {
+                rowData = ((CompleteLanguageInterface)minimalLanguageInterface)
+                        .generateToolsTable(mainDescriptorPath, mainDescriptor, sourcefilesToIndexedFiles(secondarySourceFiles));
+            } catch (NullPointerException e) {
+                LOG.error("could not parse tools from workflow", e);
+                return Optional.empty();
+            }
             final List<Map<String, String>> collect = rowData.stream().map(row -> {
-                Map<String, String> oldRow = new HashMap();
+                Map<String, String> oldRow = new HashMap<>();
                 oldRow.put("id", row.toolid);
                 oldRow.put("file", row.filename);
                 oldRow.put("docker", row.dockerContainer);
