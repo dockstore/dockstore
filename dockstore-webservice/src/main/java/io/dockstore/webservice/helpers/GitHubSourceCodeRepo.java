@@ -308,14 +308,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public boolean checkSourceCodeValidity() {
+    public boolean checkSourceCodeValidity(final boolean preload) {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
                 ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
                 throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
-            github.getMyOrganizations();
+            if (preload) {
+                github.getMyOrganizations();
+            }
         } catch (IOException e) {
             throw new CustomWebApplicationException(
                 "Please recreate your GitHub token by unlinking and then relinking your GitHub account through the Accounts page. "

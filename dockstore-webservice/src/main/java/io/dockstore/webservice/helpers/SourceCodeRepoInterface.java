@@ -176,8 +176,9 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Checks to see if a particular source code repository is properly setup for issues like token scope
+     * @param preload a hint to preload source code repo data
      */
-    public abstract boolean checkSourceCodeValidity();
+    public abstract boolean checkSourceCodeValidity(boolean preload);
 
 
     /**
