@@ -701,12 +701,8 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        try {
-            client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
-            fail("Should not succeed");
-        } catch (ApiException ex) {
-            System.out.println(ex.getCode());
-        }
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/emptytestparameter", installationId);
 
     }
 }
