@@ -1706,7 +1706,7 @@ public class OrganizationIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
 
         workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflowByPathGithub.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
@@ -1759,7 +1759,7 @@ public class OrganizationIT extends BaseIT {
         // Publish a tool
         long entryId = 2;
         ContainersApi containersApi = new ContainersApi(webClientUser2);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
