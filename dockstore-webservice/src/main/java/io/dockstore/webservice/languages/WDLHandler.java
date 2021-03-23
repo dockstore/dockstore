@@ -170,14 +170,9 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (WdlParser.SyntaxError ex) {
                 LOG.error("Unable to parse WDL file " + filepath, ex);
                 Map<String, String> validationMessageObject = new HashMap<>();
-
-                Optional<String> semVersionString = getSemanticVersionString(tempMainDescriptor.getAbsolutePath());
-                if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
-                    validationMessageObject.put(filepath, "WDL " + semVersionString.get() + " cannot be completely"
-                            + " parsed for metadata or validated at this time.");
-                } else {
-                    validationMessageObject.put(filepath, "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage());
-                }
+                String errorMessage = "WDL file is malformed or missing, cannot extract metadata. " + ex.getMessage();
+                errorMessage = getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).orElse(errorMessage);
+                validationMessageObject.put(filepath, errorMessage);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
                 version.setAuthor(null);
                 version.setDescriptionAndDescriptionSource(null, null);
@@ -289,13 +284,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                     wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                Optional<String> semVersionString = getSemanticVersionString(tempMainDescriptor.getAbsolutePath());
-                if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
-                    validationMessageObject.put(primaryDescriptorFilePath, "WDL version " + semVersionString.get() + " cannot be completely"
-                            + " validated at this time.");
-                } else {
-                    validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
-                }
+                validationMessageObject.put(primaryDescriptorFilePath, getUnsupportedWDLVersionErrorString(
+                        tempMainDescriptor.getAbsolutePath()).orElse(e.getMessage()));
                 return new VersionTypeValidation(false, validationMessageObject);
             } catch (CustomWebApplicationException e) {
                 throw e;
@@ -456,10 +446,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             namespaceToPath = wdlBridge.getImportMap(tempMainDescriptor.getAbsolutePath(), mainDescName);
         } catch (WdlParser.SyntaxError ex) {
             String exMsg = WDLHandler.WDL_PARSE_ERROR + ex.getMessage();
-            Optional<String> semVersionString = getSemanticVersionString(tempMainDescriptor.getAbsolutePath());
-            if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
-                exMsg = "WDL version " + semVersionString.get() + " cannot be completely parsed for content at this time.";
-            }
+            exMsg = getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).orElse(exMsg);
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
         } catch (IOException | NoSuchElementException ex) {
@@ -580,5 +567,15 @@ public class WDLHandler implements LanguageHandlerInterface {
         }
         // otherwise return nothing
         return Optional.empty();
+    }
+
+    Optional<String> getUnsupportedWDLVersionErrorString(String primaryDescriptorPath) {
+        Optional<String> semVersionString = getSemanticVersionString(primaryDescriptorPath);
+        if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
+            return Optional.of("Dockstore only supports up to  WDL version " + LATEST_SUPPORTED_WDL_VERSION + ". The version of"
+                    + " this workflow is " + semVersionString.get() + ". Dockstore cannot verify or parse this WDL version.");
+        } else {
+            return Optional.empty();
+        }
     }
 }
