@@ -488,20 +488,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.email = version.getEmail();
     }
 
-    // This will force EAGER workflowVersions UNLESS the entry entity was detached prior to endpoint return
-    //    @JsonProperty("input_file_formats")
-    //    public Set<FileFormat> getInputFileFormats() {
-    //        Stream<FileFormat> fileFormatStream = this.getWorkflowVersions().stream().flatMap(version -> version.getInputFileFormats().stream());
-    //        return fileFormatStream.collect(Collectors.toSet());
-    //    }
-    //
-    //    // This will force EAGER workflowVersions UNLESS the entry entity was detached prior to endpoint return
-    //    @JsonProperty("output_file_formats")
-    //    public Set<FileFormat> getOutputFileFormats() {
-    //        Stream<FileFormat> fileFormatStream = this.getWorkflowVersions().stream().flatMap(version -> version.getOutputFileFormats().stream());
-    //        return fileFormatStream.collect(Collectors.toSet());
-    //    }
-
     /**
      * Convenience method to access versions in a generic manner
      *

@@ -1357,8 +1357,6 @@ public class WorkflowIT extends BaseIT {
         source2.setContent(
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
         Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
-        //        assertFalse(workflow.getInputFileFormats().isEmpty());
-        //        assertFalse(workflow.getOutputFileFormats().isEmpty());
     }
 
     /**
