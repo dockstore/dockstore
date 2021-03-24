@@ -319,11 +319,28 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 github.getMyOrganizations();
             }
         } catch (IOException e) {
-            throw new CustomWebApplicationException(
-                "Please recreate your GitHub token by unlinking and then relinking your GitHub account through the Accounts page. "
-                    + "We need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
+            return throwRecreateGithubTokenException(e);
         }
         return true;
+    }
+
+    public void checkRateLimit()  {
+        try {
+            GHRateLimit ghRateLimit = github.getRateLimit();
+            if (ghRateLimit.getRemaining() == 0) {
+                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
+                throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
+            }
+        } catch (IOException ex) {
+            throwRecreateGithubTokenException(ex);
+        }
+    }
+
+    private boolean throwRecreateGithubTokenException(IOException ex) {
+        LOG.error("Error connecting to GitHub", ex);
+        throw new CustomWebApplicationException(
+                "Please recreate your GitHub token by unlinking and then relinking your GitHub account through the Accounts page. "
+                        + "We need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
     }
 
     @Override
