@@ -521,11 +521,11 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @return whether the input semantic version string is greater
      */
     public static boolean versionIsGreaterThanCurrentlySupported(String semVerString) {
-        semVerString = enhanceSemanticVersionString(semVerString);
+        String enhancedSemVerString = enhanceSemanticVersionString(semVerString);
 
         com.github.zafarkhaja.semver.Version semVer;
         try {
-            semVer = com.github.zafarkhaja.semver.Version.valueOf(semVerString);
+            semVer = com.github.zafarkhaja.semver.Version.valueOf(enhancedSemVerString);
         } catch (IllegalArgumentException | UnexpectedCharacterException | LexerException | UnexpectedTokenException ex) {
             // https://github.com/zafarkhaja/jsemver#exception-handling
             // if semVer cannot parse the version string it is probably not a good version string
@@ -568,7 +568,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         return Optional.empty();
     }
 
-    Optional<String> getUnsupportedWDLVersionErrorString(String primaryDescriptorPath) {
+    public static Optional<String> getUnsupportedWDLVersionErrorString(String primaryDescriptorPath) {
         Optional<String> semVersionString = getSemanticVersionString(primaryDescriptorPath);
         if (semVersionString.isPresent() && versionIsGreaterThanCurrentlySupported(semVersionString.get())) {
             return Optional.of("Dockstore only supports up to  WDL version " + LATEST_SUPPORTED_WDL_VERSION + ". The version of"
