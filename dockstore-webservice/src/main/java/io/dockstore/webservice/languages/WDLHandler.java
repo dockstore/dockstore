@@ -282,8 +282,13 @@ public class WDLHandler implements LanguageHandlerInterface {
                     wdlBridge.validateWorkflow(tempMainDescriptor.getAbsolutePath(), primaryDescriptor.get().getAbsolutePath());
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                validationMessageObject.put(primaryDescriptorFilePath, getUnsupportedWDLVersionErrorString(
-                        tempMainDescriptor.getAbsolutePath()).orElse(e.getMessage()));
+                if (tempMainDescriptor != null) {
+                    validationMessageObject.put(primaryDescriptorFilePath,
+                            getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).
+                                    orElse(e.getMessage()));
+                } else {
+                    validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
+                }
                 return new VersionTypeValidation(false, validationMessageObject);
             } catch (CustomWebApplicationException e) {
                 throw e;
