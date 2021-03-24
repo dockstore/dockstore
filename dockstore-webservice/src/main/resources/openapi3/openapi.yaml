@@ -797,6 +797,9 @@ components:
         avatarUrl:
           pattern: ([^\s]+)(\.jpg|\.jpeg|\.png|\.gif)
           type: string
+        collectionsLength:
+          format: int64
+          type: integer
         dbCreateDate:
           format: int64
           type: integer
