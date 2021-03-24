@@ -45,7 +45,7 @@ public final class SourceCodeRepoFactory {
     public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
         // The gitUsername doesn't seem to matter
         final GitHubSourceCodeRepo repo = new GitHubSourceCodeRepo("dockstore", token, "JWT");
-        repo.checkSourceCodeValidity(false);
+        repo.checkSourceCodeValidity();
         return repo;
     }
 
@@ -62,7 +62,7 @@ public final class SourceCodeRepoFactory {
             throw new CustomWebApplicationException("Sorry, we do not support " + token.getTokenSource() + ".",
                 HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
-        repo.checkSourceCodeValidity(true);
+        repo.checkSourceCodeValidity();
         return repo;
     }
 
@@ -99,7 +99,7 @@ public final class SourceCodeRepoFactory {
             LOG.info("Do not support: " + source);
             throw new CustomWebApplicationException("Sorry, we do not support " + source + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
-        repo.checkSourceCodeValidity(true);
+        repo.checkSourceCodeValidity();
         return repo;
     }
 

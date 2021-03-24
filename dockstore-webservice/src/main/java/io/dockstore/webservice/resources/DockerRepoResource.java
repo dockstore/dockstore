@@ -591,7 +591,7 @@ public class DockerRepoResource
                 .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
                         gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
         if (sourceCodeRepo != null) {
-            sourceCodeRepo.checkSourceCodeValidity(true);
+            sourceCodeRepo.checkSourceCodeValidity();
             String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
             sourceCodeRepo.setLicenseInformation(tool, gitRepositoryFromGitUrl);
         }
