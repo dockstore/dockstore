@@ -1146,10 +1146,14 @@ public class OrganizationIT extends BaseIT {
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
 
+        // there should be no collections inside
+        long numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        assertEquals(0, numberOfCollections);
+
         Collection stubCollection1 = stubCollectionObject();
         organizationsApi.createCollection(organization.getId(), stubCollection1);
 
-        long numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
         assertEquals(1, numberOfCollections);
     }
 
