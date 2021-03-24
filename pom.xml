@@ -38,7 +38,7 @@
         in the dependency section
         -->
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
-        <openapi-annotations-version>2.1.1</openapi-annotations-version>
+        <openapi-annotations-version>2.1.7</openapi-annotations-version>
         <postgresql.version>42.2.5</postgresql.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
