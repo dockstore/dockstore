@@ -308,14 +308,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public boolean checkSourceCodeValidity(final boolean preload) {
+    public boolean checkSourceCodeValidity(final boolean deepCheck) {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
                 ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
                 throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
-            if (preload) {
+            if (deepCheck) {
                 github.getMyOrganizations();
             }
         } catch (IOException e) {

@@ -402,7 +402,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public boolean checkSourceCodeValidity(final boolean preload) {
+    public boolean checkSourceCodeValidity(final boolean deepCheck) {
         //TODO
         return true;
     }

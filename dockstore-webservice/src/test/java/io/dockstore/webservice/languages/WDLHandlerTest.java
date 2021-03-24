@@ -228,7 +228,7 @@ public class WDLHandlerTest {
         }
 
         @Override
-        public boolean checkSourceCodeValidity(final boolean preload) {
+        public boolean checkSourceCodeValidity(final boolean deepCheck) {
             return false;
         }
 
