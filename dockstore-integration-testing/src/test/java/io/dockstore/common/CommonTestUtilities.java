@@ -22,12 +22,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.GenericType;
 
-import com.google.gson.Gson;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.Container;
@@ -376,18 +374,13 @@ public final class CommonTestUtilities {
     // This cannot be moved to dockstore-common because PublishRequest requires built dockstore-webservice
 
     /**
-     * These serialization/deserialization hacks should not be necessary.
-     * Why does this version of codegen remove the setters?
-     * Probably because someone dun goof'd the restful implementation of publish
      * @param bool
      * @return
      */
     public static PublishRequest createPublishRequest(Boolean bool) {
-        Map<String, Object> publishRequest = new HashMap<>();
-        publishRequest.put("publish", bool);
-        Gson gson = new Gson();
-        String s = gson.toJson(publishRequest);
-        return gson.fromJson(s, PublishRequest.class);
+        PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(bool);
+        return publishRequest;
     }
 
     public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
