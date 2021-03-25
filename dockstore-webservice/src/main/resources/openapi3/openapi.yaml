@@ -120,6 +120,10 @@ components:
         dbUpdateDate:
           format: int64
           type: integer
+        descriptorTypes:
+          items:
+            type: string
+          type: array
         entryPath:
           type: string
         entryType:
@@ -2026,7 +2030,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorkflowVersion'
+                $ref: '#/components/schemas/Aliasable'
           description: default response
       security:
         - bearer: []

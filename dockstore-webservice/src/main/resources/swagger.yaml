@@ -6252,6 +6252,10 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      descriptorTypes:
+        type: "array"
+        items:
+          type: "string"
       entryPath:
         type: "string"
       entryType:
