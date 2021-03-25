@@ -1174,12 +1174,6 @@
                                 <fileset>
                                     <directory>tool-registry-validator</directory>
                                 </fileset>
-                                <fileset>
-					<directory>src/main/resources/openapi3</directory>
-					<includes>
-						<include>unsortedopenapi.yaml</include>
-					</includes>
-                                </fileset>
                             </filesets>
                         </configuration>
                     </execution>
@@ -1258,7 +1252,7 @@
                 <artifactId>swagger-maven-plugin</artifactId>
                 <version>${openapi-annotations-version}</version>
                 <configuration>
-                    <outputFileName>unsortedopenapi</outputFileName>
+                    <outputFileName>openapi</outputFileName>
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
                     <outputFormat>YAML</outputFormat>
                     <prettyPrint>true</prettyPrint>
@@ -1273,6 +1267,7 @@
                     </resourcePackages>
                     <objectMapperProcessorClass>io.swagger.OrderedObjectMapperProcessor</objectMapperProcessorClass>
                     <readAllResources>false</readAllResources>
+                    <sortOutput>true</sortOutput>
                 </configuration>
                 <executions>
                     <execution>
@@ -1280,22 +1275,6 @@
                         <goals>
                             <goal>resolve</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>exec-maven-plugin</artifactId>
-                <groupId>org.codehaus.mojo</groupId>
-                <executions>
-                    <execution>
-                        <id>Sort OpenAPI.yaml</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${basedir}/scripts/sortOpenAPIYaml.sh</executable>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -7,11 +7,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: install yq
-        run: |
-            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
-            chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq
       - name: install git secrets
         run: |
             wget --no-verbose -O git-secrets-1.3.0.tar.gz https://github.com/awslabs/git-secrets/archive/1.3.0.tar.gz
