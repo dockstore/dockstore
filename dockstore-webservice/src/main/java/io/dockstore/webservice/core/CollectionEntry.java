@@ -1,7 +1,9 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.SortedSet;
 
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;
@@ -18,32 +20,36 @@ public class CollectionEntry implements Serializable {
     private long id;
     private String entryType;
     private String versionName;
+    private ArrayList<String> labels = new ArrayList<String>();
 
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null);
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, SortedSet<Label> labels)  {
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, labels);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, SortedSet<Label> labels)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
+        setLabels(labels);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null);
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, SortedSet<Label> labels)  {
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, labels);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, SortedSet<Label> labels)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(registry, organization, repository, entryName);
         setVersionName(versionName);
+        setLabels(labels);
     }
 
     private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
@@ -88,5 +94,13 @@ public class CollectionEntry implements Serializable {
 
     public void setVersionName(String versionName) {
         this.versionName = versionName;
+    }
+
+    public ArrayList<String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(SortedSet<Label> labels) {
+        labels.forEach(label -> this.labels.add(label.getValue()));
     }
 }
