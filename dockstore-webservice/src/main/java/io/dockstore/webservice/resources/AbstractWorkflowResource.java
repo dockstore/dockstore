@@ -325,15 +325,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
         // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
         User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = null;
+        // Grab Dockstore YML from GitHub
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+
+        GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
         GHRateLimit endRateLimit;
-        GHRateLimit startRateLimit = null;
         boolean isSuccessful = false;
         try {
-            // Grab Dockstore YML from GitHub
-            gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-
-            startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
 
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
@@ -347,10 +345,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             isSuccessful = true;
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
-            if (gitHubSourceCodeRepo != null) {
-                endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-                gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            }
+            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
@@ -362,10 +358,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
         } catch (Exception ex) {
-            if (gitHubSourceCodeRepo != null) {
-                endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-                gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            }
+            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
             sessionFactory.getCurrentSession().clear();
