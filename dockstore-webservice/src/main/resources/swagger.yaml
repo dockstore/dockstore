@@ -6527,11 +6527,14 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      conceptDoi:
-        type: "string"
-        position: 13
-        description: "The Digital Object Identifier (DOI) representing all of the\
-          \ versions of your workflow"
+      inputFileFormats:
+        type: "array"
+        position: 12
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       mode:
         type: "string"
         position: 13
@@ -6542,6 +6545,19 @@ definitions:
         - "AUTO_DETECT_QUAY_TAGS_WITH_MIXED"
         - "MANUAL_IMAGE_PATH"
         - "HOSTED"
+      outputFileFormats:
+        type: "array"
+        position: 13
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      conceptDoi:
+        type: "string"
+        position: 14
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       name:
         type: "string"
         position: 14
@@ -6769,9 +6785,25 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
+      inputFileFormats:
+        type: "array"
+        position: 12
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      outputFileFormats:
+        type: "array"
+        position: 13
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       conceptDoi:
         type: "string"
-        position: 13
+        position: 14
         description: "The Digital Object Identifier (DOI) representing all of the\
           \ versions of your workflow"
   EntryUpdateTime:
@@ -8349,11 +8381,14 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      conceptDoi:
-        type: "string"
-        position: 13
-        description: "The Digital Object Identifier (DOI) representing all of the\
-          \ versions of your workflow"
+      inputFileFormats:
+        type: "array"
+        position: 12
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       mode:
         type: "string"
         position: 13
@@ -8364,6 +8399,19 @@ definitions:
         - "STUB"
         - "HOSTED"
         - "DOCKSTORE_YML"
+      outputFileFormats:
+        type: "array"
+        position: 13
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      conceptDoi:
+        type: "string"
+        position: 14
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       workflowName:
         type: "string"
         position: 14

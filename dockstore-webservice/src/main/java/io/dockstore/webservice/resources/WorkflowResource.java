@@ -67,6 +67,7 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
@@ -363,7 +364,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Use new workflow to update existing workflow
         updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
+        // Update file formats in each version and then the entry
         FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
+        List<FileFormat> inputFileFormatsByEntry = fileFormatDAO.findInputFileFormatsByEntry(existingWorkflow.getId());
+        existingWorkflow.getInputFileFormats().clear();
+        existingWorkflow.getInputFileFormats().addAll(inputFileFormatsByEntry);
+        List<FileFormat> outputFileFormatsByEntry = fileFormatDAO.findOutputFileFormatsByEntry(existingWorkflow.getId());
+        existingWorkflow.getOutputFileFormats().clear();
+        existingWorkflow.getOutputFileFormats().addAll(outputFileFormatsByEntry);
 
         // Keep this code that updates the existing workflow BEFORE refreshing its checker workflow below. Refreshing the checker workflow will eventually call
         // EntryVersionHelper.removeSourceFilesFromEntry() which performs a session.flush and commits to the db. It's important the parent workflow is updated completely before committing to the db..

@@ -44,6 +44,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
@@ -267,6 +268,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         entry.setActualDefaultVersion(validatedVersion);
         entry.syncMetadataWithDefault();
         FileFormatHelper.updateFileFormats(entry.getWorkflowVersions(), fileFormatDAO);
+        List<FileFormat> inputFileFormatsByEntry = fileFormatDAO.findInputFileFormatsByEntry(entry.getId());
+        entry.getInputFileFormats().clear();
+        entry.getInputFileFormats().addAll(inputFileFormatsByEntry);
+        List<FileFormat> outputFileFormatsByEntry = fileFormatDAO.findOutputFileFormatsByEntry(entry.getId());
+        entry.getOutputFileFormats().clear();
+        entry.getOutputFileFormats().addAll(outputFileFormatsByEntry);
         // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
         if (validatedVersion instanceof WorkflowVersion) {
             entry.setLastModified(((WorkflowVersion)validatedVersion).getLastModified());

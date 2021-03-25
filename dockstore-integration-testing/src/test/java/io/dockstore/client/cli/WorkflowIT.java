@@ -69,6 +69,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
+import io.swagger.client.model.FileFormat;
 import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.ParsedInformation;
 import io.swagger.client.model.PublishRequest;
@@ -1357,6 +1358,8 @@ public class WorkflowIT extends BaseIT {
         source2.setContent(
             FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
         Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        assertFalse(workflow.getInputFileFormats().isEmpty());
+        assertFalse(workflow.getOutputFileFormats().isEmpty());
     }
 
     /**
@@ -1620,6 +1623,7 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         // Test that the secondary file's input file formats are recognized (secondary file is varscan_cnv.cwl)
+        List<FileFormat> fileFormats = workflow.getInputFileFormats();
         List<WorkflowVersion> workflowVersionsForFileFormat = workflow.getWorkflowVersions();
         Assert.assertTrue(workflowVersionsForFileFormat.stream().anyMatch(workflowVersion -> workflowVersion.getInputFileFormats().stream()
             .anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/format_2572"))));
@@ -1627,8 +1631,13 @@ public class WorkflowIT extends BaseIT {
             .anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/format_1929"))));
         Assert.assertTrue(workflowVersionsForFileFormat.stream().anyMatch(workflowVersion -> workflowVersion.getInputFileFormats().stream()
             .anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/format_3003"))));
+        Assert.assertTrue(fileFormats.stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/format_2572")));
+        Assert.assertTrue(fileFormats.stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/format_1929")));
+        Assert.assertTrue(fileFormats.stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/format_3003")));
         Assert.assertTrue(workflowVersionsForFileFormat.stream().anyMatch(workflowVersion -> workflowVersion.getOutputFileFormats().stream()
             .anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
+        Assert.assertTrue(
+                workflow.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
 
         // This checks if a workflow whose default name is null would remain as null after refresh
         assertNull(workflow.getWorkflowName());

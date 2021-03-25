@@ -25,6 +25,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -47,6 +48,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -89,6 +91,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final EventDAO eventDAO;
     protected final FileDAO fileDAO;
     protected final LambdaEventDAO lambdaEventDAO;
+    protected final FileFormatDAO fileFormatDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -109,6 +112,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
+        this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -189,6 +193,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     workflowVersionFromDB.setDagJson(null);
 
                     // Update sourcefiles
+                    //
                     updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
                 });
     }
@@ -446,6 +451,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     lambdaEventDAO.create(lambdaEvent);
                 }
 
+                List<FileFormat> fileFormats = fileFormatDAO.findInputFileFormatsByEntry(workflow.getId());
                 updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
@@ -577,7 +583,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
-
+                //
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
             } else {
                 workflow.addWorkflowVersion(remoteWorkflowVersion);

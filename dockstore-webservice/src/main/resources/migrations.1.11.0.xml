@@ -84,4 +84,46 @@
             <column name="orcidputcode" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="1616611369102-15">
+        <createTable tableName="entry_output_fileformat">
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_output_fileformat_pkey"/>
+            </column>
+            <column name="fileformatid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_output_fileformat_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="entry_input_fileformat">
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_input_fileformat_pkey"/>
+            </column>
+            <column name="fileformatid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_input_fileformat_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="entry_output_fileformat" constraintName="fkjwwslp8iwg1muwei31oxj27nq" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="entry_input_fileformat" constraintName="fknw01vqq7ibxyyh4ywrkj9acgf" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+        <sql dbms="postgresql">
+            INSERT INTO entry_input_fileformat(entryid, fileformatid)
+            SELECT DISTINCT workflow.id as entryid, version_input_fileformat.fileformatid as fileformatid FROM version_input_fileformat, workflow, workflowversion
+            WHERE workflow.id = workflowversion.parentid
+            AND workflowversion.id = version_input_fileformat.versionid;
+
+            INSERT INTO entry_input_fileformat(entryid, fileformatid)
+            SELECT DISTINCT tool.id as entryid, version_input_fileformat.fileformatid as fileformatid FROM version_input_fileformat, tool, tag
+            WHERE tool.id = tag.parentid
+            AND tag.id = version_input_fileformat.versionid;
+
+            INSERT INTO entry_output_fileformat(entryid, fileformatid)
+            SELECT DISTINCT workflow.id as entryid, version_output_fileformat.fileformatid as fileformatid FROM version_output_fileformat, workflow, workflowversion
+            WHERE workflow.id = workflowversion.parentid
+            AND workflowversion.id = version_output_fileformat.versionid;
+
+            INSERT INTO entry_output_fileformat(entryid, fileformatid)
+            SELECT DISTINCT tool.id as entryid, version_output_fileformat.fileformatid as fileformatid FROM version_output_fileformat, tool, tag
+            WHERE tool.id = tag.parentid
+            AND tag.id = version_output_fileformat.versionid;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
