@@ -1700,13 +1700,23 @@ public class OrganizationIT extends BaseIT {
 
         //manually register and then publish this workflow
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        Workflow workflow = workflowApi
+
+        workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl",
+                "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
+
+        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());
+
+
+        Workflow workflow2 = workflowApi
                 .manualRegister("github", "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", "wdl",
                         "");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
 
-        workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.refresh(workflowByPathGithub2.getId(), false);
+        workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
@@ -1722,12 +1732,14 @@ public class OrganizationIT extends BaseIT {
         // Approve the org
         organizationsApiAdmin.approveOrganization(organization.getId());
 
-        // Add tool to collection
-        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
+        // Add workflow to collection
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow2.getId(), null);
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(0).getId());
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(1).getId());
 
         Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
         long workflowsCount = addedCollection.getWorkflowsLength();
-        assertEquals(1, workflowsCount);
+        assertEquals(3, workflowsCount);
     }
 
     /**
