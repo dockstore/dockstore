@@ -88,6 +88,7 @@ import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
+    public static final Response BAD_DECODE_RESPONSE = Response.status(getExtendedStatus(Status.BAD_REQUEST, "Could not decode version")).build();
     private static final String GITHUB_PREFIX = "git@github.com:";
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
@@ -127,14 +128,24 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @Override
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, false);
     }
 
     @Override
     public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, true);
     }
@@ -170,13 +181,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value,
         Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         String newVersionId;
         try {
             newVersionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            Response.StatusType status = getExtendedStatus(Status.BAD_REQUEST, "Could not decode version");
-            return Response.status(status).build();
+            return BAD_DECODE_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, newVersionId, false);
@@ -278,7 +293,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return trsResponses.get().build();
         }
 
-        final List<Entry<?, ?>> all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user);
+        final List<Entry<?, ?>> all;
+        try {
+            all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
@@ -374,7 +394,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     private List<Entry<?, ?>> getEntries(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
-            String description, String author, Boolean checker, Optional<User> user) {
+            String description, String author, Boolean checker, Optional<User> user) throws UnsupportedEncodingException {
 
         final List<Entry<?, ?>> all = new ArrayList<>();
 
@@ -451,12 +471,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         boolean unwrap, Optional<User> user) {
 
         // if a version is provided, get that version, otherwise return the newest
-        ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(registryId);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         String versionId;
         try {
             versionId = URLDecoder.decode(versionIdParam, StandardCharsets.UTF_8.displayName());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
 
@@ -604,7 +629,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return trsChecksums;
     }
 
-    private Response.StatusType getExtendedStatus(Status status, String additionalMessage) {
+    private static Response.StatusType getExtendedStatus(Status status, String additionalMessage) {
         return new Response.StatusType() {
             @Override
             public int getStatusCode() {
@@ -654,7 +679,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext containerRequestContext, Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
         if (entry instanceof Workflow) {
@@ -760,13 +790,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         private final String name;
         private final String toolName;
 
-        public ParsedRegistryID(String paramId) {
+        public ParsedRegistryID(String paramId) throws UnsupportedEncodingException {
             String id;
-            try {
-                id = URLDecoder.decode(paramId, StandardCharsets.UTF_8.displayName());
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            id = URLDecoder.decode(paramId, StandardCharsets.UTF_8.displayName());
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             List<String> list = new ArrayList<>(textSegments);
             String firstTextSegment = list.get(0);
