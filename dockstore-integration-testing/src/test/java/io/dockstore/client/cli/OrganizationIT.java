@@ -1135,6 +1135,29 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * Tests whether collectionLength is returning the right info
+     */
+    @Test
+    public void testCollectionsLength() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+
+        // there should be no collections inside
+        long numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        assertEquals(0, numberOfCollections);
+
+        Collection stubCollection1 = stubCollectionObject();
+        organizationsApi.createCollection(organization.getId(), stubCollection1);
+
+        numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        assertEquals(1, numberOfCollections);
+    }
+
+    /**
      * This tests that you can create collections with unique characters in their display name
      */
     @Test
