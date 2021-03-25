@@ -449,8 +449,6 @@
                     <quiet>true</quiet>
                     <skip>${skipSignatureCheck}</skip>
                     <keysMapLocation>${project.basedir}/keysmap.list</keysMapLocation>
-                    <failNoSignature>false</failNoSignature>
-                    <failWeakSignature>false</failWeakSignature>
                 </configuration>
             </plugin>
             <plugin>
