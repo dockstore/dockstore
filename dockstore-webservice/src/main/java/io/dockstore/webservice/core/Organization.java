@@ -27,6 +27,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -119,6 +120,11 @@ public class Organization implements Serializable, Aliasable {
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
     private Set<Collection> collections = new HashSet<>();
+
+    @Transient
+    @JsonSerialize
+    @ApiModelProperty(value = "collectionsLength")
+    private long collectionsLength;
 
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "organization_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
@@ -250,6 +256,14 @@ public class Organization implements Serializable, Aliasable {
 
     public void setCollections(Set<Collection> collections) {
         this.collections = collections;
+    }
+
+    public long getCollectionsLength() {
+        return collectionsLength; 
+    }
+
+    public void setCollectionsLength(long length) {
+        this.collectionsLength = length; 
     }
 
     public void addCollection(Collection collection) {

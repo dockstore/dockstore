@@ -8,7 +8,7 @@ import common.validation.Checked._
 import common.validation.ErrorOr.ErrorOr
 import cromwell.core.path.DefaultPathBuilder
 import cromwell.languages.LanguageFactory
-import cromwell.languages.util.ImportResolver
+import cromwell.languages.util.{ImportResolver, LanguageFactoryUtil}
 import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, ImportResolver, ResolvedImportBundle}
 import languages.wdl.biscayne.WdlBiscayneLanguageFactory
 import languages.wdl.draft2.WdlDraft2LanguageFactory
@@ -28,9 +28,10 @@ import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph._
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
-
 import java.nio.file.{Files, Paths}
 import java.util
+import java.util.Optional
+
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -414,6 +415,22 @@ class WdlBridge {
     * @return Content of file as a string
     */
   def readFile(filePath: String): String = Try(Files.readAllLines(Paths.get(filePath)).asScala.mkString(System.lineSeparator())).get
+
+  /**
+    * Get the the first non comment line in the file
+    * @param descriptorFilePath path to the file to read
+    * @return Optional string containing the first line of code in the file
+    */
+  def getFirstCodeLine(descriptorFilePath: String): Optional[String] = {
+    val commentIndicators = List("#")
+    val content = readFile(descriptorFilePath)
+    val fileWithoutInitialWhitespace = content.linesIterator.toList.dropWhile { l =>
+      l.forall(_.isWhitespace) || commentIndicators.exists(l.dropWhile(_.isWhitespace).startsWith(_))
+    }
+
+    val firstCodeLine = fileWithoutInitialWhitespace.headOption.map(_.dropWhile(_.isWhitespace))
+    Optional.ofNullable(firstCodeLine.orNull)
+  }
 }
 
 object WdlBridge {

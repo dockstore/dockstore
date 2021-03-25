@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Objects;
 
 import io.dockstore.client.cli.BaseIT;
-import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -261,7 +260,7 @@ public class UserResourceIT extends BaseIT {
         adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
 
         // publish one
-        workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
 
         assertFalse(userApi.getExtendedUserData().isCanChangeUsername());
 
@@ -273,7 +272,7 @@ public class UserResourceIT extends BaseIT {
         }
         assertTrue(expectedFailToDelete);
         // then unpublish them
-        workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(false));
+        workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(false));
         assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
         assertTrue(userApi.selfDestruct());
         //TODO need to test that profiles are cascaded to and cleared

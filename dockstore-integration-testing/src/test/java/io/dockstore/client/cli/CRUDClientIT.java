@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -189,7 +190,7 @@ public class CRUDClientIT extends BaseIT {
 
         // Publish tool
         ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
-        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(dockstoreTool.getId(), pub);
 
         // files should be visible afterwards
@@ -299,7 +300,7 @@ public class CRUDClientIT extends BaseIT {
         assertTrue(thrownException);
 
         // Publish workflow
-        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
         workflowsApi.publish(dockstoreWorkflow.getId(), pub);
 
         // files should be visible afterwards

@@ -43,23 +43,8 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>dockstore-client</artifactId>
-            <version>${dockstore-client.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.dockstore</groupId>
-                    <artifactId>dockstore-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.dockstore</groupId>
-                    <artifactId>swagger-java-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.dockstore</groupId>
-                    <artifactId>openapi-java-client</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.spotify</groupId>
+            <artifactId>docker-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>

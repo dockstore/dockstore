@@ -1135,6 +1135,29 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * Tests whether collectionLength is returning the right info
+     */
+    @Test
+    public void testCollectionsLength() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+
+        // there should be no collections inside
+        long numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        assertEquals(0, numberOfCollections);
+
+        Collection stubCollection1 = stubCollectionObject();
+        organizationsApi.createCollection(organization.getId(), stubCollection1);
+
+        numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        assertEquals(1, numberOfCollections);
+    }
+
+    /**
      * This tests that you can create collections with unique characters in their display name
      */
     @Test
@@ -1353,7 +1376,7 @@ public class OrganizationIT extends BaseIT {
         // Publish a tool
         long entryId = 2;
         ContainersApi containersApi = new ContainersApi(webClientUser2);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
 
         // Able to retrieve the collection and organization an entry is part of, even if there aren't any
@@ -1404,7 +1427,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be 2 events of type ADD_TO_COLLECTION, there are " + count3, 2, count3);
 
         // Unpublish tool
-        PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+        PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
         containersApi.publish(entryId, unpublishRequest);
 
         // Collection should have one tool returned
