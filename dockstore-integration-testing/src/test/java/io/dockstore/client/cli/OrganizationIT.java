@@ -1698,15 +1698,23 @@ public class OrganizationIT extends BaseIT {
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
-        //manually register and then publish this workflow
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        Workflow workflow = workflowApi
+
+        //manually register and then publish the first workflow
+        workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl",
+                "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
+        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());
+
+        //manually register and then publish the second workflow
+        Workflow workflow2 = workflowApi
                 .manualRegister("github", "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", "wdl",
                         "");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
-
-        workflowApi.refresh(workflowByPathGithub.getId(), false);
-        workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
+        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+        workflowApi.refresh(workflowByPathGithub2.getId(), false);
+        workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
@@ -1722,12 +1730,18 @@ public class OrganizationIT extends BaseIT {
         // Approve the org
         organizationsApiAdmin.approveOrganization(organization.getId());
 
-        // Add workflow to collection
-        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
+        // Add workflow to collection, should then have 3 workflows included regardless of versions
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow2.getId(), null);
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(0).getId());
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(1).getId());
 
         Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
         long workflowsCount = addedCollection.getWorkflowsLength();
-        assertEquals(1, workflowsCount);
+        assertEquals(3, workflowsCount);
+
+        //testing the query is working properly by using GET {organizationId}/collections
+        List<Collection> collectionsFromOrganization = organizationsApi.getCollectionsFromOrganization(orgId, null);
+        assertEquals(3, (long)collectionsFromOrganization.stream().filter(col -> col.getId().equals(collectionId)).findFirst().get().getWorkflowsLength());
     }
 
     /**

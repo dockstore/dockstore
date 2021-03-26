@@ -224,8 +224,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
         collection.setCollectionEntries(collectionEntries);
-        collection.setWorkflowsLength(collectionWorkflows.size());
-        collection.setToolsLength(collectionTools.size());
+        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
+        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
