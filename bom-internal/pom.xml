@@ -73,6 +73,7 @@ POM as their parent.
         <cromwell.version>57</cromwell.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.major.version>2.12.1</jackson.major.version>
+        <docker-client.version>3.2.7</docker-client.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -215,10 +216,27 @@ POM as their parent.
                 <artifactId>json-simple</artifactId>
                 <version>1.1.1</version>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java-transport-httpclient5 -->
             <dependency>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-client</artifactId>
-                <version>8.16.0</version>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-transport-httpclient5</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-core</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-transport</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-api</artifactId>
+                <version>${docker-client.version}</version>
             </dependency>
 
 
@@ -910,7 +928,12 @@ POM as their parent.
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.60</version>
+                <version>1.64</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.5.0</version>
             </dependency>
 
             <dependency>
