@@ -38,7 +38,7 @@
         in the dependency section
         -->
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
-        <openapi-annotations-version>2.1.1</openapi-annotations-version>
+        <openapi-annotations-version>2.1.7</openapi-annotations-version>
         <postgresql.version>42.2.5</postgresql.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
@@ -171,7 +171,7 @@
                 <plugin>
                     <groupId>org.simplify4u.plugins</groupId>
                     <artifactId>pgpverify-maven-plugin</artifactId>
-                    <version>1.10.0</version>
+                    <version>1.11.0</version>
                 </plugin>
                 <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
@@ -448,6 +448,7 @@
                 <configuration>
                     <quiet>true</quiet>
                     <skip>${skipSignatureCheck}</skip>
+                    <keysMapLocation>${project.basedir}/keysmap.list</keysMapLocation>
                 </configuration>
             </plugin>
             <plugin>
