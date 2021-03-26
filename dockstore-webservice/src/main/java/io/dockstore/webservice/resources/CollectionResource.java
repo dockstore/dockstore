@@ -35,7 +35,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
-import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;

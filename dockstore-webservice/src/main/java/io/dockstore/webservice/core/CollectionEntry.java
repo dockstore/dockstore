@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.SortedSet;
 
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;

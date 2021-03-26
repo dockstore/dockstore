@@ -230,7 +230,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return (long)this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
     }
 
-    public List<Label> getLabelByEntryId(long entryId){
+    public List<Label> getLabelByEntryId(long entryId) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findLabelByEntryId").setParameter("entryId", entryId));
     }
 
