@@ -1722,7 +1722,7 @@ public class OrganizationIT extends BaseIT {
         // Approve the org
         organizationsApiAdmin.approveOrganization(organization.getId());
 
-        // Add tool to collection
+        // Add workflow to collection
         organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
 
         Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
