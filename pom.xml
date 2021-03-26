@@ -641,7 +641,6 @@
                     <commitIdGenerationMode>full</commitIdGenerationMode>
                 </configuration>
             </plugin>
-            <!-- this is timing out the build and throwing off weird messages, see https://github.com/dockstore/dockstore/issues/4109 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
@@ -653,7 +652,6 @@
                     <sortArtifactByName>true</sortArtifactByName>
                     <failOnMissing>true</failOnMissing>
                     <excludedGroups>^io\.dockstore</excludedGroups>
-                    <skipAggregateAddThirdParty>true</skipAggregateAddThirdParty>
                 </configuration>
                 <executions>
                     <execution>
@@ -663,7 +661,6 @@
                     </execution>
                 </executions>
             </plugin>
-            --> 
         </plugins>
     </build>
 
