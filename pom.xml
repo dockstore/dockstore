@@ -171,7 +171,7 @@
                 <plugin>
                     <groupId>org.simplify4u.plugins</groupId>
                     <artifactId>pgpverify-maven-plugin</artifactId>
-                    <version>1.10.0</version>
+                    <version>1.11.0</version>
                 </plugin>
                 <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
@@ -448,6 +448,7 @@
                 <configuration>
                     <quiet>true</quiet>
                     <skip>${skipSignatureCheck}</skip>
+                    <keysMapLocation>${project.basedir}/keysmap.list</keysMapLocation>
                 </configuration>
             </plugin>
             <plugin>
