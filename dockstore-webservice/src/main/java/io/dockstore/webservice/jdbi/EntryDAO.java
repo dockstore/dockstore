@@ -36,6 +36,7 @@ import com.google.common.base.Strings;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -227,6 +228,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     private long countAllPublished() {
         return (long)this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
+    }
+
+    public List<Label> getLabelByEntryId(long entryId){
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findLabelByEntryId").setParameter("entryId", entryId));
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

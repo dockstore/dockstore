@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -25,6 +26,7 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -33,6 +35,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -223,6 +226,12 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collectionEntries.addAll(collectionWorkflowsWithVersions);
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
+        collectionEntries.forEach(entry -> {
+            //Object entryDAO;
+            List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
+            List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
+            entry.setLabels(labelStrings);
+        });
         collection.setCollectionEntries(collectionEntries);
     }
 
