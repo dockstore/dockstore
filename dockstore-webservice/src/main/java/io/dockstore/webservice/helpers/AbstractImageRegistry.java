@@ -44,7 +44,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
-import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -585,16 +584,9 @@ public abstract class AbstractImageRegistry {
             }
 
         }
-        FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(tool, tool.getWorkflowVersions(), fileFormatDAO);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
-        List<FileFormat> inputFileFormatsByEntry = fileFormatDAO.findInputFileFormatsByEntry(tool.getId());
-        tool.getInputFileFormats().clear();
-        tool.getInputFileFormats().addAll(inputFileFormatsByEntry);
-        List<FileFormat> outputFileFormatsByEntry = fileFormatDAO.findOutputFileFormatsByEntry(tool.getId());
-        tool.getOutputFileFormats().clear();
-        tool.getOutputFileFormats().addAll(outputFileFormatsByEntry);
-
         toolDAO.create(tool);
     }
 

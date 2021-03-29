@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import javax.xml.bind.DatatypeConverter;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -36,8 +37,10 @@ public final class FileFormatHelper {
      * @param versions  A tool/workflow's versions (tags/workflowVersions)
      * @param fileFormatDAO  The FileFormatDAO to check the FileFormat table
      */
-    public static void updateFileFormats(Set<? extends Version> versions, final FileFormatDAO fileFormatDAO) {
+    public static void updateFileFormats(Entry entry, Set<? extends Version> versions, final FileFormatDAO fileFormatDAO) {
         CWLHandler cwlHandler = new CWLHandler();
+        SortedSet<FileFormat> entrysInputFileFormats = new TreeSet<>();
+        SortedSet<FileFormat> entrysOutputFileFormats = new TreeSet<>();
         versions.forEach(tag -> {
             SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
             SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
@@ -51,9 +54,14 @@ public final class FileFormatHelper {
             SortedSet<FileFormat> realInputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, inputFileFormats);
             SortedSet<FileFormat> realOutputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, outputFileFormats);
             tag.setInputFileFormats(realInputFileFormats);
+            entrysInputFileFormats.addAll(realInputFileFormats);
             tag.setOutputFileFormats(realOutputFileFormats);
-            // fileFormatDAO.findInputFileFormatsByEntry()
+            entrysOutputFileFormats.addAll(realOutputFileFormats);
         });
+        entry.getInputFileFormats().clear();
+        entry.getInputFileFormats().addAll(entrysInputFileFormats);
+        entry.getOutputFileFormats().clear();
+        entry.getOutputFileFormats().addAll(entrysOutputFileFormats);
     }
 
     /**
