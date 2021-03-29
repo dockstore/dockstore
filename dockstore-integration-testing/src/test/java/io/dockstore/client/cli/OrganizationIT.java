@@ -6,6 +6,8 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -16,6 +18,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
@@ -24,6 +27,7 @@ import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Workflow;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1704,6 +1708,48 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to add a duplicate Organization alias.");
         }
+    }
+
+    /**
+     * Test that we are getting the correct descriptor type for workflows
+     */
+    @Test
+    public void testGetWorkflowDescriptor() {
+        // Setup user who creates Organization and collection
+        final ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(client);
+
+        //set up admin user
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        WorkflowsApi workflowApi = new WorkflowsApi(client);
+
+        //manually register and then publish the workflow
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
+                "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
+        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+        long orgId = organization.getId();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(orgId, stubCollection);
+
+        long collectionId = collection.getId();
+
+        // Approve the org
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        // Add entry to collection
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
+
+        Collection addedCollection = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
+        assertEquals("CWL", addedCollection.getEntries().get(0).getDescriptorTypeInEnum().getValue());
     }
 
     /**

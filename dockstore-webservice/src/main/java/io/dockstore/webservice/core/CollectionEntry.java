@@ -19,7 +19,7 @@ public class CollectionEntry implements Serializable {
     private long id;
     private String entryType;
     private String versionName;
-    private DescriptorLanguage descriptorTypesInEnum = null;
+    private DescriptorLanguage descriptorTypeInEnum = null;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, DescriptorLanguage descriptorType)  {
@@ -43,7 +43,7 @@ public class CollectionEntry implements Serializable {
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
-        setDescriptorTypes(descriptorType);
+        setDescriptorType(descriptorType);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -104,12 +104,12 @@ public class CollectionEntry implements Serializable {
         this.versionName = versionName;
     }
 
-    public DescriptorLanguage getDescriptorTypesInEnum() {
-        return descriptorTypesInEnum;
+    public DescriptorLanguage getDescriptorTypeInEnum() {
+        return descriptorTypeInEnum;
     }
 
-    public void setDescriptorTypes(DescriptorLanguage descriptorTypes) {
-        this.descriptorTypesInEnum = descriptorTypes;
+    public void setDescriptorType(DescriptorLanguage descriptorType) {
+        this.descriptorTypeInEnum = descriptorType;
     }
 
 }

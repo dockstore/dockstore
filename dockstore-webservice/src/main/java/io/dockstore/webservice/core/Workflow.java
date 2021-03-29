@@ -310,7 +310,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public void setDescriptorType(DescriptorLanguage descriptorType) {
         this.descriptorType = descriptorType;
-        // also initializa the string
     }
 
     public DescriptorLanguage getDescriptorType() {

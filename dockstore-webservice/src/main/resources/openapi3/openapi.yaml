@@ -120,7 +120,7 @@ components:
         dbUpdateDate:
           format: int64
           type: integer
-        descriptorTypes:
+        descriptorType:
           enum:
             - CWL
             - WDL
@@ -130,7 +130,7 @@ components:
             - service
           type: string
           writeOnly: true
-        descriptorTypesInEnum:
+        descriptorTypeInEnum:
           enum:
             - CWL
             - WDL
