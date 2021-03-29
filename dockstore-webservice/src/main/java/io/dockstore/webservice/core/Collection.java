@@ -102,11 +102,13 @@ public class Collection implements Serializable, Aliasable {
     @Transient
     @JsonSerialize
     @ApiModelProperty(value = "Number of workflows inside this collection", position = 5)
+    @Schema(description = "Number of workflows inside this collection")
     private long workflowsLength;
 
     @Transient
     @JsonSerialize
     @ApiModelProperty(value = "Number of tools inside this collection", position = 6)
+    @Schema(description = "Number of tools inside this collection")
     private long toolsLength;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

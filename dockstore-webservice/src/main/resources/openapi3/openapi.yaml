@@ -6709,6 +6709,7 @@ components:
         toolsLength:
           type: integer
           format: int64
+          description: Number of tools inside this collection
         topic:
           type: string
           description: Short description of the collection
@@ -6716,6 +6717,7 @@ components:
         workflowsLength:
           type: integer
           format: int64
+          description: Number of workflows inside this collection
       required:
       - name
       - topic

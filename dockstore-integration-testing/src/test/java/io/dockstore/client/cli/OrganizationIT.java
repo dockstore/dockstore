@@ -6,6 +6,8 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -1724,16 +1726,16 @@ public class OrganizationIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         //manually register and then publish the first workflow
-        workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl",
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
         Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-        Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());
+        Assert.assertEquals(2, workflow.getWorkflowVersions().size());
 
         //manually register and then publish the second workflow
         Workflow workflow2 = workflowApi
-                .manualRegister("github", "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", "wdl",
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                         "");
         final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
         workflowApi.refresh(workflowByPathGithub2.getId(), false);
