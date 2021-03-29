@@ -17,7 +17,6 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -99,6 +98,7 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
  */
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
+    public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
 
@@ -122,7 +122,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername).withRateLimitHandler(new WaitReporter(gitUsername))
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername).withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername))
                     .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -309,7 +309,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
                 ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
-                throw new CustomWebApplicationException("Out of GitHub rate limit, please wait till " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + ", please wait til " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
         } catch (IOException e) {
@@ -1058,35 +1058,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return setupWorkflowVersionsHelper(workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml, Optional.empty());
     }
 
-    // based on RateLimitHandler.WAIT
-    private static final class WaitReporter extends RateLimitHandler {
-
-        static final int DEFAULT_TIME = 10_000;
-        static final int MILLISECONDS = 1_000;
+    /**
+     * Not using org.kohsuke.github.RateLimitHandler.FAIL directly because
+     *
+     * 1. This logs username
+     * 2. We control the string in the error message
+     */
+    private static final class FailRateLimitHandler extends RateLimitHandler {
 
         private final String username;
 
-        private WaitReporter(String username) {
+        private FailRateLimitHandler(String username) {
             this.username = username;
         }
 
         @Override
-        public void onError(IOException e, HttpURLConnection uc) throws IOException {
-            try {
-                LOG.error(username + " ran into a rate limit issue with github");
-                Thread.sleep(parseWaitTime(uc));
-            } catch (InterruptedException x) {
-                throw (InterruptedIOException) new InterruptedIOException().initCause(e);
-            }
+        public void onError(IOException e, HttpURLConnection uc) {
+            LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
+            throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
         }
 
-        private long parseWaitTime(HttpURLConnection uc) {
-            String v = uc.getHeaderField("X-RateLimit-Reset");
-            if (v == null) {
-                return DEFAULT_TIME; // can't tell
-            }
-
-            return Math.max(DEFAULT_TIME, Long.parseLong(v) * MILLISECONDS - System.currentTimeMillis());
-        }
     }
 }

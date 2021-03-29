@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.11.0-alpha.1-SNAPSHOT</version>
+    <version>1.11.0-alpha.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
@@ -403,6 +403,11 @@ POM as their parent.
             <dependency>
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-jackson</artifactId>
+                <version>${dropwizard.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-logging</artifactId>
                 <version>${dropwizard.version}</version>
             </dependency>
             <dependency>
@@ -1014,16 +1019,6 @@ POM as their parent.
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>4.11</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-logging</artifactId>
-                <version>${dropwizard.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-lifecycle</artifactId>
-                <version>${dropwizard.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger</groupId>
