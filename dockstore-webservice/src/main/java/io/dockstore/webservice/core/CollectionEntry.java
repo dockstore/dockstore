@@ -1,10 +1,9 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,7 +19,12 @@ public class CollectionEntry implements Serializable {
     private long id;
     private String entryType;
     private String versionName;
-    private List<String> descriptorTypes = new ArrayList<String>();
+    private DescriptorLanguage descriptorTypesInEnum = null;
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, DescriptorLanguage descriptorType)  {
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, descriptorType);
+    }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
@@ -33,33 +37,27 @@ public class CollectionEntry implements Serializable {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, List<String> descriptorTypes)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, descriptorTypes);
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, List<String> descriptorTypes)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, DescriptorLanguage descriptorType)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
-        setDescriptorTypes(descriptorTypes);
+        setDescriptorTypes(descriptorType);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, List<String> descriptorTypes)  {
-        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, descriptorTypes);
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, List<String> descriptorTypes)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(registry, organization, repository, entryName);
         setVersionName(versionName);
-        setDescriptorTypes(descriptorTypes);
     }
 
     private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
@@ -106,11 +104,12 @@ public class CollectionEntry implements Serializable {
         this.versionName = versionName;
     }
 
-    public List<String> getDescriptorTypes() {
-        return descriptorTypes;
+    public DescriptorLanguage getDescriptorTypesInEnum() {
+        return descriptorTypesInEnum;
     }
 
-    public void setDescriptorTypes(List<String> descriptorTypes) { 
-        this.descriptorTypes = descriptorTypes; 
+    public void setDescriptorTypes(DescriptorLanguage descriptorTypes) {
+        this.descriptorTypesInEnum = descriptorTypes;
     }
+
 }

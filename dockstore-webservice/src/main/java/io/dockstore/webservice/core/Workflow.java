@@ -16,8 +16,6 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -37,7 +35,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -129,8 +126,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = DescriptorLanguageConverter.class)
     @ApiModelProperty(value = "This is a descriptor type for the workflow, by default either CWL, WDL, NFL, or gxformat2 (Defaults to CWL).", required = true, position = 18, allowableValues = "CWL, WDL, NFL, gxformat2, service")
     private DescriptorLanguage descriptorType;
-
-    private List<String> descriptorTypeString = new ArrayList<String>();
 
     // TODO: Change this to LAZY, this is the source of all our problems
     @Column(nullable = false, columnDefinition = "varchar(255) default 'n/a'")
@@ -316,8 +311,6 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void setDescriptorType(DescriptorLanguage descriptorType) {
         this.descriptorType = descriptorType;
         // also initializa the string
-        descriptorTypeString = new ArrayList<String>();
-        descriptorTypeString.add(descriptorType.getShortName());
     }
 
     public DescriptorLanguage getDescriptorType() {

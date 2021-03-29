@@ -121,9 +121,24 @@ components:
           format: int64
           type: integer
         descriptorTypes:
-          items:
-            type: string
-          type: array
+          enum:
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+          type: string
+          writeOnly: true
+        descriptorTypesInEnum:
+          enum:
+            - CWL
+            - WDL
+            - gxformat2
+            - SWL
+            - NFL
+            - service
+          type: string
         entryPath:
           type: string
         entryType:
@@ -2030,7 +2045,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/WorkflowVersion'
           description: default response
       security:
         - bearer: []
