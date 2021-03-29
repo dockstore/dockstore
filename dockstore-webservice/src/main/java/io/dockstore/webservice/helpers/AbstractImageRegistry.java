@@ -241,8 +241,6 @@ public abstract class AbstractImageRegistry {
                     gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
-
-        return;
     }
 
     /**
