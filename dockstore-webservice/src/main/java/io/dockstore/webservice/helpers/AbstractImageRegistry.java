@@ -66,7 +66,6 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,7 +141,6 @@ public abstract class AbstractImageRegistry {
      * @param toolDAO           ...
      * @param tagDAO            ...
      * @param fileDAO           ...
-     * @param client            An HttpClient used by source code repositories
      * @param githubToken       The user's GitHub token
      * @param bitbucketToken    The user's Bitbucket token
      * @param gitlabToken       The user's GitLab token
@@ -152,7 +150,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
             String organization, final EventDAO eventDAO, final String dashboardPrefix) {
         // Get all the namespaces for the given registry
         List<String> namespaces;
@@ -193,7 +191,7 @@ public abstract class AbstractImageRegistry {
 
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
                     gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
@@ -202,9 +200,8 @@ public abstract class AbstractImageRegistry {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public List<Tool> refreshTool(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
-            String organization, final EventDAO eventDAO, final String dashboardPrefix, String repository) {
+    public void refreshTool(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO, final FileDAO fileDAO,
+            final FileFormatDAO fileFormatDAO, final Token githubToken, final Token bitbucketToken, final Token gitlabToken, String organization, final EventDAO eventDAO, final String dashboardPrefix, String repository) {
 
         // Get all the tools based on the found namespaces
         List<Tool> apiTools;
@@ -240,12 +237,10 @@ public abstract class AbstractImageRegistry {
 
             List<Tag> toolTags = getTags(tool);
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
                     gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
             updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
         }
-
-        return newDBTools;
     }
 
     /**

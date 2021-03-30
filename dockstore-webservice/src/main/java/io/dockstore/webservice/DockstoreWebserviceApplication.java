@@ -168,17 +168,16 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public static final String DOCKSTORE_WEB_CACHE_MISS_LOG_FILE = "/tmp/dockstore-web-cache.misses.log";
     public static final File CACHE_MISS_LOG_FILE = new File(DOCKSTORE_WEB_CACHE_MISS_LOG_FILE);
 
-    public static OkHttpClient okHttpClient = null;
+    private static OkHttpClient okHttpClient = null;
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
     private static final int CACHE_IN_MB = 100;
     private static Cache cache = null;
 
-    private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class,
-            WorkflowVersion.class, FileFormat.class, Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class,
-            Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
+    private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<>(Token.class, Tool.class, User.class,
+            Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
+            Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
@@ -198,6 +197,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
     }
 
+    public static OkHttpClient getOkHttpClient() {
+        return okHttpClient;
+    }
+
     @Override
     public String getName() {
         return "webservice";
@@ -215,7 +218,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
 
         // for database migrations.xml
-        bootstrap.addBundle(new MigrationsBundle<DockstoreWebserviceConfiguration>() {
+        bootstrap.addBundle(new MigrationsBundle<>() {
             @Override
             public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
                 return configuration.getDataSourceFactory();
@@ -262,7 +265,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             // namespace cache when testing on circle ci
             cacheDir = Files.createDirectories(Paths.get(DOCKSTORE_WEB_CACHE + (suffix == null ? "" : "/" + suffix))).toFile();
         } catch (IOException e) {
-            LOG.error("Could no create or re-use web cache", e);
+            LOG.error("Could not create or re-use web cache", e);
             throw new RuntimeException(e);
         }
         return new Cache(cacheDir, cacheSize);
@@ -366,7 +369,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
-        environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory(), httpClient));
+        environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));
