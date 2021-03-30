@@ -165,12 +165,20 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(this.currentSession().getNamedQuery("Entry.getCollectionWorkflows").setParameter("collectionId", collectionId));
     }
 
+    public long getWorkflowsLength(long collectionId) {
+        return (long)(this.currentSession().getNamedQuery("Entry.getWorkflowsLength").setParameter("collectionId", collectionId).getSingleResult());
+    }
+
     public List<CollectionEntry> getCollectionServices(long collectionId) {
         return list(this.currentSession().getNamedQuery("Entry.getCollectionServices").setParameter("collectionId", collectionId));
     }
 
     public List<CollectionEntry> getCollectionTools(long collectionId) {
         return list(this.currentSession().getNamedQuery("Entry.getCollectionTools").setParameter("collectionId", collectionId));
+    }
+
+    public long getToolsLength(long collectionId) {
+        return (long)(this.currentSession().getNamedQuery("Entry.getToolsLength").setParameter("collectionId", collectionId).getSingleResult());
     }
 
     public List<CollectionEntry> getCollectionWorkflowsWithVersions(long collectionId) {

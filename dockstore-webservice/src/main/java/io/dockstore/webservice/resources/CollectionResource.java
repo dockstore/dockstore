@@ -224,6 +224,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
         collection.setCollectionEntries(collectionEntries);
+        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
+        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
@@ -419,6 +421,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             collections.forEach(collection -> {
                 currentSession.evict(collection);
                 collection.setEntries(new HashSet<>());
+                collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
+                collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
             });
         }
         return collections;

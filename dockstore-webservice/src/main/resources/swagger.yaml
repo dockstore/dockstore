@@ -6246,6 +6246,16 @@ definitions:
         type: "string"
         position: 4
         description: "Short description of the collection"
+      workflowsLength:
+        type: "integer"
+        format: "int64"
+        position: 5
+        description: "Number of workflows inside this collection"
+      toolsLength:
+        type: "integer"
+        format: "int64"
+        position: 6
+        description: "Number of tools inside this collection"
   CollectionEntry:
     type: "object"
     properties:
