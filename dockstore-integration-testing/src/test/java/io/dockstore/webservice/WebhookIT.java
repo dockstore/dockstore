@@ -580,7 +580,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().equals("/dockstore.wdl.json")).findFirst().isPresent());
