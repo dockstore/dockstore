@@ -236,7 +236,7 @@ public class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream()
+        Optional<WorkflowVersion> first = workflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals("correct number of source files", 1, sourceFiles.size());
@@ -249,7 +249,7 @@ public class CRUDClientIT extends BaseIT {
         file2.setAbsolutePath("/arguments.cwl");
         // add one file and include the old one implicitly
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file2));
-        first = dockstoreWorkflow.getWorkflowVersions().stream()
+        first = workflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals("correct number of source files", 2, sourceFiles.size());
@@ -261,7 +261,7 @@ public class CRUDClientIT extends BaseIT {
         file3.setAbsolutePath("/tar-param.cwl");
         // add one file and include the old one implicitly
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
-        first = dockstoreWorkflow.getWorkflowVersions().stream()
+        first = workflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals("correct number of source files", 3, sourceFiles.size());
@@ -269,7 +269,7 @@ public class CRUDClientIT extends BaseIT {
         // Delete the workflow version and recreate it
         api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "3");
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
-        first = dockstoreWorkflow.getWorkflowVersions().stream()
+        first = workflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertEquals("Version name should've skipped 3 because it was previously deleted", "4", first.get().getName());
 
@@ -277,7 +277,7 @@ public class CRUDClientIT extends BaseIT {
         file2.setContent(null);
 
         dockstoreWorkflow = api.editHostedWorkflow(dockstoreWorkflow.getId(), Lists.newArrayList(file, file2));
-        first = dockstoreWorkflow.getWorkflowVersions().stream()
+        first = workflowsApi.getWorkflowVersions(dockstoreWorkflow.getId()).stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         sourceFiles = fileDAO.findSourceFilesByVersion(first.get().getId());
         assertEquals("correct number of source files", 2, sourceFiles.size());
@@ -334,12 +334,12 @@ public class CRUDClientIT extends BaseIT {
         file.setAbsolutePath("/Dockstore.cwl");
         hostedWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
 
-        WorkflowVersion frozenVersion = hostedWorkflow.getWorkflowVersions().get(0);
+        WorkflowVersion frozenVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
         frozenVersion.setFrozen(true);
         workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(frozenVersion));
 
         try {
-            api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), hostedWorkflow.getWorkflowVersions().get(0).getName());
+            api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), frozenVersion.getName());
             Assert.fail("Should not be able to delete a frozen version");
         } catch (ApiException ex) {
             assertEquals(ex.getMessage(), "Cannot delete a snapshotted version.");
@@ -509,7 +509,7 @@ public class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream()
+        Optional<WorkflowVersion> first = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).stream()
             .max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
         long numSourcefiles = testingPostgres.runSelectStatement("SELECT COUNT(*) FROM sourcefile, workflow, workflowversion, version_sourcefile WHERE workflow.id = " + hostedWorkflow.getId() + " AND workflowversion.parentid = workflow.id AND version_sourcefile.versionid = workflowversion.id AND sourcefile.id = version_sourcefile.sourcefileid", long.class);

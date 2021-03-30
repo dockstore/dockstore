@@ -492,7 +492,7 @@ public class GeneralIT extends BaseIT {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
 
         workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
+        WorkflowVersion workflowVersion = workflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
         assertEquals(SourceFile.TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
