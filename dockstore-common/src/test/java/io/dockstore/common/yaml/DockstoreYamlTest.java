@@ -209,23 +209,22 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12(workflowsKey);
             Assert.fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue(ex.getMessage().contains("Unrecognized property \"workflow\""));
+            assertTrue(ex.getMessage().contains("must have at least 1 workflow or service"));
         }
 
         final String nameKey = DOCKSTORE_GALAXY_YAML.replaceFirst("name", "Name");
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(nameKey);
-            Assert.fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue(ex.getMessage().contains("Unrecognized property \"Name\""));
+            Assert.fail("'name' is not required and 'Name' should just be ignored.");
         }
 
-        final String multipleKeys = DOCKSTORE_GALAXY_YAML.replaceFirst("name", "Name").replaceFirst("workflows", "workflow");
+        final String multipleKeys = DOCKSTORE_GALAXY_YAML.replaceFirst("version", "Version").replaceFirst("workflows", "workflow");
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12(multipleKeys);
             Assert.fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue("Should only return first error", ex.getMessage().contains("Unrecognized property \"workflow\""));
+            assertTrue("Should only return first error", ex.getMessage().contains("missing valid version"));
         }
     }
 
