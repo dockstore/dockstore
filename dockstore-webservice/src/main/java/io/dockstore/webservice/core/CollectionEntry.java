@@ -34,7 +34,6 @@ public class CollectionEntry implements Serializable {
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
-        //setLabels(labels);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -49,7 +48,6 @@ public class CollectionEntry implements Serializable {
         setId(id);
         setEntryPath(registry, organization, repository, entryName);
         setVersionName(versionName);
-        //setLabels(labels);
     }
 
     private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
@@ -101,7 +99,6 @@ public class CollectionEntry implements Serializable {
     }
 
     public void setLabels(List<String> labels) {
-        //labels.forEach(label -> this.labels.add(label.getValue()));
         this.labels = labels;
     }
 }

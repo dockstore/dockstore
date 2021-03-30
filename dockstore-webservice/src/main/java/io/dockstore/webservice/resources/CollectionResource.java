@@ -226,7 +226,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
         collectionEntries.forEach(entry -> {
-            //Object entryDAO;
             List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
             entry.setLabels(labelStrings);
