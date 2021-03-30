@@ -19,45 +19,48 @@ public class CollectionEntry implements Serializable {
     private long id;
     private String entryType;
     private String versionName;
-    private DescriptorLanguage descriptorTypeInEnum = null;
+    private DescriptorLanguage descriptorType = null;
+    private boolean verified = false;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, DescriptorLanguage descriptorType)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, descriptorType);
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false, descriptorType);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, null);
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false, null);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, versionName, null);
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified)  {
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, versionName, verified, null);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, DescriptorLanguage descriptorType)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified, DescriptorLanguage descriptorType)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
         setDescriptorType(descriptorType);
+        setVerified(verified);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null);
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, boolean verified)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(registry, organization, repository, entryName);
         setVersionName(versionName);
+        setVerified(verified);
     }
 
     private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
@@ -104,12 +107,19 @@ public class CollectionEntry implements Serializable {
         this.versionName = versionName;
     }
 
-    public DescriptorLanguage getDescriptorTypeInEnum() {
-        return descriptorTypeInEnum;
+    public DescriptorLanguage getDescriptorType() {
+        return descriptorType;
     }
 
     public void setDescriptorType(DescriptorLanguage descriptorType) {
-        this.descriptorTypeInEnum = descriptorType;
+        this.descriptorType = descriptorType;
     }
 
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public boolean getVerified() {
+        return verified;
+    }
 }

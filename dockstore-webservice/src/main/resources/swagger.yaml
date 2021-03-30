@@ -6252,7 +6252,7 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
-      descriptorTypeInEnum:
+      descriptorType:
         type: "string"
         enum:
         - "CWL"
@@ -6268,6 +6268,8 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+      verified:
+        type: "boolean"
       versionName:
         type: "string"
   CollectionOrganization:

@@ -129,16 +129,6 @@ components:
             - NFL
             - service
           type: string
-          writeOnly: true
-        descriptorTypeInEnum:
-          enum:
-            - CWL
-            - WDL
-            - gxformat2
-            - SWL
-            - NFL
-            - service
-          type: string
         entryPath:
           type: string
         entryType:
@@ -146,6 +136,8 @@ components:
         id:
           format: int64
           type: integer
+        verified:
+          type: boolean
         versionName:
           type: string
       type: object
