@@ -504,7 +504,7 @@ public class GeneralIT extends BaseIT {
         testFile.setAbsolutePath("/test.wdl.json");
 
         workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile, testFile));
-        workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
+        workflowVersion = workflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
         fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
         assertFalse(fileTypes.get(0) == fileTypes.get(1));

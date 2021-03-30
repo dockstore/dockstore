@@ -159,6 +159,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
+    private static final String VERSIONS = "versions";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -405,6 +406,22 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         workflow.getWorkflowVersions().forEach(version -> Hibernate.initialize(version.getVersionMetadata().getParsedInformationSet()));
         initializeAdditionalFields(include, workflow);
         return workflow;
+    }
+
+    @GET
+    @Path("/{workflowId}/workflowVersions")
+    @UnitOfWork
+    @ApiOperation(nickname = "getWorkflowVersions", value = "Return all versions in an entry", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
+    @Operation(operationId = "getWorkflowVersions", description = "Return all versions in an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkCanRead(user, workflow);
+
+        Hibernate.initialize(workflow.getWorkflowVersions());
+        return workflow.getWorkflowVersions();
     }
 
     @PUT
@@ -1702,6 +1719,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, IMAGES)) {
             workflow.getWorkflowVersions().stream().filter(v -> v.isFrozen()).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
+        }
+        if (checkIncludes(include, VERSIONS)) {
+            Hibernate.initialize(workflow.getWorkflowVersions());
         }
     }
 

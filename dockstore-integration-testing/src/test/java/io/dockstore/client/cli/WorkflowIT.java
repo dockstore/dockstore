@@ -1139,7 +1139,7 @@ public class WorkflowIT extends BaseIT {
         file.setAbsolutePath("/Dockstore.cwl");
         hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
 
-        WorkflowVersion hostedVersion = hostedWorkflow.getWorkflowVersions().get(0);
+        WorkflowVersion hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).get(0);
         hostedVersion.setHidden(true);
         try {
             workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
@@ -1150,7 +1150,7 @@ public class WorkflowIT extends BaseIT {
 
         file.setContent("cwlVersion: v1.0\n\n" + "class: Workflow");
         hostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        hostedVersion = hostedWorkflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("1")).findFirst().get();
+        hostedVersion = workflowsApi.getWorkflowVersions(hostedWorkflow.getId()).stream().filter(v -> v.getName().equals("1")).findFirst().get();
         hostedVersion.setHidden(true);
         workflowsApi.updateWorkflowVersion(hostedWorkflow.getId(), Collections.singletonList(hostedVersion));
 
@@ -2061,7 +2061,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNull("Getting workflow version via workflow path has null alias", workflowVersionByPath.getAliases());
 
         final Workflow publishedWorkflowByPath = workflowApi
-                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false, null);
+                .getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "versions", false, null);
         assertNotNull("did not get published workflow by path", publishedWorkflowByPath);
         Optional<WorkflowVersion> optionalWorkflowVersionByPublishedByPath = publishedWorkflowByPath.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();

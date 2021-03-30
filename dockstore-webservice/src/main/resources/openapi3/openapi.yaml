@@ -2075,6 +2075,32 @@ paths:
       - bearer: []
       tags:
       - entries
+  /entries/{entryId}/versions:
+    get:
+      description: Return all versions in an entry
+      operationId: getEntrysVersions
+      parameters:
+      - description: id of the entry
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Version'
+                uniqueItems: true
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - entries
   /entries/{entryId}/versions/{versionId}/fileTypes:
     get:
       description: Retrieve the unique file types of a version's sourcefile
@@ -6487,6 +6513,31 @@ paths:
       tags:
       - workflows
   /workflows/{workflowId}/workflowVersions:
+    get:
+      description: Return all versions in an entry
+      operationId: getWorkflowVersions
+      parameters:
+      - description: id of the worflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+                uniqueItems: true
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
     put:
       description: Update the workflow versions linked to a workflow.
       operationId: updateWorkflowVersion

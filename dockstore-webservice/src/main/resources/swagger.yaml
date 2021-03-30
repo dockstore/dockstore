@@ -6097,6 +6097,31 @@ paths:
       security:
       - BEARER: []
   /workflows/{workflowId}/workflowVersions:
+    get:
+      tags:
+      - "workflows"
+      summary: "Return all versions in an entry"
+      description: "This is one of the few endpoints that returns the user object\
+        \ with populated properties (minus the userProfiles property)"
+      operationId: "getWorkflowVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "workflowID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/WorkflowVersion"
+      security:
+      - BEARER: []
     put:
       tags:
       - "workflows"
