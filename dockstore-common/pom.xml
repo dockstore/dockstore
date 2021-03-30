@@ -248,10 +248,32 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-wom_2.12</artifactId>
+            <exclusions>
+                <!-- Ignore the eu.timepit pulled in by this artifact which
+                 is not needed and requires the Scala 2.12 compiler and which
+                 causes a Scala compiler use warning because all the other
+                 Scala artifacts make use of the 2.13 compiler
+                 -->
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell-common_2.12</artifactId>
+            <exclusions>
+                <!-- Ignore the eu.timepit pulled in by this artifact which
+                 is not needed and requires the Scala 2.12 compiler and which
+                 causes a Scala compiler use warning because all the other
+                 Scala artifacts make use of the 2.13 compiler
+                 -->
+                <exclusion>
+                    <groupId>eu.timepit</groupId>
+                    <artifactId>refined_2.12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.broadinstitute</groupId>
