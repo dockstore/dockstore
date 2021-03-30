@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.11.0-alpha.1-SNAPSHOT</version>
+    <version>1.11.0-alpha.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
@@ -46,18 +46,18 @@ POM as their parent.
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <dropwizard.version>2.0.19</dropwizard.version>
-        <dropwizard-annotations.version>4.1.17</dropwizard-annotations.version>
-        <elasticsearch-version>7.10.0</elasticsearch-version>
+        <dropwizard.version>2.0.20</dropwizard.version>
+        <dropwizard-annotations.version>4.1.18</dropwizard-annotations.version>
+        <elasticsearch-version>7.9.3</elasticsearch-version>
         <swagger-annotations-version>1.6.2</swagger-annotations-version>
-        <openapi-annotations-version>2.1.1</openapi-annotations-version>
+        <openapi-annotations-version>2.1.7</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
         <jersey-version>2.31</jersey-version>
         <junit-version>4.13.1</junit-version>
         <logback.version>1.2.3</logback.version>
-        <aws.version>2.5.25</aws.version>
+        <aws.version>2.16.22</aws.version>
         <powermock.version>2.0.4</powermock.version>
-        <postgresql.version>42.2.5</postgresql.version>
+        <postgresql.version>42.2.19</postgresql.version>
         <mockito.version>2.28.2</mockito.version>
         <cwlavro.version>2.0.4.4</cwlavro.version>
         <okhttp.version>4.7.0</okhttp.version>
@@ -65,12 +65,15 @@ POM as their parent.
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <httpcomponents.version>4.5.13</httpcomponents.version>
         <httpcore.version>4.4.14</httpcore.version>
-        <jetty-servlet.version>9.4.36.v20210114</jetty-servlet.version>
-        <netty.version>4.1.36.Final</netty.version>
+        <httpasyncclient.version>4.1.4</httpasyncclient.version>
+        <!-- ahead of dropwizard tested version due to https://github.com/eclipse/jetty.project/issues/6001 -->
+        <jetty-servlet.version>9.4.38.v20210224</jetty-servlet.version>
+        <netty.version>4.1.60.Final</netty.version>
         <scala.version>2.12.13</scala.version>
         <cromwell.version>57</cromwell.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.major.version>2.12.1</jackson.major.version>
+        <docker-client.version>3.2.7</docker-client.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -179,7 +182,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.typesafe.netty</groupId>
                 <artifactId>netty-reactive-streams</artifactId>
-                <version>2.0.3</version>
+                <version>2.0.4</version>
             </dependency>
             <dependency>
                 <groupId>com.chuusai</groupId>
@@ -213,10 +216,27 @@ POM as their parent.
                 <artifactId>json-simple</artifactId>
                 <version>1.1.1</version>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java-transport-httpclient5 -->
             <dependency>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-client</artifactId>
-                <version>8.16.0</version>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-transport-httpclient5</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-core</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-transport</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-api</artifactId>
+                <version>${docker-client.version}</version>
             </dependency>
 
 
@@ -284,7 +304,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams</artifactId>
-                <version>1.0.2</version>
+                <version>1.0.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -300,6 +320,11 @@ POM as their parent.
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${httpcomponents.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpasyncclient</artifactId>
+                <version>${httpasyncclient.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -343,7 +368,7 @@ POM as their parent.
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.10.9</version>
+                <version>2.10.10</version>
             </dependency>
 
             <dependency>
@@ -398,6 +423,16 @@ POM as their parent.
                 <artifactId>dropwizard-jackson</artifactId>
                 <version>${dropwizard.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-logging</artifactId>
+                <version>${dropwizard.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-lifecycle</artifactId>
+                <version>${dropwizard.version}</version>
+            </dependency>
 
             <!-- should not be needed, but dropwizard has a conflicting dependency within their own dependency list -->
             <dependency>
@@ -416,7 +451,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.8.0</version>
+                <version>3.10.0</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.annotation</groupId>
@@ -898,12 +933,27 @@ POM as their parent.
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.60</version>
+                <version>1.64</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.5.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlets</artifactId>
+                <version>${jetty-servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util-ajax</artifactId>
+                <version>${jetty-servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-security</artifactId>
                 <version>${jetty-servlet.version}</version>
             </dependency>
             <dependency>
@@ -953,7 +1003,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
-                <version>2.8.8</version>
+                <version>2.9.0</version>
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp-bom -->
@@ -992,16 +1042,6 @@ POM as their parent.
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>4.11</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-logging</artifactId>
-                <version>${dropwizard.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-lifecycle</artifactId>
-                <version>${dropwizard.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger</groupId>

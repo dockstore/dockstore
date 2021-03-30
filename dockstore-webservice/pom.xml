@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.11.0-alpha.1-SNAPSHOT</version>
+        <version>1.11.0-alpha.2-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -47,34 +47,38 @@
             <artifactId>dropwizard-logging</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-lifecycle</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
@@ -83,7 +87,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -411,6 +415,10 @@
             <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
         </dependency>
@@ -527,7 +535,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.11.0-alpha.1-SNAPSHOT</version>
+            <version>1.11.0-alpha.2-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -1166,12 +1174,6 @@
                                 <fileset>
                                     <directory>tool-registry-validator</directory>
                                 </fileset>
-                                <fileset>
-					<directory>src/main/resources/openapi3</directory>
-					<includes>
-						<include>unsortedopenapi.yaml</include>
-					</includes>
-                                </fileset>
                             </filesets>
                         </configuration>
                     </execution>
@@ -1250,7 +1252,7 @@
                 <artifactId>swagger-maven-plugin</artifactId>
                 <version>${openapi-annotations-version}</version>
                 <configuration>
-                    <outputFileName>unsortedopenapi</outputFileName>
+                    <outputFileName>openapi</outputFileName>
                     <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
                     <outputFormat>YAML</outputFormat>
                     <prettyPrint>true</prettyPrint>
@@ -1265,6 +1267,7 @@
                     </resourcePackages>
                     <objectMapperProcessorClass>io.swagger.OrderedObjectMapperProcessor</objectMapperProcessorClass>
                     <readAllResources>false</readAllResources>
+                    <sortOutput>true</sortOutput>
                 </configuration>
                 <executions>
                     <execution>
@@ -1272,22 +1275,6 @@
                         <goals>
                             <goal>resolve</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>exec-maven-plugin</artifactId>
-                <groupId>org.codehaus.mojo</groupId>
-                <executions>
-                    <execution>
-                        <id>Sort OpenAPI.yaml</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${basedir}/scripts/sortOpenAPIYaml.sh</executable>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

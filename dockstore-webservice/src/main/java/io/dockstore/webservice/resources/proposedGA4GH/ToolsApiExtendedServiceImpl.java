@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -49,7 +51,6 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.Request;
@@ -61,6 +62,8 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_RESPONSE;
 
 /**
  * @author kcao on 01/03/17.
@@ -169,10 +172,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     public Response toolsIndexGet(SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             List<Entry> published = getPublished();
-            try (RestHighLevelClient client = new RestHighLevelClient(
-                    RestClient.builder(
-                            new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http")))) {
-
+            try {
+                RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
                 // Delete previous indices
                 deleteIndex(client, TOOLS_INDEX);
                 deleteIndex(client, WORKFLOWS_INDEX);
@@ -209,9 +210,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
-            try (RestClient restClient = RestClient
-                    .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
-                    .build()) {
+            try {
+                RestClient restClient = ElasticSearchHelper.restClient();
                 Map<String, String> parameters = new HashMap<>();
                 // TODO: note that this is lossy if there are repeated parameters
                 // but it looks like the elastic search http client classes don't handle it
@@ -257,7 +257,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         String metadata) {
 
         ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
-        ToolsApiServiceImpl.ParsedRegistryID parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
+        ToolsApiServiceImpl.ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = impl.getEntry(parsedID, Optional.empty());
         Optional<? extends Version<?>> versionOptional;
 

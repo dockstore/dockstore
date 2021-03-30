@@ -356,7 +356,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             lambdaEvent.setMessage(errorMessage);
             lambdaEventDAO.create(lambdaEvent);
             sessionFactory.getCurrentSession().getTransaction().commit();
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
         } catch (Exception ex) {
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
@@ -370,6 +370,31 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    /**
+     * Determines whether to signal lambda to try again
+     * @param ex
+     * @return
+     */
+    private int statusCodeForLambda(Exception ex) {
+        if (isGitHubRateLimitError(ex)) {
+            // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
+            LOG.info("GitHub rate limit hit, signaling lambda to retry.");
+            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        }
+        return LAMBDA_FAILURE;
+    }
+
+    private boolean isGitHubRateLimitError(Exception ex) {
+        if (ex instanceof CustomWebApplicationException) {
+            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+            final String errorMessage = customWebAppEx.getErrorMessage();
+            if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -38,6 +38,7 @@ import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -97,6 +98,18 @@ public class Collection implements Serializable, Aliasable {
     @ApiModelProperty(value = "Short description of the collection", position = 4)
     @Schema(description = "Short description of the collection", required = true, example = "A collection of alignment algorithms")
     private String topic;
+
+    @Transient
+    @JsonSerialize
+    @ApiModelProperty(value = "Number of workflows inside this collection", position = 5)
+    @Schema(description = "Number of workflows inside this collection")
+    private long workflowsLength;
+
+    @Transient
+    @JsonSerialize
+    @ApiModelProperty(value = "Number of tools inside this collection", position = 6)
+    @Schema(description = "Number of tools inside this collection")
+    private long toolsLength;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumns({
@@ -227,6 +240,22 @@ public class Collection implements Serializable, Aliasable {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public void setWorkflowsLength(long pworkflowsLength) {
+        this.workflowsLength = pworkflowsLength;
+    }
+
+    public long getWorkflowsLength() {
+        return this.workflowsLength;
+    }
+
+    public void setToolsLength(long ptoolsLength) {
+        this.toolsLength = ptoolsLength;
+    }
+
+    public long getToolsLength() {
+        return this.toolsLength;
     }
 
     public long getOrganizationID() {

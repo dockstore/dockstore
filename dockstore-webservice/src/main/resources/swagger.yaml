@@ -6246,6 +6246,16 @@ definitions:
         type: "string"
         position: 4
         description: "Short description of the collection"
+      workflowsLength:
+        type: "integer"
+        format: "int64"
+        position: 5
+        description: "Number of workflows inside this collection"
+      toolsLength:
+        type: "integer"
+        format: "int64"
+        position: 6
+        description: "Number of tools inside this collection"
   CollectionEntry:
     type: "object"
     properties:
@@ -7104,6 +7114,10 @@ definitions:
         description: "aliases can be used as an alternate unique id for organizations"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      collectionsLength:
+        type: "integer"
+        format: "int64"
+        description: "collectionsLength"
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7274,7 +7288,6 @@ definitions:
     properties:
       publish:
         type: "boolean"
-        readOnly: true
   RegistryBean:
     type: "object"
     properties:
