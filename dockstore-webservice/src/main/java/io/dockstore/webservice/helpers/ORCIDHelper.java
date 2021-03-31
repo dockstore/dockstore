@@ -15,6 +15,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -54,6 +55,8 @@ public final class ORCIDHelper {
      * @throws DatatypeConfigurationException
      */
     public static String getOrcidWorkString(Entry e, Optional<Version> optionalVersion) throws JAXBException, DatatypeConfigurationException {
+        // Length of the work description to send to ORCID. Arbitrarily set to 4x tweet length.
+        final int descriptionLength = 4*280;
         Work work = new Work();
         WorkTitle workTitle = new WorkTitle();
         Title title = new Title();
@@ -66,13 +69,13 @@ public final class ORCIDHelper {
             externalID.setUrl(url);
             externalID.setValue(v.getDoiURL());
             title.setContent(e.getEntryPath() + ":" + v.getName());
-            work.setShortDescription(v.getDescription());
+            work.setShortDescription(StringUtils.abbreviate(v.getDescription(), descriptionLength));
         } else {
             Url url = new Url(e.getConceptDoi());
             externalID.setUrl(url);
             externalID.setValue(e.getConceptDoi());
             title.setContent(e.getEntryPath());
-            work.setShortDescription(e.getDescription());
+            work.setShortDescription(StringUtils.abbreviate(e.getDescription(), descriptionLength));
         }
         Title journalTitle = new Title();
         journalTitle.setContent("Dockstore");
