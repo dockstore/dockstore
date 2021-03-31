@@ -438,6 +438,7 @@
                     <version>1.2.2</version>
                     <configuration>
                         <outputDirectory>${project.basedir}/src/test/resources/</outputDirectory>
+                        <updatePomFile>false</updatePomFile>
                     </configuration>
                     <executions>
                         <!-- enable flattening -->
