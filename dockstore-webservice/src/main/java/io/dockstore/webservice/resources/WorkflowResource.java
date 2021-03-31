@@ -435,7 +435,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return this.updateLabels(user, workflowId, labelStrings, labelDAO);
+        Workflow workflow = this.updateLabels(user, workflowId, labelStrings, labelDAO);
+        Hibernate.initialize(workflow.getWorkflowVersions());
+        return workflow;
     }
 
     @PUT
