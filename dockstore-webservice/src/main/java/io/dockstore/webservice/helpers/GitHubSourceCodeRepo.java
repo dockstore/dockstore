@@ -103,19 +103,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final GitHub github;
 
     /**
-     *
-     * @param githubTokenUsername the username for githubTokenContent
-     * @param gitUsername deprecate this, this is more accurately, the github organization for a specific repository when this class was used for one repo at a time, weird
+     *  @param githubTokenUsername the username for githubTokenContent
      * @param githubTokenContent authorization token
      */
-    public GitHubSourceCodeRepo(@Deprecated String gitUsername, String githubTokenContent, String githubTokenUsername) {
-        this.gitUsername = gitUsername;
+    public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
         builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
         if (System.getenv("CIRCLE_SHA1") != null) {
             // namespace cache by user when testing
-            builder.cache(DockstoreWebserviceApplication.getCache(githubTokenUsername));
+            builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
         } else {
             // use general cache
             builder.cache(DockstoreWebserviceApplication.getCache(null));

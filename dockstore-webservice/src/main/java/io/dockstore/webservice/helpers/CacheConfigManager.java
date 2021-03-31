@@ -33,14 +33,6 @@ public class CacheConfigManager {
     }
 
     /**
-     * Retrieve the JWT
-     * @return JWT string
-     */
-    public static String getJsonWebToken() {
-        return jsonWebToken;
-    }
-
-    /**
      * Set the JWT
      * @param token JWT string
      */
@@ -63,7 +55,7 @@ public class CacheConfigManager {
 
         String errorMsg = "Unable to retrieve installation access token.";
         try {
-            Response response = DockstoreWebserviceApplication.okHttpClient.newCall(request).execute();
+            Response response = DockstoreWebserviceApplication.getOkHttpClient().newCall(request).execute();
             JsonElement body = new JsonParser().parse(response.body().string());
             if (body.isJsonObject()) {
                 JsonObject responseBody = body.getAsJsonObject();
