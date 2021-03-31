@@ -323,7 +323,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 if (match.startsWith("http://") || match.startsWith("https://")) { // Don't resolve URLs
                     if (currentFileImports.contains(match)) {
                         throw new CustomWebApplicationException(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT,
-                                HttpStatus.SC_BAD_REQUEST);
+                                HttpStatus.SC_UNPROCESSABLE_ENTITY);
                     } else {
                         URL url = new URL(match);
                         try (InputStream is = url.openStream();
