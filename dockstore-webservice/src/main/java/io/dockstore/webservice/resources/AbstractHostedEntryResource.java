@@ -241,7 +241,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             String fallbackMessage = "Your edited files are invalid. No new version was created. Please check your syntax and try again.";
             String validationMessages = createValidationMessages(validatedVersion);
             validationMessages = (validationMessages != null && !validationMessages.isEmpty()) ? validationMessages : fallbackMessage;
-            throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
 
         String invalidFileNames = String.join(",", invalidFileNames(version));
