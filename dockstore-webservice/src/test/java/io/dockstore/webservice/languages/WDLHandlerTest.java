@@ -25,6 +25,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -170,7 +171,7 @@ public class WDLHandlerTest {
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
             Assert.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(400, e.getResponse().getStatus());
+            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
         }
     }

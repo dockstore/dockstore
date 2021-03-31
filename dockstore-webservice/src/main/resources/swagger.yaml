@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.11.0-alpha.1-SNAPSHOT"
+  version: "1.11.0-alpha.2-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -6269,6 +6269,10 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+      labels:
+        type: "array"
+        items:
+          type: "string"
       versionName:
         type: "string"
   CollectionOrganization:
