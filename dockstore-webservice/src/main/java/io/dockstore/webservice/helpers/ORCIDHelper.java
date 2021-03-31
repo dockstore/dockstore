@@ -56,7 +56,7 @@ public final class ORCIDHelper {
      */
     public static String getOrcidWorkString(Entry e, Optional<Version> optionalVersion) throws JAXBException, DatatypeConfigurationException {
         // Length of the work description to send to ORCID. Arbitrarily set to 4x tweet length.
-        final int descriptionLength = 4*280;
+        final int descriptionLength = 4 * 280;
         Work work = new Work();
         WorkTitle workTitle = new WorkTitle();
         Title title = new Title();
