@@ -230,7 +230,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private LicenseInformation licenseInformation = new LicenseInformation();
 
     @Column
-    @ApiModelProperty(value = "The presence of the put code indicates the version was exported to ORCID.")
+    @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
     private String orcidPutCode;
 
     public Entry() {
