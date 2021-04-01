@@ -18,6 +18,8 @@ package io.dockstore.webservice.resources;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -77,6 +79,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -232,10 +235,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         checkEntry(entry);
         checkEntryPermissions(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
-
+        String putCode;
+        Version version = null;
         Optional<Version> optionalVersion = Optional.empty();
         if (versionId != null) {
-            Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
+            version = versionDAO.findVersionInEntry(entry.getId(), versionId);
             if (version == null) {
                 throw new CustomWebApplicationException(VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
@@ -255,17 +259,52 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         if (orcidByUserId.isEmpty()) {
             throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_BAD_REQUEST);
         }
+        if (optionalVersion.isPresent()) {
+            putCode = optionalVersion.get().getVersionMetadata().getOrcidPutCode();
+        } else {
+            putCode = entry.getOrcidPutCode();
+        }
         try {
-            String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion);
-            HttpResponse response = ORCIDHelper.postWorkString(baseApiURL, user.getOrcid(), orcidWorkString,
-                    orcidByUserId.get(0).getToken());
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
+            String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
+            HttpResponse response;
+            if (putCode == null) {
+                response = ORCIDHelper.postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidByUserId.get(0).getToken());
+                if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
+                    throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
+                } else {
+                    if (optionalVersion.isPresent()) {
+                        version.getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
+                    } else {
+                        entry.setOrcidPutCode(getPutCodeFromLocation(response));
+                    }
+                }
+            } else {
+                response = ORCIDHelper.putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidByUserId.get(0).getToken(), putCode);
+                if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                    throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
+                }
             }
         } catch (JAXBException | DatatypeConfigurationException | IOException e) {
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
+    }
+
+    /**
+     * Get the ORCID put code from the response
+     * @param httpResponse
+     * @return
+     */
+    private static String getPutCodeFromLocation(HttpResponse httpResponse) {
+        Header[] locations = httpResponse.getHeaders("Location");
+        URI uri;
+        try {
+            uri = new URI(locations[0].getValue());
+        } catch (URISyntaxException e) {
+            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        String path = uri.getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     @POST
