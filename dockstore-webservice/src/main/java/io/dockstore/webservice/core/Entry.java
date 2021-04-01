@@ -229,6 +229,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
 
+    @Column
+    @ApiModelProperty(value = "The presence of the put code indicates the version was exported to ORCID.")
+    private String orcidPutCode;
+
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
@@ -621,5 +625,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setBlacklistedVersionNames(Set<String> blacklistedVersionNames) {
         this.blacklistedVersionNames = blacklistedVersionNames;
+    }
+
+    public String getOrcidPutCode() {
+        return orcidPutCode;
+    }
+
+    public void setOrcidPutCode(String orcidPutCode) {
+        this.orcidPutCode = orcidPutCode;
     }
 }
