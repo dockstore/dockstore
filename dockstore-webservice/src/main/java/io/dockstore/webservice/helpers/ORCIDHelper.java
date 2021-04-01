@@ -17,6 +17,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -53,7 +54,7 @@ public final class ORCIDHelper {
      * @throws JAXBException
      * @throws DatatypeConfigurationException
      */
-    public static String getOrcidWorkString(Entry e, Optional<Version> optionalVersion) throws JAXBException, DatatypeConfigurationException {
+    public static String getOrcidWorkString(Entry e, Optional<Version> optionalVersion, String putCode) throws JAXBException, DatatypeConfigurationException {
         Work work = new Work();
         WorkTitle workTitle = new WorkTitle();
         Title title = new Title();
@@ -77,6 +78,9 @@ public final class ORCIDHelper {
         Title journalTitle = new Title();
         journalTitle.setContent("Dockstore");
         work.setJournalTitle(journalTitle);
+        if (putCode != null) {
+            work.setPutCode(Long.valueOf(putCode));
+        }
         workTitle.setTitle(title);
         work.setWorkTitle(workTitle);
         work.setWorkType(WorkType.SOFTWARE);
@@ -104,8 +108,28 @@ public final class ORCIDHelper {
         return postWorkString(ORCID_BASE_URL, id, workString, token);
     }
 
+    /**
+     * This creates a new ORCID work
+     */
     public static HttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
         HttpPost postRequest = new HttpPost(baseURL + id + "/work");
+        postRequest.addHeader("content-type", "application/vnd.orcid+xml");
+        postRequest.addHeader("Authorization", "Bearer " + token);
+        StringEntity workEntity = new StringEntity(workString);
+        postRequest.setEntity(workEntity);
+        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+        try {
+            return httpClient.execute(postRequest);
+        } finally {
+            httpClient.close();
+        }
+    }
+
+    /**
+     * This updates an existing ORCID work
+     */
+    public static HttpResponse putWorkString(String baseURL, String id, String workString, String token, String putCode) throws IOException {
+        HttpPut postRequest = new HttpPut(baseURL + id + "/work/" + putCode);
         postRequest.addHeader("content-type", "application/vnd.orcid+xml");
         postRequest.addHeader("Authorization", "Bearer " + token);
         StringEntity workEntity = new StringEntity(workString);
