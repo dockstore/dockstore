@@ -437,7 +437,7 @@
                     <artifactId>flatten-maven-plugin</artifactId>
                     <version>1.2.2</version>
                     <configuration>
-                        <outputDirectory>${project.basedir}/src/test/resources/</outputDirectory>
+                        <outputDirectory>${project.basedir}/generated/src/main/resources/</outputDirectory>
                         <updatePomFile>false</updatePomFile>
                     </configuration>
                     <executions>
