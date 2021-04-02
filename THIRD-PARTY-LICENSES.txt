@@ -1,5 +1,5 @@
 
-Lists of 356 third-party dependencies.
+Lists of 354 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.12:2.5.31 - https://akka.io/)
@@ -316,16 +316,14 @@ Lists of 356 third-party dependencies.
      (MIT) pprint_2.12 (com.lihaoyi:pprint_2.12:0.6.0 - https://github.com/lihaoyi/PPrint)
      (The Apache Software License, Version 2.0) rank-eval (org.elasticsearch.plugin:rank-eval-client:7.9.3 - https://github.com/elastic/elasticsearch)
      (CC0) reactive-streams (org.reactivestreams:reactive-streams:1.0.3 - http://www.reactive-streams.org/)
-     (MIT) refined (eu.timepit:refined_2.12:0.9.18 - https://github.com/fthomas/refined)
      (The New BSD License) (WTFPL) Reflections (org.reflections:reflections:0.9.12 - http://github.com/ronmamo/reflections)
      (The Apache Software License, Version 2.0) rest (org.elasticsearch.client:elasticsearch-rest-client:7.9.3 - https://github.com/elastic/elasticsearch)
      (The Apache Software License, Version 2.0) rest-high-level (org.elasticsearch.client:elasticsearch-rest-high-level-client:7.9.3 - https://github.com/elastic/elasticsearch)
-     (Apache-2.0) Scala Compiler (org.scala-lang:scala-compiler:2.12.12 - https://www.scala-lang.org/)
+     (Apache-2.0) Scala Compiler (org.scala-lang:scala-reflect:2.12.13 - https://www.scala-lang.org/)
      (Apache-2.0) Scala Library (org.scala-lang:scala-library:2.12.13 - https://www.scala-lang.org/)
      (BSD 3-clause) scala-java8-compat (org.scala-lang.modules:scala-java8-compat_2.12:0.8.0 - http://www.scala-lang.org/)
      (Apache 2.0 License) scala-logging (com.typesafe.scala-logging:scala-logging_2.12:3.9.2 - https://github.com/lightbend/scala-logging)
      (Apache-2.0) scala-parser-combinators (org.scala-lang.modules:scala-parser-combinators_2.12:1.1.2 - http://www.scala-lang.org/)
-     (Apache-2.0) scala-xml (org.scala-lang.modules:scala-xml_2.12:1.3.0 - http://www.scala-lang.org/)
      (MIT) scopt (com.github.scopt:scopt_2.12:4.0.0 - https://github.com/scopt/scopt)
      (BSD New) Sentry-Java client (io.sentry:sentry:1.7.30 - https://github.com/getsentry/sentry-java/sentry)
      (BSD New) Sentry-Java for Logback (io.sentry:sentry-logback:1.7.30 - https://github.com/getsentry/sentry-java/sentry-logback)
