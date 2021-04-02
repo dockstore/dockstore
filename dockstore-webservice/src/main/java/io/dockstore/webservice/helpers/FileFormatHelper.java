@@ -31,7 +31,6 @@ public final class FileFormatHelper {
     private static final Logger LOG = LoggerFactory.getLogger(FileFormatHelper.class);
     private FileFormatHelper() { }
 
-    //
     /**
      * Updates the given tool/workflow to show which file formats are associated with its sourcefiles
      * @param versions  A tool/workflow's versions (tags/workflowVersions)

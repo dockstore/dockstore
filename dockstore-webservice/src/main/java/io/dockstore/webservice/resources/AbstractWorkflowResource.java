@@ -192,8 +192,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     workflowVersionFromDB.setToolTableJson(null);
                     workflowVersionFromDB.setDagJson(null);
 
-                    // Update sourcefiles
-                    //
                     updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
                 });
     }
@@ -583,7 +581,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
-                //
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
             } else {
                 workflow.addWorkflowVersion(remoteWorkflowVersion);

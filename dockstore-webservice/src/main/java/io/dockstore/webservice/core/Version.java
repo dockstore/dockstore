@@ -80,7 +80,7 @@ import org.hibernate.annotations.UpdateTimestamp;
                         + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                         + "version.parent.id = :entryId"
         ),
-        @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
