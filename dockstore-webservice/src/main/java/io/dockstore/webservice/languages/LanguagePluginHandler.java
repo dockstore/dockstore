@@ -32,6 +32,7 @@ import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -39,6 +40,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +79,12 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             if (mainDescriptor.isPresent()) {
                 content = mainDescriptor.get().getContent();
             }
-            return ((RecommendedLanguageInterface)minimalLanguageInterface).validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
+            try {
+                return ((RecommendedLanguageInterface)minimalLanguageInterface).
+                        validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
+            } catch (Exception e) {
+                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            }
         } else {
             return new VersionTypeValidation(true, Collections.emptyMap());
         }
