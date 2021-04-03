@@ -19,6 +19,8 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.languages.CWLHandler;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,25 +39,46 @@ public final class FileFormatHelper {
      * @param fileFormatDAO  The FileFormatDAO to check the FileFormat table
      */
     public static void updateFileFormats(Entry entry, Set<? extends Version> versions, final FileFormatDAO fileFormatDAO) {
-        CWLHandler cwlHandler = new CWLHandler();
         SortedSet<FileFormat> entrysInputFileFormats = new TreeSet<>();
         SortedSet<FileFormat> entrysOutputFileFormats = new TreeSet<>();
         versions.forEach(tag -> {
-            SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
-            SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
-            SortedSet<SourceFile> sourceFiles = tag.getSourceFiles();
-            List<SourceFile> cwlFiles = sourceFiles.stream()
-                    .filter(sourceFile -> sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL).collect(Collectors.toList());
-            cwlFiles.stream().filter(cwlFile -> cwlFile.getContent() != null).forEach(cwlFile -> {
-                inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
-                outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));
-            });
-            SortedSet<FileFormat> realInputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, inputFileFormats);
-            SortedSet<FileFormat> realOutputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, outputFileFormats);
-            tag.setInputFileFormats(realInputFileFormats);
-            entrysInputFileFormats.addAll(realInputFileFormats);
-            tag.setOutputFileFormats(realOutputFileFormats);
-            entrysOutputFileFormats.addAll(realOutputFileFormats);
+            Pair<SortedSet<FileFormat>, SortedSet<FileFormat>> fileFormats = updateVersionFileFormats(tag, fileFormatDAO);
+            entrysInputFileFormats.addAll(fileFormats.getLeft());
+            entrysOutputFileFormats.addAll(fileFormats.getRight());
+        });
+        entry.getInputFileFormats().clear();
+        entry.getInputFileFormats().addAll(entrysInputFileFormats);
+        entry.getOutputFileFormats().clear();
+        entry.getOutputFileFormats().addAll(entrysOutputFileFormats);
+    }
+
+
+    // Returns Pair<InputFileFormats, OutputFileFormats>
+    public static Pair<SortedSet<FileFormat>, SortedSet<FileFormat>> updateVersionFileFormats(Version version, FileFormatDAO fileFormatDAO) {
+        CWLHandler cwlHandler = new CWLHandler();
+        SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
+        SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
+        SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
+        List<SourceFile> cwlFiles = sourceFiles.stream()
+                .filter(sourceFile -> sourceFile.getType() == DescriptorLanguage.FileType.DOCKSTORE_CWL).collect(Collectors.toList());
+        cwlFiles.stream().filter(cwlFile -> cwlFile.getContent() != null).forEach(cwlFile -> {
+            inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
+            outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));
+        });
+
+        SortedSet<FileFormat> realInputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, inputFileFormats);
+        SortedSet<FileFormat> realOutputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, outputFileFormats);
+        version.setInputFileFormats(realInputFileFormats);
+        version.setOutputFileFormats(realOutputFileFormats);
+        return new ImmutablePair<>(inputFileFormats, outputFileFormats);
+    }
+
+    public static void updateEntryLevelFileFormats(Entry entry) {
+        SortedSet<FileFormat> entrysInputFileFormats = new TreeSet<>();
+        SortedSet<FileFormat> entrysOutputFileFormats = new TreeSet<>();
+        entry.getWorkflowVersions().stream().forEach(version -> {
+            entrysInputFileFormats.addAll(((Version)version).getInputFileFormats());
+            entrysOutputFileFormats.addAll(((Version)version).getOutputFileFormats());
         });
         entry.getInputFileFormats().clear();
         entry.getInputFileFormats().addAll(entrysInputFileFormats);

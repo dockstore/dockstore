@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -55,6 +56,7 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.swagger.annotations.Api;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
@@ -294,8 +296,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         });
 
-        // Delete all non-frozen versions that have the same git reference name
-        workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
+        // Delete all non-frozen versions that have the same git reference name and then update the file formats of the entry.
+        workflows.forEach(workflow -> {
+            workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen());
+            FileFormatHelper.updateEntryLevelFileFormats(workflow);
+        });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
         return workflows;
@@ -449,7 +454,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     lambdaEventDAO.create(lambdaEvent);
                 }
 
-                List<FileFormat> fileFormats = fileFormatDAO.findInputFileFormatsByEntry(workflow.getId());
                 updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
@@ -589,6 +593,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             if (addedVersion != null) {
                 gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
+
+                // Update file formats for version and then the entry.
+                Pair<SortedSet<FileFormat>, SortedSet<FileFormat>> fileFormats = FileFormatHelper.updateVersionFileFormats(addedVersion, fileFormatDAO);
+                workflow.getInputFileFormats().addAll(fileFormats.getLeft());
+                workflow.getOutputFileFormats().addAll(fileFormats.getRight());
             }
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
