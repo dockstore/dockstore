@@ -266,7 +266,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         // TODO: handle when latest version is removed
         entry.setActualDefaultVersion(validatedVersion);
         entry.syncMetadataWithDefault();
-        FileFormatHelper.updateFileFormats(entry, entry.getWorkflowVersions(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(entry, entry.getWorkflowVersions(), fileFormatDAO, true);
 
         // TODO: Not setting lastModified for hosted tools now because we plan to get rid of the lastmodified column in Tool table in the future.
         if (validatedVersion instanceof WorkflowVersion) {

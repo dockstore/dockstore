@@ -8,12 +8,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
@@ -26,7 +26,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
-import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -56,7 +55,6 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.swagger.annotations.Api;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
@@ -596,9 +594,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 // Update file formats for the version and then the entry.
                 // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
-                Pair<SortedSet<FileFormat>, SortedSet<FileFormat>> fileFormats = FileFormatHelper.updateVersionFileFormats(addedVersion, fileFormatDAO);
-                workflow.getInputFileFormats().addAll(fileFormats.getLeft());
-                workflow.getOutputFileFormats().addAll(fileFormats.getRight());
+                Set<WorkflowVersion> workflowVersions = new HashSet<>();
+                workflowVersions.add(addedVersion);
+                FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
             }
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
