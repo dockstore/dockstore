@@ -277,12 +277,6 @@ POM as their parent.
             </dependency>
 
             <dependency>
-                <groupId>eu.timepit</groupId>
-                <artifactId>refined_2.11</artifactId>
-                <version>0.8.2</version>
-            </dependency>
-
-            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
                 <version>${aws.version}</version>

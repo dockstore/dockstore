@@ -16,6 +16,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -123,7 +124,7 @@ public class CWLHandlerTest {
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
             Assert.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(400, e.getResponse().getStatus());
+            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_ERROR);
 
         }
@@ -135,7 +136,7 @@ public class CWLHandlerTest {
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
             Assert.fail("Expected cwlVersion error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(400, e.getResponse().getStatus());
+            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_VERSION_ERROR);
         }
 
@@ -146,7 +147,7 @@ public class CWLHandlerTest {
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
             Assert.fail("Expected undefined cwlVersion error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(400, e.getResponse().getStatus());
+            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_NO_VERSION_ERROR);
         }
 
@@ -157,7 +158,7 @@ public class CWLHandlerTest {
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
             Assert.fail("Expected ($)import/($)include error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(400, e.getResponse().getStatus());
+            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
         }
     }
