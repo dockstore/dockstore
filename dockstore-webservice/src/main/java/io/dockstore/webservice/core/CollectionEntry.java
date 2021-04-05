@@ -1,7 +1,9 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
@@ -21,6 +23,7 @@ public class CollectionEntry implements Serializable {
     private String versionName;
     private DescriptorLanguage descriptorType = null;
     private boolean verified = false;
+    private List<String> labels = new ArrayList<String>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, DescriptorLanguage descriptorType)  {
@@ -121,5 +124,13 @@ public class CollectionEntry implements Serializable {
 
     public boolean getVerified() {
         return verified;
+    }
+    
+    public List<String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(List<String> labels) {
+        this.labels = labels;
     }
 }

@@ -47,7 +47,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.Ga4Ghv1Api;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
@@ -66,10 +65,8 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
-import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
@@ -223,8 +220,9 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
+    @Ignore("this old test doesn't seem to set the github user token properly")
     public void testSuccessfulManualImageRegistration() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
         DockstoreTool c = getContainerWithoutSourcefiles();
@@ -409,38 +407,6 @@ public class SwaggerClientIT extends BaseIT {
         strings = Resources.readLines(url, StandardCharsets.UTF_8);
         assertTrue(strings.get(0).contains("testparameterstuff"));
         assertTrue(strings.get(1).contains("moretestparameterstuff"));
-    }
-
-    /**
-     * This test should be removed once tag.setVerified is removed because verification should solely depend on the version's source files
-     *
-     * @throws ApiException
-     */
-    @Test
-    public void testVerifiedToolsViaGA4GH() throws ApiException {
-        ApiClient client = getAdminWebClient();
-        ContainersApi containersApi = new ContainersApi(client);
-        Ga4GhApi ga4GhApi = new Ga4GhApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainerWithoutSourcefiles();
-        c.setIsPublished(true);
-        final Tag tag = c.getWorkflowVersions().get(0);
-        tag.setVerified(true);
-        tag.setVerifiedSources(Arrays.asList("funky source"));
-        containersApi.registerManual(c);
-
-        // hit up the plain text versions
-        final String basePath = client.getBasePath();
-        String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        Tool tool = ga4GhApi.toolsIdGet(encodedID);
-        // Verifying the tag does nothing because the TRS verification endpoint was not used
-        Assert.assertFalse(tool.isVerified());
-        Assert.assertEquals("[]", tool.getVerifiedSource());
-
-        // hit up a specific version
-        ToolVersion master = ga4GhApi.toolsIdVersionsVersionIdGet(encodedID, "master");
-        Assert.assertFalse(master.isVerified());
-        Assert.assertEquals("[]", master.getVerifiedSource());
     }
 
     // Can't test publish repos that don't exist

@@ -3,6 +3,7 @@ FROM openjdk:11.0.9-jdk
 # Update the APT cache
 # prepare for Java download
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     software-properties-common \
     telnet \

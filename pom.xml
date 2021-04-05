@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.11.0-alpha.1-SNAPSHOT</version>
+    <version>1.11.0-alpha.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -38,8 +38,9 @@
         in the dependency section
         -->
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
-        <openapi-annotations-version>2.1.1</openapi-annotations-version>
-        <postgresql.version>42.2.5</postgresql.version>
+        <openapi-annotations-version>2.1.7</openapi-annotations-version>
+        <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
+        <postgresql.version>42.2.19</postgresql.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
@@ -62,6 +63,14 @@
     </scm>
 
     <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>jcenter</id>
+            <name>bintray</name>
+            <url>https://jcenter.bintray.com</url>
+        </repository>
         <repository>
             <id>artifacts.oicr.on.ca</id>
             <name>artifacts.oicr.on.ca</name>
@@ -87,14 +96,6 @@
             <id>apache-releases</id>
             <name>Apache Releases repository</name>
             <url>https://repository.apache.org/content/repositories/releases/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jcenter</id>
-            <name>bintray</name>
-            <url>https://jcenter.bintray.com</url>
         </repository>
         <!-- broad -->
         <repository>
@@ -159,7 +160,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.11.0-alpha.1-SNAPSHOT</version>
+                 <version>1.11.0-alpha.2-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
@@ -171,7 +172,7 @@
                 <plugin>
                     <groupId>org.simplify4u.plugins</groupId>
                     <artifactId>pgpverify-maven-plugin</artifactId>
-                    <version>1.10.0</version>
+                    <version>1.11.0</version>
                 </plugin>
                 <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
@@ -448,6 +449,7 @@
                 <configuration>
                     <quiet>true</quiet>
                     <skip>${skipSignatureCheck}</skip>
+                    <keysMapLocation>${project.basedir}/keysmap.list</keysMapLocation>
                 </configuration>
             </plugin>
             <plugin>
@@ -641,7 +643,6 @@
                     <commitIdGenerationMode>full</commitIdGenerationMode>
                 </configuration>
             </plugin>
-            <!-- this is timing out the build and throwing off weird messages, see https://github.com/dockstore/dockstore/issues/4109 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
@@ -653,7 +654,6 @@
                     <sortArtifactByName>true</sortArtifactByName>
                     <failOnMissing>true</failOnMissing>
                     <excludedGroups>^io\.dockstore</excludedGroups>
-                    <skipAggregateAddThirdParty>true</skipAggregateAddThirdParty>
                 </configuration>
                 <executions>
                     <execution>
@@ -663,7 +663,6 @@
                     </execution>
                 </executions>
             </plugin>
-            --> 
         </plugins>
     </build>
 

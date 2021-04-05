@@ -95,9 +95,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected final String bitbucketClientSecret;
     protected final String bitbucketClientID;
-    private final Class<T> entityClass;
 
-    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource, DockstoreWebserviceConfiguration configuration, Class<T> clazz) {
+    public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource,
+            DockstoreWebserviceConfiguration configuration) {
         this.client = client;
         this.sessionFactory = sessionFactory;
         this.entryResource = entryResource;
@@ -114,20 +114,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
         gitHubAppId = configuration.getGitHubAppId();
 
-        this.entityClass = clazz;
-    }
-
-    /**
-     * Finds all workflows from a general Dockstore path that are of type FULL
-     * @param dockstoreWorkflowPath Dockstore path (ex. github.com/dockstore/dockstore-ui2)
-     * @return List of FULL workflows with the given Dockstore path
-     */
-    protected List<Workflow> findAllWorkflowsByPath(String dockstoreWorkflowPath, WorkflowMode workflowMode) {
-        return workflowDAO.findAllByPath(dockstoreWorkflowPath, false)
-                .stream()
-                .filter(workflow ->
-                        workflow.getMode() == workflowMode)
-                .collect(Collectors.toList());
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
@@ -138,7 +124,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         final String gitlabTokenContent = getToken(tokens, TokenType.GITLAB_COM);
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(gitUrl, client, bitbucketTokenContent, gitlabTokenContent, gitHubToken);
+            .createSourceCodeRepo(gitUrl, bitbucketTokenContent, gitlabTokenContent, gitHubToken);
         if (sourceCodeRepo == null) {
             throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -356,7 +342,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             lambdaEvent.setMessage(errorMessage);
             lambdaEventDAO.create(lambdaEvent);
             sessionFactory.getCurrentSession().getTransaction().commit();
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
+            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
         } catch (Exception ex) {
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
@@ -370,6 +356,31 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    /**
+     * Determines whether to signal lambda to try again
+     * @param ex
+     * @return
+     */
+    private int statusCodeForLambda(Exception ex) {
+        if (isGitHubRateLimitError(ex)) {
+            // 5xx tells lambda to retry. Lambda is configured to wait an hour for the retry; retries shouldn't immediately cause even more strain on rate limits.
+            LOG.info("GitHub rate limit hit, signaling lambda to retry.");
+            return HttpStatus.SC_INTERNAL_SERVER_ERROR;
+        }
+        return LAMBDA_FAILURE;
+    }
+
+    private boolean isGitHubRateLimitError(Exception ex) {
+        if (ex instanceof CustomWebApplicationException) {
+            final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
+            final String errorMessage = customWebAppEx.getErrorMessage();
+            if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

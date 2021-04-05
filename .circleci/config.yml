@@ -13,7 +13,7 @@ executors:
           PG_HOST: localhost
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_PASSWORD: postgres
-      - image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+      - image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
         environment:
           - xpack.security.enabled: false
           - transport.host: localhost
@@ -114,12 +114,6 @@ jobs:
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-java-{{ checksum "pom.xml" }}
-      - run:
-          name: Install yq
-          command: |
-            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
-            chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq
       - install-git-secrets
       - run:
           name: decrypt and expand confidential test data
@@ -158,12 +152,6 @@ jobs:
       - checkout
       - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
-      - run:
-          name: Install yq
-          command: |
-            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
-            chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
           name: Install postgresql client
           command: |
@@ -302,12 +290,6 @@ commands:
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
-      - run:
-          name: Install yq
-          command: |
-            wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
-            chmod a+x yq_linux_amd64
-            sudo mv yq_linux_amd64 /usr/bin/yq
       - run:
           name: Install postgresql client
           command: |

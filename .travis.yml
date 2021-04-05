@@ -57,9 +57,6 @@ before_install:
 - sudo apt-get install jq
 - curl -u DockstoreTestUser:$DOCKSTORE_TEST_ACCESS_TOKEN -LSs "$(curl -u DockstoreTestUser:$DOCKSTORE_TEST_ACCESS_TOKEN  -LSs https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | endswith(".jar"))) | .[0].browser_download_url')" -o codacy-coverage-reporter-assembly.jar
 - pyenv global 3.6.10
-- wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64
-- chmod a+x yq_linux_amd64
-- sudo mv yq_linux_amd64 /usr/bin/yq
 
 install:
 - docker version

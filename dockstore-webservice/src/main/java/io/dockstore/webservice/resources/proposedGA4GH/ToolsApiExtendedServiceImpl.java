@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -61,6 +62,8 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_RESPONSE;
 
 /**
  * @author kcao on 01/03/17.
@@ -254,7 +257,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         String metadata) {
 
         ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
-        ToolsApiServiceImpl.ParsedRegistryID parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
+        ToolsApiServiceImpl.ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = impl.getEntry(parsedID, Optional.empty());
         Optional<? extends Version<?>> versionOptional;
 
