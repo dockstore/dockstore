@@ -78,7 +78,12 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             String content = null;
             if (mainDescriptor.isPresent()) {
                 content = mainDescriptor.get().getContent();
+            } else {
+                Map<String, String> validationMessage = new HashMap<>();
+                validationMessage.put("Unknown", "Missing the primary descriptor.");
+                return new VersionTypeValidation(false, validationMessage);
             }
+
             try {
                 return ((RecommendedLanguageInterface)minimalLanguageInterface).
                         validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
