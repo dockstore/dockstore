@@ -6262,15 +6262,10 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
-      descriptorType:
-        type: "string"
-        enum:
-        - "CWL"
-        - "WDL"
-        - "GXFORMAT2"
-        - "SWL"
-        - "NEXTFLOW"
-        - "SERVICE"
+      descriptorTypes:
+        type: "array"
+        items:
+          type: "string"
       entryPath:
         type: "string"
       entryType:

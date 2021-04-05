@@ -37,6 +37,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -87,6 +88,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     private final CollectionDAO collectionDAO;
     private final OrganizationDAO organizationDAO;
     private final WorkflowDAO workflowDAO;
+    private final ToolDAO toolDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
@@ -97,6 +99,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.versionDAO = new VersionDAO(sessionFactory);
@@ -221,7 +224,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         List<CollectionEntry> collectionEntries = new ArrayList<>();
         collectionEntries.addAll(collectionWorkflows);
         collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);
+        collectionEntries.addAll(collectionTools);        
         collectionEntries.addAll(collectionWorkflowsWithVersions);
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
@@ -229,6 +232,13 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
             entry.setLabels(labelStrings);
+            List<String> descriptorTypes;
+            if (entry.getEntryType().equals("tool")) {
+                descriptorTypes = toolDAO.getToolsDescriptorTypes(entry.getId());
+            } else {
+                descriptorTypes = workflowDAO.getWorkflowsDescriptorTypes(entry.getId());
+            }
+            entry.setDescriptorTypes(descriptorTypes);
         });
         collection.setCollectionEntries(collectionEntries);
         collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());

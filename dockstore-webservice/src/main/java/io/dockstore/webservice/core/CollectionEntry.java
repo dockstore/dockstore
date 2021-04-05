@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,33 +20,22 @@ public class CollectionEntry implements Serializable {
     private long id;
     private String entryType;
     private String versionName;
-    private DescriptorLanguage descriptorType = null;
+    private List<String> descriptorTypes = new ArrayList<String>();
     private boolean verified = false;
     private List<String> labels = new ArrayList<String>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, DescriptorLanguage descriptorType)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false, descriptorType);
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false, null);
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, versionName, verified, null);
-    }
-
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified, DescriptorLanguage descriptorType)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
-        setDescriptorType(descriptorType);
         setVerified(verified);
     }
 
@@ -110,14 +98,6 @@ public class CollectionEntry implements Serializable {
         this.versionName = versionName;
     }
 
-    public DescriptorLanguage getDescriptorType() {
-        return descriptorType;
-    }
-
-    public void setDescriptorType(DescriptorLanguage descriptorType) {
-        this.descriptorType = descriptorType;
-    }
-
     public void setVerified(boolean verified) {
         this.verified = verified;
     }
@@ -125,12 +105,20 @@ public class CollectionEntry implements Serializable {
     public boolean getVerified() {
         return verified;
     }
-    
+
     public List<String> getLabels() {
         return labels;
     }
 
     public void setLabels(List<String> labels) {
         this.labels = labels;
+    }
+
+    public List<String> getDescriptorTypes() {
+        return descriptorTypes;
+    }
+
+    public void setDescriptorTypes(List<String> descriptorTypes) {
+        this.descriptorTypes = descriptorTypes;
     }
 }

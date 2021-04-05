@@ -6727,15 +6727,10 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
-        descriptorType:
-          type: string
-          enum:
-          - CWL
-          - WDL
-          - gxformat2
-          - SWL
-          - NFL
-          - service
+        descriptorTypes:
+          type: array
+          items:
+            type: string
         entryPath:
           type: string
         entryType:
