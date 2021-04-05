@@ -182,6 +182,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "version_author", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "authorid", referencedColumnName = "id"))
+    @BatchSize(size = 25)
+    private Set<Author> authors = new HashSet<>();
+
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)

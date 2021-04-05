@@ -70,4 +70,29 @@
         <addForeignKeyConstraint baseColumnNames="cloudinstance_id" baseTableName="cloudinstance_supportedlanguages" constraintName="fk_cloudinstance_supportedlanguages" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cloud_instance"/>
         <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="cloud_instance" constraintName="fk_end_user_cloud_instance" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
+    <changeSet author="ghogue (generated)" id="createAuthorTables">
+        <createTable tableName="author">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="author_pkey"/>
+            </column>
+            <column name="affiliation" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="orcid" type="VARCHAR(50)"/>
+            <column name="role" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="version_author">
+            <column name="versionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_author_pkey"/>
+            </column>
+            <column name="authorid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_author_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="authorid" baseTableName="version_author" constraintName="version_author_fk_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="author"/>
+    </changeSet>
 </databaseChangeLog>
