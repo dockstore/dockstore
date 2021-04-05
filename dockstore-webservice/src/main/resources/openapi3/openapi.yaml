@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.11.0-alpha.1-SNAPSHOT
+  version: 1.11.0-alpha.2-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -6706,10 +6706,18 @@ components:
           format: int64
         organizationName:
           type: string
+        toolsLength:
+          type: integer
+          format: int64
+          description: Number of tools inside this collection
         topic:
           type: string
           description: Short description of the collection
           example: A collection of alignment algorithms
+        workflowsLength:
+          type: integer
+          format: int64
+          description: Number of workflows inside this collection
       required:
       - name
       - topic
@@ -6726,6 +6734,10 @@ components:
         id:
           type: integer
           format: int64
+        labels:
+          type: array
+          items:
+            type: string
         versionName:
           type: string
     CollectionOrganization:

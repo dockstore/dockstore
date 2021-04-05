@@ -48,7 +48,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -180,7 +179,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
-        super(client, sessionFactory, entryResource, configuration, Workflow.class);
+        super(client, sessionFactory, entryResource, configuration);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
         this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
@@ -252,131 +251,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         return workflow;
 
-    }
-
-    /**
-     * For each valid token for a git hosting service, refresh all workflows
-     *
-     * @param user             a user to refresh workflows for
-     * @param organization     limit the refresh to particular organizations if given
-     * @param alreadyProcessed skip particular workflows if already refreshed, previously used for debugging
-     */
-    void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
-
-        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
-
-        boolean foundAtLeastOneToken = false;
-        for (TokenType type : TokenType.values()) {
-            if (!type.isSourceControlToken()) {
-                continue;
-            }
-            // Check if tokens for git hosting services are valid and refresh corresponding workflows
-            // Refresh Bitbucket
-            Token token = Token.extractToken(tokens, type);
-            // create each type of repo and check its validity
-            SourceCodeRepoInterface sourceCodeRepo = null;
-            if (token != null) {
-                sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token);
-            }
-            boolean hasToken = token != null && token.getContent() != null;
-            foundAtLeastOneToken = foundAtLeastOneToken || hasToken;
-
-            try {
-                if (hasToken) {
-                    // get workflows from source control for a user and updates db
-                    refreshHelper(sourceCodeRepo, user, organization, alreadyProcessed);
-                }
-                // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
-            } catch (WebApplicationException ex) {
-                String msg = user.getUsername() + ": " + "Failed to refresh user " + user.getId();
-                LOG.error(msg);
-                LOG.error(ex.getMessage());
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-        }
-
-        if (!foundAtLeastOneToken) {
-            throw new CustomWebApplicationException(
-                "No source control repository token found.  Please link at least one source control repository token to your account.",
-                HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Gets a mapping of all workflows from git host, and updates/adds as appropriate
-     *
-     * @param sourceCodeRepoInterface interface to read data from source control
-     * @param user                    the user that made the request to refresh
-     * @param organization            if specified, only refresh if workflow belongs to the organization
-     */
-    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization,
-        Set<Long> alreadyProcessed) {
-
-        // Mapping of git url to repository name (owner/repo)
-        final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
-
-        /* helpful code for testing, this was used to refresh a users existing workflows
-           with a fixed github token for all users
-         */
-        boolean statsCollection = false;
-        if (statsCollection) {
-            List<Workflow> workflows = bioWorkflowDAO.findMyEntries(user.getId()).stream()
-                .map(obj -> (Workflow)obj).collect(Collectors.toList());
-            for (Workflow workflow : workflows) {
-                workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
-            }
-        }
-
-
-        LOG.info("found giturl to workflow name map" + Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
-        if (organization != null) {
-            workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
-        }
-        // For each entry found of the associated git hosting service
-        for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
-            LOG.info("refreshing " + entry.getKey());
-
-            // Get all workflows with the same giturl (ignore dockstore.yml workflows)
-            final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
-            if (byGitUrl.size() > 0) {
-                // Workflows exist with the given git url
-                for (Workflow workflow : byGitUrl) {
-                    // check whitelist for already processed workflows
-                    if (alreadyProcessed.contains(workflow.getId()) || Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
-                        continue;
-                    }
-
-                    logFullWorkflowRefresh(workflow);
-                    // Update existing workflows with new information from the repository
-                    // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty(), true);
-
-                    // Take ownership of these workflows
-                    workflow.getUsers().add(user);
-
-                    // Update the existing matching workflows based off of the new information
-                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user, Optional.empty());
-                    alreadyProcessed.add(workflow.getId());
-                }
-            } else {
-                // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty(), true);
-
-                // The workflow was successfully created
-                if (newWorkflow != null) {
-                    logFullWorkflowRefresh(newWorkflow);
-                    final long workflowID = workflowDAO.create(newWorkflow);
-
-                    // need to create nested data models
-                    final Workflow workflowFromDB = workflowDAO.findById(workflowID);
-                    workflowFromDB.getUsers().add(user);
-
-                    // Update newly created template workflow (workflowFromDB) with found data from the repository
-                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
-                    alreadyProcessed.add(workflowFromDB.getId());
-                }
-            }
-        }
     }
 
     /**

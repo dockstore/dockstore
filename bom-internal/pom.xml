@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.11.0-alpha.1-SNAPSHOT</version>
+    <version>1.11.0-alpha.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
@@ -48,7 +48,7 @@ POM as their parent.
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <dropwizard.version>2.0.20</dropwizard.version>
         <dropwizard-annotations.version>4.1.18</dropwizard-annotations.version>
-        <elasticsearch-version>7.10.0</elasticsearch-version>
+        <elasticsearch-version>7.9.3</elasticsearch-version>
         <swagger-annotations-version>1.6.2</swagger-annotations-version>
         <openapi-annotations-version>2.1.7</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
@@ -73,6 +73,7 @@ POM as their parent.
         <cromwell.version>57</cromwell.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.major.version>2.12.1</jackson.major.version>
+        <docker-client.version>3.2.7</docker-client.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -215,10 +216,27 @@ POM as their parent.
                 <artifactId>json-simple</artifactId>
                 <version>1.1.1</version>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java-transport-httpclient5 -->
             <dependency>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-client</artifactId>
-                <version>8.16.0</version>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-transport-httpclient5</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-core</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-transport</artifactId>
+                <version>${docker-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-api</artifactId>
+                <version>${docker-client.version}</version>
             </dependency>
 
 
@@ -256,12 +274,6 @@ POM as their parent.
                 <artifactId>logback-access</artifactId>
                 <version>${logback.version}</version>
                 <optional>true</optional>
-            </dependency>
-
-            <dependency>
-                <groupId>eu.timepit</groupId>
-                <artifactId>refined_2.11</artifactId>
-                <version>0.8.2</version>
             </dependency>
 
             <dependency>
@@ -915,7 +927,12 @@ POM as their parent.
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>1.60</version>
+                <version>1.64</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.5.0</version>
             </dependency>
 
             <dependency>

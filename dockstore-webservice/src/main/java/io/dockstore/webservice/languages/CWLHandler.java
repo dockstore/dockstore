@@ -274,11 +274,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (!startsWith) {
                     LOG.error(CWLHandler.CWL_VERSION_ERROR + cwlVersion.toString());
                     throw new CustomWebApplicationException(CWLHandler.CWL_VERSION_ERROR
-                        + cwlVersion.toString(), HttpStatus.SC_BAD_REQUEST);
+                        + cwlVersion.toString(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
                 }
             } else {
                 LOG.error(CWLHandler.CWL_NO_VERSION_ERROR);
-                throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
             JSONObject cwlJson = new JSONObject(mapping);
@@ -394,7 +394,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                     if (secondaryFile == null) {
                         LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
-                        throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_BAD_REQUEST);
+                        throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
                     }
                 }
 
@@ -460,7 +460,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         } catch (ClassCastException | YAMLException | JsonParseException ex) {
             final String exMsg = CWLHandler.CWL_PARSE_ERROR + ex.getMessage();
             LOG.error(exMsg, ex);
-            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 

@@ -323,7 +323,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 if (match.startsWith("http://") || match.startsWith("https://")) { // Don't resolve URLs
                     if (currentFileImports.contains(match)) {
                         throw new CustomWebApplicationException(ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT,
-                                HttpStatus.SC_BAD_REQUEST);
+                                HttpStatus.SC_UNPROCESSABLE_ENTITY);
                     } else {
                         URL url = new URL(match);
                         try (InputStream is = url.openStream();
@@ -451,7 +451,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             String exMsg = WDLHandler.WDL_PARSE_ERROR + ex.getMessage();
             exMsg = getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).orElse(exMsg);
             LOG.error(exMsg, ex);
-            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         } catch (IOException | NoSuchElementException ex) {
             final String exMsg = "Could not process request, " + ex.getMessage();
             LOG.error(exMsg, ex);

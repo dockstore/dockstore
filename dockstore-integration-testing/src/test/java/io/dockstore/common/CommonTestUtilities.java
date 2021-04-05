@@ -26,9 +26,13 @@ import java.util.Optional;
 
 import javax.ws.rs.core.GenericType;
 
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.Container;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
+import com.github.dockerjava.transport.DockerHttpClient;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -353,20 +357,25 @@ public final class CommonTestUtilities {
     }
 
     public static void restartElasticsearch() throws Exception {
-        final DockerClient docker = DefaultDockerClient.fromEnv().build();
-        List<Container> containers = docker.listContainers();
-        Optional<Container> elasticsearch = containers.stream().filter(container -> container.image().contains("elasticsearch"))
-                .findFirst();
-        if (elasticsearch.isPresent()) {
-            Container container = elasticsearch.get();
-            try {
-                docker.restartContainer(container.id());
-                // Wait 25 seconds for elasticsearch to become ready
-                // TODO: Replace with better wait
-                Thread.sleep(25000);
-            } catch (Exception e) {
-                System.err.println("Problems restarting Docker container");
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+
+        try (DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
+                .sslConfig(config.getSSLConfig()).build(); DockerClient instance = DockerClientImpl.getInstance(config, httpClient)) {
+            List<Container> exec = instance.listContainersCmd().exec();
+            Optional<Container> elasticsearch = exec.stream().filter(container -> container.getImage().contains("elasticsearch"))
+                    .findFirst();
+            if (elasticsearch.isPresent()) {
+                Container container = elasticsearch.get();
+                try {
+                    instance.restartContainerCmd(container.getId());
+                    // Wait 25 seconds for elasticsearch to become ready
+                    // TODO: Replace with better wait
+                    Thread.sleep(25000);
+                } catch (Exception e) {
+                    System.err.println("Problems restarting Docker container");
+                }
             }
+
         }
     }
 

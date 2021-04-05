@@ -1,7 +1,9 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;
@@ -18,7 +20,9 @@ public class CollectionEntry implements Serializable {
     private long id;
     private String entryType;
     private String versionName;
+    private List<String> labels = new ArrayList<String>();
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
         this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null);
     }
@@ -88,5 +92,13 @@ public class CollectionEntry implements Serializable {
 
     public void setVersionName(String versionName) {
         this.versionName = versionName;
+    }
+
+    public List<String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(List<String> labels) {
+        this.labels = labels;
     }
 }
