@@ -6552,14 +6552,6 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      inputFileFormats:
-        type: "array"
-        position: 12
-        description: "File formats for describing the input file formats of every\
-          \ version of an entry"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       mode:
         type: "string"
         position: 13
@@ -6570,14 +6562,6 @@ definitions:
         - "AUTO_DETECT_QUAY_TAGS_WITH_MIXED"
         - "MANUAL_IMAGE_PATH"
         - "HOSTED"
-      outputFileFormats:
-        type: "array"
-        position: 13
-        description: "File formats for describing the output file formats of every\
-          \ version of an entry"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       conceptDoi:
         type: "string"
         position: 14
@@ -6592,11 +6576,27 @@ definitions:
         position: 15
         description: "This indicates for the associated git repository, the default\
           \ path to the Dockerfile, required: GA4GH"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       default_cwl_path:
         type: "string"
         position: 16
         description: "This indicates for the associated git repository, the default\
           \ path to the CWL document, required: GA4GH"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       default_wdl_path:
         type: "string"
         position: 17
@@ -6810,27 +6810,27 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      inputFileFormats:
-        type: "array"
-        position: 12
-        description: "File formats for describing the input file formats of every\
-          \ version of an entry"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      outputFileFormats:
-        type: "array"
-        position: 13
-        description: "File formats for describing the output file formats of every\
-          \ version of an entry"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       conceptDoi:
         type: "string"
         position: 14
         description: "The Digital Object Identifier (DOI) representing all of the\
           \ versions of your workflow"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
   EntryUpdateTime:
     type: "object"
     properties:
@@ -8406,14 +8406,6 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      inputFileFormats:
-        type: "array"
-        position: 12
-        description: "File formats for describing the input file formats of every\
-          \ version of an entry"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       mode:
         type: "string"
         position: 13
@@ -8424,14 +8416,6 @@ definitions:
         - "STUB"
         - "HOSTED"
         - "DOCKSTORE_YML"
-      outputFileFormats:
-        type: "array"
-        position: 13
-        description: "File formats for describing the output file formats of every\
-          \ version of an entry"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       conceptDoi:
         type: "string"
         position: 14
@@ -8442,10 +8426,26 @@ definitions:
         position: 14
         description: "This is the name of the workflow, not needed when only one workflow\
           \ in a repo"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       organization:
         type: "string"
         position: 15
         description: "This is a git organization for the workflow"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       repository:
         type: "string"
         position: 16

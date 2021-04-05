@@ -220,23 +220,25 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
+    @Column
+    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 14)
+    private String conceptDoi;
+
+    @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "File formats for describing the input file formats of every version of an entry", position = 12)
+    @ApiModelProperty(value = "File formats for describing the input file formats of every version of an entry", position = 15)
     @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
+    @JsonProperty("output_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "File formats for describing the output file formats of every version of an entry", position = 13)
+    @ApiModelProperty(value = "File formats for describing the output file formats of every version of an entry", position = 16)
     @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
-
-    @Column
-    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 14)
-    private String conceptDoi;
 
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();

@@ -420,8 +420,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
-        Hibernate.initialize(workflow.getWorkflowVersions());
-        return workflow.getWorkflowVersions();
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
+        SortedSet<WorkflowVersion> setOfVersions = new TreeSet<>(versions);
+        return setOfVersions;
     }
 
     @PUT
