@@ -236,10 +236,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         checkEntryPermissions(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
         String putCode;
-        Version version = null;
         Optional<Version> optionalVersion = Optional.empty();
         if (versionId != null) {
-            version = versionDAO.findVersionInEntry(entry.getId(), versionId);
+            Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
             if (version == null) {
                 throw new CustomWebApplicationException(VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
@@ -273,7 +272,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                     throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
                 } else {
                     if (optionalVersion.isPresent()) {
-                        version.getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
+                        optionalVersion.get().getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
                     } else {
                         entry.setOrcidPutCode(getPutCodeFromLocation(response));
                     }
