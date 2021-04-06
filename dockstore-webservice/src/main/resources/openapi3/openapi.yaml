@@ -6532,8 +6532,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-                uniqueItems: true
-          description: default response
+          description: Get list workflow versions in a workflow
       security:
       - bearer: []
       tags:

@@ -115,6 +115,8 @@ import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -414,6 +416,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(nickname = "getWorkflowVersions", value = "Return first 200 versions in an entry", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     @Operation(operationId = "getWorkflowVersions", description = "Return first 200 versions in an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(description = "Get list workflow versions in a workflow", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
