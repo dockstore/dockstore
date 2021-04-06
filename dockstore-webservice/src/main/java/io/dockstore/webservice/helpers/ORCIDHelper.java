@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Optional;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -17,6 +18,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -114,10 +116,10 @@ public final class ORCIDHelper {
     /**
      * This creates a new ORCID work
      */
-    public static HttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
+    public static CloseableHttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
         HttpPost postRequest = new HttpPost(baseURL + id + "/work");
-        postRequest.addHeader("content-type", "application/vnd.orcid+xml");
-        postRequest.addHeader("Authorization", "Bearer " + token);
+        postRequest.addHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml");
+        postRequest.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         StringEntity workEntity = new StringEntity(workString);
         postRequest.setEntity(workEntity);
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
@@ -131,17 +133,14 @@ public final class ORCIDHelper {
     /**
      * This updates an existing ORCID work
      */
-    public static HttpResponse putWorkString(String baseURL, String id, String workString, String token, String putCode) throws IOException {
+    public static CloseableHttpResponse putWorkString(String baseURL, String id, String workString, String token, String putCode) throws IOException {
         HttpPut postRequest = new HttpPut(baseURL + id + "/work/" + putCode);
-        postRequest.addHeader("content-type", "application/vnd.orcid+xml");
-        postRequest.addHeader("Authorization", "Bearer " + token);
+        postRequest.addHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml");
+        postRequest.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         StringEntity workEntity = new StringEntity(workString);
         postRequest.setEntity(workEntity);
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        try {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build();) {
             return httpClient.execute(postRequest);
-        } finally {
-            httpClient.close();
         }
     }
 

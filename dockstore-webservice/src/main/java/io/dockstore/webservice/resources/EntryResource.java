@@ -82,6 +82,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -263,30 +264,46 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         } else {
             putCode = entry.getOrcidPutCode();
         }
+        String orcidWorkString;
         try {
-            String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
-            HttpResponse response;
-            if (putCode == null) {
-                response = ORCIDHelper.postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidByUserId.get(0).getToken());
-                if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-                    throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
-                } else {
-                    if (optionalVersion.isPresent()) {
-                        optionalVersion.get().getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
-                    } else {
-                        entry.setOrcidPutCode(getPutCodeFromLocation(response));
-                    }
-                }
-            } else {
-                response = ORCIDHelper.putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidByUserId.get(0).getToken(), putCode);
-                if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                    throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
-                }
-            }
-        } catch (JAXBException | DatatypeConfigurationException | IOException e) {
+            orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
+        } catch (JAXBException | DatatypeConfigurationException e) {
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+        try {
+            if (putCode == null) {
+                createOrcidWork(optionalVersion, entry, user, orcidWorkString, orcidByUserId);
+            } else {
+                updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
+            }
+        } catch (IOException e) {
+            throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 
+    private void createOrcidWork(Optional<Version> optionalVersion, Entry entry, User user, String orcidWorkString, List<Token> orcidTokens)
+            throws IOException {
+        try (CloseableHttpResponse response = ORCIDHelper.postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken())) {
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
+                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(),
+                        response.getStatusLine().getStatusCode());
+            } else {
+                if (optionalVersion.isPresent()) {
+                    optionalVersion.get().getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
+                } else {
+                    entry.setOrcidPutCode(getPutCodeFromLocation(response));
+                }
+            }
+        }
+    }
+
+    private void updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode) throws IOException {
+        try (CloseableHttpResponse response = ORCIDHelper.putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken(), putCode)) {
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(),
+                        response.getStatusLine().getStatusCode());
+            }
+        }
     }
 
     /**
