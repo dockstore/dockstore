@@ -411,9 +411,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @GET
     @Path("/{workflowId}/workflowVersions")
     @UnitOfWork
-    @ApiOperation(nickname = "getWorkflowVersions", value = "Return all versions in an entry", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
-    @Operation(operationId = "getWorkflowVersions", description = "Return all versions in an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(nickname = "getWorkflowVersions", value = "Return first 200 versions in an entry", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+    @Operation(operationId = "getWorkflowVersions", description = "Return first 200 versions in an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);

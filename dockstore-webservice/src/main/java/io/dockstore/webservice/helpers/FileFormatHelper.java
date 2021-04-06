@@ -42,7 +42,7 @@ public final class FileFormatHelper {
         SortedSet<FileFormat> entrysInputFileFormats = new TreeSet<>();
         SortedSet<FileFormat> entrysOutputFileFormats = new TreeSet<>();
         CWLHandler cwlHandler = new CWLHandler();
-        versions.forEach(tag -> {
+        versions.stream().filter(tag -> !((Version)tag).isFrozen()).forEach(tag -> {
             SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
             SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
             SortedSet<SourceFile> sourceFiles = tag.getSourceFiles();

@@ -6514,7 +6514,7 @@ paths:
       - workflows
   /workflows/{workflowId}/workflowVersions:
     get:
-      description: Return all versions in an entry
+      description: Return first 200 versions in an entry
       operationId: getWorkflowVersions
       parameters:
       - description: id of the worflow

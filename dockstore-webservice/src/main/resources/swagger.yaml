@@ -6100,9 +6100,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Return all versions in an entry"
-      description: "This is one of the few endpoints that returns the user object\
-        \ with populated properties (minus the userProfiles property)"
+      summary: "Return first 200 versions in an entry"
+      description: ""
       operationId: "getWorkflowVersions"
       produces:
       - "application/json"
