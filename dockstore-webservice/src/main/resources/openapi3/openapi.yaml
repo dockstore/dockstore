@@ -6500,7 +6500,7 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
@@ -6533,6 +6533,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
           description: Get list workflow versions in a workflow
+        "400":
+          description: Bad Request
       security:
       - bearer: []
       tags:
