@@ -84,7 +84,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
-public abstract class Version<T extends Version<?>> implements Comparable<T> {
+public abstract class Version<T extends Version> implements Comparable<T> {
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
     private static final Gson GSON = new Gson();
 
