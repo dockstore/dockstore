@@ -6434,6 +6434,10 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       output_file_formats:
         type: "array"
         readOnly: true
@@ -6672,6 +6676,10 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       output_file_formats:
         type: "array"
         readOnly: true
@@ -8192,6 +8200,10 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the version was exported\
+          \ to ORCID."
       parsedInformationSet:
         type: "array"
         items:
@@ -8247,6 +8259,10 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       output_file_formats:
         type: "array"
         readOnly: true

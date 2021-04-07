@@ -2021,7 +2021,7 @@ paths:
       - curation
   /entries/{entryId}/exportToOrcid:
     post:
-      description: Export entry to ORCID
+      description: Export entry to ORCID. DOI is required
       operationId: exportToORCID
       parameters:
       - description: The id of the entry to export.
@@ -6942,6 +6942,8 @@ components:
           type: string
         namespace:
           type: string
+        orcidPutCode:
+          type: string
         output_file_formats:
           type: array
           items:
@@ -7050,6 +7052,8 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        orcidPutCode:
+          type: string
         output_file_formats:
           type: array
           items:
@@ -7134,6 +7138,8 @@ components:
           writeOnly: true
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
+        orcidPutCode:
+          type: string
         output_file_formats:
           type: array
           items:
@@ -8364,6 +8370,8 @@ components:
         id:
           type: integer
           format: int64
+        orcidPutCode:
+          type: string
         parsedInformationSet:
           type: array
           items:
@@ -8480,6 +8488,8 @@ components:
           - STUB
           - HOSTED
           - DOCKSTORE_YML
+        orcidPutCode:
+          type: string
         organization:
           type: string
         output_file_formats:

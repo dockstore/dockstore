@@ -70,4 +70,18 @@
         <addForeignKeyConstraint baseColumnNames="cloudinstance_id" baseTableName="cloudinstance_supportedlanguages" constraintName="fk_cloudinstance_supportedlanguages" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cloud_instance"/>
         <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="cloud_instance" constraintName="fk_end_user_cloud_instance" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
+    <changeSet author="gluu (generated)" id="orcidPutCode">
+        <addColumn tableName="version_metadata">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
