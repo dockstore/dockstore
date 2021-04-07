@@ -1749,7 +1749,7 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
 
         Collection addedCollection = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
-        assertEquals("CWL", addedCollection.getEntries().get(0).getDescriptorType().getValue());
+        assertEquals(DescriptorLanguage.CWL.toString(), addedCollection.getEntries().get(0).getDescriptorTypes().get(0));
     }
 
     /**
