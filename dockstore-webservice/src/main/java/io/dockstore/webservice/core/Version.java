@@ -84,7 +84,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
-public abstract class Version<T extends Version> implements Comparable<T> {
+public abstract class Version<T extends Version<?>> implements Comparable<T> {
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
     private static final Gson GSON = new Gson();
 
@@ -98,11 +98,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     protected long id;
 
     @Column
-    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1)
+    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1, example = "master")
     private String reference;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2, example = "latest")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -239,7 +239,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
-    void updateByUser(final Version version) {
+    void updateByUser(final Version<?> version) {
         this.getVersionMetadata().hidden = version.isHidden();
         this.setDoiStatus(version.getDoiStatus());
         this.setDoiURL(version.getDoiURL());
@@ -325,7 +325,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.valid = valid;
     }
 
-    public abstract Version createEmptyVersion();
+    public abstract Version<?> createEmptyVersion();
 
     @JsonProperty
     public String getName() {
