@@ -244,7 +244,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<String> getToolsDescriptorTypes(long entryId) {
-        return this.currentSession().getNamedQuery("Entry.findToolsDescriptorTypes").setParameter("entryId", entryId).getResultList();
+        return (List<String>)this.currentSession().getNamedQuery("Entry.findToolsDescriptorTypes").setParameter("entryId", entryId)
+                .getSingleResult();
     }
 
     public List<String> getWorkflowsDescriptorTypes(long entryId) {
