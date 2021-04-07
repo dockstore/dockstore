@@ -67,6 +67,7 @@ import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -82,7 +83,6 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
-import io.dockstore.webservice.jdbi.CloudInstanceDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -148,10 +148,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
     private final DeletedUsernameDAO deletedUsernameDAO;
-    private PermissionsInterface authorizer;
+    private final PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
-    private final CloudInstanceDAO cloudInstanceDAO;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
@@ -168,7 +167,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
-        this.cloudInstanceDAO = new CloudInstanceDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
@@ -793,6 +791,25 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/github/organizations")
+    @Operation(operationId = "getMyGitHubOrgs", description = "Gets GitHub organizations for current user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Gets GitHub organizations for current user.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            response = SourceControlOrganization.class, responseContainer = "List")
+    public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        Token githubToken = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
+                .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
+        if (githubToken != null) {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
+            return sourceCodeRepo.getOrganizations();
+        }
+        return Lists.newArrayList();
     }
 
     @PATCH

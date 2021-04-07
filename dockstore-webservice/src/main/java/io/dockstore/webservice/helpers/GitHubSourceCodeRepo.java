@@ -51,6 +51,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -74,6 +75,7 @@ import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHEmail;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
+import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -101,12 +103,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
+    private String githubTokenUsername;
 
     /**
      *  @param githubTokenUsername the username for githubTokenContent
      * @param githubTokenContent authorization token
      */
     public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
+        this.githubTokenUsername = githubTokenUsername;
         // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
         builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
@@ -939,6 +943,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
         throw new UnsupportedOperationException("not implemented/needed for github");
+    }
+
+    @Override
+    public List<SourceControlOrganization> getOrganizations() {
+        try {
+            Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
+            return myOrganizations.entrySet().stream()
+                    .map(o -> new SourceControlOrganization(o.getValue().getId(), o.getKey())).collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.info(githubTokenUsername + ": Cannot retrieve their organizations", e);
+        }
+        return new ArrayList<>();
     }
 
     @Override
