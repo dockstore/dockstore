@@ -280,12 +280,24 @@
       <artifactId>cromwell-wom_2.12</artifactId>
       <version>57</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>refined_2.12</artifactId>
+          <groupId>eu.timepit</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.broadinstitute</groupId>
       <artifactId>cromwell-common_2.12</artifactId>
       <version>57</version>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>refined_2.12</artifactId>
+          <groupId>eu.timepit</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.broadinstitute</groupId>

@@ -7439,10 +7439,12 @@ definitions:
         $ref: "#/definitions/VersionMetadata"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
@@ -8072,10 +8074,12 @@ definitions:
         type: "string"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
@@ -8458,10 +8462,12 @@ definitions:
         type: "string"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"

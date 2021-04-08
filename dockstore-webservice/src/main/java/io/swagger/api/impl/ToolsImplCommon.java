@@ -239,13 +239,17 @@ public final class ToolsImplCommon {
         return tool;
     }
 
-    private static List<ImageData> processImageDataForWorkflowVersions(final Version version) {
+    private static List<ImageData> processImageDataForWorkflowVersions(final Version<?> version) {
         Set<Image> images = version.getImages();
         List<ImageData> trsImages = new ArrayList<>();
 
         for (Image image : images) {
             ImageData imageData = new ImageData();
             imageData.setImageType(ImageType.DOCKER);
+            if (image.getImageRegistry() == null) {
+                // avoid exception on null iimage registry
+                continue;
+            }
             imageData.setRegistryHost(image.getImageRegistry().getDockerPath());
             imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
             imageData.setUpdated(image.getImageUpdateDate());
