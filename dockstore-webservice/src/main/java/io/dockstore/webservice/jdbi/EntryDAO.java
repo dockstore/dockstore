@@ -20,7 +20,6 @@ import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -251,11 +250,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<String> getWorkflowsDescriptorTypes(long entryId) {
         List result = this.currentSession().getNamedQuery("Entry.findWorkflowsDescriptorTypes").setParameter("entryId", entryId).getResultList();
-        if (!result.isEmpty()) {
-            return (List<String>)result.stream().map(descriptorLanguage -> descriptorLanguage.toString()).collect(Collectors.toList());
-        } else {
-            return Collections.emptyList();
-        }
+        return (List<String>)result.stream().map(descriptorLanguage -> descriptorLanguage.toString()).collect(Collectors.toList());
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
