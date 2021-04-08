@@ -6446,12 +6446,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       last_modified_date:
         type: "integer"
         format: "int64"
@@ -6462,12 +6456,6 @@ definitions:
         type: "string"
         description: "The presence of the put code indicates the entry was exported\
           \ to ORCID."
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       tags:
         type: "array"
         uniqueItems: true
@@ -6704,12 +6692,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       last_modified_date:
         type: "integer"
         format: "int64"
@@ -6720,12 +6702,6 @@ definitions:
         type: "string"
         description: "The presence of the put code indicates the entry was exported\
           \ to ORCID."
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       topicId:
         type: "integer"
         format: "int64"
@@ -8301,12 +8277,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       isChecker:
         type: "boolean"
       last_modified_date:
@@ -8319,12 +8289,6 @@ definitions:
         type: "string"
         description: "The presence of the put code indicates the entry was exported\
           \ to ORCID."
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       parentEntry:
         $ref: "#/definitions/Entry"
       topicId:
