@@ -439,12 +439,13 @@
                     <configuration>
                         <outputDirectory>${project.basedir}/generated/src/main/resources/</outputDirectory>
                         <updatePomFile>false</updatePomFile>
+                        <flattenedPomFilename>pom.xml</flattenedPomFilename>
                     </configuration>
                     <executions>
                         <!-- enable flattening -->
                         <execution>
                             <id>flatten</id>
-                            <phase>install</phase>
+                            <phase>validate</phase>
                             <goals>
                                 <goal>flatten</goal>
                             </goals>
