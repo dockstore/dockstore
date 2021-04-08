@@ -75,7 +75,6 @@ import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHEmail;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
-import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -948,8 +947,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public List<SourceControlOrganization> getOrganizations() {
         try {
-            Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
-            return myOrganizations.entrySet().stream()
+            return github.getMyOrganizations().entrySet().stream()
                     .map(o -> new SourceControlOrganization(o.getValue().getId(), o.getKey())).collect(Collectors.toList());
         } catch (IOException e) {
             LOG.info(githubTokenUsername + ": Cannot retrieve their organizations", e);
