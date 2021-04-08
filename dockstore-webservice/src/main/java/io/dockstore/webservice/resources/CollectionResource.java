@@ -232,13 +232,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
             entry.setLabels(labelStrings);
-            List<String> descriptorTypes = null;
             if (entry.getEntryType().equals("tool")) {
-                descriptorTypes = toolDAO.getToolsDescriptorTypes(entry.getId());
+                entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
             } else if (entry.getEntryType().equals("workflow")) {
-                descriptorTypes = workflowDAO.getWorkflowsDescriptorTypes(entry.getId());
+                entry.setDescriptorTypes(workflowDAO.getWorkflowsDescriptorTypes(entry.getId()));
             }
-            entry.setDescriptorTypes(descriptorTypes);
         });
         collection.setCollectionEntries(collectionEntries);
         collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
