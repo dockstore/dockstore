@@ -38,7 +38,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Notification {
 
     @Id
-    @Column(name = "id", unique = true, nullable = false)
+    @Column
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // id is auto incremented by the database
     @ApiModelProperty(value = "ID for the notification", position = 0)
     private long id;
