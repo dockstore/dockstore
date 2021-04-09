@@ -20,34 +20,38 @@ public class CollectionEntry implements Serializable {
     private long id;
     private String entryType;
     private String versionName;
+    private List<String> descriptorTypes = new ArrayList<String>();
+    private boolean verified = false;
     private List<String> labels = new ArrayList<String>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null);
+        this(id, dbUpdateDate, entryTypeString, sourceControl, organization, repository, entryName, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName, String versionName, boolean verified)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
+        setVerified(verified);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName)  {
-        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null);
+        this(id, dbUpdateDate, entryTypeString, registry, organization, repository, entryName, null, false);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName)  {
+    public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, String registry, String organization, String repository, String entryName, String versionName, boolean verified)  {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
         setEntryPath(registry, organization, repository, entryName);
         setVersionName(versionName);
+        setVerified(verified);
     }
 
     private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
@@ -94,11 +98,27 @@ public class CollectionEntry implements Serializable {
         this.versionName = versionName;
     }
 
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public boolean getVerified() {
+        return verified;
+    }
+
     public List<String> getLabels() {
         return labels;
     }
 
     public void setLabels(List<String> labels) {
         this.labels = labels;
+    }
+
+    public List<String> getDescriptorTypes() {
+        return descriptorTypes;
+    }
+
+    public void setDescriptorTypes(List<String> descriptorTypes) {
+        this.descriptorTypes = descriptorTypes;
     }
 }

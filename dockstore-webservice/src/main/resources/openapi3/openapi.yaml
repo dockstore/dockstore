@@ -6727,6 +6727,10 @@ components:
         dbUpdateDate:
           type: integer
           format: int64
+        descriptorTypes:
+          type: array
+          items:
+            type: string
         entryPath:
           type: string
         entryType:
@@ -6738,6 +6742,8 @@ components:
           type: array
           items:
             type: string
+        verified:
+          type: boolean
         versionName:
           type: string
     CollectionOrganization:
