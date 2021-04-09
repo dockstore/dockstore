@@ -4225,14 +4225,17 @@ paths:
       description: Gets GitHub organizations for current user.
       operationId: getMyGitHubOrgs
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlOrganization'
-          description: default response
+          description: "Descriptions of Github organizations (including but not limited\
+            \ to id, names)"
+        "400":
+          description: Bad request
       security:
       - bearer: []
       tags:

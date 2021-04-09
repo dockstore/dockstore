@@ -3956,8 +3956,6 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Gets GitHub organizations for current user."
-      description: ""
       operationId: "getMyGitHubOrgs"
       produces:
       - "application/json"
@@ -3965,12 +3963,11 @@ paths:
       responses:
         200:
           description: "successful operation"
+          headers: {}
           schema:
             type: "array"
             items:
               $ref: "#/definitions/SourceControlOrganization"
-      security:
-      - BEARER: []
   /users/github/sync:
     post:
       tags:
