@@ -558,7 +558,7 @@ public class UserResourceIT extends BaseIT {
         try {
             userApi.getMyGitHubOrgs();
         } catch (io.dockstore.openapi.client.ApiException e) {
-            assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
             return;
         }
         fail("should not be able to get here");
