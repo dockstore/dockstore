@@ -19,11 +19,11 @@ package io.dockstore.webservice.jdbi;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -249,8 +249,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<String> getWorkflowsDescriptorTypes(long entryId) {
-        List result = this.currentSession().getNamedQuery("Entry.findWorkflowsDescriptorTypes").setParameter("entryId", entryId).getResultList();
-        return (List<String>)result.stream().map(descriptorLanguage -> descriptorLanguage.toString()).collect(Collectors.toList());
+        return Arrays.asList(this.currentSession().getNamedQuery("Entry.findWorkflowsDescriptorTypes").setParameter("entryId", entryId).getSingleResult().toString());
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
