@@ -220,12 +220,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 try {
                     String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
                     if (include.length() > SEARCH_TERM_LIMIT) {
-                        include.isEmpty();
                         throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
                     }
 
                 } catch (JSONException ex) {
-                    // The "include" key doesn't exist in a lot of the request bodies, so it's okay for the exception to get thrown.
+                    // The request bodies all look pretty different, so it's okay for the exception to get thrown.
                     LOG.debug("Couldn't parse search payload request.");
                 }
             }
