@@ -60,6 +60,8 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
     private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
+    private static final int SEARCH_TERM_LIMIT = 500;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -210,6 +213,22 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
+            // Performing a search on the UI sends multiple POST requests. When the search term ("include" key in request payload) is large,
+            // one of these POST requests will fail, but the others will continue to pass.
+            if (query != null) {
+                JSONObject json = new JSONObject(query);
+                try {
+                    String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+                    if (include.length() > SEARCH_TERM_LIMIT) {
+                        throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
+                    }
+
+                } catch (JSONException ex) {
+                    // The request bodies all look pretty different, so it's okay for the exception to get thrown.
+                    LOG.debug("Couldn't parse search payload request.");
+                }
+            }
+
             try {
                 RestClient restClient = ElasticSearchHelper.restClient();
                 Map<String, String> parameters = new HashMap<>();
