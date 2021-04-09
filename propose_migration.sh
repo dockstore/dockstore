@@ -14,17 +14,17 @@ if [ "${CIRCLECI-false}" = "true" ]; then
     rm dockstore-webservice/target/detected-migrations.xml || true
 else
     ## uncomment/comment this section if database is running locally on postgres
-#    sudo -i -u postgres dropdb webservice_test || true
-#    sudo -i -u postgres dropdb webservice_test_proposed || true
-#    sudo -i -u postgres createdb webservice_test || true
-#    sudo -i -u postgres createdb webservice_test_proposed || true
-#    rm dockstore-webservice/target/detected-migrations.xml || true
-    ## uncomment/comment this section if running on docker
-    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 dropdb webservice_test || true
-    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 dropdb webservice_test_proposed || true
-    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 psql -c "create database webservice_test with owner = dockstore;" || true
-    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 psql -c "create database webservice_test_proposed with owner = dockstore;" || true
+    sudo -i -u postgres dropdb webservice_test || true
+    sudo -i -u postgres dropdb webservice_test_proposed || true
+    sudo -i -u postgres createdb webservice_test || true
+    sudo -i -u postgres createdb webservice_test_proposed || true
     rm dockstore-webservice/target/detected-migrations.xml || true
+    ## uncomment/comment this section if running on docker
+#    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 dropdb webservice_test || true
+#    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 dropdb webservice_test_proposed || true
+#    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 psql -c "create database webservice_test with owner = dockstore;" || true
+#    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 psql -c "create database webservice_test_proposed with owner = dockstore;" || true
+#    rm dockstore-webservice/target/detected-migrations.xml || true
 fi
 
 ## load up the old database based on current migration
@@ -33,7 +33,7 @@ java -jar dockstore-webservice/target/dockstore-webservice-*.jar db migrate dock
 
 ## create the new database based on JPA (ugly, should really create a proper dw command if this works)
 ## remove timeout for mac devices, will have to break manually
-gtimeout 15 java -Ddw.database.url=jdbc:postgresql://localhost:5432/webservice_test_proposed -Ddw.database.properties.hibernate.hbm2ddl.auto=create -jar dockstore-webservice/target/dockstore-webservice-*.jar server dockstore-integration-testing/src/test/resources/dockstore.yml || true
+timeout 15 java -Ddw.database.url=jdbc:postgresql://localhost:5432/webservice_test_proposed -Ddw.database.properties.hibernate.hbm2ddl.auto=create -jar dockstore-webservice/target/dockstore-webservice-*.jar server dockstore-integration-testing/src/test/resources/dockstore.yml || true
 
 cd dockstore-webservice && mvn liquibase:diff
 
