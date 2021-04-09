@@ -45,7 +45,7 @@
     </changeSet>
     <changeSet author="gluu (generated)" id="cloudInstanceAndLanguageTables">
         <createTable tableName="cloud_instance">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="cloud_instance_pkey"/>
             </column>
             <column name="partner" type="VARCHAR(255)">

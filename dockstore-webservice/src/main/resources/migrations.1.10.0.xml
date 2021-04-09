@@ -19,7 +19,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
                    context="1.10.0">
     <changeSet author="dyuen" id="notification_seq">
-        <addAutoIncrement tableName="notification" columnName="id" startWith="100"/>
+        <addAutoIncrement tableName="notification" columnName="id" />
     </changeSet>
     <changeSet author="natalieperez (generated)" id="adddescriptortypecolumn">
         <addColumn tableName="tool">
