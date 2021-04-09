@@ -70,7 +70,7 @@ POM as their parent.
         <jetty-servlet.version>9.4.38.v20210224</jetty-servlet.version>
         <netty.version>4.1.60.Final</netty.version>
         <scala.version>2.12.13</scala.version>
-        <cromwell.version>57</cromwell.version>
+        <cromwell.version>60</cromwell.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.major.version>2.12.1</jackson.major.version>
         <docker-client.version>3.2.7</docker-client.version>
