@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +48,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -89,6 +91,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final EventDAO eventDAO;
     protected final FileDAO fileDAO;
     protected final LambdaEventDAO lambdaEventDAO;
+    protected final FileFormatDAO fileFormatDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -109,6 +112,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
+        this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -188,7 +192,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     workflowVersionFromDB.setToolTableJson(null);
                     workflowVersionFromDB.setDagJson(null);
 
-                    // Update sourcefiles
                     updateDBVersionSourceFilesWithRemoteVersionSourceFiles(workflowVersionFromDB, version);
                 });
     }
@@ -291,8 +294,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         });
 
-        // Delete all non-frozen versions that have the same git reference name
-        workflows.forEach(workflow -> workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen()));
+        // Delete all non-frozen versions that have the same git reference name and then update the file formats of the entry.
+        workflows.forEach(workflow -> {
+            workflow.getWorkflowVersions().removeIf(workflowVersion -> Objects.equals(workflowVersion.getName(), gitReferenceName.get()) && !workflowVersion.isFrozen());
+            FileFormatHelper.updateEntryLevelFileFormats(workflow);
+        });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
         return workflows;
@@ -563,30 +569,35 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
-            Optional<WorkflowVersion> existingWorkflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.equals(remoteWorkflowVersion)).findFirst();
-
+            WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
-            if (existingWorkflowVersion.isPresent()) {
+            if (existingWorkflowVersion != null) {
                 // Copy over workflow version level information
-                existingWorkflowVersion.get().setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
-                existingWorkflowVersion.get().setLastModified(remoteWorkflowVersion.getLastModified());
-                existingWorkflowVersion.get().setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
-                existingWorkflowVersion.get().setAliases(remoteWorkflowVersion.getAliases());
-                existingWorkflowVersion.get().setSubClass(remoteWorkflowVersion.getSubClass());
-                existingWorkflowVersion.get().setCommitID(remoteWorkflowVersion.getCommitID());
-                existingWorkflowVersion.get().setDagJson(null);
-                existingWorkflowVersion.get().setToolTableJson(null);
-                existingWorkflowVersion.get().setReferenceType(remoteWorkflowVersion.getReferenceType());
-                existingWorkflowVersion.get().setValid(remoteWorkflowVersion.isValid());
-
-                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion.get(), remoteWorkflowVersion);
+                existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
+                existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
+                existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
+                existingWorkflowVersion.setAliases(remoteWorkflowVersion.getAliases());
+                existingWorkflowVersion.setSubClass(remoteWorkflowVersion.getSubClass());
+                existingWorkflowVersion.setCommitID(remoteWorkflowVersion.getCommitID());
+                existingWorkflowVersion.setDagJson(null);
+                existingWorkflowVersion.setToolTableJson(null);
+                existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
+                existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
+                updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
             } else {
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
             }
 
-            Optional<WorkflowVersion> addedVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), remoteWorkflowVersion.getName())).findFirst();
-            addedVersion.ifPresent(workflowVersion -> gitHubSourceCodeRepo
-                    .updateVersionMetadata(workflowVersion.getWorkflowPath(), workflowVersion, workflow.getDescriptorType(), repository));
+            WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
+            if (addedVersion != null) {
+                gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
+
+                // Update file formats for the version and then the entry.
+                // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
+                Set<WorkflowVersion> workflowVersions = new HashSet<>();
+                workflowVersions.add(addedVersion);
+                FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
+            }
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {

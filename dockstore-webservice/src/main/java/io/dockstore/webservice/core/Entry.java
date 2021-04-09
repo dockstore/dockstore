@@ -25,8 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -225,8 +223,24 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
     @Column
-    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 13)
+    @ApiModelProperty(value = "The Digital Object Identifier (DOI) representing all of the versions of your workflow", position = 14)
     private String conceptDoi;
+
+    @JsonProperty("input_file_formats")
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "File formats for describing the input file formats of every version of an entry", position = 15)
+    @OrderBy("id")
+    @BatchSize(size = 25)
+    private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
+
+    @JsonProperty("output_file_formats")
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "File formats for describing the output file formats of every version of an entry", position = 16)
+    @OrderBy("id")
+    @BatchSize(size = 25)
+    private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
@@ -492,18 +506,18 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.email = version.getEmail();
     }
 
-    // This will force EAGER workflowVersions UNLESS the entry entity was detached prior to endpoint return
-    @JsonProperty("input_file_formats")
-    public Set<FileFormat> getInputFileFormats() {
-        Stream<FileFormat> fileFormatStream = this.getWorkflowVersions().stream().flatMap(version -> version.getInputFileFormats().stream());
-        return fileFormatStream.collect(Collectors.toSet());
+    public SortedSet<FileFormat> getInputFileFormats() {
+        return this.inputFileFormats;
+    }
+    public void setInputFileFormats(final SortedSet<FileFormat> inputFileFormats) {
+        this.inputFileFormats = inputFileFormats;
     }
 
-    // This will force EAGER workflowVersions UNLESS the entry entity was detached prior to endpoint return
-    @JsonProperty("output_file_formats")
-    public Set<FileFormat> getOutputFileFormats() {
-        Stream<FileFormat> fileFormatStream = this.getWorkflowVersions().stream().flatMap(version -> version.getOutputFileFormats().stream());
-        return fileFormatStream.collect(Collectors.toSet());
+    public SortedSet<FileFormat> getOutputFileFormats() {
+        return this.outputFileFormats;
+    }
+    public void setOutputFileFormats(final SortedSet<FileFormat> outputFileFormats) {
+        this.outputFileFormats = outputFileFormats;
     }
 
     /**

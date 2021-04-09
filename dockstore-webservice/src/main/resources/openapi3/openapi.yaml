@@ -6487,6 +6487,32 @@ paths:
       tags:
       - workflows
   /workflows/{workflowId}/workflowVersions:
+    get:
+      description: Return first 200 versions in an entry
+      operationId: getWorkflowVersions
+      parameters:
+      - description: id of the worflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+          description: Get list workflow versions in a workflow
+        "400":
+          description: Bad Request
+      security:
+      - bearer: []
+      tags:
+      - workflows
     put:
       description: Update the workflow versions linked to a workflow.
       operationId: updateWorkflowVersion

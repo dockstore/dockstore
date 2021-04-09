@@ -113,10 +113,11 @@ public class CheckerWorkflowIT extends BaseIT {
         assertTrue(refresh.getWorkflowVersions().stream().anyMatch(tag -> tag.getOutputFileFormats().stream()
             .anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
         assertTrue(refresh.getOutputFileFormats().stream()
-            .anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671")));
+                .anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671")));
         assertTrue(refresh.getWorkflowVersions().stream().anyMatch(
             tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
         assertTrue(refresh.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
+
 
         // Add checker workflow
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
