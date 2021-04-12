@@ -52,6 +52,7 @@
         <sonar.projectKey>dockstore_dockstore</sonar.projectKey>
         <sonar.organization>dockstore</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.moduleKey>${artifactId}</sonar.moduleKey>
         <!-- end sonarcloud properties -->
     </properties>
 
