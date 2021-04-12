@@ -78,6 +78,16 @@ jobs:
       - setup_test
       - setup_integration_test
       - save_test_results
+  cwltool-tests:
+    executor: machine_integration_test_exec
+    environment:
+      TESTING_PROFILE: require-cwltool-tests
+    steps:
+      - old_python
+      - setup_machine
+      - setup_test
+      - setup_integration_test
+      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -175,9 +185,6 @@ jobs:
             fi
             mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
             # mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
-      - run:
-          name: CWLTool Tests
-          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Prequire-cwltool-tests,coverage -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
