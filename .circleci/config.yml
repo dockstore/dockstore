@@ -148,7 +148,6 @@ jobs:
           POSTGRES_DB: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_PASSWORD: postgres
-    resource_class: medium+
     steps: # a collection of executable commands
       - checkout
       - restore_cache:
