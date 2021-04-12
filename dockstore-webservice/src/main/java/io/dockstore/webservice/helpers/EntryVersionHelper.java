@@ -246,15 +246,15 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         checkOptionalAuthRead(user, entry);
 
         // tighten permissions for hosted tools and workflows
-        if (!entry.getIsPublished()) {
-            if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
-                throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-            }
-            if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
-                throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-            }
-        }
         if (!user.isPresent() || AuthenticatedResourceInterface.userCannotRead(user.get(), entry)) {
+            if (!entry.getIsPublished()) {
+                if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
+                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                }
+                if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
+                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                }
+            }
             this.filterContainersForHiddenTags(entry);
         }
         Version tagInstance = null;
