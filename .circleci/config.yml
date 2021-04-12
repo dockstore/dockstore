@@ -43,7 +43,7 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-      - unit_and_non_confidential_tests:
+      - unit_non-confidential_cwlrunner_tests:
           <<: *common_filters
           requires:
             - build
