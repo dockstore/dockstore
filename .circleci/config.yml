@@ -136,7 +136,7 @@ jobs:
           root: .
           paths:
             - .
-  unit_and_non_confidential_tests: # runs not using Workflows must have a `build` job as entry point
+  unit_non-confidential_cwlrunner_tests: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.9
         environment:
@@ -175,6 +175,9 @@ jobs:
             fi
             mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
             # mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
+      - run:
+          name: CWLTool Tests
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Prequire-cwltool-tests,coverage -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
