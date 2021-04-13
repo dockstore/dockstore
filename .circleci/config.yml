@@ -43,7 +43,7 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-      - unit_non-confidential_cwlrunner_tests:
+      - unit_test:
           <<: *common_filters
           requires:
             - build
@@ -146,7 +146,7 @@ jobs:
           root: .
           paths:
             - .
-  unit_non-confidential_cwlrunner_tests: # runs not using Workflows must have a `build` job as entry point
+  unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.9
         environment:
