@@ -22,7 +22,6 @@ public class CollectionEntry implements Serializable {
     private String versionName;
     private List<String> descriptorTypes = new ArrayList<String>();
     private boolean verified = false;
-    private List<String> labels = new ArrayList<String>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
@@ -104,14 +103,6 @@ public class CollectionEntry implements Serializable {
 
     public boolean getVerified() {
         return verified;
-    }
-
-    public List<String> getLabels() {
-        return labels;
-    }
-
-    public void setLabels(List<String> labels) {
-        this.labels = labels;
     }
 
     public List<String> getDescriptorTypes() {

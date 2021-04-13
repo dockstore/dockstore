@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -26,7 +25,6 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
-import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -229,9 +227,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
         collectionEntries.forEach(entry -> {
-            List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
-            List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
-            entry.setLabels(labelStrings);
             if (entry.getEntryType().equals("tool")) {
                 entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
             } else if (entry.getEntryType().equals("workflow")) {

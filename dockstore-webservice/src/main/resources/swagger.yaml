@@ -6313,10 +6313,6 @@ definitions:
       id:
         type: "integer"
         format: "int64"
-      labels:
-        type: "array"
-        items:
-          type: "string"
       verified:
         type: "boolean"
       versionName:
