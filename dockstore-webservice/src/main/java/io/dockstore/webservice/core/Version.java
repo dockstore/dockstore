@@ -182,9 +182,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_author", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "authorid", referencedColumnName = "id"))
-    @BatchSize(size = 25)
     private Set<Author> authors = new HashSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
@@ -399,7 +398,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
-        return this.getVersionMetadata().author;
+        return this.authors.stream().findFirst().get().getName();
     }
 
     @ApiModelProperty(position = 22)
@@ -414,7 +413,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(position = 24)
     public String getEmail() {
-        return this.getVersionMetadata().email;
+        return this.authors.stream().findFirst().get().getEmail();
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
@@ -427,11 +426,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;
+        if (authors.size() == 0) {
+            authors.add(new Author(newAuthor));
+        }
     }
 
     public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;
+        if (authors.size() == 1) {
+            Author author = authors.stream().findFirst().get();
+            if (author.getEmail() == null) {
+                author.setEmail(newEmail);
+            }
+        }
     }
 
     public ReferenceType getReferenceType() {
