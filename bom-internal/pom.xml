@@ -52,7 +52,6 @@ POM as their parent.
         <swagger-annotations-version>1.6.2</swagger-annotations-version>
         <openapi-annotations-version>2.1.7</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
-        <jersey-version>2.31</jersey-version>
         <junit-version>4.13.1</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>2.16.22</aws.version>
@@ -481,15 +480,6 @@ POM as their parent.
 
 
 
-            <!-- jersey -->
-            <dependency>
-                <groupId>org.glassfish.jersey</groupId>
-                <artifactId>jersey-bom</artifactId>
-                <version>${jersey-version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-annotations</artifactId>
@@ -652,14 +642,14 @@ POM as their parent.
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.10.10</version>
-                <scope>test</scope>
+                <version>1.10.17</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.10.10</version>
-                <scope>test</scope>
+                <version>1.10.17</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -1067,11 +1057,6 @@ POM as their parent.
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-healthchecks</artifactId>
                 <version>${dropwizard-annotations.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>5.2.8.Final</version>
             </dependency>
             <dependency>
                 <groupId>io.dropwizard</groupId>
