@@ -188,6 +188,9 @@ public class CRUDClientIT extends BaseIT {
         }
         assertTrue(thrownException);
 
+        ContainersApi ownerApi = new ContainersApi();
+        Assert.assertNotNull("The owner can still get their own entry", ownerApi.getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile));
+
         // Publish tool
         ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
@@ -299,6 +302,8 @@ public class CRUDClientIT extends BaseIT {
             thrownException = true;
         }
         assertTrue(thrownException);
+
+        Assert.assertNotNull("The owner can still get their own entry", workflowsApi.primaryDescriptor(dockstoreWorkflow.getId(), first.get().getName(), CWL.toString()).getId());
 
         // Publish workflow
         PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
