@@ -78,6 +78,16 @@ jobs:
       - setup_test
       - setup_integration_test
       - save_test_results
+  cwltool-tests:
+    executor: machine_integration_test_exec
+    environment:
+      TESTING_PROFILE: require-cwltool-tests
+    steps:
+      - old_python
+      - setup_machine
+      - setup_test
+      - setup_integration_test
+      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -142,7 +152,7 @@ jobs:
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:9.6.19
+      - image: circleci/postgres:11.8
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
