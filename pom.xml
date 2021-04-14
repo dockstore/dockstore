@@ -48,6 +48,12 @@
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
         <skipSignatureCheck>true</skipSignatureCheck>
+        <!-- for sonarcloud -->
+        <sonar.projectKey>dockstore_dockstore</sonar.projectKey>
+        <sonar.organization>dockstore</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.moduleKey>${artifactId}</sonar.moduleKey>
+        <!-- end sonarcloud properties -->
     </properties>
 
     <organization>
@@ -691,6 +697,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.8.0.2131</version>
             </plugin>
         </plugins>
     </build>
