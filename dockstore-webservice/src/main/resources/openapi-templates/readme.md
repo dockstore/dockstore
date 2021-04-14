@@ -9,6 +9,9 @@ Changes include:
 * override tags to GA4GHV20
 
 Using https://github.com/swagger-api/swagger-codegen-generators/tree/v1.0.16/src/main/resources/handlebars/JavaJaxRS
+Updated selected templates to
+Using https://github.com/swagger-api/swagger-codegen-generators/tree/v1.0.25/src/main/resources/handlebars/JavaJaxRS
+(pending resolution of https://github.com/swagger-api/swagger-codegen/issues/8904 )
 
 See https://github.com/swagger-api/swagger-codegen/issues/9893
 
