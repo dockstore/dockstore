@@ -247,7 +247,7 @@ public final class ToolsImplCommon {
             ImageData imageData = new ImageData();
             imageData.setImageType(ImageType.DOCKER);
             if (image.getImageRegistry() == null) {
-                // avoid exception on null iimage registry
+                // avoid exception on null image registry
                 continue;
             }
             imageData.setRegistryHost(image.getImageRegistry().getDockerPath());
