@@ -126,4 +126,12 @@
             AND tag.id = version_output_fileformat.versionid;
         </sql>
     </changeSet>
+    <changeSet author="gluu (generated)" id="orcidTokenExpansion">
+        <addColumn tableName="token">
+            <column name="expirationtime" type="int8"/>
+        </addColumn>
+        <addColumn tableName="token">
+            <column name="scope" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
