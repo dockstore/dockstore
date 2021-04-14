@@ -133,5 +133,9 @@
         <addColumn tableName="token">
             <column name="scope" type="varchar(255 BYTE)"/>
         </addColumn>
+        <update tableName="token">
+            <column name="scope" value="/authenticate"/>
+            <where>tokensource = 'orcid.org'</where>
+        </update>
     </changeSet>
 </databaseChangeLog>
