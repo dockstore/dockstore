@@ -44,8 +44,28 @@ workflows:
       - build:
           <<: *common_filters
           context: sonarcloud
+      - unit_test:
+          <<: *common_filters
+          requires:
+            - build
+      - workflow-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+      - tool-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
       - integration-tests:
           <<: *common_filters
+          requires:
+            - build
+      - regression-integration-tests:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release.*$/
           requires:
             - build
 jobs:
@@ -98,6 +118,8 @@ jobs:
   build:
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.9
+        environment:
+          JAVA_TOOL_OPTIONS: -Xmx512m # Java can read cgroup. Sadly the cgroup in CircleCI is wrong. Have to manually set. Nothing to do with surefire plugin, it has its own JVM. The two of these must add up to a bit less than 4GB.
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
