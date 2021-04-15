@@ -70,7 +70,7 @@
         <addForeignKeyConstraint baseColumnNames="cloudinstance_id" baseTableName="cloudinstance_supportedlanguages" constraintName="fk_cloudinstance_supportedlanguages" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cloud_instance"/>
         <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="cloud_instance" constraintName="fk_end_user_cloud_instance" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
-    <changeSet author="ghogue (generated)" id="1618330873480-15">
+    <changeSet author="ghogue (generated)" id="multipleAuthorsTable">
         <createTable tableName="author">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="author_pkey"/>
@@ -83,18 +83,16 @@
                 <constraints nullable="false"/>
             </column>
             <column name="role" type="VARCHAR(255)"/>
-        </createTable>
-        <createTable tableName="version_author">
             <column name="versionid" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="version_author_pkey"/>
-            </column>
-            <column name="authorid" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="version_author_pkey"/>
+                <constraints nullable="false"/>
             </column>
         </createTable>
-        <addForeignKeyConstraint baseColumnNames="authorid" baseTableName="version_author" constraintName="fk_version_author" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="author" validate="true"/>
-        <createIndex indexName="index_version_author" tableName="version_author" unique="true">
-            <column name="authorid"/>
-        </createIndex>
+    </changeSet>
+    <changeSet author="ghogue" id="multipleAuthorsMigrate">
+        <sql>
+            INSERT INTO author (versionid,name,email)
+            SELECT id,author,email FROM version_metadata
+            WHERE author IS NOT NULL;
+        </sql>
     </changeSet>
 </databaseChangeLog>
