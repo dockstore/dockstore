@@ -23,6 +23,8 @@ import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -108,7 +110,8 @@ public class Token implements Comparable<Token> {
     // Null means don't know or not applicable.
     @JsonIgnore
     @Column
-    private String scope;
+    @Enumerated(EnumType.STRING)
+    private TokenScope scope;
 
     // Token expiration time in seconds since epoch. Null means don't know or never.
     @JsonIgnore
@@ -270,11 +273,11 @@ public class Token implements Comparable<Token> {
         this.id = id;
     }
 
-    public String getScope() {
+    public TokenScope getScope() {
         return scope;
     }
 
-    public void setScope(String scope) {
+    public void setScope(TokenScope scope) {
         this.scope = scope;
     }
 

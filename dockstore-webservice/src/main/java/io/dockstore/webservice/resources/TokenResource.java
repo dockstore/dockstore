@@ -61,6 +61,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.PrivacyPolicyVersion;
 import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
@@ -733,7 +734,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             token.setRefreshToken(refreshToken);
             token.setUserId(user.getId());
             token.setUsername(username);
-            token.setScope(scope);
+            TokenScope tokenScope = TokenScope.getEnumByString(scope);
+            if (tokenScope == null) {
+                LOG.error("Could not convert scope string to enum: " + scope);
+                throw new CustomWebApplicationException("Could not save ORCID token, contact Dockstore team", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+            token.setScope(tokenScope);
             token.setExpirationTime(expirationTime);
 
             checkIfAccountHasBeenLinked(username, TokenType.ORCID_ORG);
