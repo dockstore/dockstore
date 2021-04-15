@@ -398,6 +398,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
+        if (authors.isEmpty()) {
+            return null;
+        }
         return this.authors.stream().findFirst().get().getName();
     }
 
@@ -413,6 +416,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(position = 24)
     public String getEmail() {
+        if (authors.isEmpty()) {
+            return null;
+        }
         return this.authors.stream().findFirst().get().getEmail();
     }
 
