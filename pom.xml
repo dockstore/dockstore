@@ -375,7 +375,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
+                    <version>3.0.0-M3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -500,7 +500,12 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps />
+                                <requireUpperBoundDeps>
+                                    <excludes>
+                                        <!-- 3.10.3 forces us into identity columns, see https://github.com/liquibase/liquibase/pull/874#issuecomment-605033798 and https://github.com/liquibase/liquibase/pull/1010#issuecomment-734815278  -->
+                                        <exclude>org.liquibase:liquibase-core</exclude>
+                                    </excludes>
+                                </requireUpperBoundDeps>
                                 <requireMavenVersion>
                                     <version>3.5.4</version>
                                 </requireMavenVersion>
