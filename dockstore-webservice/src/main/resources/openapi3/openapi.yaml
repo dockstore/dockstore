@@ -7898,6 +7898,9 @@ components:
           format: int64
         name:
           type: string
+          description: "Implementation specific, can be a quay.io or docker hub tag\
+            \ name"
+          example: latest
         output_file_formats:
           type: array
           items:
@@ -7907,6 +7910,8 @@ components:
           $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
+          description: git commit/tag/branch
+          example: master
         referenceType:
           type: string
           enum:
@@ -7941,6 +7946,9 @@ components:
           type: string
         workingDirectory:
           type: string
+      required:
+      - name
+      - reference
     Token:
       type: object
       properties:
@@ -8386,6 +8394,9 @@ components:
           uniqueItems: true
         name:
           type: string
+          description: "Implementation specific, can be a quay.io or docker hub tag\
+            \ name"
+          example: latest
         output_file_formats:
           type: array
           items:
@@ -8395,6 +8406,8 @@ components:
           $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
+          description: git commit/tag/branch
+          example: master
         referenceType:
           type: string
           enum:
@@ -8424,6 +8437,9 @@ components:
           $ref: '#/components/schemas/VersionMetadata'
         workingDirectory:
           type: string
+      required:
+      - name
+      - reference
     VersionMetadata:
       type: object
       properties:
@@ -8655,6 +8671,9 @@ components:
           type: boolean
         name:
           type: string
+          description: "Implementation specific, can be a quay.io or docker hub tag\
+            \ name"
+          example: latest
         output_file_formats:
           type: array
           items:
@@ -8664,6 +8683,8 @@ components:
           $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
+          description: git commit/tag/branch
+          example: master
         referenceType:
           type: string
           enum:
@@ -8704,6 +8725,9 @@ components:
           type: string
         workingDirectory:
           type: string
+      required:
+      - name
+      - reference
     WorkflowVersionPathInfo:
       type: object
       properties:
