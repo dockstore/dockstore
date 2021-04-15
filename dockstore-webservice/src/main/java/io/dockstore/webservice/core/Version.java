@@ -99,10 +99,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1, example = "master")
+    @Schema(description = "git commit/tag/branch", required = true, example = "master")
     private String reference;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2, example = "latest")
+    @Schema(description = "Implementation specific, can be a quay.io or docker hub tag name", required = true, example = "latest")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
