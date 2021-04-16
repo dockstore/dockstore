@@ -1201,10 +1201,6 @@
                     <referencePassword>dockstore</referencePassword>
                     <url>jdbc:postgresql://localhost:5432/webservice_test</url>
                     <referenceUrl>jdbc:postgresql://localhost:5432/webservice_test_proposed</referenceUrl>
-                    <diffExcludeObjects>
-                        <!-- See https://ucsc-cgl.atlassian.net/browse/SEAB-2676  and https://github.com/dockstore/dockstore/pull/4167 for details  -->
-                        notification,cloudinstance_supportedlanguages
-                    </diffExcludeObjects>
                     <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
                     <logging>info</logging>
                     <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
