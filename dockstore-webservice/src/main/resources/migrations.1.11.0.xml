@@ -127,6 +127,40 @@
         </sql>
     </changeSet>
 
+    <changeSet author="dyuen (generated)" id="date_more_things">
+        <addColumn tableName="cloud_instance">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloudinstance_supportedlanguages">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="collection_entry_version">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="parsed_information">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloud_instance">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloudinstance_supportedlanguages">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="collection_entry_version">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="parsed_information">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+
+
     <!-- this pre 1.11 sequence is already not being used by the associated table -->
     <changeSet id="dropObseleteSequences" author="dyuen"  failOnError="false">
         <dropSequence sequenceName="collection_entry_version_id_seq"/>
