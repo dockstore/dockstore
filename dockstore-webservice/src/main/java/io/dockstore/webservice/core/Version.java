@@ -432,14 +432,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;  // remove this when author is removed from VersionMetadata
-        if (authors.size() == 0) {
-            authors.add(new Author(newAuthor));
-        }
+        this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
+        authors.clear();
+        authors.add(new Author(newAuthor));
     }
 
     public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;  // remove this when author is removed from VersionMetadata
+        this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
         if (authors.size() == 1) {
             Author author = authors.stream().findFirst().get();
             if (author.getEmail() == null) {
