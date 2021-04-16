@@ -46,8 +46,8 @@ POM as their parent.
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <dropwizard.version>2.0.20</dropwizard.version>
-        <dropwizard-annotations.version>4.1.18</dropwizard-annotations.version>
+        <dropwizard.version>2.0.21</dropwizard.version>
+        <dropwizard-annotations.version>4.1.19</dropwizard-annotations.version>
         <elasticsearch-version>7.9.3</elasticsearch-version>
         <swagger-annotations-version>1.6.2</swagger-annotations-version>
         <openapi-annotations-version>2.1.7</openapi-annotations-version>
@@ -66,7 +66,7 @@ POM as their parent.
         <httpcore.version>4.4.14</httpcore.version>
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
         <!-- ahead of dropwizard tested version due to https://github.com/eclipse/jetty.project/issues/6001 -->
-        <jetty-servlet.version>9.4.38.v20210224</jetty-servlet.version>
+        <jetty-servlet.version>9.4.39.v20210325</jetty-servlet.version>
         <netty.version>4.1.60.Final</netty.version>
         <scala.version>2.12.13</scala.version>
         <cromwell.version>60</cromwell.version>
@@ -110,6 +110,14 @@ POM as their parent.
               <groupId>org.apache.httpcomponents</groupId>
               <artifactId>httpcore-osgi</artifactId>
               <version>4.4.4</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
+            <!-- this is held back compared to dropwizard-bom since 3.10.3 forces us into identity columns, see https://github.com/liquibase/liquibase/pull/874#issuecomment-605033798 and https://github.com/liquibase/liquibase/pull/1010#issuecomment-734815278  -->
+            <dependency>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-core</artifactId>
+                <version>3.10.2</version>
             </dependency>
 
             <dependency>
@@ -533,7 +541,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.11</version>
+                <version>3.12.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -543,7 +551,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.1-jre</version>
+                <version>30.1.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
@@ -642,13 +650,13 @@ POM as their parent.
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.10.17</version>
+                <version>1.10.22</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.10.17</version>
+                <version>1.10.22</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
