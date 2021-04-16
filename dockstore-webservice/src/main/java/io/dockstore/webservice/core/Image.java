@@ -28,6 +28,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import io.dockstore.common.Registry;
@@ -43,8 +44,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 public class Image {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "image_id_seq")
+    @SequenceGenerator(name = "image_id_seq", sequenceName = "image_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the image in this webservice", position = 0)
+    @Column(columnDefinition = "bigint default nextval('image_id_seq')")
     private long id;
 
     @Column(columnDefinition = "varchar")

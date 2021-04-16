@@ -14,6 +14,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -45,17 +46,19 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 public class Event {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "event_id_seq")
+    @SequenceGenerator(name = "event_id_seq", sequenceName = "event_id_seq", allocationSize = 1)
+    @Column(columnDefinition = "bigint default nextval('event_id_seq')")
     @ApiModelProperty(value = "Implementation specific ID for the event in this web service", position = 0)
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "id")
+    @JoinColumn(name = "userId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "User that the event is acting on.", position = 1)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organizationId", referencedColumnName = "id")
+    @JoinColumn(name = "organizationId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Organization that the event is acting on.", position = 2)
     private Organization organization;
 
@@ -72,13 +75,13 @@ public class Event {
     private BioWorkflow workflow;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collectionId", referencedColumnName = "id")
+    @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
     @JsonIgnoreProperties({ "entries" })
     private Collection collection;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiatorUserId", referencedColumnName = "id")
+    @JoinColumn(name = "initiatorUserId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "User initiating the event.", position = 6)
     private User initiatorUser;
 

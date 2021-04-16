@@ -126,4 +126,14 @@
             AND tag.id = version_output_fileformat.versionid;
         </sql>
     </changeSet>
+
+    <!-- this pre 1.11 sequence is already not being used by the associated table -->
+    <changeSet id="dropObseleteSequences" author="dyuen"  failOnError="false">
+        <dropSequence sequenceName="collection_entry_version_id_seq"/>
+    </changeSet>
+
+    <!-- these 1.11 sequences are not used -->
+    <changeSet id="dropNewSequences" author="dyuen" failOnError="false">
+        <dropSequence sequenceName="cloud_instance_id_seq"/>
+    </changeSet>
 </databaseChangeLog>

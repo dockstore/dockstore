@@ -50,6 +50,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -87,8 +88,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", unique = true, nullable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
+    @SequenceGenerator(name = "enduser_id_seq", sequenceName = "enduser_id_seq", allocationSize = 1)
+    @Column(name = "id", unique = true, nullable = false, columnDefinition = "bigint default nextval('enduser_id_seq')")
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0, readOnly = true)
     private long id;
 
@@ -105,7 +107,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private boolean isBanned;
 
     @ElementCollection(targetClass = Profile.class)
-    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = {
+    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = {
             @UniqueConstraint(columnNames = { "id", "token_type" }),
             @UniqueConstraint(columnNames = { "username", "token_type" }) }, indexes = {
             @Index(name = "profile_by_username", columnList = "username"), @Index(name = "profile_by_email", columnList = "email") })
@@ -128,14 +130,14 @@ public class User implements Principal, Comparable<User>, Serializable {
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
     @OrderBy("id")
     @JsonIgnore
     private final SortedSet<Entry> entries;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
     @OrderBy("id")
     @JsonIgnore
@@ -174,7 +176,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private Set<OrganizationUser> organizations;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Organizations in Dockstore that this user starred", position = 14)
     @OrderBy("id")
     @JsonIgnore
