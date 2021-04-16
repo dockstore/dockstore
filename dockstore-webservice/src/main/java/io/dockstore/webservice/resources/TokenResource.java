@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,6 +61,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.PrivacyPolicyVersion;
 import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
@@ -689,6 +691,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String refreshToken;
         String username;
         String orcid;
+        String scope;
+        Long expirationTime;
 
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
@@ -701,7 +705,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         try {
             TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList(orcidScope))
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                    .setRequestInitializer(request -> request.getHeaders().setAccept(MediaType.APPLICATION_JSON)).execute();
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
 
@@ -709,6 +713,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // get them to store in the token and user tables
             username = tokenResponse.get("name").toString();
             orcid = tokenResponse.get("orcid").toString();
+            scope = tokenResponse.getScope();
+            Instant instant = Instant.now();
+            instant.plusSeconds(tokenResponse.getExpiresInSeconds());
+            expirationTime = instant.getEpochSecond();
 
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage(), e);
@@ -726,6 +734,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             token.setRefreshToken(refreshToken);
             token.setUserId(user.getId());
             token.setUsername(username);
+            TokenScope tokenScope = TokenScope.getEnumByString(scope);
+            if (tokenScope == null) {
+                LOG.error("Could not convert scope string to enum: " + scope);
+                throw new CustomWebApplicationException("Could not save ORCID token, contact Dockstore team", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+            token.setScope(tokenScope);
+            token.setExpirationTime(expirationTime);
 
             checkIfAccountHasBeenLinked(username, TokenType.ORCID_ORG);
             long create = tokenDAO.create(token);
