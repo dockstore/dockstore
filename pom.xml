@@ -52,7 +52,7 @@
         <sonar.projectKey>dockstore_dockstore</sonar.projectKey>
         <sonar.organization>dockstore</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.moduleKey>${artifactId}</sonar.moduleKey>
+        <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
         <!-- end sonarcloud properties -->
     </properties>
 
@@ -506,7 +506,7 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps/>
+                                <requireUpperBoundDeps />
                                 <requireMavenVersion>
                                     <version>3.5.4</version>
                                 </requireMavenVersion>

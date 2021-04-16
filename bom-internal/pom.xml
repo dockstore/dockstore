@@ -111,15 +111,6 @@ POM as their parent.
               <artifactId>httpcore-osgi</artifactId>
               <version>4.4.4</version>
             </dependency>
-
-            <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
-            <!-- this is held back compared to dropwizard-bom since 3.10.3 forces us into identity columns, see https://github.com/liquibase/liquibase/pull/874#issuecomment-605033798 and https://github.com/liquibase/liquibase/pull/1010#issuecomment-734815278  -->
-            <dependency>
-                <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-core</artifactId>
-                <version>3.10.2</version>
-            </dependency>
-
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
