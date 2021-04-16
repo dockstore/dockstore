@@ -43,6 +43,7 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
+          context: sonarcloud
       - unit_test:
           <<: *common_filters
           requires:
@@ -146,6 +147,9 @@ jobs:
           root: .
           paths:
             - .
+      - run:
+          name: SonarCloud scan
+          command: mvn verify sonar:sonar
   unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.9

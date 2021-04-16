@@ -2363,6 +2363,7 @@ paths:
         schema:
           type: integer
           format: int32
+          default: 1000
       responses:
         "200":
           content:
@@ -2547,13 +2548,13 @@ paths:
   /ga4gh/trs/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       description: "Returns the descriptor for the specified tool (examples include\
-        \ CWL, WDL, or Nextflow documents)."
+        \ CWL, WDL, Nextflow, or Galaxy documents)."
       operationId: toolsIdVersionsVersionIdTypeDescriptorGet
       parameters:
       - description: "The output type of the descriptor. Plain types return the bare\
           \ descriptor while the \"non-plain\" types return a descriptor wrapped with\
-          \ metadata. Allowable values include \"CWL\", \"WDL\", \"NFL\", \"PLAIN_CWL\"\
-          , \"PLAIN_WDL\", \"PLAIN_NFL\"."
+          \ metadata. Allowable values include \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"\
+          , \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"."
         in: path
         name: type
         required: true
@@ -2612,7 +2613,8 @@ paths:
           \ to the underlying implementation to determine which output type to return.\
           \ Plain types return the bare descriptor while the \"non-plain\" types return\
           \ a descriptor wrapped with metadata. Allowable values are \"CWL\", \"WDL\"\
-          , \"NFL\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\"."
+          , \"NFL\", \"GALAXY\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"\
+          ."
         in: path
         name: type
         required: true
@@ -2674,7 +2676,7 @@ paths:
       operationId: toolsIdVersionsVersionIdTypeFilesGet
       parameters:
       - description: "The output type of the descriptor. Examples of allowable values\
-          \ are \"CWL\", \"WDL\", and \"NFL\"."
+          \ are \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"."
         in: path
         name: type
         required: true
@@ -2729,9 +2731,10 @@ paths:
       operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
       - description: "The type of the underlying descriptor. Allowable values include\
-          \ \"CWL\", \"WDL\", \"NFL\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\"\
-          . For example, \"CWL\" would return an list of ToolTests objects while \"\
-          PLAIN_CWL\" would return a bare JSON list with the content of the tests."
+          \ \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"\
+          PLAIN_NFL\", \"PLAIN_GALAXY\". For example, \"CWL\" would return an list\
+          \ of ToolTests objects while \"PLAIN_CWL\" would return a bare JSON list\
+          \ with the content of the tests."
         in: path
         name: type
         required: true
@@ -6668,8 +6671,9 @@ components:
     Checksum:
       type: object
       description: The checksum value and its type
-      example: "[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,\
-        \ type=sha256}]"
+      example:
+      - checksum: 77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182
+        type: sha256
       properties:
         checksum:
           type: string
@@ -7309,8 +7313,9 @@ components:
           type: array
           description: "A production (immutable) tool version is required to have\
             \ a hashcode. Not required otherwise, but might be useful to detect changes. "
-          example: "[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,\
-            \ type=sha256}]"
+          example:
+          - checksum: 77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182
+            type: sha256
           items:
             $ref: '#/components/schemas/Checksum'
         content:
@@ -7366,8 +7371,9 @@ components:
             \  This exposes the hashcode for specific image versions to verify that\
             \ the container version pulled is actually the version that was indexed\
             \ by the registry."
-          example: "[{checksum=77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182,\
-            \ type=sha256}]"
+          example:
+          - checksum: 77af4d6b9913e693e8d0b4b294fa62ade6054e6b2f1ffb617ac955dd63fb0182
+            type: sha256
           items:
             $ref: '#/components/schemas/Checksum'
         image_name:
@@ -7816,8 +7822,7 @@ components:
           description: Name of this service. Should be human readable.
           example: My project
         organization:
-          type: object
-          description: Organization providing the service
+          $ref: '#/components/schemas/TRSServiceOrganization'
         type:
           $ref: '#/components/schemas/ServiceType'
         updatedAt:
@@ -7839,6 +7844,21 @@ components:
       - organization
       - type
       - version
+    TRSServiceOrganization:
+      type: object
+      description: Organization providing the service
+      properties:
+        name:
+          type: string
+          description: Name of the organization responsible for the service
+          example: My organization
+        url:
+          type: string
+          description: URL of the website of the organization (RFC 3986 format)
+          example: https://example.com
+      required:
+      - name
+      - url
     Tag:
       type: object
       properties:
@@ -7898,6 +7918,9 @@ components:
           format: int64
         name:
           type: string
+          description: "Implementation specific, can be a quay.io or docker hub tag\
+            \ name"
+          example: latest
         output_file_formats:
           type: array
           items:
@@ -7907,6 +7930,8 @@ components:
           $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
+          description: git commit/tag/branch
+          example: master
         referenceType:
           type: string
           enum:
@@ -7941,6 +7966,9 @@ components:
           type: string
         workingDirectory:
           type: string
+      required:
+      - name
+      - reference
     Token:
       type: object
       properties:
@@ -8189,12 +8217,15 @@ components:
           type: array
           description: An array of IDs for the applications that are stored inside
             this tool.
-          example: "[https://bio.tools/tool/mytum.de/SNAP2/1, https://bio.tools/bioexcel_seqqc]"
+          example:
+          - https://bio.tools/tool/mytum.de/SNAP2/1
+          - https://bio.tools/bioexcel_seqqc
           items:
             type: string
             description: An array of IDs for the applications that are stored inside
               this tool.
-            example: "[https://bio.tools/tool/mytum.de/SNAP2/1, https://bio.tools/bioexcel_seqqc]"
+            example: "[\"https://bio.tools/tool/mytum.de/SNAP2/1\",\"https://bio.tools/bioexcel_seqqc\"\
+              ]"
         is_production:
           type: boolean
           description: "This version of a tool is guaranteed to not change over time\
@@ -8386,6 +8417,9 @@ components:
           uniqueItems: true
         name:
           type: string
+          description: "Implementation specific, can be a quay.io or docker hub tag\
+            \ name"
+          example: latest
         output_file_formats:
           type: array
           items:
@@ -8395,6 +8429,8 @@ components:
           $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
+          description: git commit/tag/branch
+          example: master
         referenceType:
           type: string
           enum:
@@ -8424,6 +8460,9 @@ components:
           $ref: '#/components/schemas/VersionMetadata'
         workingDirectory:
           type: string
+      required:
+      - name
+      - reference
     VersionMetadata:
       type: object
       properties:
@@ -8655,6 +8694,9 @@ components:
           type: boolean
         name:
           type: string
+          description: "Implementation specific, can be a quay.io or docker hub tag\
+            \ name"
+          example: latest
         output_file_formats:
           type: array
           items:
@@ -8664,6 +8706,8 @@ components:
           $ref: '#/components/schemas/EntryObjectObject'
         reference:
           type: string
+          description: git commit/tag/branch
+          example: master
         referenceType:
           type: string
           enum:
@@ -8704,6 +8748,9 @@ components:
           type: string
         workingDirectory:
           type: string
+      required:
+      - name
+      - reference
     WorkflowVersionPathInfo:
       type: object
       properties:

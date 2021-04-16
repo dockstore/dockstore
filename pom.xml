@@ -48,6 +48,12 @@
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
         <skipSignatureCheck>true</skipSignatureCheck>
+        <!-- for sonarcloud -->
+        <sonar.projectKey>dockstore_dockstore</sonar.projectKey>
+        <sonar.organization>dockstore</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.moduleKey>${artifactId}</sonar.moduleKey>
+        <!-- end sonarcloud properties -->
     </properties>
 
     <organization>
@@ -395,13 +401,13 @@
                 <plugin>
                     <groupId>io.swagger</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>2.4.12</version>
+                    <version>2.4.19</version>
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/io.swagger.codegen.v3/swagger-codegen-maven-plugin -->
                 <plugin>
                     <groupId>io.swagger.codegen.v3</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>3.0.16</version>
+                    <version>3.0.25</version>
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
                 <plugin>
@@ -691,6 +697,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.8.0.2131</version>
             </plugin>
         </plugins>
     </build>
