@@ -61,6 +61,9 @@ public class Author {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    public Author() {
+    }
+
     public Author(String name) {
         this.name = name;
     }
