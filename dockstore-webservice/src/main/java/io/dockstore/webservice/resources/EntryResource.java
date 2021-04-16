@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
@@ -85,6 +84,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -215,24 +215,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             }
             checkUser(user.get(), entry);
         }
-    }
-
-    /**
-     * Get the ORCID put code from the response
-     *
-     * @param httpResponse
-     * @return
-     */
-    private static String getPutCodeFromLocation(HttpResponse httpResponse) {
-        Optional<String> location = httpResponse.headers().firstValue("Location");
-        URI uri;
-        try {
-            uri = new URI(location.get());
-        } catch (URISyntaxException e) {
-            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        String path = uri.getPath();
-        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     @POST

@@ -20,9 +20,11 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.orcid.jaxb.model.common.Relationship;
 import org.orcid.jaxb.model.common.WorkType;
 import org.orcid.jaxb.model.v3.release.common.CreatedDate;
@@ -118,6 +120,25 @@ public final class ORCIDHelper {
         HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).PUT(ofString(workString)).build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
+    }
+
+
+    /**
+     * Get the ORCID put code from the response
+     *
+     * @param httpResponse
+     * @return
+     */
+    public static String getPutCodeFromLocation(HttpResponse httpResponse) {
+        Optional<String> location = httpResponse.headers().firstValue("Location");
+        URI uri;
+        try {
+            uri = new URI(location.get());
+        } catch (URISyntaxException e) {
+            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        String path = uri.getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     private static String transformWork(Work work) throws JAXBException {
