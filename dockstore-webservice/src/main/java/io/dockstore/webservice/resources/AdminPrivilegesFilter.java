@@ -2,7 +2,6 @@ package io.dockstore.webservice.resources;
 
 import java.lang.reflect.Method;
 import java.security.Principal;
-import java.util.Arrays;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -47,7 +46,9 @@ public class AdminPrivilegesFilter implements ContainerRequestFilter {
         if (resourceMethod != null) { // JavaDoc says it can be null, hmm
             final RolesAllowed rolesAllowedAnnotation = resourceMethod.getAnnotation(RolesAllowed.class);
             if (rolesAllowedAnnotation != null) {
-                return Arrays.stream(rolesAllowedAnnotation.value()).anyMatch(role -> SimpleAuthorizer.ADMIN.equals(role));
+                final String[] value = rolesAllowedAnnotation.value();
+                // Ignore methods that work with either curator or admin
+                return value.length == 1 && SimpleAuthorizer.ADMIN.equals(value[0]);
             }
         }
         return false;
