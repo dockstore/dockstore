@@ -33,7 +33,7 @@ public class AdminPrivilegesFilter implements ContainerRequestFilter {
             final Principal principal = requestContext.getSecurityContext().getUserPrincipal();
             if (principal instanceof User) {
                 final User user = (User)principal;
-                if (user.getIsAdmin() && shouldLog()) {
+                if (user.getIsAdmin() && requestRequiresAdminRole()) {
                     final String logMessage = "Admin " + user.getUsername() + " making " + requestContext.getMethod()
                             + " privileged request at " + requestContext.getUriInfo().getPath();
                     LOG.info(logMessage);
@@ -42,7 +42,7 @@ public class AdminPrivilegesFilter implements ContainerRequestFilter {
         }
     }
 
-    private boolean shouldLog() {
+    private boolean requestRequiresAdminRole() {
         final Method resourceMethod = resourceInfo.getResourceMethod();
         if (resourceMethod != null) { // JavaDoc says it can be null, hmm
             final RolesAllowed rolesAllowedAnnotation = resourceMethod.getAnnotation(RolesAllowed.class);
