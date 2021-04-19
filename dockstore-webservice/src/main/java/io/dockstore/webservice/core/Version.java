@@ -400,10 +400,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
-        if (authors.isEmpty()) {
+        Optional<Author> author = this.authors.stream().findFirst();
+        if (author.isPresent()) {
+            return author.get().getName();
+        } else {
             return null;
         }
-        return this.authors.stream().findFirst().get().getName();
     }
 
     @ApiModelProperty(position = 22)
@@ -418,10 +420,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(position = 24)
     public String getEmail() {
-        if (authors.isEmpty()) {
+        Optional<Author> author = this.authors.stream().findFirst();
+        if (author.isPresent()) {
+            return author.get().getEmail();
+        } else {
             return null;
         }
-        return this.authors.stream().findFirst().get().getEmail();
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
@@ -444,9 +448,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void setEmail(String newEmail) {
         this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
         if (authors.size() == 1) {
-            Author author = authors.stream().findFirst().get();
-            if (author.getEmail() == null) {
-                author.setEmail(newEmail);
+            Optional<Author> author = authors.stream().findFirst();
+            if (author.isPresent() && author.get().getEmail() == null) {
+                author.get().setEmail(newEmail);
             }
         }
     }
