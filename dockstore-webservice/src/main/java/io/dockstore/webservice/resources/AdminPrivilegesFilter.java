@@ -2,6 +2,7 @@ package io.dockstore.webservice.resources;
 
 import java.lang.reflect.Method;
 import java.security.Principal;
+import java.text.MessageFormat;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -33,8 +34,8 @@ public class AdminPrivilegesFilter implements ContainerRequestFilter {
             if (principal instanceof User) {
                 final User user = (User)principal;
                 if (user.getIsAdmin() && requestRequiresAdminRole()) {
-                    final String logMessage = "Admin " + user.getUsername() + " making " + requestContext.getMethod()
-                            + " privileged request at " + requestContext.getUriInfo().getPath();
+                    final String logMessage = MessageFormat.format("Admin {0}, id {1}, making {2} privileged request at {3}",
+                            user.getUsername(), Long.toString(user.getId()), requestContext.getMethod(), requestContext.getUriInfo().getPath());
                     LOG.info(logMessage);
                 }
             }
