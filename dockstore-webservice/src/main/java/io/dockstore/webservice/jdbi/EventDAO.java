@@ -1,9 +1,17 @@
 package io.dockstore.webservice.jdbi;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.User;
@@ -68,13 +76,29 @@ public class EventDAO extends AbstractDAO<Event> {
 
     public List<Event> findAllByOrganizationIdsOrEntryIds(Set<Long> organizationIds, Set<Long> entryIds, Integer offset, int limit) {
         int newLimit = Math.min(MAX_LIMIT, limit);
-        if (organizationIds.isEmpty()) {
+
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Event> query = criteriaQuery();
+        Root<Event> event = query.from(Event.class);
+
+        if (organizationIds.isEmpty() && entryIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIdsOrEntryIds");
-        query.setParameterList("organizationIDs", organizationIds).setParameter("entryIDs", entryIds)
-                .setFirstResult(offset).setMaxResults(newLimit);
-        return list(query);
+        List<Predicate> list = new ArrayList<>();
+        if (!organizationIds.isEmpty()) {
+            list.add(event.get("organization").in(organizationIds));
+        }
+        if (!entryIds.isEmpty()) {
+            list.add(event.get("tool").in(entryIds));
+            list.add(event.get("workflow").in(entryIds));
+        }
+        query.where(cb.or(list.toArray(new Predicate[0])));
+        query.orderBy(cb.desc(event.get("id")));
+        query.select(event);
+
+        int primitiveOffset = MoreObjects.firstNonNull(offset, 0);
+        TypedQuery<Event> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(newLimit);
+        return typedQuery.getResultList();
     }
 
     public void delete(Event event) {
@@ -88,6 +112,15 @@ public class EventDAO extends AbstractDAO<Event> {
         Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
         query.setParameter("entryId", entryId);
         query.executeUpdate();
+        currentSession().flush();
+    }
+
+    public void deleteEventByOrganizationID(long organizationId) {
+        Query query = namedQuery("io.dockstore.webservice.core.Event.deleteByOrganizationId");
+        query.setParameter("organizationId", organizationId);
+        query.executeUpdate();
+        // Flush after executing the DELETE query. This would force Hibernate to synchronize the state of the
+        // current session with the database so the session can see that an event has been deleted
         currentSession().flush();
     }
 

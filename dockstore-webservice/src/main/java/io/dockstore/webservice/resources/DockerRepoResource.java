@@ -138,10 +138,12 @@ public class DockerRepoResource
     private final EventDAO eventDAO;
     private final WorkflowResource workflowResource;
     private final EntryResource entryResource;
+    private final SessionFactory sessionFactory;
 
     public DockerRepoResource(final HttpClient client, final SessionFactory sessionFactory, final DockstoreWebserviceConfiguration configuration,
         final WorkflowResource workflowResource, final EntryResource entryResource) {
 
+        this.sessionFactory = sessionFactory;
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.tagDAO = new TagDAO(sessionFactory);
@@ -161,37 +163,7 @@ public class DockerRepoResource
         this.toolDAO = new ToolDAO(sessionFactory);
     }
 
-    List<Tool> refreshToolsForUser(Long userId, String organization) {
-        refreshBitbucketToken(userId);
-
-        // Get user's quay and git tokens
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
-
-        // with Docker Hub support it is now possible that there is no quayToken
-        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
-
-        // Get a list of all image registries
-        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
-        final List<AbstractImageRegistry> allRegistries = factory.getAllRegistries();
-
-        // Get a list of all namespaces from all image registries
-        List<Tool> updatedTools = new ArrayList<>();
-        for (AbstractImageRegistry abstractImageRegistry : allRegistries) {
-            Registry registry = abstractImageRegistry.getRegistry();
-            LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
-
-            updatedTools.addAll(abstractImageRegistry
-                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
-                    gitlabToken, organization, eventDAO, dashboardPrefix));
-        }
-        return updatedTools;
-    }
-
-    List<Tool> refreshToolsForUser(Long userId, String organization, String repository) {
+    void refreshToolsForUser(Long userId, String organization, String repository) {
         refreshBitbucketToken(userId);
 
         // Get user's quay and git tokens
@@ -209,7 +181,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Missing required Quay.io token", HttpStatus.SC_BAD_REQUEST);
         }
         QuayImageRegistry registry = new QuayImageRegistry(quayToken);
-        return registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+        registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, githubToken, bitbucketToken,
             gitlabToken, organization, eventDAO, dashboardPrefix, repository);
     }
 
@@ -248,7 +220,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-        checkUser(user, tool);
+        checkUserOwnsEntry(user, tool);
         checkNotHosted(tool);
         // Update user data
         User dbUser = userDAO.findById(user.getId());
@@ -265,10 +237,11 @@ public class DockerRepoResource
 
         // Refresh checker workflow
         if (refreshedTool.getCheckerWorkflow() != null) {
-            workflowResource.refresh(user, refreshedTool.getCheckerWorkflow().getId());
+            workflowResource.refresh(user, refreshedTool.getCheckerWorkflow().getId(), true);
         }
         refreshedTool.getWorkflowVersions().forEach(Version::updateVerified);
         PublicStateManager.getInstance().handleIndexUpdate(refreshedTool, StateManagerMode.UPDATE);
+        EntryVersionHelper.removeSourceFilesFromEntry(tool, sessionFactory);
         return refreshedTool;
     }
 
@@ -296,8 +269,8 @@ public class DockerRepoResource
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+            .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
@@ -360,7 +333,7 @@ public class DockerRepoResource
         Tool foundTool = toolDAO.findById(containerId);
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkUser(user, foundTool);
+        checkUserOwnsEntry(user, foundTool);
 
         Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
@@ -427,6 +400,7 @@ public class DockerRepoResource
         }
 
         originalTool.setGitUrl(newTool.getGitUrl());
+        originalTool.setForumUrl(newTool.getForumUrl());
 
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());
@@ -450,7 +424,7 @@ public class DockerRepoResource
         //use helper to check the user and the entry
         checkEntry(foundTool);
         checkNotHosted(foundTool);
-        checkUser(user, foundTool);
+        checkUserOwnsEntry(user, foundTool);
 
         //update the tool path in all workflowVersions
         Set<Tag> tags = foundTool.getWorkflowVersions();
@@ -596,7 +570,31 @@ public class DockerRepoResource
             tool.setGitUrl(convertHttpsToSsh(tool.getGitUrl()));
         }
 
+        // Can't set tool license information here, far too many tests register a tool without a GitHub token
+        setToolLicenseInformation(user, tool);
+
         return toolDAO.findById(id);
+    }
+
+    /**
+     * Set the license information for a tool
+     * @param user  The user the tool belongs to
+     * @param tool  The tool to get license information for
+     */
+    private void setToolLicenseInformation(User user, Tool tool) {
+        // Get user's Git tokens
+        List<Token> tokens = tokenDAO.findByUserId(user.getId());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
+        if (sourceCodeRepo != null) {
+            sourceCodeRepo.checkSourceCodeValidity();
+            String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
+            sourceCodeRepo.setLicenseInformation(tool, gitRepositoryFromGitUrl);
+        }
     }
 
     /**
@@ -632,7 +630,7 @@ public class DockerRepoResource
     public Response deleteContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        checkUser(user, tool);
+        checkUserOwnsEntry(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
         deleteTool.setActualDefaultVersion(null);
@@ -661,7 +659,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        checkUser(user, tool);
+        checkUserOwnsEntry(user, tool);
 
         Workflow checker = tool.getCheckerWorkflow();
 
@@ -846,7 +844,7 @@ public class DockerRepoResource
     public SourceFile dockerfile(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user);
+        return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user, fileDAO);
     }
 
     // Add for new descriptor types
@@ -861,7 +859,7 @@ public class DockerRepoResource
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(containerId, tag, fileType, user);
+        return getSourceFile(containerId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -876,7 +874,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFileByPath(containerId, tag, fileType, path, user);
+        return getSourceFileByPath(containerId, tag, fileType, path, user, fileDAO);
     }
 
     @GET
@@ -890,7 +888,7 @@ public class DockerRepoResource
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getAllSecondaryFiles(containerId, tag, fileType, user);
+        return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -905,7 +903,7 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
         final FileType testParameterType = DescriptorLanguage.getTestParameterType(descriptorType).orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
-        return getAllSourceFiles(containerId, tag, testParameterType, user);
+        return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO);
     }
 
     /**
@@ -928,18 +926,6 @@ public class DockerRepoResource
             //                throw ex;
             //            }
         }
-    }
-
-    /*
-     * TODO: This endpoint has been moved to metadata, though it still exists here to deal with the case of users trying to interact with this endpoint.
-     */
-    @GET
-    @Timed
-    @Path("/dockerRegistryList")
-    @Operation(operationId = "getDockerRegistries", description = "Get the list of docker registries supported on Dockstore.")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
-    public List<Registry.RegistryBean> getDockerRegistries() {
-        return rc.getResource(MetadataResource.class).getDockerRegistries();
     }
 
     @PUT
@@ -1148,6 +1134,9 @@ public class DockerRepoResource
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
 
         Tool tool = toolDAO.findById(toolId);
+        if (tool == null) {
+            throw new CustomWebApplicationException("could not find tool", HttpStatus.SC_NOT_FOUND);
+        }
         if (tool.getIsPublished()) {
             checkEntry(tool);
         } else {
@@ -1167,7 +1156,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
-        String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
+        String fileName = EntryVersionHelper.generateZipFileName(tool.getToolPath(), tag.getName());
         java.nio.file.Path path = Paths.get(tag.getWorkingDirectory());
 
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))

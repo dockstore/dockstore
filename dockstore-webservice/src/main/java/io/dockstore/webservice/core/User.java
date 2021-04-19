@@ -65,6 +65,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -163,6 +164,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Time privacy policy was accepted", position = 16, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Date privacyPolicyVersionAcceptanceDate;
 
     @Column
@@ -203,6 +205,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Transient
     @JsonIgnore
     private String temporaryCredential;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user", orphanRemoval = true)
+    @JsonIgnore
+    private Set<CloudInstance> cloudInstances;
 
     /**
      * The user's ORCID id in the format xxxx-xxxx-xxxx-xxxx
@@ -291,7 +297,7 @@ public class User implements Principal, Comparable<User>, Serializable {
             return false;
         } else {
             Token githubToken = githubByUserId.get(0);
-            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
+            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
             sourceCodeRepo.checkSourceCodeValidity();
             sourceCodeRepo.syncUserMetadataFromGitHub(this);
             return true;
@@ -343,10 +349,6 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void addEntry(Entry entry) {
         entries.add(entry);
-    }
-
-    public boolean removeEntry(Entry entry) {
-        return entries.remove(entry);
     }
 
     public Set<Entry> getStarredEntries() {
@@ -491,12 +493,15 @@ public class User implements Principal, Comparable<User>, Serializable {
         this.privacyPolicyVersion = privacyPolicyVersion;
     }
 
+    // tosVersionAcceptanceDate is split into two properties in the resulting OpenAPI.
     @JsonProperty
     @ApiModelProperty(value = "Time TOS was accepted", position = 15, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     public Date getTOSAcceptanceDate() {
         return this.tosVersionAcceptanceDate;
     }
 
+    @Schema(type = "integer", format = "int64")
     public void setTOSVersionAcceptanceDate(Date date) {
         this.tosVersionAcceptanceDate = date;
     }
@@ -521,6 +526,14 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     public void setBanned(boolean banned) {
         isBanned = banned;
+    }
+
+    public void setCloudInstances(Set<CloudInstance> cloudInstances) {
+        this.cloudInstances = cloudInstances;
+    }
+
+    public Set<CloudInstance> getCloudInstances() {
+        return cloudInstances;
     }
 
     /**

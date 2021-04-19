@@ -89,6 +89,10 @@ public class VersionMetadata {
     )
     protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
 
+    @Column
+    @ApiModelProperty(value = "The presence of the put code indicates the version was exported to ORCID.")
+    protected String orcidPutCode;
+
     @Id
     @Column(name = "id")
     private long id;
@@ -107,6 +111,19 @@ public class VersionMetadata {
 
     public void setParsedInformationSet(List<ParsedInformation> parsedInformationSet) {
         this.parsedInformationSet.clear();
-        this.parsedInformationSet.addAll(parsedInformationSet);
+
+        // Deserializer can call this method while parsedInformationSet is null, which causes a Null Pointer Exception
+        // Adding a checker here to avoid a Null Pointer Exception caused by the deserializer
+        if (parsedInformationSet != null) {
+            this.parsedInformationSet.addAll(parsedInformationSet);
+        }
+    }
+
+    public String getOrcidPutCode() {
+        return orcidPutCode;
+    }
+
+    public void setOrcidPutCode(String orcidPutCode) {
+        this.orcidPutCode = orcidPutCode;
     }
 }

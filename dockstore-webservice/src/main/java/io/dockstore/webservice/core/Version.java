@@ -56,6 +56,7 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
@@ -75,10 +76,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
         @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
-                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata) FROM Version version "
+                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "
                         + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
                         + "version.parent.id = :entryId"
-        )
+        ),
+        @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -96,11 +98,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     protected long id;
 
     @Column
-    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1)
+    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1, example = "master")
+    @Schema(description = "git commit/tag/branch", required = true, example = "master")
     private String reference;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2, example = "latest")
+    @Schema(description = "Implementation specific, can be a quay.io or docker hub tag name", required = true, example = "latest")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -123,9 +127,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private ReferenceType referenceType = ReferenceType.UNSET;
 
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
-    // TODO: @JsonIgnore this field to catch more places in UI that use it.
-    // TODO: Change to FetchType.LAZY
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JsonIgnore
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
@@ -157,12 +160,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(updatable = false, nullable = false)
     @CreationTimestamp
     @ApiModelProperty(position = 10, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column(nullable = false)
     @UpdateTimestamp
     @JsonProperty("dbUpdateDate")
     @ApiModelProperty(position = 11, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -236,7 +241,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
-    void updateByUser(final Version version) {
+    void updateByUser(final Version<?> version) {
         this.getVersionMetadata().hidden = version.isHidden();
         this.setDoiStatus(version.getDoiStatus());
         this.setDoiURL(version.getDoiURL());
@@ -322,7 +327,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.valid = valid;
     }
 
-    public abstract Version createEmptyVersion();
+    public abstract Version<?> createEmptyVersion();
 
     @JsonProperty
     public String getName() {

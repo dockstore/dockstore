@@ -7,6 +7,7 @@ import java.util.Set;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -22,11 +23,13 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.StarRequest;
+import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -40,11 +43,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.EmailValidator;
@@ -79,11 +86,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
+    private final CollectionDAO collectionDAO;
 
     public OrganizationResource(SessionFactory sessionFactory) {
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
+        this.collectionDAO = new CollectionDAO(sessionFactory);
         this.sessionFactory = sessionFactory;
     }
 
@@ -94,7 +103,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Operation(operationId = "getApprovedOrganizations", summary = "List all available organizations.", description = "List all organizations that have been approved by a curator or admin, sorted by number of stars.")
     public List<Organization> getApprovedOrganizations() {
         List<Organization> organizations = organizationDAO.findApprovedSortedByStar();
-        organizations.stream().forEach(org -> Hibernate.initialize(org.getAliases()));
+        organizations.stream().forEach(org -> {
+            Hibernate.initialize(org.getAliases());
+            org.setCollectionsLength(org.getCollections().size());
+        });
         return organizations;
     }
 
@@ -162,7 +174,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Organization organization = organizationDAO.findById(id);
         throwExceptionForNullOrganization(organization);
         OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
-        if (organizationUser == null) {
+        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
             String msg = "Organization not found";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
@@ -242,6 +254,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Organization organization = getOrganizationByIdOptionalAuth(user, id);
         Hibernate.initialize(organization.getAliases());
+        organization.setCollectionsLength(organization.getCollections().size());
         return organization;
     }
 
@@ -277,8 +290,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Organization oldOrganization = organizationDAO.findById(organizationId);
 
         // Ensure that the user is a member of the organization
-        OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
+        boolean isUserAdminOrMaintainer = isUserAdminOrMaintainer(oldOrganization, user.getId());
+        if (!isUserAdminOrMaintainer) {
             String msg = "You do not have permissions to update the organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
@@ -409,6 +422,43 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
+    @DELETE
+    @Path("/{organizationId}")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "hidden", hidden = true)
+    @Operation(operationId = "deleteRejectedOrPendingOrganization", summary = "Delete pending or rejected organization", description = "Delete pending or rejected organization", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "NO CONTENT"),
+            @ApiResponse(responseCode = "400", description = "BAD REQUEST"),
+            @ApiResponse(responseCode = "403", description = "FORBIDDEN")
+    })
+    public void deleteRejectedOrPendingOrganization(
+            @Parameter(hidden = true, name = "user") @Auth User user,
+            @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
+        Organization organization = organizationDAO.findById(organizationId);
+        throwExceptionForNullOrganization(organization);
+        OrganizationUser orgUser = getUserOrgRole(organization, user.getId());
+
+        // If the user does not belong to the organization or if the user is not an admin of the organization
+        // and if the user is neither an admin nor curator, then throw an error
+        if ((orgUser == null || orgUser.getRole() != OrganizationUser.Role.ADMIN) && (!user.isCurator() && !user.getIsAdmin())) {
+            throw new CustomWebApplicationException("You do not have access to delete this organization", HttpStatus.SC_FORBIDDEN);
+        }
+
+        // If the organization to be deleted is pending or has been rejected, then delete the organization
+        if (organization.getStatus() == Organization.ApplicationState.PENDING || organization.getStatus() == Organization.ApplicationState.REJECTED) {
+            // To delete an org, you need to delete its associated events, entryversions, and collections (in this order) first.
+            eventDAO.deleteEventByOrganizationID(organizationId);
+            List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
+            collections.stream().forEach(collection -> collectionDAO.deleteEntryVersionByCollectionId(collection.getId()));
+            collectionDAO.deleteCollectionsByOrgId(organizationId);
+            organizationDAO.delete(organization);
+        } else { // else if the organization is not pending nor rejected, then throw an error
+            throw new CustomWebApplicationException("You can only delete organizations that are pending or have been rejected", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -444,6 +494,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @ApiOperation(value = "Create an organization.", notes = "Organization requires approval by an admin before being made public.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     @Operation(operationId = "createOrganization", summary = "Create an organization.", description = "Create an organization. Organization requires approval by an admin before being made public.", security = @SecurityRequirement(name = "bearer"))
@@ -459,12 +510,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
 
         // Validate email and link
-        if (organization.getEmail() != null) {
-            validateEmail(organization.getEmail());
-        }
-        if (organization.getLink() != null) {
-            validateLink(organization.getLink());
-        }
+        validateEmail(organization.getEmail());
+        validateLink(organization.getLink());
 
         // Save organization
         organization.setStatus(Organization.ApplicationState.PENDING); // should not be approved by default
@@ -473,7 +520,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         User foundUser = userDAO.findById(user.getId());
 
         // Create Role for user creating the organization
-        OrganizationUser organizationUser = new OrganizationUser(foundUser, organizationDAO.findById(id), OrganizationUser.Role.MAINTAINER);
+        OrganizationUser organizationUser = new OrganizationUser(foundUser, organizationDAO.findById(id), OrganizationUser.Role.ADMIN);
         organizationUser.setAccepted(true);
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organizationUser);
@@ -489,6 +536,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork
     @Path("{organizationId}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Update an organization.", notes = "Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     @Operation(operationId = "updateOrganization", summary = "Update an organization.", description = "Update an organization. Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", security = @SecurityRequirement(name = "bearer"))
     public Organization updateOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -504,12 +552,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
 
         Organization oldOrganization = organizationDAO.findById(id);
 
-        // Ensure that the user is a member of the organization
-        OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
-            String msg = "You do not have permissions to update the organization.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        // Ensure that the user is an admin or maintainer of the organization
+        if (!user.isCurator() && !user.getIsAdmin()) {
+            OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
+            if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
+                String msg = "You do not have permissions to update the organization.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+            }
         }
 
         // Check if new name is valid
@@ -529,17 +579,21 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
 
         // Validate email and link
-        if (organization.getEmail() != null) {
-            validateEmail(organization.getEmail());
-        }
-        if (organization.getLink() != null) {
-            validateLink(organization.getLink());
+        validateEmail(organization.getEmail());
+        validateLink(organization.getLink());
+
+        if (!oldOrganization.getName().equals(organization.getName()) || !oldOrganization.getDisplayName().equals(organization.getDisplayName())) {
+            if (user.getIsAdmin() || user.isCurator() || oldOrganization.getStatus() != Organization.ApplicationState.APPROVED) {
+                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved
+                // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
+                oldOrganization.setName(organization.getName());
+                oldOrganization.setDisplayName(organization.getDisplayName());
+            } else {
+                throw new CustomWebApplicationException("Only admin and curators are able to change an approved Organization's name or display name. Contact Dockstore to have it changed.", HttpStatus.SC_UNAUTHORIZED);
+            }
         }
 
-
-        // Update organization
-        oldOrganization.setName(organization.getName());
-        oldOrganization.setDisplayName(organization.getDisplayName());
+        // Update rest of organization
         oldOrganization.setDescription(organization.getDescription());
         oldOrganization.setTopic(organization.getTopic());
         oldOrganization.setEmail(organization.getEmail());
@@ -554,7 +608,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return organizationDAO.findById(id);
     }
 
+    /**
+     * Validate email string. null/empty is valid since it's optional.
+     * @param email The email to validate
+     */
     private void validateEmail(String email) {
+        if (StringUtils.isEmpty(email)) {
+            return;
+        }
         EmailValidator emailValidator = EmailValidator.getInstance();
         if (!emailValidator.isValid(email)) {
             String msg = "Email is invalid: " + email;
@@ -563,7 +624,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
+    /**
+     * Validate url string. null/empty is valid since it's optional.
+     * @param url The link to validate
+     */
     private void validateLink(String url) {
+        if (StringUtils.isEmpty(url)) {
+            return;
+        }
         String[] schemes = { "http", "https" };
         UrlValidator urlValidator = new UrlValidator(schemes);
         if (!urlValidator.isValid(url)) {
@@ -601,7 +669,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
     @Operation(operationId = "addUserToOrg", summary = "Add a user role to an organization.", description = "Add a user role to an organization.", security = @SecurityRequirement(name = "bearer"))
     public OrganizationUser addUserToOrg(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {"MAINTAINER", "MEMBER"}), required = true) @QueryParam("role") String role,
+        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, schema = @Schema(allowableValues = {"ADMIN", "MAINTAINER", "MEMBER"}), required = true) @QueryParam("role") String role,
         @ApiParam(value = "User ID of user to add to organization.", required = true) @Parameter(description = "User ID of user to add to organization.", name = "userId", in = ParameterIn.QUERY, required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") @Parameter(description = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -636,7 +704,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class)
     @Operation(operationId = "updateUserRole", summary = "Update a user role in an organization.", description = "Update a user role in an organization.", security = @SecurityRequirement(name = "bearer"))
     public OrganizationUser updateUserRole(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, required = true, schema = @Schema(allowableValues = {"MAINTAINER", "MEMBER"})) @QueryParam("role") String role,
+        @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @Parameter(description = "Role of user.", name = "role", in = ParameterIn.QUERY, required = true, schema = @Schema(allowableValues = {"ADMIN", "MAINTAINER", "MEMBER"})) @QueryParam("role") String role,
         @ApiParam(value = "User ID of user to update within organization.", required = true) @Parameter(description = "User ID of user to add to organization.", name = "userId", in = ParameterIn.QUERY, required = true) @QueryParam("userId") Long userId,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
 
@@ -809,6 +877,30 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
 
+    static boolean isUserAdminOrMaintainer(Organization organization, Long userId) {
+        if (organization == null) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        OrganizationUser organizationUser = getUserOrgRole(organization, userId);
+        if (organizationUser == null) {
+            return false;
+        }
+
+        if (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) {
+            return true;
+        }
+        return false;
+    }
+
+    static boolean isUserAdminOrMaintainer(Long organizationId, Long userId, OrganizationDAO organizationDAO) {
+        Organization organization = organizationDAO.findById(organizationId);
+        return isUserAdminOrMaintainer(organization, userId);
+    }
+
+
     /**
      * Common checks done by the user add/edit/delete endpoints
      *
@@ -843,8 +935,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Ensure that the calling user is a maintainer of the organization
-        checkUserOrgRole(organization, user.getId(), OrganizationUser.Role.MAINTAINER);
+        // Ensure that the calling user is an admin of the organization
+        checkUserOrgRole(organization, user.getId(), OrganizationUser.Role.ADMIN);
 
         return new ImmutablePair<>(organization, userToAdd);
     }
@@ -857,6 +949,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @ApiOperation(nickname = "addOrganizationAliases", value = "Add aliases linked to a listing in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Organization.class)
     @Operation(operationId = "addOrganizationAliases", summary = "Add aliases linked to a listing in Dockstore.", description = "Add aliases linked to a listing in Dockstore. Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created organization alias", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Organization.class)))
     public Organization addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization to modify.", required = true) @Parameter(description = "Organization to modify.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @Parameter(description = "Comma-delimited list of aliases.", name = "aliases", in = ParameterIn.QUERY, required = true) @QueryParam("aliases") String aliases) {

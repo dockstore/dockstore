@@ -35,6 +35,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,6 +47,7 @@ import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -113,6 +115,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
+    @Column
+    @Size(max = 256)
+    @ApiModelProperty(value = "This is a link to a forum or discussion board")
+    private String forumUrl;
+
     // DOCKSTORE-2428 - demo how to add new workflow language
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
@@ -126,12 +133,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
     private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
     @BatchSize(size = 25)
-    private final SortedSet<WorkflowVersion> workflowVersions;
+    private SortedSet<WorkflowVersion> workflowVersions;
 
     @JsonIgnore
     @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
@@ -183,6 +190,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setEmail(getEmail());
         targetWorkflow.setDescription(getDescription());
         targetWorkflow.setLastModified(getLastModifiedDate());
+        targetWorkflow.setForumUrl(getForumUrl());
         targetWorkflow.setOrganization(getOrganization());
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
@@ -227,7 +235,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Override
     public Set<WorkflowVersion> getWorkflowVersions() {
-        return workflowVersions;
+        return this.workflowVersions;
+    }
+
+    @Hidden
+    public void setWorkflowVersionsOverride(SortedSet<WorkflowVersion> newWorkflowVersions) {
+        this.workflowVersions = newWorkflowVersions;
     }
 
     /**
@@ -247,6 +260,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     //TODO: odd side effect, this means that if the descriptor language is set wrong, we will get or set the wrong the default paths
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
         getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
+    }
+
+    @JsonProperty
+    public String getForumUrl() {
+        return forumUrl;
+    }
+    public void setForumUrl(String forumUrl) {
+        this.forumUrl = forumUrl;
     }
 
     @JsonProperty

@@ -45,6 +45,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -90,12 +91,18 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
+    private final SessionFactory sessionFactory;
 
     public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
         super(sessionFactory, permissionsInterface, limitConfig);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
+        this.sessionFactory = sessionFactory;
+    }
+
+    public WorkflowDAO getDAO() {
+        return this.workflowDAO;
     }
 
     @Override
@@ -113,7 +120,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
-        return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
+        Workflow workflow = super.createHosted(user, registry, name, descriptorType, namespace, entryName);
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     @Override
@@ -133,7 +142,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     private void checkUserCanDoAction(User user, Entry entry, Role.Action action) {
         try {
-            checkUser(user, entry); // Checks if owner, which has all permissions.
+            checkUserOwnsEntry(user, entry); // Checks if owner, which has all permissions.
         } catch (CustomWebApplicationException ex) {
             if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, action)) {
                 throw ex;

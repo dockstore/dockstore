@@ -595,9 +595,36 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         }
     }
 
-    public class ElasticSearchConfig {
+    public static class ElasticSearchConfig {
         private String hostname;
         private int port;
+        private String protocol;
+        private String user;
+        private String password;
+
+        public String getProtocol() {
+            return protocol;
+        }
+
+        public void setProtocol(final String protocol) {
+            this.protocol = protocol;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(final String user) {
+            this.user = user;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(final String password) {
+            this.password = password;
+        }
 
         public String getHostname() {
             return hostname;
@@ -694,6 +721,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String documentationUrl;
 
         private String featuredContentUrl;
+
+        private String deployVersion;
+
+        private String composeSetupVersion;
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
@@ -910,6 +941,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setFeaturedContentUrl(String featuredContentUrl) {
             this.featuredContentUrl = featuredContentUrl;
+        }
+
+        public String getDeployVersion() {
+            return deployVersion;
+        }
+
+        public void setDeployVersion(final String deployVersion) {
+            this.deployVersion = deployVersion;
+        }
+
+        public String getComposeSetupVersion() {
+            return composeSetupVersion;
+        }
+
+        public void setComposeSetupVersion(final String composeSetupVersion) {
+            this.composeSetupVersion = composeSetupVersion;
         }
     }
 }

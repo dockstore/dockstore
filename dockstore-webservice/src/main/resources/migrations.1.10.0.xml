@@ -96,4 +96,60 @@
     <changeSet author="dyuen" id="constrain_filecontent">
         <addForeignKeyConstraint baseColumnNames="sha1" baseTableName="sourcefile" constraintName="filecontentsha1" deferrable="true" initiallyDeferred="true" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="filecontent"/>
     </changeSet>
+    <changeSet author="gluu (generated)" id="addLicenseInformation">
+        <addColumn tableName="service">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="nolwarre (generated)" id="notificationsCharLimit">
+        <modifyDataType columnName="message" newDataType="varchar(1024)" tableName="notification"/>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="addCollectionEntryVersion">
+        <createTable tableName="collection_entry_version">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="entry_version_pkey"/>
+            </column>
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version_id" type="BIGINT"/>
+            <column name="collection_id" type="int8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="collection_id" baseTableName="collection_entry_version" constraintName="fk_collection_entry_version" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+        <sql>INSERT into collection_entry_version(collection_id, entry_id) select collectionId, entryId from collection_entry</sql>
+        <dropForeignKeyConstraint baseTableName="collection_entry" constraintName="fk_collectionIdInCollectionEntry"/>
+        <sql dbms="postgresql">CREATE UNIQUE INDEX unique_collection_entry_version ON collection_entry_version USING btree (collection_id, entry_id, version_id) WHERE version_id IS NOT NULL;</sql>
+        <sql dbms="postgresql">CREATE UNIQUE INDEX unique_collection_entry ON collection_entry_version USING btree (collection_id, entry_id) WHERE version_id IS NULL;</sql>
+        <dropTable tableName="collection_entry"/>
+    </changeSet>
+    <changeSet id="fixSevenBridgesImageLinks" author="gfjhogue">
+        <sql dbms="postgresql">
+            UPDATE workflowversion
+            SET tooltablejson = REPLACE(tooltablejson, 'hub.docker.com/_/images.sbgenomics.com', 'images.sbgenomics.com')
+            WHERE tooltablejson LIKE '%hub.docker.com/\_/images.sbgenomics.com%';
+            UPDATE workflowversion
+            SET dagjson = REPLACE(dagjson, 'hub.docker.com/_/images.sbgenomics.com', 'images.sbgenomics.com')
+            WHERE dagjson LIKE '%hub.docker.com/\_/images.sbgenomics.com%';
+        </sql>
+    </changeSet>
+    <changeSet author="nzhao (generated)" id="workflowForumUrl">
+        <addColumn tableName="service">
+            <column name="forumurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="forumurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="nzhao (generated)" id="changeForumUrlType">
+        <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="service"/>
+        <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="workflow"/>
+    </changeSet>
 </databaseChangeLog>

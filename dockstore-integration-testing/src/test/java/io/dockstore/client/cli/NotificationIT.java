@@ -1,5 +1,6 @@
 package io.dockstore.client.cli;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -16,6 +17,7 @@ import org.junit.experimental.categories.Category;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @Category(ConfidentialTest.class)
 public class NotificationIT extends BaseIT {
@@ -40,6 +42,15 @@ public class NotificationIT extends BaseIT {
     private Notification anotherTestNotification() {
         Notification notification = new Notification();
         notification.setMessage(currentMsg);
+        notification.setExpiration(System.currentTimeMillis() + 100000L);  // a future timestamp
+        notification.setPriority(Notification.PriorityEnum.CRITICAL);
+        return notification;
+    }
+
+    private Notification longNotification(int length) throws IOException {
+        Notification notification = new Notification();
+        String message = "a".repeat(length);
+        notification.setMessage(message);
         notification.setExpiration(System.currentTimeMillis() + 100000L);  // a future timestamp
         notification.setPriority(Notification.PriorityEnum.CRITICAL);
         return notification;
@@ -130,5 +141,44 @@ public class NotificationIT extends BaseIT {
         String message = testingPostgres.runSelectStatement(String.format("select message from notification where id = '%s'", id), String.class);
         assertEquals(currentMsg, message);  // confirm that the database entry was updated
 
+    }
+
+    @Test
+    public void testLongNotification() throws IOException {
+
+        // create a notification that is on the edge
+        Notification notification = longNotification(1024);
+
+        // try to create notification that is the limit
+        Notification result = curationApiAdmin.createNotification(notification);
+        assertNotNull(result);
+
+        // make notification over character limit
+        notification = longNotification(1025);
+
+        // try to create notification with too long of a message
+        try {
+            curationApiAdmin.createNotification(notification);
+            fail("create should fail since message is too long");
+        } catch (ApiException e) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode()); // this should return a 400 code right now
+        }
+
+        // make another notification that will be updated
+        Notification updateNotification = curationApiAdmin.createNotification(testNotification());
+        long id = updateNotification.getId();
+        notification.setId(id);
+
+        // try to update notification with long notification
+        try {
+            curationApiAdmin.updateNotification(id, notification);
+            fail("update should fail since update notification is too long");
+        } catch (ApiException e) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), e.getCode());  // this should return a 400 error
+        }
+
+        // confirm that the database entry was not updated
+        String message = testingPostgres.runSelectStatement(String.format("select message from notification where id = '%s'", id), String.class);
+        assertEquals(updateNotification.getMessage(), message);
     }
 }

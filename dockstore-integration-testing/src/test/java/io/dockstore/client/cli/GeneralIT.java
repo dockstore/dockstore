@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.ws.rs.core.Response;
 
@@ -37,6 +39,10 @@ import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.helpers.GitHubHelper;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -51,6 +57,10 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
+import org.apache.http.HttpStatus;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
@@ -60,6 +70,10 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.kohsuke.github.AbuseLimitHandler;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.RateLimitHandler;
 
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
@@ -81,6 +95,10 @@ public class GeneralIT extends BaseIT {
 
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
 
+    private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
+
+    private static final String QUAY_TOOL_PATH = "quay.io/dockstoretestuser2/dockstore-tool-imports/test5";
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -90,56 +108,43 @@ public class GeneralIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
+    private FileDAO fileDAO;
+    private Session session;
+
+    @Before
+    public void setup() {
+        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
+
+        this.fileDAO = new FileDAO(sessionFactory);
+        this.session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+    }
+
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.addAdditionalToolsWithPrivate2(SUPPORT, false);
     }
 
-    /**
-     * This method will create and register a new container for testing
-     *
-     * @return DockstoreTool
-     * @throws ApiException
-     */
-    private DockstoreTool getContainer() {
-        DockstoreTool c = new DockstoreTool();
-        c.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        c.setName("testUpdatePath");
-        c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
-        c.setDefaultDockerfilePath("/Dockerfile");
-        c.setDefaultCwlPath("/dockstore.cwl");
-        c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
-        c.setIsPublished(false);
-        c.setNamespace("testPath");
-        c.setToolname("test5");
-        c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
-        Tag tag = new Tag();
-        tag.setName("1.0");
-        tag.setReference("master");
-        tag.setValid(true);
-        tag.setImageId("123456");
-        tag.setCwlPath(c.getDefaultCwlPath());
-        tag.setWdlPath(c.getDefaultWdlPath());
-        // construct source files
-        SourceFile fileCWL = new SourceFile();
-        fileCWL.setContent("cwlstuff");
-        fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        fileCWL.setPath("/dockstore.cwl");
-        fileCWL.setAbsolutePath("/dockstore.cwl");
-        List<SourceFile> list = new ArrayList<>();
-        list.add(fileCWL);
-        tag.setSourceFiles(list);
-        SourceFile fileDockerFile = new SourceFile();
-        fileDockerFile.setContent("dockerstuff");
-        fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
-        fileDockerFile.setPath("/Dockerfile");
-        fileDockerFile.setAbsolutePath("/Dockerfile");
-        tag.getSourceFiles().add(fileDockerFile);
-        List<Tag> tags = new ArrayList<>();
-        tags.add(tag);
-        c.setWorkflowVersions(tags);
-        return c;
+    @Test
+    public void testGitHubLicense() throws IOException {
+        String githubToken = testingPostgres
+                .runSelectStatement("select content from token where username='DockstoreTestUser2' and tokensource='github.com'",
+                        String.class);
+        GitHub gitHub = new GitHubBuilder().withOAuthToken(githubToken).withRateLimitHandler(RateLimitHandler.FAIL).withAbuseLimitHandler(
+                AbuseLimitHandler.FAIL).build();
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/md5sum-checker");
+        Assert.assertEquals("Apache License 2.0", licenseInformation.getLicenseName());
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/galaxy-workflows");
+        Assert.assertEquals("MIT License", licenseInformation.getLicenseName());
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstoretestuser2/cwl-gene-prioritization");
+        Assert.assertEquals("Other", licenseInformation.getLicenseName());
+
+        licenseInformation = GitHubHelper.getLicenseInformation(gitHub, "dockstore-testing/silly-example");
+        Assert.assertNull(licenseInformation.getLicenseName());
     }
 
     /**
@@ -176,7 +181,7 @@ public class GeneralIT extends BaseIT {
     public void testListAvailableContainers() {
 
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", long.class);
-        assertEquals("there should be 4 entries, there are " + count, 4, count);
+        assertEquals("unpublished entries should match", 6, count);
     }
 
     /**
@@ -395,7 +400,7 @@ public class GeneralIT extends BaseIT {
         List<Tag> tags = tool.getWorkflowVersions();
         verifySourcefileChecksumsSaved(tags);
 
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         // Dockerfile
         List<FileWrapper> fileWrappers = ga4Ghv20Api.toolsIdVersionsVersionIdContainerfileGet("quay.io/dockstoretestuser2/quayandgithub/alternate", "master");
@@ -410,8 +415,9 @@ public class GeneralIT extends BaseIT {
     public void verifySourcefileChecksumsSaved(final List<Tag> tags) {
         assertTrue(tags.size() > 0);
         tags.stream().forEach(tag -> {
-            assertTrue(tag.getSourceFiles().size() > 0);
-            tag.getSourceFiles().stream().forEach(sourceFile -> {
+            List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
+            assertTrue(sourceFiles.size() > 0);
+            sourceFiles.stream().forEach(sourceFile -> {
                 assertTrue(sourceFile.getChecksums().size() > 0);
                 sourceFile.getChecksums().stream().forEach(checksum -> {
                     assertFalse(checksum.getChecksum().isEmpty());
@@ -432,28 +438,118 @@ public class GeneralIT extends BaseIT {
         Workflow workflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
 
-        workflow = workflowApi.refresh(workflow.getId());
-        SourceFile sourceFile = workflow.getWorkflowVersions().get(0).getSourceFiles().get(0);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-        workflowApi.publish(workflow.getId(), publishRequest);
+        workflow = workflowApi.refresh(workflow.getId(), false);
+        long workflowVersionId = workflow.getWorkflowVersions().stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get().getId();
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersionId);
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
-        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata, platformversion) VALUES (" + sourceFiles.get(0).getId() + ", true, 'Potato CLI', 'Idaho', '1.0')");
         versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
         ContainersApi toolApi = new ContainersApi(webClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
-        sourceFile = tool.getWorkflowVersions().get(0).getSourceFiles().get(0);
-        toolApi.publish(tool.getId(), publishRequest);
+        sourceFiles = fileDAO.findSourceFilesByVersion(tool.getWorkflowVersions().get(0).getId());
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
-        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFile.getId() + ", true, 'Potato CLI', 'Idaho')");
+        testingPostgres.runUpdateStatement("INSERT INTO sourcefile_verified(id, verified, source, metadata) VALUES (" + sourceFiles.get(0).getId() + ", true, 'Potato CLI', 'Idaho')");
         versionsVerified = entriesApi.getVerifiedPlatforms(tool.getId());
         Assert.assertEquals(1, versionsVerified.size());
 
+        // check that verified platforms can't be viewed by another user if entry isn't published
+        io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi user1EntriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
+        try {
+            versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
+            fail("Should not be able to verified platforms if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("This entry is not published.", ex.getMessage());
+        }
+
+        // verified platforms can be viewed by others once published
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        workflowApi.publish(workflow.getId(), publishRequest);
+        versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
+        Assert.assertEquals(1, versionsVerified.size());
+    }
+
+    @Test
+    public void testGettingVersionsFileTypes() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final HostedApi hostedApi = new HostedApi(webClient);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
+        io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
+
+        Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, DescriptorLanguage.WDL.toString(), null, null);
+        SourceFile sourceFile = new SourceFile();
+        sourceFile.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
+        sourceFile.setContent("workflow potato {\n}");
+        sourceFile.setPath("/Dockstore.wdl");
+        sourceFile.setAbsolutePath("/Dockstore.wdl");
+
+        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
+        List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(1, fileTypes.size());
+        assertEquals(SourceFile.TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
+
+        SourceFile testFile = new SourceFile();
+        testFile.setType(SourceFile.TypeEnum.WDL_TEST_JSON);
+        testFile.setContent("{}");
+        testFile.setPath("/test.wdl.json");
+        testFile.setAbsolutePath("/test.wdl.json");
+
+        workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile, testFile));
+        workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
+        fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(2, fileTypes.size());
+        assertFalse(fileTypes.get(0) == fileTypes.get(1));
+
+        DockstoreTool tool = hostedApi.createHostedTool("hostedTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), DescriptorLanguage.CWL.toString(), "namespace", null);
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        SourceFile cwl = new SourceFile();
+        cwl.setContent("class: CommandLineTool\ncwlVersion: v1.0");
+        cwl.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        cwl.setPath("/Dockstore.cwl");
+        cwl.setAbsolutePath("/Dockstore.cwl");
+        SourceFile testcwl = new SourceFile();
+        testcwl.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        testcwl.setContent("{}");
+        testcwl.setPath("/test.cwl.json");
+        testcwl.setAbsolutePath("/test.cwl.json");
+        tool = hostedApi.editHostedTool(tool.getId(), Lists.newArrayList(sourceFile, testFile, cwl, testcwl, dockerfile));
+
+        fileTypes = entriesApi.getVersionsFileTypes(tool.getId(), tool.getWorkflowVersions().get(0).getId());
+        assertEquals(5, fileTypes.size());
+        // ensure no duplicates
+        SortedSet set = new TreeSet(fileTypes);
+        assertEquals(set.size(), fileTypes.size());
+
+        // check that file types can't be viewed by another user if entry isn't published
+        io.dockstore.openapi.client.ApiClient user1Client = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi user1entriesApi = new io.dockstore.openapi.client.api.EntriesApi(user1Client);
+        try {
+            fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+            fail("Should not be able to grab a versions file types if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("This entry is not published.", ex.getMessage());
+        }
+
+        // file types can be viewed by others once published
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        workflowApi.publish(workflow.getId(), publishRequest);
+        fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
+        assertEquals(2, fileTypes.size());
+        assertFalse(fileTypes.get(0) == fileTypes.get(1));
     }
 
     // Tests 1.10.0 migration where id=adddescriptortypecolumn
@@ -604,7 +700,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 1 hidden tag", 1, count);
 
         tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst();
@@ -619,7 +715,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from tag t, version_metadata vm where vm.hidden = 't' and t.id = vm.id", long.class);
+            .runSelectStatement("select count(*) from tag t, version_metadata vm where t.id = " + updatedTag.getId() + " and vm.hidden = 't' and t.id = vm.id", long.class);
         assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
@@ -839,9 +935,7 @@ public class GeneralIT extends BaseIT {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
-        //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
         //change the default cwl path and refresh
@@ -862,29 +956,22 @@ public class GeneralIT extends BaseIT {
     @Test
     public void testImageIDUpdateDuringRefresh() throws ApiException {
         ContainersApi containersApi = setupWebService();
+        DockstoreTool toolTest = containersApi.getContainerByToolPath(QUAY_TOOL_PATH, null);
 
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        c.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
-        c.setNamespace("dockstoretestuser2");
-        c.setName(DOCKSTORE_TOOL_IMPORTS);
-        c.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
-        c = containersApi.registerManual(c);
-
-        assertTrue("should see one (or more) tags: " + c.getWorkflowVersions().size(), c.getWorkflowVersions().size() >= 1);
+        assertTrue("should see one (or more) tags: " + toolTest.getWorkflowVersions().size(), toolTest.getWorkflowVersions().size() >= 1);
 
         UsersApi usersApi = new UsersApi(containersApi.getApiClient());
         final Long userid = usersApi.getUser().getId();
         usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
 
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
-        int size = containersApi.getContainer(c.getId(), null).getWorkflowVersions().size();
-        long size2 = containersApi.getContainer(c.getId(), null).getWorkflowVersions().stream()
+        int size = containersApi.getContainer(toolTest.getId(), null).getWorkflowVersions().size();
+        long size2 = containersApi.getContainer(toolTest.getId(), null).getWorkflowVersions().stream()
             .filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size == size2 && size >= 1);
         // individual refresh should update image ids
-        containersApi.refresh(c.getId());
-        DockstoreTool container = containersApi.getContainer(c.getId(), null);
+        containersApi.refresh(toolTest.getId());
+        DockstoreTool container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -892,7 +979,7 @@ public class GeneralIT extends BaseIT {
         // so should overall refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
-        container = containersApi.getContainer(c.getId(), null);
+        container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -900,7 +987,7 @@ public class GeneralIT extends BaseIT {
         // so should organizational refresh
         testingPostgres.runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, container.getNamespace(), DOCKSTORE_TOOL_IMPORTS);
-        container = containersApi.getContainer(c.getId(), null);
+        container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
         size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -912,12 +999,7 @@ public class GeneralIT extends BaseIT {
     @Test
     public void testGrabbingImagesFromQuay() {
         ContainersApi containersApi = setupWebService();
-        DockstoreTool tool = getContainer();
-        tool.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
-        tool.setNamespace("dockstoretestuser2");
-        tool.setName(DOCKSTORE_TOOL_IMPORTS);
-        tool.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
-        tool = containersApi.registerManual(tool);
+        DockstoreTool tool = containersApi.getContainerByToolPath(QUAY_TOOL_PATH, null);
 
         assertEquals(0, containersApi.getContainer(tool.getId(), null).getWorkflowVersions().get(0).getImages().size());
 
@@ -980,7 +1062,7 @@ public class GeneralIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         tool = toolApi.refresh(tool.getId());
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
 
@@ -1057,9 +1139,9 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
 
         // Create tool with mismatching tag name and tag reference
-        DockstoreTool tool = getContainer();
+        DockstoreTool tool = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         tool.setDefaultVersion("1.0");
-        DockstoreTool toolTest = toolsApi.registerManual(tool);
+        DockstoreTool toolTest = toolsApi.updateContainer(tool.getId(), tool);
         toolsApi.refresh(toolTest.getId());
 
         DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId(), null);
@@ -1077,8 +1159,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
 
         //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
         //change the default wdl path and refresh
@@ -1097,18 +1178,19 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
 
-        //register tool
-        DockstoreTool c = getContainer();
+        // change default paths
+        DockstoreTool c = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         c.setDefaultCwlPath("foo.cwl");
         c.setDefaultWdlPath("foo.wdl");
         c.setDefaultDockerfilePath("foo");
+        c = toolsApi.updateContainer(c.getId(), c);
         c.getWorkflowVersions().forEach(tag -> {
             tag.setCwlPath("foo.cwl");
             tag.setWdlPath("foo.wdl");
             tag.setDockerfilePath("foo");
         });
-        DockstoreTool toolTest = toolsApi.registerManual(c);
-        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        c = toolsApi.updateTagContainerPath(c.getId(), c);
+        DockstoreTool refresh = toolsApi.refresh(c.getId());
         assertFalse(refresh.getWorkflowVersions().isEmpty());
         Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
         master.setFrozen(true);
@@ -1129,10 +1211,8 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         ContainertagsApi tagsApi = new ContainertagsApi(toolsApi.getApiClient());
 
-        //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
-        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        DockstoreTool c = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
+        DockstoreTool refresh = toolsApi.refresh(c.getId());
 
         assertFalse(refresh.getWorkflowVersions().isEmpty());
         Tag master = refresh.getWorkflowVersions().stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
@@ -1161,8 +1241,9 @@ public class GeneralIT extends BaseIT {
 
         // try modifying sourcefiles
         // cannot modify sourcefiles for a frozen version
-        assertFalse(master.getSourceFiles().isEmpty());
-        master.getSourceFiles().forEach(s -> {
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(master.getId());
+        assertFalse(sourceFiles.isEmpty());
+        sourceFiles.forEach(s -> {
             assertTrue(s.isFrozen());
             testingPostgres.runUpdateStatement("update sourcefile set content = 'foo' where id = " + s.getId());
             final String content = testingPostgres
@@ -1171,14 +1252,14 @@ public class GeneralIT extends BaseIT {
         });
 
         // try deleting a row join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("delete from version_sourcefile vs where vs.sourcefileid = " + s.getId());
             assertEquals(0, affected);
         });
 
         // try updating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             final int affected = testingPostgres
                 .runUpdateStatement("update version_sourcefile set sourcefileid=123456 where sourcefileid = " + s.getId());
             assertEquals(0, affected);
@@ -1186,7 +1267,7 @@ public class GeneralIT extends BaseIT {
 
         final Long versionId = master.getId();
         // try creating a row in the join table
-        master.getSourceFiles().forEach(s -> {
+        sourceFiles.forEach(s -> {
             try {
                 testingPostgres.runUpdateStatement(
                     "insert into version_sourcefile (versionid, sourcefileid) values (" + versionId + ", " + 1234567890 + ")");
@@ -1222,9 +1303,7 @@ public class GeneralIT extends BaseIT {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
-        //register tool
-        DockstoreTool c = getContainer();
-        DockstoreTool toolTest = toolsApi.registerManual(c);
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
         //change the default dockerfile and refresh
@@ -1235,6 +1314,30 @@ public class GeneralIT extends BaseIT {
         //check if the tag's dockerfile path have the same dockerfile path or not in the database
         final String path = getPathfromDB("dockerfilepath");
         assertEquals("the cwl path should be changed to /test1/Dockerfile", "/test1/Dockerfile", path);
+    }
+
+    /**
+     * Test to update the tool's forum and it should change the in the database
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void testUpdateToolForumUrl() throws ApiException {
+        final String forumUrl = "hello.com";
+        //setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
+        toolsApi.refresh(toolTest.getId());
+
+        //change the forumurl
+        toolTest.setForumUrl(forumUrl);
+        toolsApi.updateContainer(toolTest.getId(), toolTest);
+        toolsApi.refresh(toolTest.getId());
+
+        //check the tool's forumurl is updated in the database
+        final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
+        assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
     }
 
     /**
@@ -1267,7 +1370,12 @@ public class GeneralIT extends BaseIT {
         ContainersApi toolsApi = setupWebService();
         DockstoreTool tool = getQuayContainer(gitUrl);
         DockstoreTool toolTest = toolsApi.registerManual(tool);
-        toolsApi.refresh(toolTest.getId());
+        Assert.assertEquals("Should be able to get license after manual register", "Apache License 2.0", toolTest.getLicenseInformation().getLicenseName());
+
+        // Clear license name to mimic old entry that does not have a license associated with it
+        testingPostgres.runUpdateStatement("update tool set licensename=null");
+        DockstoreTool refresh = toolsApi.refresh(toolTest.getId());
+        Assert.assertEquals("Should be able to get license after refresh", "Apache License 2.0", refresh.getLicenseInformation().getLicenseName());
 
         final long count = testingPostgres.runSelectStatement(
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '"
@@ -1336,7 +1444,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Add tool
-        DockstoreTool tool = containersApi.registerManual(getContainer());
+        DockstoreTool tool = containersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         DockstoreTool refresh = containersApi.refresh(tool.getId());
 
         // Add alias
@@ -1364,7 +1472,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // Publish tool
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(refresh.getId(), publishRequest);
 
         // Get published tool by alias as owner
@@ -1382,6 +1490,23 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
+     * This tests a not found zip file
+     */
+    @Test
+    public void sillyContainerZipFile() throws IOException {
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+        boolean success = false;
+        try {
+            anonContainersApi.getToolZip(100000000L, 1000000L);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_NOT_FOUND);
+            success = true;
+        }
+        assertTrue("should have got 404", success);
+    }
+
+    /**
      * This tests that zip file can be downloaded or not based on published state and auth.
      */
     @Test
@@ -1396,7 +1521,7 @@ public class GeneralIT extends BaseIT {
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool
-        DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
+        DockstoreTool tool = ownerContainersApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
         Long toolId = refresh.getId();
         Tag tag = refresh.getWorkflowVersions().get(0);
@@ -1425,7 +1550,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // Publish
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         ownerContainersApi.publish(toolId, publishRequest);
 
         // Try downloading published

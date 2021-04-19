@@ -20,17 +20,25 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.Container;
+import javax.ws.rs.core.GenericType;
+
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
+import com.github.dockerjava.transport.DockerHttpClient;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
+import io.swagger.client.model.PublishRequest;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -89,7 +97,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
         application
             .run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,"
-                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0");
+                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0");
     }
 
     /**
@@ -106,16 +114,28 @@ public final class CommonTestUtilities {
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
         String dropwizardConfigurationFile) throws Exception {
         LOG.info("Dropping and Recreating the database with non-confidential test data");
-        Application<DockstoreWebserviceConfiguration> application;
-        if (isNewApplication) {
-            application = support.newApplication();
-        } else {
-            application = support.getApplication();
-        }
-        application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
+                isNewApplication);
 
         List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0");
+            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+        runMigration(migrationList, application, dropwizardConfigurationFile);
+    }
+
+    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
+    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
+            throws Exception {
+        dropAndCreateWithTestDataAndAdditionalTools(support, isNewApplication, CONFIDENTIAL_CONFIG_PATH);
+    }
+
+    public static void dropAndCreateWithTestDataAndAdditionalTools(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication,
+            String dropwizardConfigurationFile) throws Exception {
+        LOG.info("Dropping and Recreating the database with non-confidential test data");
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, dropwizardConfigurationFile,
+                isNewApplication);
+
+        List<String> migrationList = Arrays
+                .asList("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
         runMigration(migrationList, application, dropwizardConfigurationFile);
     }
 
@@ -185,7 +205,7 @@ public final class CommonTestUtilities {
 
         List<String> migrationList = Arrays
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0");
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -209,6 +229,7 @@ public final class CommonTestUtilities {
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
         throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
+
         cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
         // getTestingPostgres(SUPPORT).runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
@@ -223,6 +244,36 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
         boolean isNewApplication) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
+
+        List<String> migrationList = Arrays
+            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
+
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+        runMigration(migrationList, application, configPath);
+    }
+
+    // Adds 3 tools to the database. 2 tools are unpublished with 1 version each. 1 tool is published and has two versions (1 hidden).
+    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication)
+            throws Exception {
+        LOG.info("Dropping and Recreating the database with confidential 2 test data and additonal tools");
+        addAdditionalToolsWithPrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
+    }
+
+    public static void addAdditionalToolsWithPrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+            boolean isNewApplication) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = getApplicationAndDropDB(support, configPath, isNewApplication);
+
+        List<String> migrationList = Arrays
+                .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "add_test_tools", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
+
+                        "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+        runMigration(migrationList, application, configPath);
+    }
+
+    public static Application<DockstoreWebserviceConfiguration> getApplicationAndDropDB(
+            final DropwizardTestSupport<DockstoreWebserviceConfiguration> support, final String configPath, final boolean isNewApplication)
+            throws Exception {
         Application<DockstoreWebserviceConfiguration> application;
         if (isNewApplication) {
             application = support.newApplication();
@@ -230,11 +281,7 @@ public final class CommonTestUtilities {
             application = support.getApplication();
         }
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-
-        List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0");
-        runMigration(migrationList, application, configPath);
+        return application;
     }
 
     /**
@@ -250,7 +297,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         application
             .run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0,1.11.0");
 
     }
 
@@ -267,7 +314,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         List<String> migrationList = Arrays
                 .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0",
-                        "1.8.0", "1.9.0", "1.10.0");
+                        "1.8.0", "1.9.0", "1.10.0", "1.11.0");
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 
@@ -310,20 +357,44 @@ public final class CommonTestUtilities {
     }
 
     public static void restartElasticsearch() throws Exception {
-        final DockerClient docker = DefaultDockerClient.fromEnv().build();
-        List<Container> containers = docker.listContainers();
-        Optional<Container> elasticsearch = containers.stream().filter(container -> container.image().contains("elasticsearch"))
-                .findFirst();
-        if (elasticsearch.isPresent()) {
-            Container container = elasticsearch.get();
-            try {
-                docker.restartContainer(container.id());
-                // Wait 15 seconds for elasticsearch to become ready
-                // TODO: Replace with better wait
-                Thread.sleep(15000);
-            } catch (Exception e) {
-                System.err.println("Problems restarting Docker container");
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+
+        try (DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder().dockerHost(config.getDockerHost())
+                .sslConfig(config.getSSLConfig()).build(); DockerClient instance = DockerClientImpl.getInstance(config, httpClient)) {
+            List<Container> exec = instance.listContainersCmd().exec();
+            Optional<Container> elasticsearch = exec.stream().filter(container -> container.getImage().contains("elasticsearch"))
+                    .findFirst();
+            if (elasticsearch.isPresent()) {
+                Container container = elasticsearch.get();
+                try {
+                    instance.restartContainerCmd(container.getId());
+                    // Wait 25 seconds for elasticsearch to become ready
+                    // TODO: Replace with better wait
+                    Thread.sleep(25000);
+                } catch (Exception e) {
+                    System.err.println("Problems restarting Docker container");
+                }
             }
+
         }
+    }
+
+    // These two functions are duplicated from SwaggerUtility in dockstore-client to prevent importing dockstore-client
+    // This cannot be moved to dockstore-common because PublishRequest requires built dockstore-webservice
+
+    /**
+     * @param bool
+     * @return
+     */
+    public static PublishRequest createPublishRequest(Boolean bool) {
+        PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(bool);
+        return publishRequest;
+    }
+
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+        return client
+                .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
+                        new String[] { "BEARER" }, type).getData();
     }
 }

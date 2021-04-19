@@ -35,6 +35,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -56,6 +57,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -88,7 +91,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
-
+        if (fileName.isEmpty()) {
+            LOG.info(gitUsername + ": no file path provided for " + repositoryId);
+            return null;
+        }
         try {
             String fileContent = this
                 .getArbitraryURL(BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName,
@@ -156,6 +162,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return "Bitbucket";
     }
 
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+
+    }
 
     /**
      * Gets arbitrary URLs that Bitbucket seems to use for pagination
@@ -197,6 +207,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             file.setAbsolutePath(path);
         }
         return file;
+    }
+
+    @Override
+    public List<SourceControlOrganization> getOrganizations() {
+        throw new UnsupportedOperationException("apps not supported for bitbucket yet");
     }
 
     @Override
@@ -292,7 +307,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             PaginatedRefs paginatedRefs = refsApi
@@ -300,24 +315,44 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             // this pagination structure is repetitive and should be refactored
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
-                    String branchName = ref.getName();
+                    final String branchName = ref.getName();
                     if (versionName.isEmpty() || Objects.equals(branchName, versionName.get())) {
-                        OffsetDateTime date = ref.getTarget().getDate();
-                        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
-                        version.setLastModified(Date.from(date.toInstant()));
-                        String calculatedPath = version.getWorkflowPath();
-                        // Now grab source files
-                        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
-                        // TODO: No exceptions are caught here in the event of a failed call
-                        SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                        WorkflowVersion version = new WorkflowVersion();
+                        version.setName(branchName);
+                        version.setReference(branchName);
+                        final OffsetDateTime date = ref.getTarget().getDate();
+                        final Date lastModifiedDate = Date.from(date.toInstant());
+                        version.setLastModified(lastModifiedDate);
+                        final String commitId = getCommitID(repositoryId, version);
 
-                        // Use default test parameter file if either new version or existing version that hasn't been edited
-                        createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
-                        workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                        if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+                            LOG.info(gitUsername + ": Looking at Bitbucket reference: " + branchName);
+                            version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
 
-                        version.setCommitID(getCommitID(repositoryId, version));
+                            version.setLastModified(lastModifiedDate);
+                            String calculatedPath = version.getWorkflowPath();
+                            // Now grab source files
+                            DescriptorLanguage.FileType identifiedType = workflow.getFileType();
+                            // TODO: No exceptions are caught here in the event of a failed call
+                            SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                        version = versionValidation(version, workflow, calculatedPath);
+                            // Use default test parameter file if either new version or existing version that hasn't been edited
+                            createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
+                            workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+
+                            version.setCommitID(getCommitID(repositoryId, version));
+
+                            version = versionValidation(version, workflow, calculatedPath);
+                            if (version != null) {
+                                workflow.addWorkflowVersion(version);
+                            }
+                        } else {
+                            // Version didn't change, but we don't want to delete
+                            // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+                            LOG.info(gitUsername + ": Skipping Bitbucket reference: " + branchName);
+                            version.setCommitID(SKIP_COMMIT_ID);
+                            workflow.addWorkflowVersion(version);
+                        }
                     }
                 });
 

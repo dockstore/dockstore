@@ -33,6 +33,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -46,6 +47,8 @@ import org.gitlab.api.models.GitlabRepositoryTree;
 import org.gitlab.api.models.GitlabTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author aduncan on 05/10/16.
@@ -110,6 +113,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+
+    }
+
+    @Override
     public Workflow initializeWorkflow(String repositoryId, Workflow workflow) {
         // Does this split not work if name has a slash?
         String[] id = repositoryId.split("/");
@@ -130,7 +138,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
 
         try {
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
@@ -140,7 +148,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                 if (versionName.isEmpty() || Objects.equals(versionName.get(), tag.getName())) {
                     Date committedDate = tag.getCommit().getCommittedDate();
                     String commitId = tag.getCommit().getId();
-                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate, commitId);
+                    handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate, commitId, hardRefresh);
                 }
             });
             branches.forEach(branch -> {
@@ -148,7 +156,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     Date committedDate = branch.getCommit().getCommittedDate();
                     String commitId = branch.getCommit().getId();
                     handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(),
-                            Version.ReferenceType.BRANCH, committedDate, commitId);
+                            Version.ReferenceType.BRANCH, committedDate, commitId, hardRefresh);
                 }
             });
         } catch (IOException e) {
@@ -159,26 +167,40 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @SuppressWarnings("checkstyle:parameternumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId) {
-        // Initialize workflow version
-        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
-        String calculatedPath = version.getWorkflowPath();
+        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate, String commitId, boolean hardRefresh) {
+        if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+            LOG.info(gitUsername + ": Looking at GitLab reference: " + branchName);
+            // Initialize workflow version
+            WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+            String calculatedPath = version.getWorkflowPath();
 
-        // Now grab source files
-        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
-        // TODO: No exceptions are caught here in the event of a failed call
-        SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
+            // Now grab source files
+            DescriptorLanguage.FileType identifiedType = workflow.getFileType();
+            // TODO: No exceptions are caught here in the event of a failed call
+            SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
-        version.setReferenceType(type);
-        version.setLastModified(committedDate);
-        version.setCommitID(commitId);
-        // Use default test parameter file if either new version or existing version that hasn't been edited
-        createTestParameterFiles(workflow, id, branchName, version, identifiedType);
-        version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults);
+            version.setReferenceType(type);
+            version.setLastModified(committedDate);
+            version.setCommitID(commitId);
+            // Use default test parameter file if either new version or existing version that hasn't been edited
+            createTestParameterFiles(workflow, id, branchName, version, identifiedType);
+            version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults);
 
-        version = versionValidation(version, workflow, calculatedPath);
-
-        workflow.addWorkflowVersion(version);
+            version = versionValidation(version, workflow, calculatedPath);
+            if (version != null) {
+                workflow.addWorkflowVersion(version);
+            }
+        } else {
+            // Version didn't change, but we don't want to delete
+            // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+            LOG.info(gitUsername + ": Skipping GitLab reference: " + branchName);
+            WorkflowVersion version = new WorkflowVersion();
+            version.setName(branchName);
+            version.setReference(branchName);
+            version.setLastModified(committedDate);
+            version.setCommitID(SKIP_COMMIT_ID);
+            workflow.addWorkflowVersion(version);
+        }
     }
 
     @Override
@@ -261,6 +283,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info("could not find " + path + " at " + e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public List<SourceControlOrganization> getOrganizations() {
+        throw new UnsupportedOperationException("apps not supported for gitlab yet");
     }
 
     @Override

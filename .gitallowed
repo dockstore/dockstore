@@ -1,0 +1,99 @@
+# Each line is a regular expression against the output of git-secrets
+# swagger-java-bitbucket-client/swagger.yaml:.*
+# Can match on the content of the string
+
+# swagger-java-bitbucket-client/swagger.yaml:.*
+swagger-java-bitbucket-client/swagger.yaml:.*https://api.bitbucket.org/
+swagger-java-bitbucket-client/swagger.yaml:.*https://bitbucket.org/
+swagger-java-bitbucket-client/swagger.yaml:.*"hash": "
+swagger-java-bitbucket-client/swagger.yaml:.*ETag: "
+swagger-java-bitbucket-client/swagger.yaml:.*"id": "
+
+# swagger-java-discourse-client/src/main/resources/api.json:.*
+# Or use the file name and line-number
+swagger-java-discourse-client/src/main/resources/api.json:.*http://127.0.0.1:3000/admin/users/list/active.json?api_key=714552c6148e1617aeab526d0606184b94a80ec048fc09894ff1a72b740c5f19&api_username=discourse1
+swagger-java-discourse-client/src/main/resources/api.json:.*api_key=714552c6148e1617aeab526d0606184b94a80ec048fc09894ff1a72b740c5f19
+
+# dockstore-webservice/src/test/resources/gatk-sv-clinical/:.*
+dockstore-webservice/src/test/.*.talkowski/sv-vcf-qc@sha256:b7e902c9d65343cd3e74b817e10aa9692111f7edd5b51cf940383a33d22f7af0
+dockstore-webservice/src/test/.*.talkowski/sv-vcf-qc@sha256:0a84a24a0924d667f3d2d7142c0db5fe316918e87053e0e60635fd69954fb720
+
+# dockstore-integration-testing/src/test/resources/fixtures/GitHubRefs.json:.*
+dockstore-integration-testing/src/test/resources/fixtures/GitHubRefs.json:.*"sha": "
+dockstore-integration-testing/src/test/resources/fixtures/GitHubRefs.json:.*https://api.github.com/repos/potato/
+
+# dockstore-integration-testing/src/test/resources/fixtures/GitHubCommit.json:.*
+dockstore-integration-testing/src/test/resources/fixtures/GitHubCommit.json:.*https://github.com/potato/xenahub/
+dockstore-integration-testing/src/test/resources/fixtures/GitHubCommit.json:.*"sha"
+dockstore-integration-testing/src/test/resources/fixtures/GitHubCommit.json:.*https://api.github.com/repos/potato/
+
+# dockstore-webservice/src/test/resources/recursive.wdl:.*
+dockstore-webservice/src/test/resources/recursive.wdl:.*.https://raw.githubusercontent.com/dockstore/dockstore/
+
+# dockstore-webservice/src/test/resources/not-really-recursive/not-really-recursive.wdl:.*
+# dockstore-webservice/src/test/resources/not-really-recursive/b.wdl:.*
+# dockstore-webservice/src/test/resources/not-really-recursive/a.wdl:.*
+dockstore-webservice/src/test/resources/not-really-recursive.*.https://raw.githubusercontent.com/dockstore/dockstore/
+
+
+# dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*
+dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*checksum=
+
+# dockstore-webservice/src/main/java/io/dockstore/webservice/helpers/GitHubSourceCodeRepo.java:.*
+dockstore-webservice/src/main/java/io/dockstore/webservice/helpers/GitHubSourceCodeRepo.java:.*https://raw.githubusercontent.com/denis-yuen/
+
+# dockstore-webservice/src/test/resources/importTesting.wdl:.*
+dockstore-webservice/src/test/resources/importTesting.wdl:.*https://raw.githubusercontent.com/DockstoreTestUser2/
+
+# dockstore-webservice/src/test/resources/gatk-sv-clinical/GATKSVPipelineClinical.wdl.ref_panel_v1b.NA19240.json:.*
+dockstore-webservice/src/test/resources/gatk-sv-clinical/GATKSVPipelineClinical.wdl.ref_panel_v1b.NA19240.json:.*gatksv/gatk:condensecounts-7396ae99aaab07e29c92b509a6515508fbe68158
+
+# dockstore-webservice/src/main/resources/migrations.test.add_service_1.7.0.xml:.*
+dockstore-webservice/src/main/resources/migrations.test.add_service_1.7.0.xml:.*<column name="commitid" value="
+
+# dockstore-webservice/src/main/resources/migrations.test.xml:.*
+dockstore-webservice/src/main/resources/migrations.test.xml:.*<column name="content" value="
+
+# dockstore-integration-testing/src/test/resources/testWorkflow.json:.*
+dockstore-integration-testing/src/test/resources/testWorkflow.json:.*https://github.com/dockstore/dockstore
+
+# image ID that we use
+# dockstore-integration-testing/src/test/java/io/dockstore/client/cli/.*.
+dockstore-integration-testing/src/test/java/io/dockstore/client/cli/.*.tag.setImageId
+dockstore-integration-testing/src/test/java/io/dockstore/client/cli/.*. "--git-reference", "master", "--script"
+
+# dockstore-common/src/test/resources/config:.*
+dockstore-common/src/test/resources/config:.*token = 08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7
+
+# dockstore-integration-testing/src/test/resources/md5sum-wrapper-tool.json:.*
+dockstore-integration-testing/src/test/resources/md5sum-wrapper-tool.json:.*"expected_md5"
+
+# dockstore-integration-testing/src/test/resources/fixtures/GitHubFileContent.json:.*
+dockstore-integration-testing/src/test/resources/fixtures/GitHubFileContent.json:.*"sha": "
+dockstore-integration-testing/src/test/resources/fixtures/GitHubFileContent.json:.*https://api.github.com/repos/coverbeck/xenahub
+
+# dockstore-integration-testing/src/test/resources/fixtures/GitHubContents.json:.*
+dockstore-integration-testing/src/test/resources/fixtures/GitHubContents.json:.*"sha":
+dockstore-integration-testing/src/test/resources/fixtures/GitHubContents.json:.*"sha":
+dockstore-integration-testing/src/test/resources/fixtures/GitHubContents.json:.*https://api.github.com/repos/potato/xenahub/
+
+# dockstore-integration-testing/src/test/resources/config:.*
+dockstore-integration-testing/src/test/resources/config:.*tokenUser1= 08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7
+
+# dockstore-integration-testing/src/test/java/io/dockstore/common/CommonTestUtilities.java:.*
+dockstore-integration-testing/src/test/java/io/dockstore/common/CommonTestUtilities.java:.*DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
+
+# dockstore-integration-testing/src/test/java/io/dockstore/client/cli/WorkflowIT.java:.*
+dockstore-integration-testing/src/test/java/io/dockstore/client/cli/WorkflowIT.java:.*nextflow/rnatoy@
+
+# dockstore-integration-testing/src/test/java/io/dockstore/client/cli/OrganizationIT.java:.*
+dockstore-integration-testing/src/test/java/io/dockstore/client/cli/OrganizationIT.java:.*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+dockstore-integration-testing/src/test/java/io/dockstore/client/cli/OrganizationIT.java:.*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+
+# dockstore-common/src/test/java/io/dockstore/common/yaml/DockstoreYamlTest.java:.*
+dockstore-common/src/test/java/io/dockstore/common/yaml/DockstoreYamlTest.java:.*https://raw.githubusercontent.com/denis-yuen/
+
+# README.md:.*
+README.md:.*https://github.com/dockstore/dockstore/blob/
+README.md:.*https://app.codacy.com/app/dockstore/dockstore
+README.md:.*db89e89508bd562cd36e9c316ac968ab0a136c0e

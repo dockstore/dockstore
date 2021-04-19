@@ -174,4 +174,37 @@
         </sql>
     </changeSet>
 
+    <changeSet author="aduncan" id="addSyncedColumnToWorkflowVersion">
+        <addColumn tableName="workflowversion">
+            <column name="synced" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET synced = TRUE;
+        </sql>
+    </changeSet>
+
+    <changeSet id="changeOrganizationUserRoles" author="natalieperez">
+        <sql dbms="postgresql">
+            UPDATE organization_user
+            SET role = REPLACE(role, 'MAINTAINER', 'ADMIN');
+            UPDATE organization_user
+            SET role = REPLACE(role, 'MEMBER', 'MAINTAINER');
+        </sql>
+    </changeSet>
+    <!-- There's a workflow and a tool  that both have the same checker workflow. Unlinking it from the workflow -->
+    <changeSet id="removeCheckerId" author="gluu">
+        <sql dbms="postgresql">
+            UPDATE workflow
+            SET checkerid = null where checkerid = 9332 and id = 8168;
+        </sql>
+    </changeSet>
+    <!-- This does not solve the case where there's identical checkerid in different tables -->
+    <changeSet author="gluu (generated)" id="uniqueCheckerId">
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_uniqueWorkflowCheckerId" tableName="workflow"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_uniqueServiceCheckerId" tableName="service"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_uniqueToolCheckerId" tableName="tool"/>
+    </changeSet>
 </databaseChangeLog>

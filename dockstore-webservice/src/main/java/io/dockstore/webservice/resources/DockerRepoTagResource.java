@@ -38,6 +38,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -92,6 +93,21 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Override
     public ToolDAO getDAO() {
         return this.toolDAO;
+    }
+
+    @Override
+    public void checkCanRead(User user, Entry tool) {
+        try {
+            checkUser(user, tool);
+        } catch (CustomWebApplicationException ex) {
+            LOG.info("permissions are not yet tool aware");
+            // should not throw away exception
+            throw ex;
+            //TODO permissions will eventually need to know about tools too
+            //            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
+            //                throw ex;
+            //            }
+        }
     }
 
     @GET

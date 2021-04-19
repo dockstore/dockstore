@@ -15,26 +15,16 @@
  */
 package io.dockstore.consumer.handler;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.exceptions.DockerCertificateException;
-import com.spotify.docker.client.exceptions.DockerException;
 import io.dockstore.common.model.DOIMessage;
 import io.dockstore.zenodo.client.ApiClient;
 import io.dockstore.zenodo.client.ApiException;
 import io.dockstore.zenodo.client.api.ActionsApi;
 import io.dockstore.zenodo.client.api.DepositsApi;
-import io.dockstore.zenodo.client.api.FilesApi;
 import io.dockstore.zenodo.client.model.Author;
 import io.dockstore.zenodo.client.model.Deposit;
 import io.dockstore.zenodo.client.model.DepositMetadata;
@@ -44,11 +34,9 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,20 +81,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 return true;
             }
 
-            // Pull an image
-            // Create a client based on DOCKER_HOST and DOCKER_CERT_PATH env vars
-            String image = publishedContainer.getPath() + ":" + tag.getName();
-            File dockerImageFile = new File(image);
-            try (DockerClient docker = DefaultDockerClient.fromEnv().build()) {
-                docker.pull(image);
-                FileUtils.copyInputStreamToFile(docker.save(image), dockerImageFile);
-            } catch (DockerException | DockerCertificateException | InterruptedException e) {
-                LOG.error("could not pull Docker image:" + image, e);
-                return false;
-            } catch (IOException e) {
-                LOG.error("could not save Docker image to file:" + dockerImageFile.getAbsolutePath(), e);
-                return false;
-            }
+            // Someday a prototype could pull Docker images here
 
             // send documents to zenodo
             ApiClient zenodoClient = new ApiClient();
@@ -126,13 +101,14 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 returnDeposit = depositApi.createDeposit(deposit);
                 // upload a new file
                 int depositionID = returnDeposit.getId();
-                FilesApi filesApi = new FilesApi(zenodoClient);
-                for (SourceFile file : tag.getSourceFiles()) {
-                    Path tempFile = Files.createTempFile("temp", "file");
-                    FileUtils.writeStringToFile(tempFile.toFile(), file.getContent(), StandardCharsets.UTF_8);
-                    // file name is passsed in but seems to be ignore
-                    filesApi.createFile(depositionID, tempFile.toFile(), new File(file.getPath()).getName());
-                }
+                // Commenting out to get around json ignoring source files. The files in this section aren't used, but keeping them around for reference for possible future work.
+                // FilesApi filesApi = new FilesApi(zenodoClient);
+                //                for (SourceFile file : tag.getSourceFiles()) {
+                //                    Path tempFile = Files.createTempFile("temp", "file");
+                //                    FileUtils.writeStringToFile(tempFile.toFile(), file.getContent(), StandardCharsets.UTF_8);
+                //                    // file name is passsed in but seems to be ignore
+                //                    filesApi.createFile(depositionID, tempFile.toFile(), new File(file.getPath()).getName());
+                //                }
                 // TODO: this would be fleshed out to populate descriptors, secondary descriptors, test json, dockerfiles, etc.
                 // TODO: this could use a progress indicator, uploading docker images seems slow
                 //DepositionFile file = filesApi.createFile(depositionID, dockerImageFile, dockerImageFile.getAbsolutePath());
@@ -160,7 +136,7 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                 Deposit publishedDeposit = actionsApi.publishDeposit(depositionID);
                 // need to grab and save the generated DOI here
                 LOG.info(publishedDeposit.toString());
-            } catch (ApiException | IOException e) {
+            } catch (ApiException e) {
                 LOG.error("could not create zenodo representation", e);
                 return false;
             }

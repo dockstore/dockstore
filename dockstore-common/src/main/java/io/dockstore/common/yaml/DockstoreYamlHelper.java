@@ -1,10 +1,15 @@
 package io.dockstore.common.yaml;
 
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,10 +26,12 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
+import org.yaml.snakeyaml.representer.Representer;
 
 public final class DockstoreYamlHelper {
 
     public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
+    public static final Pattern WRONG_KEY_PATTERN = Pattern.compile("Unable to find property '(.+)'");
 
     enum Version {
         ONE_ZERO("1.0") {
@@ -169,12 +176,16 @@ public final class DockstoreYamlHelper {
 
     private static <T> T readContent(final String content, final Constructor constructor) throws DockstoreYamlException {
         try {
-            final Yaml yaml = new Yaml(constructor);
+            Representer representer = new Representer();
+            representer.getPropertyUtils().setSkipMissingProperties(true);
+            final Yaml yaml = new Yaml(constructor, representer);
             return yaml.load(content);
         } catch (Exception e) {
-            final String msg = ERROR_READING_DOCKSTORE_YML + e.getMessage();
-            LOG.error(msg, e);
-            throw new DockstoreYamlException(msg);
+            final String exceptionMsg = e.getMessage();
+            String errorMsg = ERROR_READING_DOCKSTORE_YML;
+            errorMsg += exceptionMsg;
+            LOG.error(errorMsg, e);
+            throw new DockstoreYamlException(errorMsg);
         }
     }
 
@@ -192,6 +203,51 @@ public final class DockstoreYamlHelper {
     private static Validator createValidator() {
         final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
         return validatorFactory.getValidator();
+    }
+
+    /**
+     * Decide whether a gitReference is excluded, given a workflow/service's filters
+     * @param gitRefPath Path.of(gitReference) for glob matching with PathMatcher
+     * @param filters Filters specified for a workflow/service in .dockstore.yml
+     * @return
+     */
+    public static boolean filterGitReference(final Path gitRefPath, final Filters filters) {
+        final List<String> branches = filters.getBranches();
+        final List<String> tags = filters.getTags();
+
+        // If no filters specified, accept anything
+        if (branches.isEmpty() && tags.isEmpty()) {
+            return true;
+        }
+
+        List<String> patterns;
+        if (gitRefPath.startsWith("refs/heads/")) {
+            patterns = branches;
+        } else if (gitRefPath.startsWith("refs/tags/")) {
+            patterns = tags;
+        } else {
+            throw new UnsupportedOperationException("Invalid git reference: " + gitRefPath.toString());
+        }
+
+        // Remove refs/heads/ or refs/tags/ from Path for matching
+        final Path matchPath = gitRefPath.subpath(2, gitRefPath.getNameCount());
+        return patterns.stream().anyMatch(pattern -> {
+            String matcherString;
+            // Use regex if pattern string is surrounded by /, otherwise use glob
+            if (pattern.matches("^\\/.*\\/$")) {
+                matcherString = "regex:" + pattern.substring(1, pattern.length() - 1);
+            } else {
+                matcherString = "glob:" + pattern;
+            }
+            try {
+                final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(matcherString);
+                return pathMatcher.matches(matchPath);
+            } catch (PatternSyntaxException | UnsupportedOperationException e) {
+                final String msg = ERROR_READING_DOCKSTORE_YML + e.getMessage();
+                LOG.warn(msg, e);
+                return false;
+            }
+        });
     }
 
     public static class DockstoreYamlException extends Exception {

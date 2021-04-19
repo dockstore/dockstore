@@ -60,9 +60,7 @@ import io.swagger.quay.client.model.QuayRepo;
 import io.swagger.quay.client.model.QuayTag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -142,7 +140,7 @@ public interface LanguageHandlerInterface {
      * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
-    String getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao);
+    Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao);
 
     /**
      * Checks that the test parameter files are valid JSON or YAML
@@ -169,7 +167,12 @@ public interface LanguageHandlerInterface {
     }
 
     default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
-        return DAGHelper.cleanDAG(getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao));
+        Optional<String> content = getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao);
+        if (content.isPresent()) {
+            return DAGHelper.cleanDAG(content.get());
+        } else {
+            return null;
+        }
     }
 
     default ParsedInformation getParsedInformation(Version version, DescriptorLanguage descriptorLanguage) {
@@ -207,7 +210,7 @@ public interface LanguageHandlerInterface {
      * @return Cytoscape compatible JSON with nodes and edges
      */
     default String setupJSONDAG(List<Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
-        Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
+            Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
         List<Map<String, Map<String, String>>> edges = new ArrayList<>();
 
@@ -216,7 +219,7 @@ public interface LanguageHandlerInterface {
             String stepId = node.getLeft();
             String dockerUrl = null;
             if (nodeDockerInfo.get(stepId) != null) {
-                dockerUrl = nodeDockerInfo.get(stepId).getRight();
+                dockerUrl = nodeDockerInfo.get(stepId).getDockerUrl();
             }
 
             Map<String, Map<String, String>> nodeEntry = new HashMap<>();
@@ -226,10 +229,8 @@ public interface LanguageHandlerInterface {
             dataEntry.put("name", stepId.replaceFirst("^dockstore_", ""));
             dataEntry.put("type", stepToType.get(stepId));
             if (nodeDockerInfo.get(stepId) != null) {
-                dataEntry.put("docker", nodeDockerInfo.get(stepId).getMiddle());
-            }
-            if (nodeDockerInfo.get(stepId) != null) {
-                dataEntry.put("run", nodeDockerInfo.get(stepId).getLeft());
+                dataEntry.put("docker", nodeDockerInfo.get(stepId).getDockerImage());
+                dataEntry.put("run", nodeDockerInfo.get(stepId).getRunPath());
             }
             nodeEntry.put("data", dataEntry);
             nodes.add(nodeEntry);
@@ -263,20 +264,20 @@ public interface LanguageHandlerInterface {
      * @param nodeDockerInfo map of stepId -> (run path, docker pull, docker url)
      * @return string representation of json table tool content
      */
-    default String getJSONTableToolContent(Map<String, Triple<String, String, String>> nodeDockerInfo) {
+    default String getJSONTableToolContent(Map<String, DockerInfo> nodeDockerInfo) {
         // set up JSON for Table Tool Content for all workflow languages
         ArrayList<Object> tools = new ArrayList<>();
 
         //iterate through each step within workflow file
-        for (Map.Entry<String, Triple<String, String, String>> entry : nodeDockerInfo.entrySet()) {
+        for (Map.Entry<String, DockerInfo> entry : nodeDockerInfo.entrySet()) {
             String key = entry.getKey();
-            Triple<String, String, String> value = entry.getValue();
+            DockerInfo value = entry.getValue();
             //get the idName and fileName
-            String fileName = value.getLeft();
+            String fileName = value.getRunPath();
 
             //get the docker requirement
-            String dockerPullName = value.getMiddle();
-            String dockerLink = value.getRight();
+            String dockerPullName = value.getDockerImage();
+            String dockerLink = value.getDockerUrl();
 
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
@@ -316,7 +317,7 @@ public interface LanguageHandlerInterface {
      * @param dockerEntry has the docker name
      * @return URL
      */
-    // TODO: Don't assume that it's dockerhub when it's not Quay. Potentially add support for other registries and add message that the registry is unsupported
+    // TODO: Potentially add support for other registries and add message that the registry is unsupported
     default String getURLFromEntry(String dockerEntry, ToolDAO toolDAO) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
@@ -333,9 +334,16 @@ public interface LanguageHandlerInterface {
             dockerEntry = m.group(1);
         }
 
+        if (dockerEntry.isEmpty()) {
+            return null;
+        }
+
+        // Regex for determining registry requires a tag; add a fake "0" tag
+        Optional<Registry> registry = determineImageRegistry(dockerEntry + ":0");
+
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
-        if (dockerEntry.startsWith("quay.io/")) {
+        if (registry.isPresent() && registry.get().equals(Registry.QUAY_IO)) {
             List<Tool> byPath = toolDAO.findAllByPath(dockerEntry, true);
             if (byPath == null || byPath.isEmpty()) {
                 // when we cannot find a published tool on Dockstore, link to quay.io
@@ -344,7 +352,10 @@ public interface LanguageHandlerInterface {
                 // when we found a published tool, link to the tool on Dockstore
                 url = dockstorePath + dockerEntry;
             }
-        } else {
+        } else if (registry.isEmpty() || !registry.get().equals(Registry.DOCKER_HUB)) {
+            // if the registry is neither Quay nor Docker Hub, return the entry as the url
+            url = "https://" + dockerEntry;
+        } else {  // DOCKER_HUB
             String[] parts = dockerEntry.split("/");
             if (parts.length == 2) {
                 // if the path looks like pancancer/pcawg-oxog-tools
@@ -359,10 +370,6 @@ public interface LanguageHandlerInterface {
             } else {
                 // if the path looks like debian:8 or debian
                 url = dockerHubPathUnderscore + dockerEntry;
-
-                if (url.equals(dockerHubPathUnderscore)) {
-                    url = null;
-                }
             }
 
         }
@@ -500,7 +507,10 @@ public interface LanguageHandlerInterface {
                             final String manifestDigest = dockerHubImage.getDigest();
                             Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
                             List<Checksum> checksums = Collections.singletonList(checksum);
-                            Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB);
+                            // Docker Hub appears to return null for all the "last_pushed" properties of their images.
+                            // Using the result's "last_pushed" as a workaround
+                            Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB,
+                                    dockerHubImage.getSize(), r.getLastUpdated());
 
                             String osInfo = formatDockerHubInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
                             String archInfo = formatDockerHubInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
@@ -546,7 +556,7 @@ public interface LanguageHandlerInterface {
             final String digest = tag.getManifestDigest();
             final String imageID = tag.getImageId();
             List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-            quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO));
+            quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO, tag.getSize(), tag.getLastModified()));
         } catch (ApiException ex) {
             LOG.error("Could not read from " + repo, ex);
         }
@@ -576,7 +586,7 @@ public interface LanguageHandlerInterface {
      * @param namespaceToPath ?
      * @return the actual JSON output of either a DAG or tool listing
      */
-    default String convertMapsToContent(final String mainDescName, final Type type, ToolDAO dao, final String callType,
+    default Optional<String> convertMapsToContent(final String mainDescName, final Type type, ToolDAO dao, final String callType,
         final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
 
         // Initialize data structures for DAG
@@ -584,7 +594,7 @@ public interface LanguageHandlerInterface {
         Map<String, String> callToType = new HashMap<>();
 
         // Initialize data structures for Tool table
-        Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
+        Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
         // Create nodePairs, callToType, toolID, and toolDocker
         for (Map.Entry<String, ToolInfo> entry : toolInfoMap.entrySet()) {
@@ -605,9 +615,9 @@ public interface LanguageHandlerInterface {
             String[] callName = callId.replaceFirst("^dockstore_", "").split("\\.");
 
             if (callName.length > 1) {
-                nodeDockerInfo.put(callId, new MutableTriple<>(namespaceToPath.get(callName[0]), docker, dockerUrl));
+                nodeDockerInfo.put(callId, new DockerInfo(namespaceToPath.get(callName[0]), docker, dockerUrl, null));
             } else {
-                nodeDockerInfo.put(callId, new MutableTriple<>(mainDescName, docker, dockerUrl));
+                nodeDockerInfo.put(callId, new DockerInfo(mainDescName, docker, dockerUrl, null));
             }
         }
 
@@ -640,19 +650,44 @@ public interface LanguageHandlerInterface {
 
         // Create JSON for DAG/table
         if (type == Type.DAG) {
-            return setupJSONDAG(nodePairs, toolInfoMap, callToType, nodeDockerInfo);
+            return Optional.of(setupJSONDAG(nodePairs, toolInfoMap, callToType, nodeDockerInfo));
         } else if (type == Type.TOOLS) {
-            return getJSONTableToolContent(nodeDockerInfo);
+            return Optional.of(getJSONTableToolContent(nodeDockerInfo));
         }
 
-        return null;
+        return Optional.empty();
     }
 
     enum Type {
         DAG, TOOLS
     }
 
+    enum DockerSpecifier {
+        /**
+         * The image is not a string literal
+         */
+        PARAMETER,
+        /**
+         * The image is a string literal, but doesn't specify a tag
+         */
+        NO_TAG,
+        /**
+         * The image is a string literal with the tag "latest"
+         */
+        LATEST,
+        /**
+         * The image has a tag that is not "latest" nor a digest
+         */
+        TAG,
+        /**
+         * The image tag is a digest
+         */
+        DIGEST
+    }
+
     class ToolInfo {
+
+        protected final DockerSpecifier dockerSpecifier;
 
         /**
          * Currently, the id of a docker container as used by docker pull.
@@ -663,9 +698,49 @@ public interface LanguageHandlerInterface {
          * A list if ids for tools, processes that had to come before
          */
         List<String> toolDependencyList;
+
         ToolInfo(String dockerContainer, List<String> toolDependencyList) {
+            this(dockerContainer, toolDependencyList, null);
+        }
+
+        ToolInfo(final String dockerContainer, final List<String> toolDependencyList, final DockerSpecifier dockerSpecifier) {
             this.dockerContainer = dockerContainer;
             this.toolDependencyList = toolDependencyList;
+            this.dockerSpecifier = dockerSpecifier;
+        }
+    }
+
+    class DockerInfo {
+        private final String runPath;
+        private final String dockerImage;
+        private final String dockerUrl;
+        private final DockerSpecifier dockerSpecifier;
+
+        public DockerInfo(final String runPath, final String dockerImage, final String dockerUrl) {
+            this(runPath, dockerImage, dockerUrl, null);
+        }
+
+        public DockerInfo(final String runPath, final String dockerImage, final String dockerUrl, final DockerSpecifier dockerSpecifier) {
+            this.runPath = runPath;
+            this.dockerImage = dockerImage;
+            this.dockerUrl = dockerUrl;
+            this.dockerSpecifier = dockerSpecifier;
+        }
+
+        public String getRunPath() {
+            return runPath;
+        }
+
+        public String getDockerImage() {
+            return dockerImage;
+        }
+
+        public String getDockerUrl() {
+            return dockerUrl;
+        }
+
+        public DockerSpecifier getDockerSpecifier() {
+            return dockerSpecifier;
         }
     }
 

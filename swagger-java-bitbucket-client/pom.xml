@@ -9,7 +9,7 @@
     <parent>
         <artifactId>dockstore</artifactId>
         <groupId>io.dockstore</groupId>
-        <version>1.10.0-alpha.0-SNAPSHOT</version>
+        <version>1.11.0-alpha.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -173,6 +173,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 
@@ -183,7 +187,6 @@
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
-            <version>${swagger-annotations-version}</version>
         </dependency>
 
         <!-- HTTP client: jersey-client -->
@@ -255,7 +258,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.major.version}</version>
         </dependency>
     </dependencies>
 

@@ -41,6 +41,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -57,6 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -67,6 +69,7 @@ import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
     public static final int BYTES_IN_KB = 1024;
+    @Deprecated
     String gitUsername;
 
     /**
@@ -97,6 +100,12 @@ public abstract class SourceCodeRepoInterface {
 
     public abstract String getName();
 
+    /**
+     * Set the entry's license information based on the Git repository
+     * @param entry The entry whose license information should be set
+     * @param gitRepository The Git repository (e.g. dockstore/hello_world)
+     */
+    public abstract void setLicenseInformation(Entry entry, String gitRepository);
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
@@ -202,10 +211,29 @@ public abstract class SourceCodeRepoInterface {
      * @param existingWorkflow
      * @param existingDefaults
      * @param versionName
+     * @param hardRefresh
      * @return workflow with associated workflow versions
      */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName);
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh);
+
+    /**
+     * Determine whether to refresh a version or not
+     * Refresh version if any of the following is true
+     * * this is a hard refresh
+     * * version doesn't exist
+     * * commit id isn't set
+     * * commitId is different
+     * * synced == false
+     *
+     * @param commitId
+     * @param existingVersion
+     * @param hardRefresh
+     * @return
+     */
+    protected boolean toRefreshVersion(String commitId, WorkflowVersion existingVersion, boolean hardRefresh) {
+        return hardRefresh || existingVersion == null || existingVersion.getCommitID() == null || !Objects.equals(existingVersion.getCommitID(), commitId) || !existingVersion.isSynced();
+    }
 
     /**
      * Creates a basic workflow object with default values
@@ -224,9 +252,10 @@ public abstract class SourceCodeRepoInterface {
      * @param repositoryId Repository ID (ex. dockstore/dockstore-ui2)
      * @param existingWorkflow Optional existing workflow
      * @param versionName Optional version name to refresh
+     * @param hardRefresh
      * @return workflow
      */
-    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName) {
+    public Workflow createWorkflowFromGitRepository(String repositoryId, Optional<Workflow> existingWorkflow, Optional<String> versionName, boolean hardRefresh) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId, new BioWorkflow());
 
@@ -266,7 +295,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Create versions and associated source files
         //TODO: calls validation eventually, may simplify if we take into account metadata parsing below
-        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName);
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults, versionName, hardRefresh);
 
         if (versionName.isPresent() && workflow.getWorkflowVersions().size() == 0) {
             String msg = "Version " + versionName.get() + " was not found on Git repository";
@@ -332,7 +361,10 @@ public abstract class SourceCodeRepoInterface {
             Workflow workflow = (Workflow)entry;
             workflow.getWorkflowVersions().forEach(workflowVersion -> {
                 String filePath = workflowVersion.getWorkflowPath();
-                updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
+                // Don't update metadata for versions that have not changed
+                if (!Objects.equals(SKIP_COMMIT_ID, workflowVersion.getCommitID())) {
+                    updateVersionMetadata(filePath, workflowVersion, type, repositoryId);
+                }
             });
         }
     }
@@ -470,6 +502,7 @@ public abstract class SourceCodeRepoInterface {
         version.setName(branch);
         version.setReference(branch);
         version.setValid(false);
+        version.setSynced(true);
 
         // Determine workflow version from previous
         String calculatedPath;
@@ -599,6 +632,15 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
+    /**
+     *
+     * @param repositoryId
+     * @param content   This is the contents of the main descriptor
+     * @param fileType
+     * @param version
+     * @param filepath
+     * @return
+     */
     public Map<String, SourceFile> resolveImports(String repositoryId, String content, DescriptorLanguage.FileType fileType, Version<?> version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
@@ -688,4 +730,10 @@ public abstract class SourceCodeRepoInterface {
         return version.getValidations().stream().filter(validation -> !Objects.equals(validation.getType(),
                 DescriptorLanguage.FileType.DOCKSTORE_YML)).allMatch(Validation::isValid);
     }
+
+    /**
+     * Gets organizations for the current user
+     * @return
+     */
+    public abstract List<SourceControlOrganization> getOrganizations();
 }
