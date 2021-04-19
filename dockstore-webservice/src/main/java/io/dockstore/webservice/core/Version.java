@@ -434,7 +434,9 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     public void setAuthor(String newAuthor) {
         this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
         authors.clear();
-        authors.add(new Author(newAuthor));
+        if (newAuthor != null) {
+            authors.add(new Author(newAuthor));
+        }
     }
 
     public void setEmail(String newEmail) {
