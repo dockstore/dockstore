@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Optional;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -17,7 +18,9 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Version;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -54,7 +57,7 @@ public final class ORCIDHelper {
      * @throws JAXBException
      * @throws DatatypeConfigurationException
      */
-    public static String getOrcidWorkString(Entry e, Optional<Version> optionalVersion) throws JAXBException, DatatypeConfigurationException {
+    public static String getOrcidWorkString(Entry e, Optional<Version> optionalVersion, String putCode) throws JAXBException, DatatypeConfigurationException {
         // Length of the work description to send to ORCID. Arbitrarily set to 4x tweet length.
         final int descriptionLength = 4 * 280;
         Work work = new Work();
@@ -80,6 +83,9 @@ public final class ORCIDHelper {
         Title journalTitle = new Title();
         journalTitle.setContent("Dockstore");
         work.setJournalTitle(journalTitle);
+        if (putCode != null) {
+            work.setPutCode(Long.valueOf(putCode));
+        }
         workTitle.setTitle(title);
         work.setWorkTitle(workTitle);
         work.setWorkType(WorkType.SOFTWARE);
@@ -107,10 +113,13 @@ public final class ORCIDHelper {
         return postWorkString(ORCID_BASE_URL, id, workString, token);
     }
 
-    public static HttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
+    /**
+     * This creates a new ORCID work
+     */
+    public static CloseableHttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
         HttpPost postRequest = new HttpPost(baseURL + id + "/work");
-        postRequest.addHeader("content-type", "application/vnd.orcid+xml");
-        postRequest.addHeader("Authorization", "Bearer " + token);
+        postRequest.addHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml");
+        postRequest.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         StringEntity workEntity = new StringEntity(workString);
         postRequest.setEntity(workEntity);
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
@@ -118,6 +127,20 @@ public final class ORCIDHelper {
             return httpClient.execute(postRequest);
         } finally {
             httpClient.close();
+        }
+    }
+
+    /**
+     * This updates an existing ORCID work
+     */
+    public static CloseableHttpResponse putWorkString(String baseURL, String id, String workString, String token, String putCode) throws IOException {
+        HttpPut postRequest = new HttpPut(baseURL + id + "/work/" + putCode);
+        postRequest.addHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml");
+        postRequest.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        StringEntity workEntity = new StringEntity(workString);
+        postRequest.setEntity(workEntity);
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build();) {
+            return httpClient.execute(postRequest);
         }
     }
 

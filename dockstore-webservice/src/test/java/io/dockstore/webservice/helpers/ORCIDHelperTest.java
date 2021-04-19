@@ -34,7 +34,7 @@ public class ORCIDHelperTest {
         version.setLastModified(new Date());
         version.setDoiURL("https://doi.org/10.1038/s41586-020-1969-6");
         Optional<Version> optionalVersion = Optional.of(version);
-        String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion);
+        String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
         HttpResponse response = ORCIDHelper.postSandboxWorkString(id, orcidWorkString, "fakeToken");
         Assert.assertEquals("Should fail because of fake token", HttpStatus.SC_UNAUTHORIZED, response.getStatusLine().getStatusCode());
     }

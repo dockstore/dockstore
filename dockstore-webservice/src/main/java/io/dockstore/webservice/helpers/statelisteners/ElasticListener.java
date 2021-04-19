@@ -314,6 +314,7 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
         Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
         detachedEntry.setWorkflowVersions(detachedVersions);
+        detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
         String defaultVersion = entry.getDefaultVersion();
         if (defaultVersion != null) {

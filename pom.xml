@@ -48,6 +48,12 @@
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
         <skipSignatureCheck>true</skipSignatureCheck>
+        <!-- for sonarcloud -->
+        <sonar.projectKey>dockstore_dockstore</sonar.projectKey>
+        <sonar.organization>dockstore</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.moduleKey>${artifactId}</sonar.moduleKey>
+        <!-- end sonarcloud properties -->
     </properties>
 
     <organization>
@@ -375,7 +381,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>1.4.1</version>
+                    <version>3.0.0-M3</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -395,13 +401,13 @@
                 <plugin>
                     <groupId>io.swagger</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>2.4.12</version>
+                    <version>2.4.19</version>
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/io.swagger.codegen.v3/swagger-codegen-maven-plugin -->
                 <plugin>
                     <groupId>io.swagger.codegen.v3</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>3.0.16</version>
+                    <version>3.0.25</version>
                 </plugin>
                 <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
                 <plugin>
@@ -429,6 +435,35 @@
                                 <executable>bash</executable>
                                 <commandlineArgs>${project.parent.basedir}/scripts/install-git-hooks.sh</commandlineArgs>
                             </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>1.2.2</version>
+                    <configuration>
+                        <outputDirectory>${project.basedir}/generated/src/main/resources/</outputDirectory>
+                        <updatePomFile>false</updatePomFile>
+                        <!-- snyk is picky about filenames -->
+                        <flattenedPomFilename>pom.xml</flattenedPomFilename>
+                    </configuration>
+                    <executions>
+                        <!-- enable flattening -->
+                        <execution>
+                            <id>flatten</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <!-- ensure proper cleanup -->
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -471,7 +506,12 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps />
+                                <requireUpperBoundDeps>
+                                    <excludes>
+                                        <!-- 3.10.3 forces us into identity columns, see https://github.com/liquibase/liquibase/pull/874#issuecomment-605033798 and https://github.com/liquibase/liquibase/pull/1010#issuecomment-734815278  -->
+                                        <exclude>org.liquibase:liquibase-core</exclude>
+                                    </excludes>
+                                </requireUpperBoundDeps>
                                 <requireMavenVersion>
                                     <version>3.5.4</version>
                                 </requireMavenVersion>
@@ -662,6 +702,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.8.0.2131</version>
             </plugin>
         </plugins>
     </build>

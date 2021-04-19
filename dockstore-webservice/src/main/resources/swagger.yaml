@@ -3952,6 +3952,22 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/LambdaEvent"
+  /users/github/organizations:
+    get:
+      tags:
+      - "users"
+      operationId: "getMyGitHubOrgs"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceControlOrganization"
   /users/github/sync:
     post:
       tags:
@@ -6097,6 +6113,30 @@ paths:
       security:
       - BEARER: []
   /workflows/{workflowId}/workflowVersions:
+    get:
+      tags:
+      - "workflows"
+      summary: "Return first 200 versions in an entry"
+      description: ""
+      operationId: "getWorkflowVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "workflowID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/WorkflowVersion"
+      security:
+      - BEARER: []
     put:
       tags:
       - "workflows"
@@ -6262,6 +6302,10 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      descriptorTypes:
+        type: "array"
+        items:
+          type: "string"
       entryPath:
         type: "string"
       entryType:
@@ -6273,6 +6317,8 @@ definitions:
         type: "array"
         items:
           type: "string"
+      verified:
+        type: "boolean"
       versionName:
         type: "string"
   CollectionOrganization:
@@ -6422,24 +6468,16 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       last_modified_date:
         type: "integer"
         format: "int64"
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       tags:
         type: "array"
         uniqueItems: true
@@ -6523,11 +6561,6 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      conceptDoi:
-        type: "string"
-        position: 13
-        description: "The Digital Object Identifier (DOI) representing all of the\
-          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
@@ -6538,6 +6571,11 @@ definitions:
         - "AUTO_DETECT_QUAY_TAGS_WITH_MIXED"
         - "MANUAL_IMAGE_PATH"
         - "HOSTED"
+      conceptDoi:
+        type: "string"
+        position: 14
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       name:
         type: "string"
         position: 14
@@ -6547,11 +6585,27 @@ definitions:
         position: 15
         description: "This indicates for the associated git repository, the default\
           \ path to the Dockerfile, required: GA4GH"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       default_cwl_path:
         type: "string"
         position: 16
         description: "This indicates for the associated git repository, the default\
           \ path to the CWL document, required: GA4GH"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       default_wdl_path:
         type: "string"
         position: 17
@@ -6660,24 +6714,16 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       last_modified_date:
         type: "integer"
         format: "int64"
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       topicId:
         type: "integer"
         format: "int64"
@@ -6763,9 +6809,25 @@ definitions:
         readOnly: true
       conceptDoi:
         type: "string"
-        position: 13
+        position: 14
         description: "The Digital Object Identifier (DOI) representing all of the\
           \ versions of your workflow"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
   EntryUpdateTime:
     type: "object"
     properties:
@@ -7350,6 +7412,17 @@ definitions:
         type: "string"
       value:
         type: "string"
+  SourceControlOrganization:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Id for the organization e.g. 1"
+      name:
+        type: "string"
+        description: "Name of the organization e.g. dockstore"
+    description: "This describes a source control organization"
   SourceFile:
     type: "object"
     required:
@@ -7431,10 +7504,12 @@ definitions:
         $ref: "#/definitions/VersionMetadata"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
@@ -8064,10 +8139,12 @@ definitions:
         type: "string"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
@@ -8192,6 +8269,10 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the version was exported\
+          \ to ORCID."
       parsedInformationSet:
         type: "array"
         items:
@@ -8233,12 +8314,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       isChecker:
         type: "boolean"
       last_modified_date:
@@ -8247,12 +8322,10 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       parentEntry:
         $ref: "#/definitions/Entry"
       topicId:
@@ -8333,11 +8406,6 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      conceptDoi:
-        type: "string"
-        position: 13
-        description: "The Digital Object Identifier (DOI) representing all of the\
-          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
@@ -8348,15 +8416,36 @@ definitions:
         - "STUB"
         - "HOSTED"
         - "DOCKSTORE_YML"
+      conceptDoi:
+        type: "string"
+        position: 14
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       workflowName:
         type: "string"
         position: 14
         description: "This is the name of the workflow, not needed when only one workflow\
           \ in a repo"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       organization:
         type: "string"
         position: 15
         description: "This is a git organization for the workflow"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       repository:
         type: "string"
         position: 16
@@ -8442,10 +8531,12 @@ definitions:
         type: "string"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"

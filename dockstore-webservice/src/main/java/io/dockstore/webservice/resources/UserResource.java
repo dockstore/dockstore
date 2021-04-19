@@ -67,6 +67,7 @@ import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -82,7 +83,6 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
-import io.dockstore.webservice.jdbi.CloudInstanceDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -108,6 +108,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -148,10 +149,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
     private final DeletedUsernameDAO deletedUsernameDAO;
-    private PermissionsInterface authorizer;
+    private final PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
-    private final CloudInstanceDAO cloudInstanceDAO;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
@@ -168,7 +168,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
-        this.cloudInstanceDAO = new CloudInstanceDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
@@ -793,6 +792,26 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         workflowResource.syncEntitiesForUser(user);
         userDAO.clearCache();
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/github/organizations")
+    @Operation(operationId = "getMyGitHubOrgs", description = "Gets GitHub organizations for current user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Descriptions of Github organizations (including but not limited to id, names)", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SourceControlOrganization.class)))),
+            @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
+    })
+    public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        Token githubToken = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
+                .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
+        if (githubToken != null) {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
+            return sourceCodeRepo.getOrganizations();
+        }
+        return Lists.newArrayList();
     }
 
     @PATCH

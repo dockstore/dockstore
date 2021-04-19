@@ -584,7 +584,7 @@ public abstract class AbstractImageRegistry {
             }
 
         }
-        FileFormatHelper.updateFileFormats(tool.getWorkflowVersions(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(tool, tool.getWorkflowVersions(), fileFormatDAO, true);
         // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
         tool.getWorkflowVersions().forEach(tagDAO::create);
         toolDAO.create(tool);
