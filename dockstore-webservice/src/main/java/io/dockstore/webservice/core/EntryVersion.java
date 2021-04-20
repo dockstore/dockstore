@@ -1,7 +1,9 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -10,6 +12,11 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * The Entry and Version associated with a collection
@@ -31,6 +38,18 @@ public class EntryVersion implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "version_id")
     private Version version;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbUpdateDate;
 
     private EntryVersion() {
 
