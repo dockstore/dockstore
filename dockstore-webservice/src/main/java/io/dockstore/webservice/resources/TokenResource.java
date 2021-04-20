@@ -532,14 +532,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String githubLogin;
         Token dockstoreToken = null;
         Token githubToken = null;
+        Long gitHubId;
         try {
             GitHub github = new GitHubBuilder().withOAuthToken(accessToken).build();
             githubLogin = github.getMyself().getLogin();
+            gitHubId = github.getMyself().getId();
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Token ignored due to IOException", HttpStatus.SC_CONFLICT);
         }
 
-        User user = userDAO.findByGitHubUsername(githubLogin);
+        User user = userDAO.findByGitHubUserId(gitHubId);
         long userID;
         if (registerUser) {
             // check that there was no previous user, but by default use the github login

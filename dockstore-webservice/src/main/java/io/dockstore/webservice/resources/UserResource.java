@@ -78,6 +78,7 @@ import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -301,9 +302,17 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "selfDestruct", description = "Delete user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean selfDestruct(
-            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
-        checkUser(authUser, authUser.getId());
-        User user = userDAO.findById(authUser.getId());
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
+            @ApiParam(value = "Optional user id if deleting another user. Only admins can delete another user.") @Parameter(description = "Optional user id if deleting another user. Only admins can delete another user.", name = "userId", in = ParameterIn.QUERY) @QueryParam("userId") Long userId) {
+        User user;
+        if (userId != null) {
+            checkAdmin(authUser);
+            user = userDAO.findById(userId);
+        } else {
+            checkUser(authUser, authUser.getId());
+            user = userDAO.findById(authUser.getId());
+        }
+
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
@@ -716,6 +725,45 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         return userDAO.findAll();
+    }
+
+    // TODO: Do equivalent of below, but for Google users.
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserMetadataToGetIds")
+    @Operation(operationId = "updateUserMetadataToGetIds", description = "Update metadata of all GitHub users and returns list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Update metadata of all GitHub users and returns list of Dockstore users who could not be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only.", response = User.class, responseContainer = "List")
+    public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Token> gitHubTokens = tokenDAO.findAllGitHubTokens();
+        List<User> usersNotUpdatedWithToken = new ArrayList<>();
+        List<User> usersNotUpdatedWithTokenOrUsername = new ArrayList<>();
+
+        for (Token t : gitHubTokens) {
+            User currentUser = userDAO.findById(t.getUserId());
+            if (currentUser != null) {
+                try {
+                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser);
+                } catch (Exception ex) {
+                    usersNotUpdatedWithToken.add(currentUser);
+                }
+            }
+        }
+
+        // Get the GitHub token of the admin making this call to avoid rate limiting
+        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+        for (User u : usersNotUpdatedWithToken) {
+            boolean success = gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u);
+            if (!success) {
+                usersNotUpdatedWithTokenOrUsername.add(u);
+                LOG.info("Unable to get GitHub user id for Dockstore user " + u.getUsername() + " " + u.getId());
+            }
+        }
+
+        return usersNotUpdatedWithTokenOrUsername;
     }
 
     /**

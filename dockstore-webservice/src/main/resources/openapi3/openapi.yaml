@@ -4420,10 +4420,36 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/updateUserMetadataToGetIds:
+    get:
+      description: Update metadata of all GitHub users and returns list of Dockstore
+        users who could not be updated.
+      operationId: updateUserMetadataToGetIds
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/user:
     delete:
       description: Delete user if possible.
       operationId: selfDestruct
+      parameters:
+      - description: Optional user id if deleting another user. Only admins can delete
+          another user.
+        in: query
+        name: userId
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           content:
@@ -7623,6 +7649,9 @@ components:
           type: string
         name:
           type: string
+        onlineProfileId:
+          type: integer
+          format: int64
         username:
           type: string
     PublishRequest:

@@ -97,4 +97,8 @@ public class TokenDAO extends AbstractDAO<Token> {
     public Token findTokenByUserNameAndTokenSource(String username, TokenType tokenSource) {
         return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findTokenByUserNameAndTokenSource").setParameter("username", username).setParameter("tokenSource", tokenSource));
     }
+
+    public List<Token> findAllGitHubTokens() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Token.findAllGitHubTokens"));
+    }
 }

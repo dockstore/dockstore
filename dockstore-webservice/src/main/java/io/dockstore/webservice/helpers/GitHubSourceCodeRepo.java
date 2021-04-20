@@ -79,6 +79,7 @@ import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHTagObject;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.HttpConnector;
@@ -1028,11 +1029,35 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             profile.location = myself.getLocation();
             profile.company = myself.getCompany();
             profile.username = myself.getLogin();
+            profile.onlineProfileId = myself.getId();
             Map<String, User.Profile> userProfile = user.getUserProfiles();
             userProfile.put(TokenType.GITHUB_COM.toString(), profile);
             user.setAvatarUrl(myself.getAvatarUrl());
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername(), ex);
+        }
+    }
+
+    public boolean syncUserMetadataFromGitHubByUsername(User user) {
+        // eGit user object
+        try {
+            GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
+            User.Profile profile = new User.Profile();
+            profile.name = ghUser.getName();
+            profile.email = ghUser.getEmail();
+            profile.avatarURL = ghUser.getAvatarUrl();
+            profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
+            profile.location = ghUser.getLocation();
+            profile.company = ghUser.getCompany();
+            profile.username = ghUser.getLogin();
+            profile.onlineProfileId = ghUser.getId();
+            Map<String, User.Profile> userProfile = user.getUserProfiles();
+            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
+            user.setAvatarUrl(ghUser.getAvatarUrl());
+            return true;
+        } catch (IOException | NullPointerException ex) {
+            LOG.info("Could not find user information for user " + user.getUsername(), ex);
+            return false;
         }
     }
 

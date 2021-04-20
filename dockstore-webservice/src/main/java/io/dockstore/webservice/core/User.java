@@ -83,7 +83,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.countPublishedEntries", query = "SELECT count(e) FROM User u INNER JOIN u.entries e where e.isPublished=true and u.username = :username"),
-    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)")
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com' AND p.onlineProfileId = :id)")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
@@ -108,8 +109,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @ElementCollection(targetClass = Profile.class)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = {
-            @UniqueConstraint(columnNames = { "id", "token_type" }),
-            @UniqueConstraint(columnNames = { "username", "token_type" }) }, indexes = {
+            @UniqueConstraint(columnNames = { "id", "token_type" })}, indexes = {
             @Index(name = "profile_by_username", columnList = "username"), @Index(name = "profile_by_email", columnList = "email") })
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
@@ -563,6 +563,8 @@ public class User implements Principal, Comparable<User>, Serializable {
          */
         @Column(columnDefinition = "text")
         public String username;
+        @Column
+        public Long onlineProfileId;
 
         @Column(updatable = false)
         @CreationTimestamp

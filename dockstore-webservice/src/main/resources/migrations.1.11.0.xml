@@ -198,4 +198,14 @@
             <where>tokensource = 'orcid.org'</where>
         </update>
     </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="1618951572157-1">
+        <addColumn tableName="user_profile">
+            <column name="onlineprofileid" type="int8"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            ALTER TABLE user_profile DROP CONSTRAINT one_sign_in_method_by_profile;
+            CREATE UNIQUE INDEX one_sign_in_method_by_profile ON user_profile USING btree (onlineprofileid, token_type) WHERE onlineprofileid IS NOT NULL;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

@@ -76,6 +76,10 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return (User)query.uniqueResult();
     }
 
+    public User findByGitHubUserId(long id) {
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findByGitHubUserId").setParameter("id", id));
+    }
+
     public long findPublishedEntries(String username)  {
         final Query query = namedQuery("io.dockstore.webservice.core.User.countPublishedEntries").setParameter("username", username);
         return (long)query.uniqueResult();

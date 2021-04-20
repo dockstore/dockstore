@@ -4142,6 +4142,26 @@ paths:
               $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/updateUserMetadataToGetIds:
+    get:
+      tags:
+      - "users"
+      summary: "Update metadata of all GitHub users and returns list of Dockstore\
+        \ users who could not be updated."
+      description: "Admin only."
+      operationId: "updateUserMetadataToGetIds"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/User"
+      security:
+      - BEARER: []
   /users/user:
     get:
       tags:
@@ -4167,7 +4187,14 @@ paths:
       operationId: "selfDestruct"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "userId"
+        in: "query"
+        description: "Optional user id if deleting another user. Only admins can delete\
+          \ another user."
+        required: false
+        type: "integer"
+        format: "int64"
       responses:
         200:
           description: "successful operation"
@@ -7343,6 +7370,9 @@ definitions:
         type: "string"
       name:
         type: "string"
+      onlineProfileId:
+        type: "integer"
+        format: "int64"
       username:
         type: "string"
   PublishRequest:
