@@ -55,7 +55,7 @@ public class CloudInstance implements Serializable {
     private boolean supportsFileImports;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id", columnDefinition = "bigint")
     @JsonIgnore
     private User user;
 

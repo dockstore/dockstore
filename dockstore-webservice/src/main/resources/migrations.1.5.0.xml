@@ -33,8 +33,10 @@
 
     <!-- adding support for input and output format -->
     <changeSet author="gluu (generated)" id="create-fileformat-tables">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="fileformat_id_seq"/>
         <createTable tableName="fileformat">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('fileformat_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="fileformat_pkey"/>
             </column>
             <column name="value" type="text"/>

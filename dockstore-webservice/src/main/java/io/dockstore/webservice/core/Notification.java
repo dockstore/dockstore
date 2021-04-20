@@ -11,6 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.Size;
 
@@ -38,8 +39,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Notification {
 
     @Id
-    @Column
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // id is auto incremented by the database
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notification_id_seq")
+    @SequenceGenerator(name = "notification_id_seq", sequenceName = "notification_id_seq", allocationSize = 1)
+    @Column(name = "id", unique = true, nullable = false, columnDefinition = "bigint default nextval('notification_id_seq')")
     @ApiModelProperty(value = "ID for the notification", position = 0)
     private long id;
 

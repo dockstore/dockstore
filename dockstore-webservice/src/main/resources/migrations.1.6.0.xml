@@ -25,8 +25,10 @@
     </changeSet>
 
     <changeSet author="aduncan (generated)" id="addOrganisationTable">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="organisation_id_seq"/>
         <createTable tableName="organisation">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('organisation_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="organisation_pkey"/>
             </column>
             <column name="approved" type="BOOLEAN"/>
@@ -81,8 +83,10 @@
     </changeSet>
 
     <changeSet author="aduncan (generated)" id="createEventsTable">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="event_id_seq"/>
         <createTable tableName="event">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('event_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="event_pkey"/>
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
@@ -113,8 +117,10 @@
     </changeSet>
 
     <changeSet author="aduncan (generated)" id="createCollectionTable">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="collection_id_seq"/>
         <createTable tableName="collection">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('collection_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="collection_pkey"/>
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
@@ -161,8 +167,10 @@
     </changeSet>
 
     <changeSet author="aduncan" id="AddValidationTable">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="validation_id_seq"/>
         <createTable tableName="validation">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('validation_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="validation_pkey"/>
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>

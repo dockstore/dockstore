@@ -30,6 +30,7 @@ import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -71,7 +72,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable, Aliasable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "collection_id_seq")
+    @SequenceGenerator(name = "collection_id_seq", sequenceName = "collection_id_seq", allocationSize = 1)
+    @Column(columnDefinition = "bigint default nextval('collection_id_seq')")
     @ApiModelProperty(value = "Implementation specific ID for the collection in this web service", position = 0)
     @Schema(description = "Implementation specific ID for the collection in this web service")
     private long id;
@@ -113,21 +116,21 @@ public class Collection implements Serializable, Aliasable {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "collection_id", nullable = false),
+            @JoinColumn(name = "collection_id", nullable = false, columnDefinition = "bigint"),
     })
     @JsonIgnore
     private Set<EntryVersion> entries = new HashSet<>();
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organizationid")
+    @JoinColumn(name = "organizationid", columnDefinition = "bigint")
     private Organization organization;
 
     @Column(name = "organizationid", insertable = false, updatable = false)
     private long organizationID;
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "collection_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_col_aliases", columnNames = { "alias" }))
+    @JoinTable(name = "collection_alias", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = @UniqueConstraint(name = "unique_col_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for collections")
     private Map<String, Alias> aliases = new HashMap<>();

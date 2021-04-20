@@ -262,7 +262,7 @@ Lists of 357 third-party dependencies.
      (Apache License 2.0) JVM Integration for Metrics (io.dropwizard.metrics:metrics-jvm:4.1.19 - https://metrics.dropwizard.io/metrics-jvm)
      (The Apache Software License, Version 2.0) lang-mustache (org.elasticsearch.plugin:lang-mustache-client:7.9.3 - https://github.com/elastic/elasticsearch)
      (WDL License https://github.com/openwdl/wdl/blob/master/LICENSE) language-factory-core (org.broadinstitute:language-factory-core_2.12:60 - no url defined)
-     (Apache License, Version 2.0) Liquibase (org.liquibase:liquibase-core:3.10.2 - http://www.liquibase.org/liquibase-root/liquibase-dist)
+     (Apache License, Version 2.0) Liquibase (org.liquibase:liquibase-core:3.10.3 - http://www.liquibase.org/liquibase-root/liquibase-dist)
      (MIT License) liquibase-slf4j (com.mattbertolini:liquibase-slf4j:2.0.0 - https://github.com/mattbertolini/liquibase-slf4j)
      (Apache License 2.0) localstack-utils (cloud.localstack:localstack-utils:0.1.19 - http://localstack.cloud)
      (Apache Software Licenses) Log4j Implemented Over SLF4J (org.slf4j:log4j-over-slf4j:1.7.30 - http://www.slf4j.org)

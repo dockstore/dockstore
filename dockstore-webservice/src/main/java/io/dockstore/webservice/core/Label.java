@@ -24,6 +24,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,8 +49,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Label implements Comparable<Label> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "label_id_seq")
+    @SequenceGenerator(name = "label_id_seq", sequenceName = "label_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
+    @Column(columnDefinition = "bigint default nextval('label_id_seq')")
     private long id;
 
     @Column(unique = true)

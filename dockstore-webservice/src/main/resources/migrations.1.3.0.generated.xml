@@ -24,8 +24,10 @@
         <createSequence sequenceName="tag_id_seq"/>
     </changeSet>
     <changeSet author="dyuen (generated)" id="1511468490651-3">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="enduser_id_seq"/>
         <createTable tableName="enduser">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('enduser_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="enduser_pkey"/>
             </column>
             <column name="avatarurl" type="VARCHAR(255)"/>
@@ -60,16 +62,20 @@
         </createTable>
     </changeSet>
     <changeSet author="dyuen (generated)" id="1511468490651-6">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="label_id_seq"/>
         <createTable tableName="label">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('label_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="label_pkey"/>
             </column>
             <column name="value" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
     <changeSet author="dyuen (generated)" id="1511468490651-7">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="sourcefile_id_seq"/>
         <createTable tableName="sourcefile">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('sourcefile_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="sourcefile_pkey"/>
             </column>
             <column name="content" type="TEXT"/>
@@ -117,8 +123,10 @@
         </createTable>
     </changeSet>
     <changeSet author="dyuen (generated)" id="1511468490651-10">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="token_id_seq"/>
         <createTable tableName="token">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('token_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="token_pkey"/>
             </column>
             <column name="content" type="VARCHAR(255)">
