@@ -136,7 +136,7 @@
     <changeSet id="dropNewSequences" author="dyuen" failOnError="false">
         <dropSequence sequenceName="cloud_instance_id_seq"/>
     </changeSet>
-      
+
     <changeSet author="gluu (generated)" id="orcidTokenExpansion">
         <addColumn tableName="token">
             <column name="expirationtime" type="int8"/>
@@ -148,5 +148,47 @@
             <column name="scope" value="/authenticate"/>
             <where>tokensource = 'orcid.org'</where>
         </update>
+    </changeSet>
+  
+    <changeSet author="dyuen (generated)" id="date_more_things">
+        <addColumn tableName="cloud_instance">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloudinstance_supportedlanguages">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="collection_entry_version">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="parsed_information">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloud_instance">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloudinstance_supportedlanguages">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="collection_entry_version">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="parsed_information">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="standard_sequences">
+        <alterSequence sequenceName="container_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="enduser_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="label_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="sourcefile_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="tag_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="token_id_seq" incrementBy="1" />
     </changeSet>
 </databaseChangeLog>

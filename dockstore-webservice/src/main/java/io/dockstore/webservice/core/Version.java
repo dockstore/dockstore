@@ -93,7 +93,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tag_id_seq")
-    @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq")
+    @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the tag in this web service", position = 0)
     protected long id;
 
