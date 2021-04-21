@@ -129,7 +129,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
+    @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
     @OrderBy("path")
@@ -154,6 +154,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 9)
     @OneToOne
+    @JoinColumn(name = "versioneditor_id", referencedColumnName = "id", columnDefinition = "bigint")
     private User versionEditor;
 
     // database timestamps
@@ -171,14 +172,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
     @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
     @OrderBy("id")
     @BatchSize(size = 25)
@@ -189,14 +190,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private Set<Author> authors = new HashSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
+    @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
     @OrderBy("type")
     @BatchSize(size = 25)
     private final SortedSet<Validation> validations;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "The images that belong to this version", position = 15)
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();

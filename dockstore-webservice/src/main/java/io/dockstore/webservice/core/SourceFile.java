@@ -40,6 +40,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
@@ -77,8 +78,10 @@ public class SourceFile implements Comparable<SourceFile> {
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sourcefile_id_seq")
+    @SequenceGenerator(name = "sourcefile_id_seq", sequenceName = "sourcefile_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", position = 0)
+    @Column(columnDefinition = "bigint default nextval('sourcefile_id_seq')")
     private long id;
 
     @Enumerated(EnumType.STRING)
@@ -119,7 +122,7 @@ public class SourceFile implements Comparable<SourceFile> {
     private Timestamp dbUpdateDate;
 
     @ElementCollection(targetClass = VerificationInformation.class, fetch = FetchType.EAGER)
-    @JoinTable(name = "sourcefile_verified", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = {
+    @JoinTable(name = "sourcefile_verified", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = @UniqueConstraint(columnNames = {
         "id", "source" }))
     @MapKeyColumn(name = "source", columnDefinition = "text")
     @ApiModelProperty(value = "maps from platform to whether an entry successfully ran on it using this test json")

@@ -30,6 +30,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -82,8 +83,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Token implements Comparable<Token> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "token_id_seq")
+    @SequenceGenerator(name = "token_id_seq", sequenceName = "token_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0, readOnly = true)
+    @Column(columnDefinition = "bigint default nextval('token_id_seq')")
     private long id;
 
     @Column(nullable = false)

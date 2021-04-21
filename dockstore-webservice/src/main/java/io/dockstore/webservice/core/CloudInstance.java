@@ -1,6 +1,7 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -21,6 +22,9 @@ import javax.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @ApiModel(value = "CloudInstance", description = "Instances that launch-with cloud partners have")
 @Entity
@@ -55,13 +59,26 @@ public class CloudInstance implements Serializable {
     private boolean supportsFileImports;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id", columnDefinition = "bigint")
     @JsonIgnore
     private User user;
 
     @ElementCollection(targetClass = Language.class)
     @ApiModelProperty(value = "The languages the cloud instance is known to support")
     private Set<Language> supportedLanguages;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbUpdateDate;
+
 
     public long getId() {
         return id;

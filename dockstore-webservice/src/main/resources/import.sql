@@ -29,6 +29,8 @@ CREATE UNIQUE INDEX partial_service_name ON service USING btree (sourcecontrol, 
 
 -- unable to convert these to JPA properly
 ALTER TABLE token ADD CONSTRAINT fk_userid_with_enduser FOREIGN KEY (userid) REFERENCES public.enduser (id) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION;
+ALTER TABLE cloudinstance_supportedlanguages ADD CONSTRAINT cloudinstance_supportedlanguages_pkey PRIMARY KEY (cloudinstance_id, language);
+
 -- https://liquibase.jira.com/browse/CORE-2895
 CREATE UNIQUE INDEX organization_name_index on organization (LOWER(name));
 CREATE UNIQUE INDEX collection_name_index on collection (LOWER(name), organizationid);

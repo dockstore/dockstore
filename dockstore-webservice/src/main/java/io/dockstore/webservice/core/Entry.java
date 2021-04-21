@@ -129,7 +129,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String description;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
     @OrderBy("id")
     @BatchSize(size = 25)
@@ -228,7 +228,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of every version of an entry", position = 15)
     @OrderBy("id")
     @BatchSize(size = 25)
@@ -236,7 +236,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty("output_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of every version of an entry", position = 16)
     @OrderBy("id")
     @BatchSize(size = 25)
