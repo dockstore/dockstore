@@ -182,4 +182,13 @@
             <column name="dbupdatedate" type="timestamp"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="dyuen (generated)" id="standard_sequences">
+        <alterSequence sequenceName="container_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="enduser_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="label_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="sourcefile_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="tag_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="token_id_seq" incrementBy="1" />
+    </changeSet>
 </databaseChangeLog>
