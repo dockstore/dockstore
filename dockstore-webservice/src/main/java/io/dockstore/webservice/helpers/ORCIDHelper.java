@@ -129,8 +129,11 @@ public final class ORCIDHelper {
      * @param httpResponse
      * @return
      */
-    public static String getPutCodeFromLocation(HttpResponse httpResponse) {
+    public static String getPutCodeFromLocation(HttpResponse<String> httpResponse) {
         Optional<String> location = httpResponse.headers().firstValue("Location");
+        if (location.isEmpty()) {
+            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
         URI uri;
         try {
             uri = new URI(location.get());

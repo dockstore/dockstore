@@ -274,7 +274,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             } else {
                 updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
             }
-        } catch (IOException | URISyntaxException | InterruptedException e) {
+        } catch (IOException | URISyntaxException e) {
+            throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }  catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
