@@ -117,7 +117,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "container_id_seq")
-    @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq")
+    @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
