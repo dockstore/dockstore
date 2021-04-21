@@ -37,19 +37,23 @@ public class Author {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", required = true, position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the author in this web service", required = true, position = 0)
     private long id;
 
     @Column(columnDefinition = "varchar(255)", nullable = false)
+    @ApiModelProperty(value = "Name of the author", required = true, position = 1)
     private String name;
 
     @Column(columnDefinition = "varchar(255)")
+    @ApiModelProperty(value = "Role of the author")
     private String role;
 
     @Column(columnDefinition = "varchar(255)")
+    @ApiModelProperty(value = "Affiliation of the author")
     private String affiliation;
 
     @Column(columnDefinition = "varchar(255)")
+    @ApiModelProperty(value = "Email of the author")
     private String email;
 
     // database timestamps

@@ -182,7 +182,7 @@
             <column name="dbupdatedate" type="timestamp"/>
         </addColumn>
     </changeSet>
-    
+
     <changeSet author="ghogue (generated)" id="multipleAuthorsTable">
         <createTable tableName="author">
             <column autoIncrement="true" name="id" type="BIGINT">
