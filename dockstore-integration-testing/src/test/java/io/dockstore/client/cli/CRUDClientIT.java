@@ -188,7 +188,7 @@ public class CRUDClientIT extends BaseIT {
         }
         assertTrue(thrownException);
 
-        ContainersApi ownerApi = new ContainersApi();
+        ContainersApi ownerApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
         Assert.assertNotNull("The owner can still get their own entry", ownerApi.getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile));
 
         // Publish tool
