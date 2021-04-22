@@ -1019,7 +1019,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
      */
-    public void syncUserMetadataFromGitHub(User user, TokenDAO tokenDAO, boolean updateToken) {
+    public void syncUserMetadataFromGitHub(User user, Optional<TokenDAO> tokenDAO) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
@@ -1027,8 +1027,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             profile.email = getEmail(myself);
 
             // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
-            if (updateToken) {
-                Token usersGitHubToken = tokenDAO.findGithubByUserId(user.getId()).get(0);
+            if (tokenDAO.isPresent()) {
+                Token usersGitHubToken = tokenDAO.get().findGithubByUserId(user.getId()).get(0);
                 usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
                 usersGitHubToken.setUsername(profile.username);
             }

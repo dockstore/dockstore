@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -301,7 +302,7 @@ public class User implements Principal, Comparable<User>, Serializable {
             Token githubToken = githubByUserId.get(0);
             GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
             sourceCodeRepo.checkSourceCodeValidity();
-            sourceCodeRepo.syncUserMetadataFromGitHub(this, tokenDAO, true);
+            sourceCodeRepo.syncUserMetadataFromGitHub(this, Optional.of(tokenDAO));
             return true;
         }
     }

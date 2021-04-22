@@ -749,7 +749,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             if (currentUser != null) {
                 try {
                     GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, tokenDAO, true);
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, Optional.of(tokenDAO));
                 } catch (Exception ex) {
                     usersNotUpdatedWithToken.add(currentUser);
                 }
