@@ -764,7 +764,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
             } catch (Exception ex) {
                 usersNotUpdatedWithTokenOrUsername.add(u);
-                LOG.info("Unable to get GitHub user id for Dockstore user " + u.getUsername() + " " + u.getId());
+                LOG.info(ex.getMessage());
             }
         }
 

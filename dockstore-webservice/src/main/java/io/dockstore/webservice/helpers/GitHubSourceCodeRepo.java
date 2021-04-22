@@ -1018,6 +1018,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
+     * @param tokenDAO Optional tokenDAO used if the user's GitHub token information needs to be updated as well.
      */
     public void syncUserMetadataFromGitHub(User user, Optional<TokenDAO> tokenDAO) {
         // eGit user object
@@ -1037,11 +1038,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    // DO NOT USE THIS FUNCTION ELSEWHERE
     // This function has no use outside of gathering user's GitHub IDs the first time. This uses the GitHub token of the admin user calling the new, one-time-use endpoint.
     // This will attempt to get the GitHub profile info (including id) of users we were unable to get by calling the github.getMyself() function above.
     public void syncUserMetadataFromGitHubByUsername(User user, TokenDAO tokenDAO) {
         // eGit user object
         try {
+            if (user.getUserProfiles().get(TokenType.GITHUB_COM.toString()) == null) {
+                throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
+            }
             GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
             User.Profile profile = getProfile(user, ghUser);
             profile.email = ghUser.getEmail();
@@ -1051,19 +1056,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
             usersGitHubToken.setUsername(profile.username);
         } catch (IOException ex) {
-            LOG.info("Could not find user information for user " + user.getUsername(), ex);
+            String msg = "Unable to get GitHub user id for Dockstore user " + user.getUsername() + " " + user.getId();
+            LOG.info(msg, ex);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
     }
 
     public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
         User.Profile profile = new User.Profile();
+        profile.onlineProfileId = ghUser.getId();
+        profile.username = ghUser.getLogin();
         profile.name = ghUser.getName();
         profile.avatarURL = ghUser.getAvatarUrl();
         profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
         profile.location = ghUser.getLocation();
         profile.company = ghUser.getCompany();
-        profile.username = ghUser.getLogin();
-        profile.onlineProfileId = ghUser.getId();
         Map<String, User.Profile> userProfile = user.getUserProfiles();
         userProfile.put(TokenType.GITHUB_COM.toString(), profile);
         user.setAvatarUrl(ghUser.getAvatarUrl());
