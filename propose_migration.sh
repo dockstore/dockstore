@@ -14,9 +14,9 @@ if [ "${CIRCLECI-false}" = "true" ]; then
     rm dockstore-webservice/target/detected-migrations.xml || true
 else
     ## uncomment/comment this section if database is running locally on postgres
-    sudo -i -u postgres dropdb webservice_test || true
+    sudo -i -u postgres dropdb webservice_test || true # comment this line if you want to diff with an already loaded db dump 
     sudo -i -u postgres dropdb webservice_test_proposed || true
-    sudo -i -u postgres createdb webservice_test || true
+    sudo -i -u postgres createdb webservice_test || true # comment this line if you want to diff with an already loaded db dump
     sudo -i -u postgres createdb webservice_test_proposed || true
     rm dockstore-webservice/target/detected-migrations.xml || true
     ## uncomment/comment this section if running on docker
@@ -29,7 +29,8 @@ fi
 
 ## load up the old database based on current migration
 rm dockstore-webservice/target/dockstore-webservice-*sources.jar || true
-java -jar dockstore-webservice/target/dockstore-webservice-*.jar db migrate dockstore-integration-testing/src/test/resources/dockstore.yml --include 1.3.0.generated,1.4.0,1.5.0,1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0
+# java -jar dockstore-webservice/target/dockstore-webservice-*.jar db migrate dockstore-integration-testing/src/test/resources/dockstore.yml --include 1.3.0.consistency,1.4.0,1.5.0,1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0 # uncomment this line if you want to diff with an already loaded db dump
+java -jar dockstore-webservice/target/dockstore-webservice-*.jar db migrate dockstore-integration-testing/src/test/resources/dockstore.yml --include 1.3.0.generated,1.4.0,1.5.0,1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0 # uncomment this line if you want to generate a DB from scratch with migrations
 
 ## create the new database based on JPA (ugly, should really create a proper dw command if this works)
 ## remove timeout for mac devices, will have to break manually

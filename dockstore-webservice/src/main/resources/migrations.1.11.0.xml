@@ -183,6 +183,23 @@
         </addColumn>
     </changeSet>
 
+
+    <changeSet author="dyuen (generated)" id="standard_sequences">
+        <alterSequence sequenceName="container_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="enduser_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="label_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="sourcefile_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="tag_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="token_id_seq" incrementBy="1" />
+    </changeSet>
+    <!-- This fixes the previous incorrect orcidTokenExpansion -->
+    <changeSet id="existingORCIDScopeSet" author="gluu">
+        <update tableName="token">
+            <column name="scope" value="AUTHENTICATE"/>
+            <where>tokensource = 'orcid.org'</where>
+        </update>
+    </changeSet>
+
     <changeSet author="ghogue (generated)" id="multipleAuthorsTable">
         <createTable tableName="author">
             <column autoIncrement="true" name="id" type="BIGINT">
