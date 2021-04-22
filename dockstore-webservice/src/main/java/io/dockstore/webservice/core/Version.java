@@ -185,7 +185,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
-    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinColumn(name = "versionid", referencedColumnName = "id", nullable = false)
     @ApiModelProperty(value = "Non-ORCID Authors for each version.")
     private Set<Author> authors = new HashSet<>();
