@@ -539,7 +539,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String githubLogin;
         Token dockstoreToken = null;
         Token githubToken = null;
-        Long gitHubId;
+        long gitHubId;
         try {
             GitHub github = new GitHubBuilder().withOAuthToken(accessToken).build();
             githubLogin = github.getMyself().getLogin();
