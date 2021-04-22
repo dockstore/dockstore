@@ -4422,18 +4422,19 @@ paths:
       - users
   /users/updateUserMetadataToGetIds:
     get:
+      deprecated: true
       description: Update metadata of all GitHub users and returns list of Dockstore
         users who could not be updated.
       operationId: updateUserMetadataToGetIds
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-          description: default response
+          description: Get list Dockstore users we were unable to get GitHub IDs for.
       security:
       - bearer: []
       tags:
@@ -8010,6 +8011,9 @@ components:
           type: integer
           format: int64
         id:
+          type: integer
+          format: int64
+        onlineProfileId:
           type: integer
           format: int64
         refreshToken:

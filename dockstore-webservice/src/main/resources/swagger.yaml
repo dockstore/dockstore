@@ -4142,26 +4142,6 @@ paths:
               $ref: "#/definitions/User"
       security:
       - BEARER: []
-  /users/updateUserMetadataToGetIds:
-    get:
-      tags:
-      - "users"
-      summary: "Update metadata of all GitHub users and returns list of Dockstore\
-        \ users who could not be updated."
-      description: "Admin only."
-      operationId: "updateUserMetadataToGetIds"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/User"
-      security:
-      - BEARER: []
   /users/user:
     get:
       tags:
@@ -7716,6 +7696,11 @@ definitions:
         type: "string"
         position: 2
         description: "Contents of the access token"
+      onlineProfileId:
+        type: "integer"
+        format: "int64"
+        position: 3
+        description: "The ID of the user on the integrated service."
       username:
         type: "string"
         position: 3

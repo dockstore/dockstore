@@ -46,3 +46,7 @@ CREATE UNIQUE INDEX unique_collection_entry_version ON collection_entry_version 
 
 ALTER TABLE user_profile DROP CONSTRAINT one_sign_in_method_by_profile;
 CREATE UNIQUE INDEX one_sign_in_method_by_profile ON user_profile USING btree (onlineprofileid, token_type) WHERE onlineprofileid IS NOT NULL;
+
+ALTER TABLE token DROP CONSTRAINT one_token_link_per_identify;
+CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprofileid, tokensource) WHERE onlineprofileid IS NOT NULL;
+CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;

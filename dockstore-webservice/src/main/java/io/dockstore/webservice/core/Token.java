@@ -32,7 +32,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -51,7 +50,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel(value = "Token", description = "Access tokens for this web service and integrated services like quay.io and github")
 @Entity
-@Table(name = "token", uniqueConstraints = @UniqueConstraint(name = "one_token_link_per_identify", columnNames = { "username", "tokenSource" }))
+@Table(name = "token")
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent",
             query = "SELECT t FROM Token t WHERE t.content = :content"),
@@ -77,6 +76,8 @@ import org.hibernate.annotations.UpdateTimestamp;
             query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = 'github.com'"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByUserNameAndTokenSource",
             query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = :tokenSource"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByOnlineProfileIdAndTokenSource",
+                query = "SELECT t FROM Token t WHERE t.onlineProfileId = :onlineProfileId AND t.tokenSource = :tokenSource"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGitHubTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'github.com'")
 })
 
@@ -102,6 +103,10 @@ public class Token implements Comparable<Token> {
     @Column(nullable = false)
     @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it", position = 3)
     private String username;
+
+    @Column()
+    @ApiModelProperty(value = "The ID of the user on the integrated service.", position = 3)
+    private Long onlineProfileId;
 
     @Column
     @ApiModelProperty(position = 4)
@@ -217,6 +222,14 @@ public class Token implements Comparable<Token> {
      */
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public Long getOnlineProfileId() {
+        return onlineProfileId;
+    }
+
+    public void setOnlineProfileId(final Long onlineProfileId) {
+        this.onlineProfileId = onlineProfileId;
     }
 
     /**

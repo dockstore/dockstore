@@ -229,7 +229,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
 
-            checkIfAccountHasBeenLinked(username, TokenType.QUAY_IO);
+            checkIfAccountHasBeenLinked(token, TokenType.QUAY_IO);
             long create = tokenDAO.create(token);
             LOG.info("Quay token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -242,15 +242,22 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     /**
      * Checks if an account has already been connected to Dockstore
      * For services that don't require refresh tokens
-     * @param username Username on account being added
+     * @param token Newly created Token for account being linked
      * @param tokenType The type of token being added
      */
-    private void checkIfAccountHasBeenLinked(String username, TokenType tokenType) {
-        Token existingToken = tokenDAO.findTokenByUserNameAndTokenSource(username, tokenType);
+    private void checkIfAccountHasBeenLinked(Token token, TokenType tokenType) {
+        Token existingToken;
+        // TODO: Check if tokentype is Google after Google ids have been gathered
+        if (tokenType == TokenType.GITHUB_COM) {
+            existingToken = tokenDAO.findTokenByOnlineProfileIdAndTokenSource(token.getOnlineProfileId(), tokenType);
+        } else {
+            existingToken = tokenDAO.findTokenByUserNameAndTokenSource(token.getUsername(), tokenType);
+        }
+
         if (existingToken != null) {
             User dockstoreUser = userDAO.findById(existingToken.getUserId());
             final String tokenAccount = "\"" + tokenType.toString() + "\"";
-            final String tokenAccountName = "\"" + username + "\"";
+            final String tokenAccountName = "\"" + token.getUsername() + "\"";
             final String dockstoreUserName = "\"" + dockstoreUser.getName() + "\"";
             String msg = MessageFormat.format("The {0} account {1} is already linked to the Dockstore user {2}. "
                 + "Login to Dockstore using your {0} {1} user.", tokenAccount, tokenAccountName, dockstoreUserName);
@@ -330,7 +337,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
 
-            checkIfAccountHasBeenLinked(username, TokenType.GITLAB_COM);
+            checkIfAccountHasBeenLinked(token, TokenType.GITLAB_COM);
             long create = tokenDAO.create(token);
             LOG.info("Gitlab token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -455,7 +462,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             LOG.info("Could not find user's Google token. Making new one...");
             // CREATE GOOGLE TOKEN
             googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM);
-            checkIfAccountHasBeenLinked(googleLoginName, TokenType.GOOGLE_COM);
+            checkIfAccountHasBeenLinked(googleToken, TokenType.GOOGLE_COM);
             tokenDAO.create(googleToken);
             // Update user profile too
             user = userDAO.findById(userID);
@@ -594,11 +601,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             githubToken.setContent(accessToken);
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
-            checkIfAccountHasBeenLinked(githubLogin, TokenType.GITHUB_COM);
+            githubToken.setOnlineProfileId(gitHubId);
+            checkIfAccountHasBeenLinked(githubToken, TokenType.GITHUB_COM);
             tokenDAO.create(githubToken);
             user = userDAO.findById(userID);
             GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
-            gitHubSourceCodeRepo.syncUserMetadataFromGitHub(user);
+            gitHubSourceCodeRepo.syncUserMetadataFromGitHub(user, tokenDAO, false);
         }
         return dockstoreToken;
     }
@@ -669,7 +677,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 LOG.info("Bitbucket.org token username is null, did not create token");
                 throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
-            checkIfAccountHasBeenLinked(username, TokenType.BITBUCKET_ORG);
+            checkIfAccountHasBeenLinked(token, TokenType.BITBUCKET_ORG);
             long create = tokenDAO.create(token);
             LOG.info("Bitbucket token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -744,7 +752,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             token.setScope(tokenScope);
             token.setExpirationTime(expirationTime);
 
-            checkIfAccountHasBeenLinked(username, TokenType.ORCID_ORG);
+            checkIfAccountHasBeenLinked(token, TokenType.ORCID_ORG);
             long create = tokenDAO.create(token);
             LOG.info("ORCID token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -799,7 +807,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // otherwise we will get a DB error when trying to
             // link another user's Zenodo credentials
             token.setUsername(user.getUsername());
-            checkIfAccountHasBeenLinked(user.getUsername(), TokenType.ZENODO_ORG);
+            checkIfAccountHasBeenLinked(token, TokenType.ZENODO_ORG);
             long create = tokenDAO.create(token);
             LOG.info("Zenodo token created for {}", user.getUsername());
             return tokenDAO.findById(create);

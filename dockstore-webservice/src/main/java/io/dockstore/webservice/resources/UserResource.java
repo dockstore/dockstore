@@ -733,8 +733,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork
     @RolesAllowed("admin")
     @Path("/updateUserMetadataToGetIds")
+    @Deprecated
     @Operation(operationId = "updateUserMetadataToGetIds", description = "Update metadata of all GitHub users and returns list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Update metadata of all GitHub users and returns list of Dockstore users who could not be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only.", response = User.class, responseContainer = "List")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list Dockstore users we were unable to get GitHub IDs for.", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = User.class))))
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
     public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<Token> gitHubTokens = tokenDAO.findAllGitHubTokens();
         List<User> usersNotUpdatedWithToken = new ArrayList<>();
@@ -745,7 +749,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
             if (currentUser != null) {
                 try {
                     GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser);
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, tokenDAO, true);
                 } catch (Exception ex) {
                     usersNotUpdatedWithToken.add(currentUser);
                 }
@@ -756,8 +760,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
         for (User u : usersNotUpdatedWithToken) {
-            boolean success = gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u);
-            if (!success) {
+            try {
+                gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
+            } catch (Exception ex) {
                 usersNotUpdatedWithTokenOrUsername.add(u);
                 LOG.info("Unable to get GitHub user id for Dockstore user " + u.getUsername() + " " + u.getId());
             }
