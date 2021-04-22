@@ -168,7 +168,7 @@ Lists of 357 third-party dependencies.
      (Apache License 2.0) Hibernate Validator Engine (org.hibernate.validator:hibernate-validator:6.1.7.Final - http://hibernate.org/validator/hibernate-validator)
      (EPL 2.0) (GPL2 w/ CPE) HK2 API module (org.glassfish.hk2:hk2-api:2.6.1 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-api)
      (EPL 2.0) (GPL2 w/ CPE) HK2 Implementation Utilities (org.glassfish.hk2:hk2-utils:2.6.1 - https://github.com/eclipse-ee4j/glassfish-hk2/hk2-utils)
-     (The Apache Software License, Version 2.0) Hoverfly Java (io.specto:hoverfly-java:0.12.0 - https://github.com/SpectoLabs/hoverfly-java)
+     (The Apache Software License, Version 2.0) Hoverfly Java (io.specto:hoverfly-java:0.14.0 - https://github.com/SpectoLabs/hoverfly-java)
      (The Apache Software License, Version 2.0) HPPC Collections (com.carrotsearch:hppc:0.8.1 - http://labs.carrotsearch.com/hppc.html/hppc)
      (The Apache Software License, Version 2.0) IntelliJ IDEA Annotations (org.jetbrains:annotations:13.0 - http://www.jetbrains.org)
      (Apache 2.0) io.grpc:grpc-context (io.grpc:grpc-context:1.22.1 - https://github.com/grpc/grpc-java)

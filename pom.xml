@@ -42,7 +42,7 @@
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
         <postgresql.version>42.2.19</postgresql.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
-        <maven-surefire.version>2.21.0</maven-surefire.version>
+        <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
 
         <skipTests>false</skipTests>

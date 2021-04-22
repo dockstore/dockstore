@@ -206,7 +206,7 @@
                 <configuration>
                     <!-- nothing to do with the JAVA_TOOL_OPTIONS in .cirleci/config.yml because surefire has its own JVM-->
                     <!-- This plus the .circle/config.yml must add to a bit less than 4GB -->
-                    <argLine>-Xmx3g</argLine>
+                    <argLine>-Xmx4g</argLine>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
                 </configuration>

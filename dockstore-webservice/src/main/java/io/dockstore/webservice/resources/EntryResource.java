@@ -18,9 +18,9 @@ package io.dockstore.webservice.resources;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -79,14 +79,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -276,51 +274,36 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             } else {
                 updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
             }
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
+            throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }  catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
     private void createOrcidWork(Optional<Version> optionalVersion, Entry entry, User user, String orcidWorkString, List<Token> orcidTokens)
-            throws IOException {
-        try (CloseableHttpResponse response = ORCIDHelper.postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken())) {
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(),
-                        response.getStatusLine().getStatusCode());
+            throws IOException, URISyntaxException, InterruptedException {
+        HttpResponse<String> response = ORCIDHelper
+                .postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken());
+        if (response.statusCode() != HttpStatus.SC_CREATED) {
+            throw new CustomWebApplicationException("Could not export to ORCID: " + response.body(), response.statusCode());
+        } else {
+            if (optionalVersion.isPresent()) {
+                optionalVersion.get().getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
             } else {
-                if (optionalVersion.isPresent()) {
-                    optionalVersion.get().getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
-                } else {
-                    entry.setOrcidPutCode(getPutCodeFromLocation(response));
-                }
+                entry.setOrcidPutCode(getPutCodeFromLocation(response));
             }
         }
     }
 
-    private void updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode) throws IOException {
-        try (CloseableHttpResponse response = ORCIDHelper.putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken(), putCode)) {
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(),
-                        response.getStatusLine().getStatusCode());
-            }
+    private void updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode)
+            throws IOException, URISyntaxException, InterruptedException {
+        HttpResponse<String> response = ORCIDHelper
+                .putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken(), putCode);
+        if (response.statusCode() != HttpStatus.SC_OK) {
+            throw new CustomWebApplicationException("Could not export to ORCID: " + response.body(), response.statusCode());
         }
-    }
-
-    /**
-     * Get the ORCID put code from the response
-     * @param httpResponse
-     * @return
-     */
-    private static String getPutCodeFromLocation(HttpResponse httpResponse) {
-        Header[] locations = httpResponse.getHeaders("Location");
-        URI uri;
-        try {
-            uri = new URI(locations[0].getValue());
-        } catch (URISyntaxException e) {
-            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        String path = uri.getPath();
-        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     @POST
