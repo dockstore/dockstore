@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.11.0-alpha.2-SNAPSHOT"
+  version: "1.11.0-alpha.3-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -4167,7 +4167,14 @@ paths:
       operationId: "selfDestruct"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "userId"
+        in: "query"
+        description: "Optional user id if deleting another user. Only admins can delete\
+          \ another user."
+        required: false
+        type: "integer"
+        format: "int64"
       responses:
         200:
           description: "successful operation"
@@ -7343,6 +7350,9 @@ definitions:
         type: "string"
       name:
         type: "string"
+      onlineProfileId:
+        type: "integer"
+        format: "int64"
       username:
         type: "string"
   PublishRequest:
@@ -7686,6 +7696,11 @@ definitions:
         type: "string"
         position: 2
         description: "Contents of the access token"
+      onlineProfileId:
+        type: "integer"
+        format: "int64"
+        position: 3
+        description: "The ID of the user on the integrated service."
       username:
         type: "string"
         position: 3

@@ -53,6 +53,7 @@ import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
@@ -61,6 +62,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -79,6 +81,7 @@ import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHTagObject;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.HttpConnector;
@@ -1015,25 +1018,63 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
+     * @param tokenDAO Optional tokenDAO used if the user's GitHub token information needs to be updated as well.
      */
-    public void syncUserMetadataFromGitHub(User user) {
+    public void syncUserMetadataFromGitHub(User user, Optional<TokenDAO> tokenDAO) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
-            User.Profile profile = new User.Profile();
-            profile.name = myself.getName();
+            User.Profile profile = getProfile(user, myself);
             profile.email = getEmail(myself);
-            profile.avatarURL = myself.getAvatarUrl();
-            profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
-            profile.location = myself.getLocation();
-            profile.company = myself.getCompany();
-            profile.username = myself.getLogin();
-            Map<String, User.Profile> userProfile = user.getUserProfiles();
-            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
-            user.setAvatarUrl(myself.getAvatarUrl());
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            if (tokenDAO.isPresent()) {
+                Token usersGitHubToken = tokenDAO.get().findGithubByUserId(user.getId()).get(0);
+                usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+                usersGitHubToken.setUsername(profile.username);
+            }
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername(), ex);
         }
+    }
+
+    // DO NOT USE THIS FUNCTION ELSEWHERE
+    // This function has no use outside of gathering user's GitHub IDs the first time. This uses the GitHub token of the admin user calling the new, one-time-use endpoint.
+    // This will attempt to get the GitHub profile info (including id) of users we were unable to get by calling the github.getMyself() function above.
+    public void syncUserMetadataFromGitHubByUsername(User user, TokenDAO tokenDAO) {
+        // eGit user object
+        try {
+            if (user.getUserProfiles().get(TokenType.GITHUB_COM.toString()) == null) {
+                throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
+            }
+            GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
+            User.Profile profile = getProfile(user, ghUser);
+            profile.email = ghUser.getEmail();
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            Token usersGitHubToken = tokenDAO.findGithubByUserId(user.getId()).get(0);
+            usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+            usersGitHubToken.setUsername(profile.username);
+        } catch (IOException ex) {
+            String msg = "Unable to get GitHub user id for Dockstore user " + user.getUsername() + " " + user.getId();
+            LOG.info(msg, ex);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
+        User.Profile profile = new User.Profile();
+        profile.onlineProfileId = ghUser.getId();
+        profile.username = ghUser.getLogin();
+        profile.name = ghUser.getName();
+        profile.avatarURL = ghUser.getAvatarUrl();
+        profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
+        profile.location = ghUser.getLocation();
+        profile.company = ghUser.getCompany();
+        Map<String, User.Profile> userProfile = user.getUserProfiles();
+        userProfile.put(TokenType.GITHUB_COM.toString(), profile);
+        user.setAvatarUrl(ghUser.getAvatarUrl());
+        return profile;
     }
 
     /**

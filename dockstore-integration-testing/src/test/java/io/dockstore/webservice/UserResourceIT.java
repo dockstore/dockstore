@@ -267,7 +267,7 @@ public class UserResourceIT extends BaseIT {
 
         boolean expectedFailToDelete = false;
         try {
-            userApi.selfDestruct();
+            userApi.selfDestruct(null);
         } catch (ApiException e) {
             expectedFailToDelete = true;
         }
@@ -275,7 +275,7 @@ public class UserResourceIT extends BaseIT {
         // then unpublish them
         workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(false));
         assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
-        assertTrue(userApi.selfDestruct());
+        assertTrue(userApi.selfDestruct(null));
         //TODO need to test that profiles are cascaded to and cleared
 
         // Verify that self-destruct also deleted the workflow
@@ -318,6 +318,30 @@ public class UserResourceIT extends BaseIT {
     }
 
     @Test
+    public void testAdminLevelSelfDestruct() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        UsersApi adminUserApi = new UsersApi(adminWebClient);
+
+        long userCount = testingPostgres.runSelectStatement("select count(*) from enduser", long.class);
+        assertEquals(4, userCount);
+
+        testingPostgres.runUpdateStatement("UPDATE enduser set isadmin = false WHERE username='DockstoreTestUser2'");
+        try {
+            userApi.selfDestruct(3L);
+            fail("Should not be able to delete another user if you're not an admin");
+        } catch (ApiException ex) {
+            assertEquals("Forbidden: you need to be an admin to perform this operation.", ex.getMessage());
+        }
+
+        boolean deletedOtherUser = adminUserApi.selfDestruct(2L);
+        assertTrue(deletedOtherUser);
+        userCount = testingPostgres.runSelectStatement("select count(*) from enduser", long.class);
+        assertEquals(3, userCount);
+    }
+
+    @Test
     public void testDeletedUsernameReuse() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
@@ -332,7 +356,7 @@ public class UserResourceIT extends BaseIT {
         String altUsername = "notTheNameOfTheSite";
         assertFalse(userApi.checkUserExists(altUsername));
         userApi.changeUsername(altUsername);
-        userApi.selfDestruct();
+        userApi.selfDestruct(null);
         count = testingPostgres.runSelectStatement("select count(*) from deletedusername", long.class);
         assertEquals(1, count);
 
@@ -650,6 +674,28 @@ public class UserResourceIT extends BaseIT {
         adminApi.updateUserMetadata();
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
+        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
+        assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
+        assertEquals("Toronto", userProfile.getLocation());
+    }
+
+    @Test
+    public void testUpdateUserMetadataToGetIds() {
+        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
+        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
+
+        // DockstoreUser2's profile elements should be initially set to null since the GitHub metadata isn't synced yet
+        assertNull(userProfile.getEmail());
+        assertNull(userProfile.getAvatarURL());
+        assertNull(userProfile.getLocation());
+
+        // The API call updateUserMetadataToGetIds() should not throw an error and exit if any users' tokens are out of date or absent
+        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
+        userApi.updateUserMetadataToGetIds();
+        Long userId = 17859829L;
+        userProfile = userApi.getUser().getUserProfiles().get("github.com");
+        assertEquals(userId, userProfile.getOnlineProfileId());
         assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("Toronto", userProfile.getLocation());

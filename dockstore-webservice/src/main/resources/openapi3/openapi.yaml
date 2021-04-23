@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.11.0-alpha.2-SNAPSHOT
+  version: 1.11.0-alpha.3-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -4420,10 +4420,37 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/updateUserMetadataToGetIds:
+    get:
+      deprecated: true
+      description: Update metadata of all GitHub users and returns list of Dockstore
+        users who could not be updated.
+      operationId: updateUserMetadataToGetIds
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: Get list Dockstore users we were unable to get GitHub IDs for.
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/user:
     delete:
       description: Delete user if possible.
       operationId: selfDestruct
+      parameters:
+      - description: Optional user id if deleting another user. Only admins can delete
+          another user.
+        in: query
+        name: userId
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           content:
@@ -7623,6 +7650,9 @@ components:
           type: string
         name:
           type: string
+        onlineProfileId:
+          type: integer
+          format: int64
         username:
           type: string
     PublishRequest:
@@ -7981,6 +8011,9 @@ components:
           type: integer
           format: int64
         id:
+          type: integer
+          format: int64
+        onlineProfileId:
           type: integer
           format: int64
         refreshToken:

@@ -361,7 +361,7 @@ public class TokenResourceIT {
      */
     private void registerNewUsersAfterSelfDestruct(TokensApi unAuthenticatedTokensApi) {
         UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
-        Boolean aBoolean = mainUsersApi.selfDestruct();
+        Boolean aBoolean = mainUsersApi.selfDestruct(null);
         assertTrue(aBoolean);
         io.swagger.client.model.Token recreatedGoogleToken = unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, true));
         io.swagger.client.model.Token recreatedGitHubToken = unAuthenticatedTokensApi.addToken(getSatellizer(SUFFIX1, true));
