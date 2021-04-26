@@ -131,22 +131,6 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <id>seqware.sourceforge.net</id>
-      <name>SeqWare Maven Repository</name>
-      <url>https://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
-    </repository>
-    <repository>
-      <id>seqwaremaven.oicr.on.ca</id>
-      <name>seqwaremaven.oicr.on.ca-releases</name>
-      <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
-    </repository>
-    <repository>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
       <id>artifactory.broadinstitute.org</id>
       <name>artifactory.broadinstitute.org</name>
       <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
