@@ -189,11 +189,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     @GET
     @Path("/{tokenId}")
-    @JsonView(TokenViews.Auth.class)
+    @JsonView(TokenViews.User.class)
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "listToken", description = "Get a specific token by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get a specific token by id.", authorizations = {
+    @Operation(operationId = "listToken", description = "Get information about a specific token by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get information about a specific token by id.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })

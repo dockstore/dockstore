@@ -761,7 +761,7 @@ paths:
       tags:
       - tokens
     get:
-      description: Get a specific token by id.
+      description: Get information about a specific token by id.
       operationId: listToken
       parameters:
       - in: path
@@ -775,7 +775,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token_Auth'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
