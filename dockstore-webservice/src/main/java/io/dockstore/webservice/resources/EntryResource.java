@@ -300,6 +300,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         switch (response.statusCode()) {
         case HttpStatus.SC_CREATED:
             setPutCode(optionalVersion, entry, getPutCodeFromLocation(response));
+            break;
         case HttpStatus.SC_CONFLICT:
             // User has an ORCID work with the same DOI URL. Rather than link the Dockstore entry to ORCID work, just throw error.
             throw new CustomWebApplicationException(
