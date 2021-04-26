@@ -120,14 +120,6 @@
   </dependencies>
   <repositories>
     <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>jcenter</id>
-      <name>bintray</name>
-      <url>https://jcenter.bintray.com</url>
-    </repository>
-    <repository>
       <id>artifacts.oicr.on.ca</id>
       <name>artifacts.oicr.on.ca</name>
       <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
@@ -149,11 +141,6 @@
       <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
     </repository>
     <repository>
-      <id>apache-releases</id>
-      <name>Apache Releases repository</name>
-      <url>https://repository.apache.org/content/repositories/releases/</url>
-    </repository>
-    <repository>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -163,16 +150,6 @@
       <id>artifactory.broadinstitute.org</id>
       <name>artifactory.broadinstitute.org</name>
       <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
-    </repository>
-    <repository>
-      <id>sagebionetworks</id>
-      <name>sagebionetworks-releases</name>
-      <url>https://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
-    </repository>
-    <repository>
-      <id>mockito</id>
-      <name>mockito</name>
-      <url>https://dl.bintray.com/mockito/maven/</url>
     </repository>
   </repositories>
 </project>
