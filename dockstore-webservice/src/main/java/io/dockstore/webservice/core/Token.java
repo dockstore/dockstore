@@ -87,39 +87,39 @@ public class Token implements Comparable<Token> {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "token_id_seq")
     @SequenceGenerator(name = "token_id_seq", sequenceName = "token_id_seq", allocationSize = 1)
-    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", readOnly = true)
+    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0, readOnly = true)
     @Column(columnDefinition = "bigint default nextval('token_id_seq')")
     @JsonView(TokenViews.User.class)
     private long id;
 
     @Column(nullable = false)
     @Convert(converter = TokenTypeConverter.class)
-    @ApiModelProperty(value = "Source website for this token", dataType = "string")
+    @ApiModelProperty(value = "Source website for this token", position = 1, dataType = "string")
     @JsonView(TokenViews.User.class)
     private TokenType tokenSource;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Contents of the access token")
+    @ApiModelProperty(value = "Contents of the access token", position = 2)
     @JsonView(TokenViews.Auth.class)
     private String content;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it")
+    @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it", position = 3)
     @JsonView(TokenViews.User.class)
     private String username;
 
     @Column()
-    @ApiModelProperty(value = "The ID of the user on the integrated service.")
+    @ApiModelProperty(value = "The ID of the user on the integrated service.", position = 7)
     @JsonView(TokenViews.User.class)
     private Long onlineProfileId;
 
     @Column
-    @ApiModelProperty
+    @ApiModelProperty(position = 4)
     @JsonView(TokenViews.Auth.class)
     private String refreshToken;
 
     @Column
-    @ApiModelProperty
+    @ApiModelProperty(position = 5)
     @JsonView(TokenViews.User.class)
     private long userId;
 
@@ -173,7 +173,7 @@ public class Token implements Comparable<Token> {
         return id;
     }
 
-    @ApiModelProperty(value = "Contents of the access token")
+    @ApiModelProperty(value = "Contents of the access token", position = 6)
     @JsonView(TokenViews.Auth.class)
     public String getToken() {
         return content;

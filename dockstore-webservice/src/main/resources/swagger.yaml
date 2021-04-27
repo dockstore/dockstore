@@ -7675,9 +7675,6 @@ definitions:
   Token_Auth:
     type: "object"
     properties:
-      content:
-        type: "string"
-        description: "Contents of the access token"
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7689,25 +7686,35 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the token in this web service"
         readOnly: true
-      onlineProfileId:
-        type: "integer"
-        format: "int64"
-        description: "The ID of the user on the integrated service."
-      refreshToken:
-        type: "string"
-      token:
-        type: "string"
-        description: "Contents of the access token"
       tokenSource:
         type: "string"
+        position: 1
         description: "Source website for this token"
+      content:
+        type: "string"
+        position: 2
+        description: "Contents of the access token"
+      username:
+        type: "string"
+        position: 3
+        description: "When an integrated service is not aware of the username, we\
+          \ store it"
+      refreshToken:
+        type: "string"
+        position: 4
       userId:
         type: "integer"
         format: "int64"
-      username:
+        position: 5
+      token:
         type: "string"
-        description: "When an integrated service is not aware of the username, we\
-          \ store it"
+        position: 6
+        description: "Contents of the access token"
+      onlineProfileId:
+        type: "integer"
+        format: "int64"
+        position: 7
+        description: "The ID of the user on the integrated service."
     description: "Access tokens for this web service and integrated services like\
       \ quay.io and github"
   Token_User:
@@ -7724,20 +7731,24 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the token in this web service"
         readOnly: true
-      onlineProfileId:
-        type: "integer"
-        format: "int64"
-        description: "The ID of the user on the integrated service."
       tokenSource:
         type: "string"
+        position: 1
         description: "Source website for this token"
+      username:
+        type: "string"
+        position: 3
+        description: "When an integrated service is not aware of the username, we\
+          \ store it"
       userId:
         type: "integer"
         format: "int64"
-      username:
-        type: "string"
-        description: "When an integrated service is not aware of the username, we\
-          \ store it"
+        position: 5
+      onlineProfileId:
+        type: "integer"
+        format: "int64"
+        position: 7
+        description: "The ID of the user on the integrated service."
     description: "Access tokens for this web service and integrated services like\
       \ quay.io and github"
   Tool:
