@@ -1111,7 +1111,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token_Auth"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/github:
@@ -1158,7 +1158,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token_Auth"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/gitlab.com:
@@ -1181,7 +1181,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token_Auth"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/google:
@@ -1226,7 +1226,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token_Auth"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/quay.io:
@@ -1249,7 +1249,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token_Auth"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/zenodo.org:
@@ -1272,7 +1272,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token_Auth"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/{tokenId}:

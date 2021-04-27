@@ -579,7 +579,7 @@ public class TokenResourceIT {
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
         // going back to the first user, we want to add a github token to their profile
-        io.swagger.client.model.TokenAuth token = tokensApi.addGithubToken(getFakeCode(SUFFIX1));
+        io.swagger.client.model.TokenUser token = tokensApi.addGithubToken(getFakeCode(SUFFIX1));
 
         // check that the user ends up with the correct two tokens
         byUserId = tokenDAO.findByUserId(id);
