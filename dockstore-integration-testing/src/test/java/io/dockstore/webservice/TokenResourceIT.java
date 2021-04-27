@@ -288,8 +288,7 @@ public class TokenResourceIT {
     }
 
     private void setAdmin(boolean admin) {
-        final String sql = MessageFormat.format("update enduser set isadmin={0} where username=''{1}''", admin,
-                io.dockstore.common.Hoverfly.GOOGLE_ACCOUNT_USERNAME1);
+        final String sql = MessageFormat.format("update enduser set isadmin={0} where username=''{1}''", admin, GOOGLE_ACCOUNT_USERNAME1);
         testingPostgres.runUpdateStatement(sql);
     }
 
