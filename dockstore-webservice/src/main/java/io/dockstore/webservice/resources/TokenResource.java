@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.Collections;
@@ -27,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -570,7 +570,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 User newUser = new User();
                 newUser.setUsername(username);
                 userID = userDAO.create(newUser);
-                user = userDAO.findById(userID);
+                userDAO.findById(userID);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
             }
@@ -621,7 +621,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     private Token createDockstoreToken(long userID, String githubLogin) {
         Token dockstoreToken;
-        final Random random = new Random();
+        final SecureRandom random = new SecureRandom();
         final int bufferLength = 1024;
         final byte[] buffer = new byte[bufferLength];
         random.nextBytes(buffer);
@@ -712,7 +712,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String username;
         String orcid;
         String scope;
-        Long expirationTime;
+        long expirationTime;
 
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);

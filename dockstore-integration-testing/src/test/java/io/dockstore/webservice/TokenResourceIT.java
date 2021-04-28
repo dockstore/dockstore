@@ -52,7 +52,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -99,8 +98,6 @@ public class TokenResourceIT {
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
     @Rule
     public TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
@@ -278,7 +275,7 @@ public class TokenResourceIT {
     public void adminsAndCuratorsMayNotLoginWithGoogle() {
         TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a", testingPostgres));
         createAccount1(unAuthenticatedTokensApi);
-        setAdmin(GOOGLE_ACCOUNT_USERNAME1, true);
+        setAdmin(true);
         try {
             unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
             fail("An admin should not be able to log in via Google");
@@ -286,12 +283,12 @@ public class TokenResourceIT {
             assertEquals(ex.getMessage(), TokenResource.ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE);
         }
         // Verify a non-admin can still login with Google
-        setAdmin(GOOGLE_ACCOUNT_USERNAME1, false);
+        setAdmin(false);
         unAuthenticatedTokensApi.addGoogleToken(getSatellizer(SUFFIX3, false));
     }
 
-    private void setAdmin(String user, boolean admin) {
-        final String sql = MessageFormat.format("update enduser set isadmin={0} where username=''{1}''", admin, user);
+    private void setAdmin(boolean admin) {
+        final String sql = MessageFormat.format("update enduser set isadmin={0} where username=''{1}''", admin, GOOGLE_ACCOUNT_USERNAME1);
         testingPostgres.runUpdateStatement(sql);
     }
 
