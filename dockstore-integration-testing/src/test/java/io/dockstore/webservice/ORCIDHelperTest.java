@@ -23,34 +23,20 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
-import static io.dropwizard.testing.FixtureHelpers.fixture;
-import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
-import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
-import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.badRequest;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
-import static io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers.contains;
 
 @Category(NonConfidentialTest.class)
 public class ORCIDHelperTest {
 
-    private static final String BASE_URL = "https://api.sandbox.orcid.org/v3.0/";
-    // Changing this requires changing the fixtures too
-    private static final String PUT_CODE = "7777777";
-
     /**
-     * This simulation assumes that the work that's trying to be created already exists
+     * This simulation assumes that the work that's trying to be created does not exist on orcid yet
      */
     @ClassRule
-    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(dsl(
-            service("https://api.sandbox.orcid.org")
-                    .post("/v3.0/0000-0001-8365-0487/work").anyBody().willReturn(response().status(HttpStatus.SC_CREATED).andSetState("Work", "Created").header("Location", PUT_CODE))
-                    .post("/v3.0/0000-0001-8365-0487/work").withState("Work", "Created").anyBody().willReturn(response().status(HttpStatus.SC_CONFLICT).body(fixture(
-                    "fixtures/successfulPostOrcidWork.xml")))
-                    .post("/v3.0/0000-0001-8365-0487/work").body(contains(PUT_CODE)).willReturn(badRequest().body(fixture("fixtures/putCodeOnPostOrcidWork.xml")))
-                    .put("/v3.0/0000-0001-8365-0487/work/" + PUT_CODE).body(contains(PUT_CODE)).willReturn(success().body(fixture("fixtures/successfulPutOrcidWork.xml")))
-    ));
+    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(ORCID_SIMULATION_SOURCE);
+
+    private static final String BASE_URL = "https://api.sandbox.orcid.org/v3.0/";
+
     @Test
     public void exportEntry() throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
         Workflow entry = new BioWorkflow();

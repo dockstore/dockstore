@@ -265,20 +265,31 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         String orcidWorkString;
         try {
             orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
-        } catch (JAXBException | DatatypeConfigurationException e) {
-            throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        try {
             if (putCode == null) {
                 createOrcidWork(optionalVersion, entry, user, orcidWorkString, orcidByUserId);
             } else {
-                updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
+                boolean success = updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
+                if (!success) {
+                    LOG.error("Could not find ORCID work based on put code: " + putCode);
+                    // This is almost going to be redundant because it's going to attempt to create a new work
+                    setPutCode(optionalVersion, entry, null);
+                    orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
+                    createOrcidWork(optionalVersion, entry, user, orcidWorkString, orcidByUserId);
+                }
             }
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException | URISyntaxException | JAXBException | DatatypeConfigurationException e) {
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }  catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void setPutCode(Optional<Version> optionalVersion, Entry entry, String putCode) {
+        if (optionalVersion.isPresent()) {
+            optionalVersion.get().getVersionMetadata().setOrcidPutCode(putCode);
+        } else {
+            entry.setOrcidPutCode(putCode);
         }
     }
 
@@ -286,22 +297,34 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
                 .postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken());
-        if (response.statusCode() != HttpStatus.SC_CREATED) {
-            throw new CustomWebApplicationException("Could not export to ORCID: " + response.body(), response.statusCode());
-        } else {
-            if (optionalVersion.isPresent()) {
-                optionalVersion.get().getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
-            } else {
-                entry.setOrcidPutCode(getPutCodeFromLocation(response));
-            }
+        switch (response.statusCode()) {
+        case HttpStatus.SC_CREATED:
+            setPutCode(optionalVersion, entry, getPutCodeFromLocation(response));
+            break;
+        case HttpStatus.SC_CONFLICT:
+            // User has an ORCID work with the same DOI URL. Rather than link the Dockstore entry to ORCID work, just throw error.
+            throw new CustomWebApplicationException(
+                    "Could not export to ORCID. There exists another ORCID work with the same DOI URL. \n" + response.body(),
+                    response.statusCode());
+        default:
+            throw new CustomWebApplicationException("Could not export to ORCID.\n" + response.body(), response.statusCode());
         }
     }
 
-    private void updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode)
+    /**
+     * return true means everything is fine
+     * return false means there's a syncing problem (Dockstore has put code, ORCID does not)
+     */
+    private boolean updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode)
             throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
                 .putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken(), putCode);
-        if (response.statusCode() != HttpStatus.SC_OK) {
+        switch (response.statusCode()) {
+        case HttpStatus.SC_OK:
+            return true;
+        case HttpStatus.SC_NOT_FOUND:
+            return false;
+        default:
             throw new CustomWebApplicationException("Could not export to ORCID: " + response.body(), response.statusCode());
         }
     }
