@@ -591,7 +591,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -612,7 +612,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_Auth'
           description: default response
       security:
       - bearer: []
@@ -632,7 +632,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -652,7 +652,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -672,7 +672,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_Auth'
           description: default response
       security:
       - bearer: []
@@ -693,7 +693,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -714,7 +714,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -734,7 +734,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -761,7 +761,7 @@ paths:
       tags:
       - tokens
     get:
-      description: Get a specific token by id.
+      description: Get information about a specific token by id.
       operationId: listToken
       parameters:
       - in: path
@@ -775,7 +775,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -4991,7 +4991,7 @@ paths:
       - users
   /users/{userId}/tokens:
     get:
-      description: Get tokens with user id.
+      description: Get information about tokens with user id.
       operationId: getUserTokens
       parameters:
       - in: path
@@ -5007,7 +5007,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Token'
+                  $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -7999,7 +7999,7 @@ components:
       required:
       - name
       - reference
-    Token:
+    Token_Auth:
       type: object
       properties:
         content:
@@ -8013,13 +8013,38 @@ components:
         id:
           type: integer
           format: int64
-        onlineProfileId:
-          type: integer
-          format: int64
         refreshToken:
           type: string
         token:
           type: string
+        tokenSource:
+          type: string
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
+          - orcid.org
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+    Token_User:
+      type: object
+      properties:
+        dbCreateDate:
+          type: integer
+          format: int64
+        dbUpdateDate:
+          type: integer
+          format: int64
+        id:
+          type: integer
+          format: int64
         tokenSource:
           type: string
           enum:

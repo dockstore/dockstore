@@ -34,7 +34,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
@@ -76,9 +76,9 @@ import org.hibernate.annotations.UpdateTimestamp;
             query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = 'github.com'"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByUserNameAndTokenSource",
             query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = :tokenSource"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByOnlineProfileIdAndTokenSource",
-                query = "SELECT t FROM Token t WHERE t.onlineProfileId = :onlineProfileId AND t.tokenSource = :tokenSource"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGitHubTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'github.com'")
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByOnlineProfileIdAndTokenSource",
+            query = "SELECT t FROM Token t WHERE t.onlineProfileId = :onlineProfileId AND t.tokenSource = :tokenSource"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGitHubTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'github.com'")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -89,31 +89,37 @@ public class Token implements Comparable<Token> {
     @SequenceGenerator(name = "token_id_seq", sequenceName = "token_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0, readOnly = true)
     @Column(columnDefinition = "bigint default nextval('token_id_seq')")
+    @JsonView(TokenViews.User.class)
     private long id;
 
     @Column(nullable = false)
     @Convert(converter = TokenTypeConverter.class)
     @ApiModelProperty(value = "Source website for this token", position = 1, dataType = "string")
+    @JsonView(TokenViews.User.class)
     private TokenType tokenSource;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "Contents of the access token", position = 2)
+    @JsonView(TokenViews.Auth.class)
     private String content;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it", position = 3)
+    @JsonView(TokenViews.User.class)
     private String username;
 
     @Column()
-    @ApiModelProperty(value = "The ID of the user on the integrated service.", position = 3)
+    @JsonIgnore
     private Long onlineProfileId;
 
     @Column
     @ApiModelProperty(position = 4)
+    @JsonView(TokenViews.Auth.class)
     private String refreshToken;
 
     @Column
     @ApiModelProperty(position = 5)
+    @JsonView(TokenViews.User.class)
     private long userId;
 
     // Null means don't know or not applicable.
@@ -132,12 +138,14 @@ public class Token implements Comparable<Token> {
     @CreationTimestamp
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
+    @JsonView(TokenViews.User.class)
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
+    @JsonView(TokenViews.User.class)
     private Timestamp dbUpdateDate;
 
     public Token() {
@@ -160,23 +168,20 @@ public class Token implements Comparable<Token> {
         return null;
     }
 
-    @JsonProperty
     public long getId() {
         return id;
     }
 
-    @JsonProperty
     @ApiModelProperty(value = "Contents of the access token", position = 6)
+    @JsonView(TokenViews.Auth.class)
     public String getToken() {
         return content;
     }
 
-    @JsonProperty
     public String getContent() {
         return content;
     }
 
-    @JsonProperty
     public String getUsername() {
         return username;
     }
@@ -184,7 +189,6 @@ public class Token implements Comparable<Token> {
     /**
      * @return the tokenSource
      */
-    @JsonProperty
     public TokenType getTokenSource() {
         return tokenSource;
     }
@@ -235,7 +239,6 @@ public class Token implements Comparable<Token> {
     /**
      * @return the userId
      */
-    @JsonProperty
     public long getUserId() {
         return userId;
     }
@@ -247,12 +250,10 @@ public class Token implements Comparable<Token> {
         this.userId = userId;
     }
 
-    @JsonProperty
     public Timestamp getDbCreateDate() {
         return dbCreateDate;
     }
 
-    @JsonProperty
     public Timestamp getDbUpdateDate() {
         return dbUpdateDate;
     }
