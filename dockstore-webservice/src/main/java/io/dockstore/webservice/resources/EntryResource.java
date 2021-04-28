@@ -270,7 +270,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             } else {
                 boolean success = updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
                 if (!success) {
-                    LOG.info("Could not find ORCID work based on put code");
+                    LOG.error("Could not find ORCID work based on put code: " + putCode);
                     // This is almost going to be redundant because it's going to attempt to create a new work
                     setPutCode(optionalVersion, entry, null);
                     orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
