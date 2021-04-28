@@ -75,6 +75,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
 
+
+
     /**
      * @param gitUsername           username that owns the bitbucket token
      * @param bitbucketTokenContent bitbucket token
@@ -113,6 +115,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoriesApi repositoriesApi = new RepositoriesApi(apiClient);
         try {
             List<String> files = new ArrayList<>();
+            System.out.println("Invoked: repositoriesUsernameRepoSlugSrcNodePathGet" + repositoryId.split("/")[0]);
             PaginatedTreeentries paginatedTreeentries = repositoriesApi
                 .repositoriesUsernameRepoSlugSrcNodePathGet(repositoryId.split("/")[0], reference, pathToDirectory,
                     repositoryId.split("/")[1], null, null, null);
@@ -140,6 +143,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoriesApi repositoriesApi = new RepositoriesApi(apiClient);
         try {
             Map<String, String> collect = new HashMap<>();
+            System.out.println("Invoked: repositoriesUsernameGet" + gitUsername);
             PaginatedRepositories contributor = repositoriesApi.repositoriesUsernameGet(gitUsername, "contributor");
             while (contributor != null) {
                 collect.putAll(contributor.getValues().stream().collect(Collectors
@@ -176,6 +180,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private <T> T getArbitraryURL(String url, GenericType<T> type) throws ApiException {
         String substring = url.substring(BITBUCKET_V2_API_URL.length() - 1);
+        System.out.println("Invoked: " + url);
         return apiClient
             .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
                 new String[] { "api_key", "basic", "oauth2" }, type).getData();
@@ -219,50 +224,37 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
         }
+        String workspace = repositoryId.split("/")[0];
+        String repoSlug = repositoryId.split("/")[1];
+        String name = version.getReference();
         RefsApi refsApi = new RefsApi(apiClient);
         try {
-            PaginatedBranches paginatedBranches = refsApi
-                .repositoriesUsernameRepoSlugRefsBranchesGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedBranches != null) {
-                if (paginatedBranches.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.BRANCH);
-                }
-                if (paginatedBranches.getNext() != null) {
-                    paginatedBranches = getArbitraryURL(paginatedBranches.getNext(), new GenericType<PaginatedBranches>() {
-                    });
-                } else {
-                    paginatedBranches = null;
-                }
-            }
+            System.out.println("Invoked: repositoriesUsernameRepoSlugRefsBranchesNameGet");
+            refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, version.getReference(), repoSlug);
+            version.setReferenceType(Version.ReferenceType.BRANCH);
+            return;
         } catch (ApiException e) {
             LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
 
         try {
-            PaginatedTags paginatedTags = refsApi
-                .repositoriesUsernameRepoSlugRefsTagsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedTags != null) {
-                if (paginatedTags.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.TAG);
-                }
-                if (paginatedTags.getNext() != null) {
-                    paginatedTags = getArbitraryURL(paginatedTags.getNext(), new GenericType<PaginatedTags>() {
-                    });
-                } else {
-                    paginatedTags = null;
-                }
-            }
+            System.out.println("Invoked: repositoriesUsernameRepoSlugRefsTagsNameGet");
+            refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.TAG);
+            return;
         } catch (ApiException e) {
             LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
+        throw new CustomWebApplicationException("Not a Bitbucket branch or tag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @Override
     protected String getCommitID(String repositoryId, Version version) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
+            System.out.println("Invoked: repositoriesUsernameRepoSlugRefsBranchesNameGet" + repositoryId.split("/")[0] + version.getReference() + repositoryId.split("/")[1]);
             Branch branch = refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(repositoryId.split("/")[0], version.getReference(),
                 repositoryId.split("/")[1]);
             if (branch != null) {
@@ -274,6 +266,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         try {
+            System.out.println("Invoked: repositoriesUsernameRepoSlugRefsTagsNameGet" + repositoryId.split("/")[0] + version.getReference() + repositoryId.split("/")[1]);
             Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
                     repositoryId.split("/")[1]);
             if (tag != null) {
@@ -310,6 +303,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
+            System.out.println("Invoked: repositoriesUsernameRepoSlugRefsGet" + repositoryId.split("/")[0] + repositoryId.split("/")[1]);
             PaginatedRefs paginatedRefs = refsApi
                 .repositoriesUsernameRepoSlugRefsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
             // this pagination structure is repetitive and should be refactored
