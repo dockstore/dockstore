@@ -109,8 +109,7 @@ public class Token implements Comparable<Token> {
     private String username;
 
     @Column()
-    @ApiModelProperty(value = "The ID of the user on the integrated service.", position = 7)
-    @JsonView(TokenViews.User.class)
+    @JsonIgnore
     private Long onlineProfileId;
 
     @Column

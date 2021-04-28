@@ -8013,9 +8013,6 @@ components:
         id:
           type: integer
           format: int64
-        onlineProfileId:
-          type: integer
-          format: int64
         refreshToken:
           type: string
         token:
@@ -8046,9 +8043,6 @@ components:
           type: integer
           format: int64
         id:
-          type: integer
-          format: int64
-        onlineProfileId:
           type: integer
           format: int64
         tokenSource:

@@ -7710,11 +7710,6 @@ definitions:
         type: "string"
         position: 6
         description: "Contents of the access token"
-      onlineProfileId:
-        type: "integer"
-        format: "int64"
-        position: 7
-        description: "The ID of the user on the integrated service."
     description: "Access tokens for this web service and integrated services like\
       \ quay.io and github"
   Token_User:
@@ -7744,11 +7739,6 @@ definitions:
         type: "integer"
         format: "int64"
         position: 5
-      onlineProfileId:
-        type: "integer"
-        format: "int64"
-        position: 7
-        description: "The ID of the user on the integrated service."
     description: "Access tokens for this web service and integrated services like\
       \ quay.io and github"
   Tool:
