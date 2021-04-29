@@ -693,7 +693,7 @@ public class UserResourceIT extends BaseIT {
         // The API call updateUserMetadataToGetIds() should not throw an error and exit if any users' tokens are out of date or absent
         // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
         userApi.updateUserMetadataToGetIds();
-        Long userId = 17859829L;
+        String userId = "17859829";
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
         assertEquals(userId, userProfile.getOnlineProfileId());
         assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
