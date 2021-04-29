@@ -1064,7 +1064,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
         User.Profile profile = new User.Profile();
-        profile.onlineProfileId = ghUser.getId();
+        profile.onlineProfileId = String.valueOf(ghUser.getId());
         profile.username = ghUser.getLogin();
         profile.name = ghUser.getName();
         profile.avatarURL = ghUser.getAvatarUrl();

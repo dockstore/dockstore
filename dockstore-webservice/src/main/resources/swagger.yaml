@@ -7351,8 +7351,7 @@ definitions:
       name:
         type: "string"
       onlineProfileId:
-        type: "integer"
-        format: "int64"
+        type: "string"
       username:
         type: "string"
   PublishRequest:
