@@ -242,7 +242,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.warn(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
-        throw new CustomWebApplicationException("Not a Bitbucket branch or tag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        throw new CustomWebApplicationException(name + " is not a Bitbucket branch or tag in " + repositoryId, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @Override
