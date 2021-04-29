@@ -223,12 +223,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String repoSlug = repositoryId.split("/")[1];
         String name = version.getReference();
         RefsApi refsApi = new RefsApi(apiClient);
+        // There isn't exactly a single Bitbucket endpoint to get a version which then allows us to determine if it's a branch or tag.
+        // This code checks two endpoints (branches and tags) to see if it belongs in which.
         try {
-            refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, version.getReference(), repoSlug);
+            refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, name, repoSlug);
             version.setReferenceType(Version.ReferenceType.BRANCH);
             return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
+            LOG.warn(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
 
@@ -237,7 +239,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             version.setReferenceType(Version.ReferenceType.TAG);
             return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
+            LOG.warn(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
         throw new CustomWebApplicationException("Not a Bitbucket branch or tag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
