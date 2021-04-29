@@ -16,7 +16,10 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -350,6 +353,15 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public void setSourceControl(SourceControl sourceControl) {
         this.sourceControl = sourceControl;
+    }
+
+    public void updateLastModified() {
+        Optional<Date> max = this.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
+        // TODO: this conversion is lossy
+        if (max.isPresent()) {
+            long time = max.get().getTime();
+            this.setLastModified(new Date(Math.max(time, 0L)));
+        }
     }
 
     public abstract boolean isIsChecker();
