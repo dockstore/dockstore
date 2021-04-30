@@ -203,6 +203,12 @@ jobs:
           environment:
             TESTING_PROFILE: automated-review
       - run:
+          name: check generated flattened pom files match checked-in files.
+          command: |
+            scripts/check_poms.sh
+          environment:
+            TESTING_PROFILE: automated-review
+      - run:
           name: Run git-secrets scan on dockstore repository
           # Needs to be after a build so that the correct configuration is set
           # by the exec-maven plugin
