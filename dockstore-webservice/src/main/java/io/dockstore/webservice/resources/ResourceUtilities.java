@@ -47,14 +47,9 @@ public final class ResourceUtilities {
         return getResponseAsString(buildHttpGet(input, token), client);
     }
 
-    public static Optional<String> refreshPost(String input, String token, HttpClient client, String clientId, String secret,
+    public static Optional<String> refreshPost(String input, String token, HttpClient client,
             String payload) throws UnsupportedEncodingException {
-        return getResponseAsString(buildHttpPost(input, token, clientId, secret, payload), client);
-    }
-
-    public static Optional<String> bitbucketPost(String input, String token, HttpClient client, String clientId, String secret,
-            String payload) throws UnsupportedEncodingException {
-        return getResponseAsString(buildHttpPost(input, token, clientId, secret, payload), client);
+        return getResponseAsString(buildHttpPost(input, token, payload), client);
     }
 
     private static HttpGet buildHttpGet(String input, String token) {
@@ -65,7 +60,7 @@ public final class ResourceUtilities {
         return httpGet;
     }
 
-    private static HttpPost buildHttpPost(String input, String token, String clientId, String secret, String payload)
+    private static HttpPost buildHttpPost(String input, String token, String payload)
             throws UnsupportedEncodingException {
         HttpPost httpPost = new HttpPost(input);
         if (token == null) {

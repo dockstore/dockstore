@@ -58,7 +58,7 @@ public interface SourceControlResourceInterface {
         String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
         String payload = "client_id=" + bitbucketClientID + "&client_secret=" + bitbucketClientSecret
                 + "&grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
-        refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, null, null, payload);
+        refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, payload);
     }
 
     /**
@@ -68,17 +68,13 @@ public interface SourceControlResourceInterface {
      * @param token
      * @param client
      * @param tokenDAO
-     * @param clientID
-     * @param clientSecret
      * @param payload e.g. "grant_type=refresh_token&refresh_token=" + token.getRefreshToken()
      * @return the updated token
      */
-    default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String clientID,
-            String clientSecret, String payload) {
+    default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String payload) {
 
         try {
-            Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, clientID, clientSecret,
-                    payload);
+            Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, payload);
 
             if (asString.isPresent()) {
                 String accessToken;
