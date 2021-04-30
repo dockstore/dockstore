@@ -591,7 +591,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             if (addedVersion != null) {
                 gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
-                if (workflow.getLastModified() == null || workflow.getLastModifiedDate().before(addedVersion.getLastModified())) {
+                if (workflow.getLastModified() == null || (addedVersion.getLastModified() != null && workflow.getLastModifiedDate().before(addedVersion.getLastModified()))) {
                     workflow.setLastModified(addedVersion.getLastModified());
                 }
 
