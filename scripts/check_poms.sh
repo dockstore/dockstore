@@ -13,5 +13,5 @@ fi
 
 mvn validate
 for filename in */${GENERATED_POM_FILE_DIR}pom.xml; do
-  git diff --exit-code $filename || exit 1
+  git diff --exit-code "$filename" || exit 1
 done
