@@ -7651,8 +7651,6 @@ components:
           type: string
         name:
           type: string
-        onlineProfileId:
-          type: string
         username:
           type: string
     PublishRequest:

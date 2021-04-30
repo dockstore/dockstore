@@ -566,6 +566,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         @Column(columnDefinition = "text")
         public String username;
         @Column
+        @JsonIgnore
         public String onlineProfileId;
 
         @Column(updatable = false)
