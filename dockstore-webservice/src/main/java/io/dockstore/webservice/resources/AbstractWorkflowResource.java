@@ -439,7 +439,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
-                workflow.updateLastModified();
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -592,6 +591,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             if (addedVersion != null) {
                 gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
+                if (workflow.getLastModified() == null || workflow.getLastModifiedDate().before(addedVersion.getLastModified())) {
+                    workflow.setLastModified(addedVersion.getLastModified());
+                }
 
                 // Update file formats for the version and then the entry.
                 // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow

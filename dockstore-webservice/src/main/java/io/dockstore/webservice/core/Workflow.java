@@ -355,6 +355,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
+    // Try to avoid using this because it will cause a big performance impact for workflows many versions.
     public void updateLastModified() {
         Optional<Date> max = this.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
