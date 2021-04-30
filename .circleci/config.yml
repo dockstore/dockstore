@@ -150,7 +150,7 @@ jobs:
           name: SonarCloud scan
           command: mvn verify sonar:sonar
       - run:
-          name: check generated flattened pom files match checked-in files.
+          name: check generated flattened POMs match checked-in files.
           command: |
             scripts/check_poms.sh
           environment:
