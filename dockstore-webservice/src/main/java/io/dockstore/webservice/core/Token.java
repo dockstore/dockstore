@@ -78,7 +78,8 @@ import org.hibernate.annotations.UpdateTimestamp;
             query = "SELECT t FROM Token t WHERE t.username = :username AND t.tokenSource = :tokenSource"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findTokenByOnlineProfileIdAndTokenSource",
             query = "SELECT t FROM Token t WHERE t.onlineProfileId = :onlineProfileId AND t.tokenSource = :tokenSource"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGitHubTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'github.com'")
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGitHubTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'github.com'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Token.findAllGoogleTokens", query = "SELECT t FROM Token t WHERE t.tokenSource = 'google.com'")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -110,7 +111,7 @@ public class Token implements Comparable<Token> {
 
     @Column()
     @JsonIgnore
-    private Long onlineProfileId;
+    private String onlineProfileId;
 
     @Column
     @ApiModelProperty(position = 4)
@@ -151,12 +152,13 @@ public class Token implements Comparable<Token> {
     public Token() {
     }
 
-    public Token(String content, String refreshToken, long userId, String username, TokenType tokenSource) {
+    public Token(String content, String refreshToken, long userId, String username, TokenType tokenSource, String onlineProfileId) {
         this.setContent(content);
         this.setRefreshToken(refreshToken);
         this.setUserId(userId);
         this.setUsername(username);
         this.setTokenSource(tokenSource);
+        this.setOnlineProfileId(onlineProfileId);
     }
 
     public static Token extractToken(List<Token> tokens, TokenType source) {
@@ -228,11 +230,11 @@ public class Token implements Comparable<Token> {
         this.refreshToken = refreshToken;
     }
 
-    public Long getOnlineProfileId() {
+    public String getOnlineProfileId() {
         return onlineProfileId;
     }
 
-    public void setOnlineProfileId(final Long onlineProfileId) {
+    public void setOnlineProfileId(final String onlineProfileId) {
         this.onlineProfileId = onlineProfileId;
     }
 

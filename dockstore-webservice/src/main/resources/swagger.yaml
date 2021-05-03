@@ -7350,9 +7350,6 @@ definitions:
         type: "string"
       name:
         type: "string"
-      onlineProfileId:
-        type: "integer"
-        format: "int64"
       username:
         type: "string"
   PublishRequest:

@@ -737,16 +737,33 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @RolesAllowed("admin")
     @Path("/updateUserMetadataToGetIds")
     @Deprecated
-    @Operation(operationId = "updateUserMetadataToGetIds", description = "Update metadata of all GitHub users and returns list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list Dockstore users we were unable to get GitHub IDs for.", content = @Content(
+    @Operation(operationId = "updateUserMetadataToGetIds", description = "Attempt to update the metadata of all GitHub and Google users and then returns a list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list Dockstore users we were unable to get GitHub/Google IDs for.", content = @Content(
             mediaType = "application/json",
             array = @ArraySchema(schema = @Schema(implementation = User.class))))
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
         List<Token> gitHubTokens = tokenDAO.findAllGitHubTokens();
-        List<User> usersNotUpdatedWithToken = new ArrayList<>();
-        List<User> usersNotUpdatedWithTokenOrUsername = new ArrayList<>();
+        List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
+        List<User> usersCouldNotBeUpdated = new ArrayList<>();
 
+        // Try to update Google metadata using user's token. This is the only option for Google.
+        for (Token t : googleTokens) {
+            User currentUser = userDAO.findById(t.getUserId());
+            if (currentUser != null) {
+                updateGoogleAccessToken(currentUser.getId());
+                try {
+                    currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
+                } catch (Exception ex) {
+                    LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
+                    usersCouldNotBeUpdated.add(currentUser);
+                }
+
+            }
+        }
+
+        // Try to update Google metadata using user's token and getMyself(). If not, try by using username in block below.
         for (Token t : gitHubTokens) {
             User currentUser = userDAO.findById(t.getUserId());
             if (currentUser != null) {
@@ -754,7 +771,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                     GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
                     gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, Optional.of(tokenDAO));
                 } catch (Exception ex) {
-                    usersNotUpdatedWithToken.add(currentUser);
+                    gitHubUsersNotUpdatedWithToken.add(currentUser);
                 }
             }
         }
@@ -762,16 +779,16 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         // Get the GitHub token of the admin making this call to avoid rate limiting
         Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-        for (User u : usersNotUpdatedWithToken) {
+        for (User u : gitHubUsersNotUpdatedWithToken) {
             try {
                 gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
             } catch (Exception ex) {
-                usersNotUpdatedWithTokenOrUsername.add(u);
-                LOG.info(ex.getMessage());
+                usersCouldNotBeUpdated.add(u);
+                LOG.info(ex.getMessage(), ex);
             }
         }
 
-        return usersNotUpdatedWithTokenOrUsername;
+        return usersCouldNotBeUpdated;
     }
 
     /**

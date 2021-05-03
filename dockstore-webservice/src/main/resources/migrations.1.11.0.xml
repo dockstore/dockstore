@@ -215,4 +215,12 @@
             CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;
         </sql>
     </changeSet>
+    <changeSet author="natalieperez (generated)" id="fix_onlineprofileid_datatype">
+        <sql dbms="postgresql">
+            UPDATE token SET onlineprofileid = null;
+            UPDATE user_profile SET onlineprofileid = null;
+        </sql>
+        <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="token"/>
+        <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="user_profile"/>
+    </changeSet>
 </databaseChangeLog>

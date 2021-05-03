@@ -415,8 +415,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Token dockstoreToken = null;
         Token googleToken = null;
         String googleLoginName = userinfo.getEmail();
-        User user = userDAO.findByGoogleEmail(googleLoginName);
+        String googleOnlineProfileId = userinfo.getId();
 
+        // We will not be able to get everyone's Google profile ID so check if we can match a user by id first, and then by username if that fails.
+        User user = userDAO.findByGoogleOnlineProfileId(googleOnlineProfileId);
+        if (user == null) {
+            user = userDAO.findByGoogleEmail(googleLoginName);
+        }
         if (registerUser && authUser.isEmpty()) {
             if (user == null) {
                 String googleLogin = userinfo.getEmail();
@@ -467,7 +472,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         if (googleToken == null) {
             LOG.info("Could not find user's Google token. Making new one...");
             // CREATE GOOGLE TOKEN
-            googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM);
+            googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM, googleOnlineProfileId);
             checkIfAccountHasBeenLinked(googleToken, TokenType.GOOGLE_COM);
             tokenDAO.create(googleToken);
             // Update user profile too
@@ -478,6 +483,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // Update tokens if exists
             googleToken.setContent(accessToken);
             googleToken.setRefreshToken(refreshToken);
+            googleToken.setUsername(googleLoginName);
+            googleToken.setOnlineProfileId(googleOnlineProfileId);
+
             tokenDAO.update(googleToken);
         }
         return dockstoreToken;
@@ -556,7 +564,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             throw new CustomWebApplicationException("Token ignored due to IOException", HttpStatus.SC_CONFLICT);
         }
 
-        User user = userDAO.findByGitHubUserId(gitHubId);
+        User user = userDAO.findByGitHubUserId(String.valueOf(gitHubId));
         long userID;
         if (registerUser) {
             // check that there was no previous user, but by default use the github login
@@ -609,7 +617,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             githubToken.setContent(accessToken);
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
-            githubToken.setOnlineProfileId(gitHubId);
+            githubToken.setOnlineProfileId(String.valueOf(gitHubId));
             checkIfAccountHasBeenLinked(githubToken, TokenType.GITHUB_COM);
             tokenDAO.create(githubToken);
             user = userDAO.findById(userID);
