@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -304,12 +303,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Setting last modified date can be done uniformly
-        Optional<Date> max = workflow.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
-        // TODO: this conversion is lossy
-        if (max.isPresent()) {
-            long time = max.get().getTime();
-            workflow.setLastModified(new Date(Math.max(time, 0L)));
-        }
+        workflow.updateLastModified();
 
         // update each workflow with reference types
         Set<WorkflowVersion> versions = workflow.getWorkflowVersions();

@@ -591,6 +591,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
             if (addedVersion != null) {
                 gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
+                if (workflow.getLastModified() == null || (addedVersion.getLastModified() != null && workflow.getLastModifiedDate().before(addedVersion.getLastModified()))) {
+                    workflow.setLastModified(addedVersion.getLastModified());
+                }
 
                 // Update file formats for the version and then the entry.
                 // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
