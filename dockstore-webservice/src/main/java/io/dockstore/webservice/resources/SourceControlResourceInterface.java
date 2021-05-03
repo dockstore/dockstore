@@ -54,7 +54,7 @@ public interface SourceControlResourceInterface {
     default void refreshBitbucketToken(Token bitbucketToken, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
         String bitbucketClientSecret) {
 
-        LOG.info("Refreshing the BitBucket Token");
+        LOG.info("Refreshing the Bitbucket Token");
         String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
         String payload = "client_id=" + bitbucketClientID + "&client_secret=" + bitbucketClientSecret
                 + "&grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
