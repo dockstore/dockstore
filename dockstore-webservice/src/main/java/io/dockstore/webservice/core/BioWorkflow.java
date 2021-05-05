@@ -56,7 +56,6 @@ public class BioWorkflow extends Workflow {
     private Entry parentEntry;
 
     @Column(columnDefinition = "boolean default false")
-    @ApiModelProperty(position = 23)
     private boolean isChecker = false;
 
     public EntryType getEntryType() {

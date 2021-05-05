@@ -6223,9 +6223,6 @@ definitions:
           type: "integer"
           format: "int64"
           readOnly: true
-        isChecker:
-          type: "boolean"
-          position: 23
       description: "This describes one workflow in the dockstore"
   Checksum:
     type: "object"
