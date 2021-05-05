@@ -6691,8 +6691,6 @@ components:
       - $ref: '#/components/schemas/Workflow'
       - type: object
         properties:
-          is_checker:
-            type: boolean
           parent_id:
             type: integer
             format: int64
