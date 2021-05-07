@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 
 import io.dropwizard.testing.FixtureHelpers;
-import junit.framework.TestCase;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Rule;

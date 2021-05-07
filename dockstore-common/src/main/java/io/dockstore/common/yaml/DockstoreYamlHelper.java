@@ -1,6 +1,5 @@
 package io.dockstore.common.yaml;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
