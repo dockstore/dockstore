@@ -16,9 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 /**
  * @author xliu
@@ -42,6 +46,17 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     }
 
     public Version<T> findVersionInEntry(Long entryId, Long versionId) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Version.findVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Version.findVersionInEntry").setParameter("entryId", entryId).setParameter("versionId", versionId));
+    }
+
+    public List<VersionVerifiedPlatform> findEntryVersionsWithVerifiedPlatforms(Long entryId) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms").setParameter("entryId", entryId));
+    }
+
+    // Currently not used for anything, will be used for paginated versions
+    public long getVersionsCount(long entryId) {
+        Query query = namedQuery("io.dockstore.webservice.core.Version.getCountByEntryId");
+        query.setParameter("id", entryId);
+        return (long)query.getSingleResult();
     }
 }

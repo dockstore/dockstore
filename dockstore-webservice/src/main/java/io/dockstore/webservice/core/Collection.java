@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -20,12 +21,16 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
 import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedNativeQueries;
+import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -34,6 +39,7 @@ import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -52,12 +58,23 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.deleteByOrgId", query = "DELETE Collection c WHERE c.organization.id = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND organizationid = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId"),
+})
+
+@NamedNativeQueries({
+        // This is a native query since I couldn't figure out how to do a delete with a join in HQL
+        @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId", query =
+                "DELETE FROM collection_entry_version WHERE collection_id = :collectionId")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable, Aliasable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "collection_id_seq")
+    @SequenceGenerator(name = "collection_id_seq", sequenceName = "collection_id_seq", allocationSize = 1)
+    @Column(columnDefinition = "bigint default nextval('collection_id_seq')")
     @ApiModelProperty(value = "Implementation specific ID for the collection in this web service", position = 0)
     @Schema(description = "Implementation specific ID for the collection in this web service")
     private long id;
@@ -85,31 +102,49 @@ public class Collection implements Serializable, Aliasable {
     @Schema(description = "Short description of the collection", required = true, example = "A collection of alignment algorithms")
     private String topic;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
+    @Transient
+    @JsonSerialize
+    @ApiModelProperty(value = "Number of workflows inside this collection", position = 5)
+    @Schema(description = "Number of workflows inside this collection")
+    private long workflowsLength;
+
+    @Transient
+    @JsonSerialize
+    @ApiModelProperty(value = "Number of tools inside this collection", position = 6)
+    @Schema(description = "Number of tools inside this collection")
+    private long toolsLength;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "collection_id", nullable = false, columnDefinition = "bigint"),
+    })
     @JsonIgnore
-    private Set<Entry> entries = new HashSet<>();
+    private Set<EntryVersion> entries = new HashSet<>();
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organizationid")
+    @JoinColumn(name = "organizationid", columnDefinition = "bigint")
     private Organization organization;
 
     @Column(name = "organizationid", insertable = false, updatable = false)
     private long organizationID;
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "collection_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_col_aliases", columnNames = { "alias" }))
+    @JoinTable(name = "collection_alias", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = @UniqueConstraint(name = "unique_col_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for collections")
     private Map<String, Alias> aliases = new HashMap<>();
 
     @Column(updatable = false)
     @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     @Transient
@@ -151,15 +186,15 @@ public class Collection implements Serializable, Aliasable {
     }
 
     public void setEntries(Set<Entry> entries) {
-        this.entries = entries;
+        this.entries = entries.stream().map(EntryVersion::new).collect(Collectors.toSet());
     }
 
-    public void addEntry(Entry entry) {
-        this.entries.add(entry);
+    public void addEntry(Entry entry, Version version) {
+        this.entries.add(new EntryVersion(entry, version));
     }
 
-    public void removeEntry(Entry entry) {
-        this.entries.remove(entry);
+    public void removeEntry(Long entryId, Long versionId) {
+        this.entries.removeIf(entryVersion -> entryVersion.equals(entryId, versionId));
     }
 
     public Organization getOrganization() {
@@ -208,6 +243,22 @@ public class Collection implements Serializable, Aliasable {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public void setWorkflowsLength(long pworkflowsLength) {
+        this.workflowsLength = pworkflowsLength;
+    }
+
+    public long getWorkflowsLength() {
+        return this.workflowsLength;
+    }
+
+    public void setToolsLength(long ptoolsLength) {
+        this.toolsLength = ptoolsLength;
+    }
+
+    public long getToolsLength() {
+        return this.toolsLength;
     }
 
     public long getOrganizationID() {

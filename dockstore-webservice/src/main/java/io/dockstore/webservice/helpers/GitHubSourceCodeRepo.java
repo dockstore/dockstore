@@ -17,6 +17,7 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -43,12 +44,16 @@ import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
@@ -57,8 +62,10 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -67,39 +74,62 @@ import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHEmail;
 import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHTagObject;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.RateLimitHandler;
 import org.kohsuke.github.extras.ImpatientHttpConnector;
+import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
 import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
  */
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
+    public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
+    private String githubTokenUsername;
 
-    GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
-        this.gitUsername = gitUsername;
-        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
-            new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
-        HttpConnector okHttp3Connector =  new ImpatientHttpConnector(obsoleteUrlFactory::open);
+    /**
+     *  @param githubTokenUsername the username for githubTokenContent
+     * @param githubTokenContent authorization token
+     */
+    public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
+        this.githubTokenUsername = githubTokenUsername;
+        // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
+        if (System.getenv("CIRCLE_SHA1") != null) {
+            // namespace cache by user when testing
+            builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
+        } else {
+            // use general cache
+            builder.cache(DockstoreWebserviceApplication.getCache(null));
+        }
+        OkHttpClient build = builder.build();
+        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
+
+        HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername).withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername))
+                    .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -132,7 +162,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
             return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         }
     }
@@ -168,7 +198,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                 } catch (IOException e) {
                     // move on if a file is not found
-                    LOG.warn("Could not find " + partialPath + " at " + reference);
+                    LOG.warn("Could not find " + partialPath + " at " + reference, e);
                 }
             }
             fileName = Joiner.on("/").join(folders);
@@ -180,11 +210,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return decodedContentAndMetadata.getRight();
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage());
+            LOG.warn(gitUsername + ": IOException on readFileFromRepo " + fileName + " from repository " + repo.getFullName() +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         } finally {
             GHRateLimit endRateLimit = getGhRateLimitQuietly();
             reportOnRateLimit("readFileFromRepo", startRateLimit, endRateLimit);
+        }
+    }
+
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+        if (gitRepository != null) {
+            LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, gitRepository);
+            entry.setLicenseInformation(licenseInformation);
         }
     }
 
@@ -201,8 +239,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
-        GHRef[] refs = repo.getRefs();
-        if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+
+        GHRef[] branchesAndTags = getBranchesAndTags(repo);
+
+        if (Lists.newArrayList(branchesAndTags).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
             return null;
         }
         // only look at github if the reference exists
@@ -222,7 +262,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             try {
                 return Pair.of(fileContent, fileContent.getContent());
             } catch (NullPointerException ex) {
-                LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?");
+                LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?", ex);
                 // seems to be thrown on submodules with the new library
                 return null;
             }
@@ -272,10 +312,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public boolean checkSourceCodeValidity() {
         try {
-            GHRateLimit ghRateLimit = github.rateLimit();
-            if (ghRateLimit.remaining == 0) {
-                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.reset.getTime()).atZone(ZoneId.systemDefault());
-                throw new CustomWebApplicationException("Out of rate limit, please wait till " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
+            GHRateLimit ghRateLimit = github.getRateLimit();
+            if (ghRateLimit.getRemaining() == 0) {
+                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
+                throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + ", please wait til " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
         } catch (IOException e) {
@@ -296,6 +336,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            setLicenseInformation(workflow, workflow.getOrganization() + '/' + workflow.getRepository());
+
             // Why is the path not set here?
         } catch (GHFileNotFoundException e) {
             LOG.info(gitUsername + ": GitHub reports file not found: " + e.getCause().getLocalizedMessage(), e);
@@ -324,7 +366,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
-
+        this.setLicenseInformation(service, repositoryId);
+        LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
+        service.setLicenseInformation(licenseInformation);
         // Validate subclass
         if (subclass != null) {
             DescriptorLanguageSubclass descriptorLanguageSubclass;
@@ -356,6 +400,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
         workflow.setWorkflowName(workflowName);
+        this.setLicenseInformation(workflow, repositoryId);
         DescriptorLanguage descriptorLanguage;
         try {
             descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
@@ -369,7 +414,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -377,8 +422,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Triple<String, Date, String>> references = new ArrayList<>();
+
+        GHRef[] refs = {};
         try {
-            GHRef[] refs = repository.getRefs();
+            refs = getBranchesAndTags(repository);
             for (GHRef ref : refs) {
                 Triple<String, Date, String> referenceTriple = getRef(ref, repository);
                 if (referenceTriple != null) {
@@ -389,18 +436,33 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         } catch (GHFileNotFoundException e) {
             // seems to legitimately do this when the repo has no tags or releases
-            LOG.debug("repo had no releases or tags: " + repositoryId);
+            LOG.debug("repo had no releases or tags: " + repositoryId, e);
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
             if (ref != null) {
-                WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
-                    repository, null, versionName);
-                if (version != null) {
+                final String branchName = ref.getLeft();
+                final Date lastModified = ref.getMiddle();
+                final String commitId = ref.getRight();
+                if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+                    WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
+                            repository, null, versionName);
+                    if (version != null) {
+                        workflow.addWorkflowVersion(version);
+                    }
+                } else {
+                    // Version didn't change, but we don't want to delete
+                    // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+                    LOG.info(gitUsername + ": Skipping GitHub reference: " + ref.toString());
+                    WorkflowVersion version = new WorkflowVersion();
+                    version.setName(branchName);
+                    version.setReference(branchName);
+                    version.setLastModified(lastModified);
+                    version.setCommitID(SKIP_COMMIT_ID);
                     workflow.addWorkflowVersion(version);
                 }
             }
@@ -467,7 +529,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     branchDate = epochStart;
                 }
             } catch (IOException e) {
-                LOG.error("unable to retrieve commit date for branch " + refName);
+                LOG.error("unable to retrieve commit date for branch " + refName, e);
             }
             return Triple.of(refName, branchDate, sha);
         } else {
@@ -488,7 +550,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private WorkflowVersion setupWorkflowVersionsHelper(Workflow workflow, Triple<String, Date, String> ref, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, GHRepository repository, SourceFile dockstoreYml, Optional<String> versionName) {
-        LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
+        LOG.info(gitUsername + ": Looking at GitHub reference: " + ref.toString());
         // Initialize the workflow version
         WorkflowVersion version = initializeWorkflowVersion(ref.getLeft(), existingWorkflow, existingDefaults);
         version.setLastModified(ref.getMiddle());
@@ -704,20 +766,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             if (testParameterPaths != null) {
                 List<String> missingParamFiles = new ArrayList<>();
                 for (String testParameterPath : testParameterPaths) {
-                    String testJsonContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
-                    if (testJsonContent != null) {
-                        SourceFile testJson = new SourceFile();
-                        // find type from file type, then find matching test param type
-                        testJson.setType(workflow.getDescriptorType().getTestParamType());
-                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setContent(testJsonContent);
-
-                        // Only add test parameter file if it hasn't already been added
-                        boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(workflow.getDefaultTestParameterFilePath()) && sf.getType() == testJson.getType());
-                        if (!hasDuplicate) {
-                            version.getSourceFiles().add(testJson);
-                        }
+                    // Only add test parameter file if it hasn't already been added
+                    boolean hasDuplicate = version.getSourceFiles().stream().anyMatch((SourceFile sf) -> sf.getPath().equals(testParameterPath) && sf.getType() == workflow.getDescriptorType().getTestParamType());
+                    if (hasDuplicate) {
+                        continue;
+                    }
+                    String testFileContent = this.readFileFromRepo(testParameterPath, ref.getLeft(), repository);
+                    if (testFileContent != null) {
+                        SourceFile testFile = new SourceFile();
+                        // find type from file type
+                        testFile.setType(workflow.getDescriptorType().getTestParamType());
+                        testFile.setPath(testParameterPath);
+                        testFile.setAbsolutePath(testParameterPath);
+                        testFile.setContent(testFileContent);
+                        version.getSourceFiles().add(testFile);
                     } else {
                         missingParamFiles.add(testParameterPath);
                     }
@@ -754,25 +816,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (CustomWebApplicationException ex) {
             throw new CustomWebApplicationException("Could not find repository " + repositoryId + ".", LAMBDA_FAILURE);
         }
-        String dockstoreYmlContent = this.readFileFromRepo(DOCKSTORE_YML_PATH, gitReference, repository);
-        if (dockstoreYmlContent != null) {
-            // Create file for .dockstore.yml
-            SourceFile dockstoreYml = new SourceFile();
-            dockstoreYml.setContent(dockstoreYmlContent);
-            dockstoreYml.setPath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setAbsolutePath(DOCKSTORE_YML_PATH);
-            dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
+        String dockstoreYmlContent = null;
+        for (String dockstoreYmlPath : DOCKSTORE_YML_PATHS) {
+            dockstoreYmlContent = this.readFileFromRepo(dockstoreYmlPath, gitReference, repository);
+            if (dockstoreYmlContent != null) {
+                // Create file for .dockstore.yml
+                SourceFile dockstoreYml = new SourceFile();
+                dockstoreYml.setContent(dockstoreYmlContent);
+                dockstoreYml.setPath(dockstoreYmlPath);
+                dockstoreYml.setAbsolutePath(dockstoreYmlPath);
+                dockstoreYml.setType(DescriptorLanguage.FileType.DOCKSTORE_YML);
 
-            return dockstoreYml;
-        } else {
-            // TODO: https://github.com/dockstore/dockstore/issues/3239
-            throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
+                return dockstoreYml;
+            }
         }
+        // TODO: https://github.com/dockstore/dockstore/issues/3239
+        throw new CustomWebApplicationException("Could not retrieve .dockstore.yml. Does the tag exist and have a .dockstore.yml?", LAMBDA_FAILURE);
     }
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
         if (startRateLimit != null && endRateLimit != null) {
-            int used = startRateLimit.remaining - endRateLimit.remaining;
+            int used = startRateLimit.getRemaining() - endRateLimit.getRemaining();
             if (used > 0) {
                 LOG.debug(id + ": used up " + used + " GitHub rate limited requests");
             } else {
@@ -781,14 +845,61 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    private GHRateLimit getGhRateLimitQuietly() {
+    public void reportOnGitHubRelease(GHRateLimit startRateLimit, GHRateLimit endRateLimit, String repository, String username, String gitReference, boolean isSuccessful) {
+        String gitHubRepoInfo = "Performing GitHub release for repository: " + repository + ", user: " + username + ", and git reference: " + gitReference;
+        String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
+        if (isSuccessful) {
+            LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
+        } else {
+            LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+        }
+
+    }
+
+    public GHRateLimit getGhRateLimitQuietly() {
         GHRateLimit startRateLimit = null;
         try {
-            startRateLimit = github.rateLimit();
+            // github.rateLimit() was deprecated and returned a much lower limit, low balling our rate limit numbers
+            startRateLimit = github.getRateLimit();
         } catch (IOException e) {
-            LOG.error("unable to retrieve rate limit, weird");
+            LOG.error("unable to retrieve rate limit, weird", e);
         }
         return startRateLimit;
+    }
+
+    /**
+     * This function replaces calling repo.getRefs(). Calling getRefs() will return all GHRefs, including old PRs. This change makes two calls
+     * instead to get only the branches and tags separately. Previously, an exception would get thrown if the repo had no GHRefs at all; now
+     * it will throw an exception only if the repo has neither tags nor branches, so that it is as similar as possible.
+     * @param repo Repository path (ex. dockstore/dockstore-ui2)
+     * @return GHRef[] Array of branches and tags
+     */
+    private GHRef[] getBranchesAndTags(GHRepository repo) throws IOException {
+        boolean getBranchesSucceeded = false;
+        GHRef[] branches = {};
+        GHRef[] tags = {};
+
+        // getRefs() fails with a GHFileNotFoundException if there are no matching results instead of returning an empty array/null.
+        try {
+            branches = repo.getRefs("refs/heads/");
+            getBranchesSucceeded = true;
+        } catch (GHFileNotFoundException ex) {
+            LOG.debug("No branches found for " + repo.getName(), ex);
+        }
+
+        try {
+            // this crazy looking structure is because getRefs can result in a cache miss (on repos without tags) whereas listTags seems to not have this problem
+            // yes this could probably be re-coded to use listTags directly
+            if (repo.listTags().iterator().hasNext()) {
+                tags = repo.getRefs("refs/tags/");
+            }
+        } catch (GHFileNotFoundException ex) {
+            LOG.debug("No tags found for  " + repo.getName());
+            if (!getBranchesSucceeded) {
+                throw ex;
+            }
+        }
+        return ArrayUtils.addAll(branches, tags);
     }
 
     @Override
@@ -819,7 +930,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Determine the default branch on Github
                 mainBranch = repository.getDefaultBranch();
             } catch (IOException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
                 return null;
             }
         }
@@ -837,6 +948,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public List<SourceControlOrganization> getOrganizations() {
+        try {
+            return github.getMyOrganizations().entrySet().stream()
+                    .map(o -> new SourceControlOrganization(o.getValue().getId(), o.getKey())).collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.info(githubTokenUsername + ": Cannot retrieve their organizations", e);
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
     public void updateReferenceType(String repositoryId, Version version) {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
@@ -844,8 +966,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
-            GHRef[] refs = repo.getRefs();
-
+            GHRef[] refs = getBranchesAndTags(repo);
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
                 if (reference.equals(version.getReference())) {
@@ -860,7 +981,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on updateReferenceType " + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
     }
@@ -870,7 +991,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
-            GHRef[] refs = repo.getRefs();
+            GHRef[] refs = getBranchesAndTags(repo);
 
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
@@ -879,8 +1000,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage(), e);
             // this is not so critical to warrant a http error code
+        }
+        return null;
+    }
+
+    private String getEmail(GHMyself myself) throws IOException {
+        for (GHEmail email: myself.getEmails2()) {
+            if (email.isPrimary()) {
+                return email.getEmail();
+            }
         }
         return null;
     }
@@ -888,25 +1018,63 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
+     * @param tokenDAO Optional tokenDAO used if the user's GitHub token information needs to be updated as well.
      */
-    public void syncUserMetadataFromGitHub(User user) {
+    public void syncUserMetadataFromGitHub(User user, Optional<TokenDAO> tokenDAO) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
-            User.Profile profile = new User.Profile();
-            profile.name = myself.getName();
-            profile.email = myself.getEmail();
-            profile.avatarURL = myself.getAvatarUrl();
-            profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
-            profile.location = myself.getLocation();
-            profile.company = myself.getCompany();
-            profile.username = myself.getLogin();
-            Map<String, User.Profile> userProfile = user.getUserProfiles();
-            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
-            user.setAvatarUrl(myself.getAvatarUrl());
+            User.Profile profile = getProfile(user, myself);
+            profile.email = getEmail(myself);
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            if (tokenDAO.isPresent()) {
+                Token usersGitHubToken = tokenDAO.get().findGithubByUserId(user.getId()).get(0);
+                usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+                usersGitHubToken.setUsername(profile.username);
+            }
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername(), ex);
         }
+    }
+
+    // DO NOT USE THIS FUNCTION ELSEWHERE
+    // This function has no use outside of gathering user's GitHub IDs the first time. This uses the GitHub token of the admin user calling the new, one-time-use endpoint.
+    // This will attempt to get the GitHub profile info (including id) of users we were unable to get by calling the github.getMyself() function above.
+    public void syncUserMetadataFromGitHubByUsername(User user, TokenDAO tokenDAO) {
+        // eGit user object
+        try {
+            if (user.getUserProfiles().get(TokenType.GITHUB_COM.toString()) == null) {
+                throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
+            }
+            GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
+            User.Profile profile = getProfile(user, ghUser);
+            profile.email = ghUser.getEmail();
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            Token usersGitHubToken = tokenDAO.findGithubByUserId(user.getId()).get(0);
+            usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+            usersGitHubToken.setUsername(profile.username);
+        } catch (IOException ex) {
+            String msg = "Unable to get GitHub user id for Dockstore user " + user.getUsername() + " " + user.getId();
+            LOG.info(msg, ex);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
+        User.Profile profile = new User.Profile();
+        profile.onlineProfileId = String.valueOf(ghUser.getId());
+        profile.username = ghUser.getLogin();
+        profile.name = ghUser.getName();
+        profile.avatarURL = ghUser.getAvatarUrl();
+        profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
+        profile.location = ghUser.getLocation();
+        profile.company = ghUser.getCompany();
+        Map<String, User.Profile> userProfile = user.getUserProfiles();
+        userProfile.put(TokenType.GITHUB_COM.toString(), profile);
+        user.setAvatarUrl(ghUser.getAvatarUrl());
+        return profile;
     }
 
     /**
@@ -943,5 +1111,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml, Optional.empty());
+    }
+
+    /**
+     * Not using org.kohsuke.github.RateLimitHandler.FAIL directly because
+     *
+     * 1. This logs username
+     * 2. We control the string in the error message
+     */
+    private static final class FailRateLimitHandler extends RateLimitHandler {
+
+        private final String username;
+
+        private FailRateLimitHandler(String username) {
+            this.username = username;
+        }
+
+        @Override
+        public void onError(IOException e, HttpURLConnection uc) {
+            LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
+            throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
+        }
+
     }
 }

@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +39,7 @@ import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -68,11 +70,17 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     private static final Logger LOG = LoggerFactory.getLogger(HostedToolResource.class);
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
+    private final SessionFactory sessionFactory;
 
     public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
         super(sessionFactory, permissionsInterface, limitConfig);
         this.tagDAO = new TagDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
+        this.sessionFactory = sessionFactory;
+    }
+
+    public ToolDAO getDAO() {
+        return this.toolDAO;
     }
 
     @Override
@@ -112,7 +120,11 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @ApiOperation(nickname = "editHostedTool", value = "Non-idempotent operation for creating new revisions of hosted tools.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
-        return super.editHosted(user, entryId, sourceFiles);
+        Tool tool = super.editHosted(user, entryId, sourceFiles);
+        List<String> descriptorTypes =  tool.calculateDescriptorType();
+        tool.setDescriptorType(descriptorTypes);
+        EntryVersionHelper.removeSourceFilesFromEntry(tool, sessionFactory);
+        return tool;
     }
 
     @Override

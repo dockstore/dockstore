@@ -19,6 +19,7 @@ package io.dockstore.client.cli;
 import javax.ws.rs.core.Response;
 
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
@@ -30,10 +31,12 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import static io.dockstore.common.CommonTestUtilities.PUBLIC_CONFIG_PATH;
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author dyuen
  */
+@Category(NonConfidentialTest.class)
 public class OpenApiIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
@@ -60,7 +64,7 @@ public class OpenApiIT {
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, PUBLIC_CONFIG_PATH);
         SUPPORT.before();
         client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
     }
@@ -74,11 +78,15 @@ public class OpenApiIT {
     public void testSwagger20() {
         Response response = client.target(baseURL + "swagger.json").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        // To prevent connection leak?
+        response.readEntity(String.class);
     }
 
     @Test
     public void testOpenApi30() {
         Response response = client.target(baseURL + "openapi.yaml").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        // To prevent connection leak?
+        response.readEntity(String.class);
     }
 }

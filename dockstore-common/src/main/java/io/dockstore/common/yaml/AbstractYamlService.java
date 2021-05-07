@@ -37,9 +37,18 @@ public abstract class AbstractYamlService {
      */
     private String description;
     /**
+     * Change the service's publish-state, if set.
+     * null does nothing; True & False correspond with the current API behaviour of publishing & unpublishing.
+     */
+    private Boolean publish;
+    /**
      * A list of files that Dockstore should index
      */
     private List<String> files;
+    /**
+     * A set of git reference globs/regex patterns that Dockstore should filter for
+     */
+    private Filters filters = new Filters();
     /**
      * A scripts object for the service's lifecycle
      */
@@ -77,12 +86,28 @@ public abstract class AbstractYamlService {
         this.description = description;
     }
 
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(final Boolean publish) {
+        this.publish = publish;
+    }
+
     public List<String> getFiles() {
         return files;
     }
 
     public void setFiles(final List<String> files) {
         this.files = files;
+    }
+
+    public Filters getFilters() {
+        return filters;
+    }
+
+    public void setFilters(final Filters filters) {
+        this.filters = filters;
     }
 
     public Scripts getScripts() {

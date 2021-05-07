@@ -96,7 +96,7 @@ public class EventResourceIT extends BaseIT {
 
         // Publish
         if (toPublish) {
-            tool = containersApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
             assertTrue(tool.isIsPublished());
         }
         return tool;
@@ -112,7 +112,6 @@ public class EventResourceIT extends BaseIT {
 
 
     @Test()
-
     public void eventResourcePaginationTest() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
@@ -123,7 +122,11 @@ public class EventResourceIT extends BaseIT {
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         EventsApi eventsApi = new EventsApi(client);
         List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
-        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
+        Assert.assertTrue("No starred entries, so there should be no events returned in starred entries mode", events.isEmpty());
+        events = eventsApi.getEvents(EventSearchType.ALL_STARRED.toString(), 10, 0);
+        Assert.assertTrue("No starred entries, so there should be no events returned in the all starred mode", events.isEmpty());
+
+
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);

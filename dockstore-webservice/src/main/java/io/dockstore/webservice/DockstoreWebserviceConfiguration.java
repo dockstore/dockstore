@@ -20,15 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.cache.CacheBuilderSpec;
+import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
-import org.hibernate.validator.constraints.NotEmpty;
 
 public class DockstoreWebserviceConfiguration extends Configuration {
 
@@ -130,7 +130,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String gitHubAppPrivateKeyFile;
 
     @NotNull
-    private CacheBuilderSpec authenticationCachePolicy;
+    private CaffeineSpec authenticationCachePolicy;
 
     private String languagePluginLocation;
 
@@ -308,11 +308,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.bitbucketClientSecret = bitbucketClientSecret;
     }
 
-    public CacheBuilderSpec getAuthenticationCachePolicy() {
+    public CaffeineSpec getAuthenticationCachePolicy() {
         return authenticationCachePolicy;
     }
 
-    public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
+    public void setAuthenticationCachePolicy(CaffeineSpec authenticationCachePolicy) {
         this.authenticationCachePolicy = authenticationCachePolicy;
     }
 
@@ -595,9 +595,36 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         }
     }
 
-    public class ElasticSearchConfig {
+    public static class ElasticSearchConfig {
         private String hostname;
         private int port;
+        private String protocol;
+        private String user;
+        private String password;
+
+        public String getProtocol() {
+            return protocol;
+        }
+
+        public void setProtocol(final String protocol) {
+            this.protocol = protocol;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(final String user) {
+            this.user = user;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(final String password) {
+            this.password = password;
+        }
 
         public String getHostname() {
             return hostname;
@@ -694,6 +721,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String documentationUrl;
 
         private String featuredContentUrl;
+
+        private String deployVersion;
+
+        private String composeSetupVersion;
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
@@ -910,6 +941,22 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setFeaturedContentUrl(String featuredContentUrl) {
             this.featuredContentUrl = featuredContentUrl;
+        }
+
+        public String getDeployVersion() {
+            return deployVersion;
+        }
+
+        public void setDeployVersion(final String deployVersion) {
+            this.deployVersion = deployVersion;
+        }
+
+        public String getComposeSetupVersion() {
+            return composeSetupVersion;
+        }
+
+        public void setComposeSetupVersion(final String composeSetupVersion) {
+            this.composeSetupVersion = composeSetupVersion;
         }
     }
 }

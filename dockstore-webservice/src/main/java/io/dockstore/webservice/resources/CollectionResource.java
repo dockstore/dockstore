@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -24,6 +26,7 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -34,7 +37,9 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -46,6 +51,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
@@ -59,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Collection of collection endpoints
@@ -79,17 +88,21 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     private final CollectionDAO collectionDAO;
     private final OrganizationDAO organizationDAO;
     private final WorkflowDAO workflowDAO;
+    private final ToolDAO toolDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
+    private final VersionDAO versionDAO;
 
     public CollectionResource(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
+        this.versionDAO = new VersionDAO(sessionFactory);
     }
 
     /**
@@ -102,7 +115,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("/collections/{collectionId}/aliases")
     @ApiOperation(nickname = "addCollectionAliases", value = "Add aliases linked to a collection in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Collection.class)
-    @Operation(operationId = "addCollectionAliases", summary = "Add aliases linked to a collection in Dockstore.", description = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "addCollectionAliases", summary = "Add aliases linked to a collection in Dockstore.", description = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added alias to collection", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     public Collection addAliases(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Collection to modify.", required = true) @Parameter(description = "Collection to modify.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @Parameter(description = "Comma-delimited list of aliases.", name = "aliases", in = ParameterIn.QUERY, required = true) @QueryParam("aliases") String aliases) {
@@ -163,7 +177,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork(readOnly = true)
     @Path("{organizationName}/collections/{collectionName}/name")
     @ApiOperation(value = "Retrieve a collection by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
-    @Operation(operationId = "getCollectionById", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getCollectionByName", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public Collection getCollectionByName(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization name.", required = true) @Parameter(description = "Organization name.", name = "organizationName", in = ParameterIn.PATH, required = true) @PathParam("organizationName") String organizationName,
             @ApiParam(value = "Collection name.", required = true) @Parameter(description = "Collection name.", name = "collectionName", in = ParameterIn.PATH, required = true) @PathParam("collectionName") String collectionName) {
@@ -204,11 +218,29 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
         List<CollectionEntry> collectionServices = workflowDAO.getCollectionServices(collection.getId());
         List<CollectionEntry> collectionTools = workflowDAO.getCollectionTools(collection.getId());
+        List<CollectionEntry> collectionWorkflowsWithVersions = workflowDAO.getCollectionWorkflowsWithVersions(collection.getId());
+        List<CollectionEntry> collectionServicesWithVersions = workflowDAO.getCollectionServicesWithVersions(collection.getId());
+        List<CollectionEntry> collectionToolsWithVersions = workflowDAO.getCollectionToolsWithVersions(collection.getId());
         List<CollectionEntry> collectionEntries = new ArrayList<>();
         collectionEntries.addAll(collectionWorkflows);
         collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);
+        collectionEntries.addAll(collectionTools);        
+        collectionEntries.addAll(collectionWorkflowsWithVersions);
+        collectionEntries.addAll(collectionServicesWithVersions);
+        collectionEntries.addAll(collectionToolsWithVersions);
+        collectionEntries.forEach(entry -> {
+            List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
+            List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
+            entry.setLabels(labelStrings);
+            if (entry.getEntryType().equals("tool")) {
+                entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
+            } else if (entry.getEntryType().equals("workflow")) {
+                entry.setDescriptorTypes(workflowDAO.getWorkflowsDescriptorTypes(entry.getId()));
+            }
+        });
         collection.setCollectionEntries(collectionEntries);
+        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
+        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
@@ -228,12 +260,19 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     public Collection addEntryToCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
-            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId) {
+            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
+            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionId") Long versionId) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
+        if (versionId == null) {
+            // Add the entry to the collection
+            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), null);
+        } else {
+            // TODO: Need to check that the version belongs to the entry
+            Version version = versionDAO.findById(versionId);
+            entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
+        }
 
-        // Add the entry to the collection
-        entryAndCollection.getRight().addEntry(entryAndCollection.getLeft());
 
         // Event for addition
         Organization organization = organizationDAO.findById(organizationId);
@@ -267,12 +306,26 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     public Collection deleteEntryFromCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
-            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId) {
+            @ApiParam(value = "Entry ID", required = true) @Parameter(description = "Entry ID.", name = "entryId", in = ParameterIn.QUERY, required = true) @QueryParam("entryId") Long entryId,
+            @ApiParam(value = "Version ID", required = false) @Parameter(description = "Version ID.", name = "versionId", in = ParameterIn.QUERY, required = false) @QueryParam("versionName") String versionName) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(organizationId, entryId, collectionId, user);
 
-        // Remove the entry from the organization
-        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft());
+        Long versionId = null;
+        if (versionName != null) {
+            Set<Version> workflowVersions = entryAndCollection.getLeft().getWorkflowVersions();
+
+            Optional<Version> first = workflowVersions.stream().filter(version -> version.getName().equals(versionName)).findFirst();
+            if (first.isPresent()) {
+                versionId = first.get().getId();
+            } else {
+                throw new CustomWebApplicationException("Version not found", HttpStatus.SC_NOT_FOUND);
+            }
+        }
+
+        // Remove the entry from the organization,
+        // This silently fails if the user somehow manages to give a non-existent entryId and versionId pair
+        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft().getId(), versionId);
 
         // Event for deletion
         Organization organization = organizationDAO.findById(organizationId);
@@ -316,7 +369,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
         Collection collection = getAndCheckCollection(Optional.of(organizationId), collectionId, user);
 
-        // Check that user is a member of the organization
+        // Check that user is an admin or maintainer of the organization
         getOrganizationAndCheckModificationRights(user, collection);
         return new ImmutablePair<>(entry, collection);
     }
@@ -383,6 +436,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             collections.forEach(collection -> {
                 currentSession.evict(collection);
                 collection.setEntries(new HashSet<>());
+                collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
+                collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
             });
         }
         return collections;
@@ -407,9 +462,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection to register.", required = true) @Parameter(description = "Collection to register.", name = "collection", required = true) Collection collection) {
 
-        // First check if the organization exists
-        boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.getId(), organizationDAO);
-        if (!doesOrgExist) {
+        // First check if the organization exists and that the user is an admin or maintainer
+        boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organizationId, user.getId(), organizationDAO);
+        if (!isUserAdminOrMaintainer) {
             String msg = "Organization not found.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
@@ -502,17 +557,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Collections's description in markdown.", required = true) @Parameter(description = "Collections's description in markdown.", name = "description", required = true) String description) {
-        Organization oldOrganization = organizationDAO.findById(organizationId);
-
-        // Ensure that the user is a member of the organization
-        OrganizationUser organizationUser = OrganizationResource.getUserOrgRole(oldOrganization, user.getId());
-        if (organizationUser == null) {
-            String msg = "You do not have permissions to update the collection.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
-        }
-
         Collection oldCollection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
+        Organization oldOrganization = getOrganizationAndCheckModificationRights(user, oldCollection);
 
         // Update collection
         oldCollection.setDescription(description);
@@ -545,7 +591,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Check that the user has rights to the organization
         OrganizationUser organizationUser = OrganizationResource.getUserOrgRole(organization, user.getId());
-        if (organizationUser == null) {
+        if (organizationUser == null || organizationUser.getRole() == OrganizationUser.Role.MEMBER) {
             String msg = "User does not have rights to modify a collection from this organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);

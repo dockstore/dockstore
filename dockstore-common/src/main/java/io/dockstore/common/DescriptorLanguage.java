@@ -70,21 +70,6 @@ public enum DescriptorLanguage {
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_SERVICE_OTHER;
         }
-    },
-    // crappy evil hack for 1.6.0 backwards compatibility after all sorts of Jackson annotations failed
-    // delete after 1.6.0 CLI users fade out https://github.com/dockstore/dockstore/issues/2860
-    OLD_CWL("cwl", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, CWL.defaultPrimaryDescriptorExtensions) {
-        @Override
-        public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
-        }
-    },
-    OLD_WDL("wdl", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON,
-        WDL.defaultPrimaryDescriptorExtensions) {
-        @Override
-        public boolean isRelevantFileType(FileType type) {
-            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE;
-        }
     };
 
     /**
@@ -143,10 +128,6 @@ public enum DescriptorLanguage {
         return shortName;
     }
 
-    public String getLowerShortName() {
-        return shortName.toLowerCase();
-    }
-
     public String getFriendlyName() {
         return friendlyName;
     }
@@ -162,6 +143,10 @@ public enum DescriptorLanguage {
     }
 
     public static Optional<FileType> getFileType(String descriptorType) {
+        // Tricky case for GALAXY because it doesn't match the rules of the other languages
+        if (StringUtils.containsIgnoreCase(descriptorType, "galaxy")) {
+            return Optional.of(GXFORMAT2.fileType);
+        }
         // this is tricky, since it is used by GA4GH, those APIs can use string of the form PLAIN_CWL
         // which is why we use StringUtils.containsIgnoreCase
         return Arrays.stream(DescriptorLanguage.values())

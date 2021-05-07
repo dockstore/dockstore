@@ -75,7 +75,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsGet(id, alias, null, registry, organization, name, toolname,
+        return ApiV2BetaVersionConverter.convertToVersion(finalConverterImpl.toolsGet(id, alias, null,  null, registry, organization, name, toolname,
             description, author, checker, offset, limit, securityContext,
             value, user));
     }

@@ -39,6 +39,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -52,6 +53,8 @@ import org.apache.commons.io.FilenameUtils;
     "name" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
+        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastmodified DESC")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -70,12 +73,17 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Column
     @JsonProperty("last_modified")
-    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102)
+    @ApiModelProperty(value = "Remote: Last time version on GitHub repo was changed. Hosted: time version created.", position = 102, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Date lastModified;
 
     @Column(nullable = false, columnDefinition = "boolean default true")
     @ApiModelProperty(value = "Whether or not the version was added using the legacy refresh process.", position = 104)
     private boolean isLegacyVersion = true;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    @ApiModelProperty(value = "Whether or not the version has been refreshed since its last edit on Dockstore.", position = 105)
+    private boolean synced = false;
 
     /**
      * In theory, this should be in a ServiceVersion.
@@ -124,6 +132,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         super.setReference(workflowVersion.getReference());
         workflowPath = workflowVersion.getWorkflowPath();
         lastModified = workflowVersion.getLastModified();
+        synced = workflowVersion.isSynced();
     }
 
     public void clone(WorkflowVersion tag) {
@@ -163,7 +172,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, reference);
+        return Objects.hash(this.getName(), this.getReference());
     }
 
     @Override
@@ -174,7 +183,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("name", name).add("reference", reference).toString();
+        return MoreObjects.toStringHelper(this).add("id", id).add("name", this.getName()).add("reference", this.getReference()).toString();
     }
 
     public Service.SubClass getSubClass() {
@@ -223,6 +232,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setToolTableJson(final String toolTableJson) {
         this.toolTableJson = toolTableJson;
+    }
+
+    public boolean isSynced() {
+        return synced;
+    }
+
+    public void setSynced(boolean synced) {
+        this.synced = synced;
     }
 
     @ApiModel(value = "WorkflowVersionPathInfo", description = "Object that "

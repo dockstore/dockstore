@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
@@ -15,6 +16,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -24,6 +26,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,6 +35,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.mockito.Mockito;
 
 import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class WDLHandlerTest {
@@ -114,8 +118,9 @@ public class WDLHandlerTest {
     public void testRepeatedFilename() throws IOException {
         final String content = getGatkSvMainDescriptorContent();
         final WDLHandler wdlHandler = new WDLHandler();
+        Version emptyVersion = new WorkflowVersion();
         final Map<String, SourceFile> map = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+                .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
         // There are 9 Structs.wdl files, in gatk-sv-clinical, but the one in gncv is not imported
         final long structsWdlCount = map.keySet().stream().filter(key -> key.contains("Structs.wdl")).count();
         Assert.assertEquals(8, structsWdlCount); // Note: there are 9 Structs.wdl files
@@ -128,20 +133,48 @@ public class WDLHandlerTest {
     @Test
     public void testGetToolsForComplexWorkflow() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
+        Version emptyVersion = new WorkflowVersion();
         final String content = getGatkSvMainDescriptorContent();
         final Map<String, SourceFile> sourceFileMap = wdlHandler
-                .processImports("whatever", content, null, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
+                .processImports("whatever", content, emptyVersion, new GatkSvClinicalSourceCodeRepoInterface(), MAIN_WDL);
 
         // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
         // up; just have it return null
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
 
-        final String toolsStr = wdlHandler
+        final Optional<String> toolsStr = wdlHandler
                 .getContent(MAIN_WDL, content, new HashSet<SourceFile>(sourceFileMap.values()), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-        final Gson gson = new Gson();
-        final Object[] tools = gson.fromJson(toolsStr, Object[].class);
-        Assert.assertEquals("There should be 227 tools", 227, tools.length);
+        if (toolsStr.isPresent()) {
+            final Gson gson = new Gson();
+            final Object[] tools = gson.fromJson(toolsStr.get(), Object[].class);
+            Assert.assertEquals("There should be 227 tools", 227, tools.length);
+        } else {
+            Assert.fail("Should be able to get tool json");
+        }
+
+    }
+
+    @Test
+    public void testGetContentWithSyntaxErrors() throws IOException {
+        final WDLHandler wdlHandler = new WDLHandler();
+        final File wdlFile = new File(ResourceHelpers.resourceFilePath("brokenWDL.wdl"));
+        final Set<SourceFile> emptySet = Collections.emptySet();
+
+        // wdlHandler.getContent ultimately invokes toolDAO.findAllByPath from LanguageHandlerEntry.getURLFromEntry for look
+        // up; just have it return null
+        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
+        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
+
+        // run test with a WDL descriptor with syntax errors
+        try {
+            wdlHandler.getContent("/brokenWDL.wdl", FileUtils.readFileToString(wdlFile, StandardCharsets.UTF_8), emptySet,
+                LanguageHandlerInterface.Type.TOOLS, toolDAO);
+            Assert.fail("Expected parsing error");
+        } catch (CustomWebApplicationException e) {
+            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
+            assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
+        }
     }
 
     private String getGatkSvMainDescriptorContent() throws IOException {
@@ -180,6 +213,11 @@ public class WDLHandlerTest {
             return "gatk";
         }
 
+        @Override
+        public void setLicenseInformation(Entry entry, String gitRepository) {
+
+        }
+
         // From here on down these methods are not invoked in our tests
         @Override
         public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
@@ -203,7 +241,7 @@ public class WDLHandlerTest {
 
         @Override
         public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+                Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
             return null;
         }
 
@@ -219,6 +257,11 @@ public class WDLHandlerTest {
 
         @Override
         public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
+            return null;
+        }
+
+        @Override
+        public List<SourceControlOrganization> getOrganizations() {
             return null;
         }
 

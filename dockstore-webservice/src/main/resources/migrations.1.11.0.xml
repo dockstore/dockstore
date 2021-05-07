@@ -1,0 +1,226 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2020 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.11.0">
+    <changeSet author="gluu (generated)" id="addImageSizeAndUpdateDate">
+        <addColumn tableName="image">
+            <column name="imageupdatedate" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="image">
+            <column name="size" type="int8"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="nzhao (generated)" id="toolForumUrl">
+        <addColumn tableName="tool">
+            <column name="forumurl" type="varchar(256 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="deletedUsernameTable">
+        <createTable tableName="deletedusername">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="deletedusername_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="cloudInstanceAndLanguageTables">
+        <createTable tableName="cloud_instance">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="cloud_instance_pkey"/>
+            </column>
+            <column name="partner" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="supports_file_imports" type="BOOLEAN"/>
+            <column name="supports_http_imports" type="BOOLEAN"/>
+            <column name="url" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT"/>
+        </createTable>
+        <createTable tableName="cloudinstance_supportedlanguages">
+            <column name="cloudinstance_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="cloudinstance_supportedlanguages_pkey"/>
+            </column>
+            <column name="language" type="VARCHAR(50)">
+                <constraints primaryKey="true" primaryKeyName="cloudinstance_supportedlanguages_pkey"/>
+            </column>
+            <column name="version" type="VARCHAR(50)"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="cloudinstance_id" baseTableName="cloudinstance_supportedlanguages" constraintName="fk_cloudinstance_supportedlanguages" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="cloud_instance"/>
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="cloud_instance" constraintName="fk_end_user_cloud_instance" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="orcidPutCode">
+        <addColumn tableName="version_metadata">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="orcidputcode" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="input_output_fileformats_on_entry">
+        <createTable tableName="entry_output_fileformat">
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_output_fileformat_pkey"/>
+            </column>
+            <column name="fileformatid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_output_fileformat_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="entry_input_fileformat">
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_input_fileformat_pkey"/>
+            </column>
+            <column name="fileformatid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_input_fileformat_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="entry_output_fileformat" constraintName="fk_entry_ouput_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="entry_input_fileformat" constraintName="fk_entry_input_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+        <sql dbms="postgresql">
+            INSERT INTO entry_input_fileformat(entryid, fileformatid)
+            SELECT DISTINCT workflow.id as entryid, version_input_fileformat.fileformatid as fileformatid FROM version_input_fileformat, workflow, workflowversion
+            WHERE workflow.id = workflowversion.parentid
+            AND workflowversion.id = version_input_fileformat.versionid;
+
+            INSERT INTO entry_input_fileformat(entryid, fileformatid)
+            SELECT DISTINCT tool.id as entryid, version_input_fileformat.fileformatid as fileformatid FROM version_input_fileformat, tool, tag
+            WHERE tool.id = tag.parentid
+            AND tag.id = version_input_fileformat.versionid;
+
+            INSERT INTO entry_output_fileformat(entryid, fileformatid)
+            SELECT DISTINCT workflow.id as entryid, version_output_fileformat.fileformatid as fileformatid FROM version_output_fileformat, workflow, workflowversion
+            WHERE workflow.id = workflowversion.parentid
+            AND workflowversion.id = version_output_fileformat.versionid;
+
+            INSERT INTO entry_output_fileformat(entryid, fileformatid)
+            SELECT DISTINCT tool.id as entryid, version_output_fileformat.fileformatid as fileformatid FROM version_output_fileformat, tool, tag
+            WHERE tool.id = tag.parentid
+            AND tag.id = version_output_fileformat.versionid;
+        </sql>
+    </changeSet>
+
+    <!-- this pre 1.11 sequence is already not being used by the associated table -->
+    <changeSet id="dropObseleteSequences" author="dyuen"  failOnError="false">
+        <dropSequence sequenceName="collection_entry_version_id_seq"/>
+    </changeSet>
+
+    <!-- these 1.11 sequences are not used -->
+    <changeSet id="dropNewSequences" author="dyuen" failOnError="false">
+        <dropSequence sequenceName="cloud_instance_id_seq"/>
+    </changeSet>
+
+    <changeSet author="gluu (generated)" id="orcidTokenExpansion">
+        <addColumn tableName="token">
+            <column name="expirationtime" type="int8"/>
+        </addColumn>
+        <addColumn tableName="token">
+            <column name="scope" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <update tableName="token">
+            <column name="scope" value="/authenticate"/>
+            <where>tokensource = 'orcid.org'</where>
+        </update>
+    </changeSet>
+  
+    <changeSet author="dyuen (generated)" id="date_more_things">
+        <addColumn tableName="cloud_instance">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloudinstance_supportedlanguages">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="collection_entry_version">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="parsed_information">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloud_instance">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="cloudinstance_supportedlanguages">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="collection_entry_version">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="parsed_information">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="version_metadata">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="standard_sequences">
+        <alterSequence sequenceName="container_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="enduser_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="label_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="sourcefile_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="tag_id_seq" incrementBy="1" />
+        <alterSequence sequenceName="token_id_seq" incrementBy="1" />
+    </changeSet>
+    <!-- This fixes the previous incorrect orcidTokenExpansion -->
+    <changeSet id="existingORCIDScopeSet" author="gluu">
+        <update tableName="token">
+            <column name="scope" value="AUTHENTICATE"/>
+            <where>tokensource = 'orcid.org'</where>
+        </update>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="add_ids_from_github">
+        <addColumn tableName="user_profile">
+            <column name="onlineprofileid" type="int8"/>
+        </addColumn>
+        <addColumn tableName="token">
+            <column name="onlineprofileid" type="int8"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            ALTER TABLE user_profile DROP CONSTRAINT one_sign_in_method_by_profile;
+            CREATE UNIQUE INDEX one_sign_in_method_by_profile_old ON user_profile USING btree (username, token_type) WHERE onlineprofileid IS NULL;
+            CREATE UNIQUE INDEX one_sign_in_method_by_profile ON user_profile USING btree (onlineprofileid, token_type) WHERE onlineprofileid IS NOT NULL;
+            ALTER TABLE token DROP CONSTRAINT one_token_link_per_identify;
+            CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprofileid, tokensource) WHERE onlineprofileid IS NOT NULL;
+            CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;
+        </sql>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="fix_onlineprofileid_datatype">
+        <sql dbms="postgresql">
+            UPDATE token SET onlineprofileid = null;
+            UPDATE user_profile SET onlineprofileid = null;
+        </sql>
+        <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="token"/>
+        <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="user_profile"/>
+    </changeSet>
+</databaseChangeLog>

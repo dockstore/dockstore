@@ -35,6 +35,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -45,10 +46,8 @@ import io.swagger.bitbucket.client.Configuration;
 import io.swagger.bitbucket.client.api.RefsApi;
 import io.swagger.bitbucket.client.api.RepositoriesApi;
 import io.swagger.bitbucket.client.model.Branch;
-import io.swagger.bitbucket.client.model.PaginatedBranches;
 import io.swagger.bitbucket.client.model.PaginatedRefs;
 import io.swagger.bitbucket.client.model.PaginatedRepositories;
-import io.swagger.bitbucket.client.model.PaginatedTags;
 import io.swagger.bitbucket.client.model.PaginatedTreeentries;
 import io.swagger.bitbucket.client.model.Repository;
 import io.swagger.bitbucket.client.model.Tag;
@@ -56,6 +55,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -71,6 +72,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
+
+
 
     /**
      * @param gitUsername           username that owns the bitbucket token
@@ -88,7 +91,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
-
+        if (fileName.isEmpty()) {
+            LOG.info(gitUsername + ": no file path provided for " + repositoryId);
+            return null;
+        }
         try {
             String fileContent = this
                 .getArbitraryURL(BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName,
@@ -97,7 +103,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": FOUND: {}", fileName);
             return fileContent;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": ApiException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": ApiException on readFile " + fileName + " from repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         }
     }
@@ -124,7 +130,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return files;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage());
+            LOG.error(gitUsername + ": IOException on listFiles in " + pathToDirectory + " for repository " + repositoryId +  ":" + reference + ", " + e.getMessage(), e);
             return null;
         }
     }
@@ -156,6 +162,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return "Bitbucket";
     }
 
+    @Override
+    public void setLicenseInformation(Entry entry, String gitRepository) {
+
+    }
 
     /**
      * Gets arbitrary URLs that Bitbucket seems to use for pagination
@@ -200,48 +210,39 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public List<SourceControlOrganization> getOrganizations() {
+        throw new UnsupportedOperationException("apps not supported for bitbucket yet");
+    }
+
+    @Override
     public void updateReferenceType(String repositoryId, Version version) {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
         }
+        String workspace = repositoryId.split("/")[0];
+        String repoSlug = repositoryId.split("/")[1];
+        String name = version.getReference();
         RefsApi refsApi = new RefsApi(apiClient);
+        // There isn't exactly a single Bitbucket endpoint to get a version which then allows us to determine if it's a branch or tag.
+        // This code checks two endpoints (branches and tags) to see if it belongs in which.
         try {
-            PaginatedBranches paginatedBranches = refsApi
-                .repositoriesUsernameRepoSlugRefsBranchesGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedBranches != null) {
-                if (paginatedBranches.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.BRANCH);
-                }
-                if (paginatedBranches.getNext() != null) {
-                    paginatedBranches = getArbitraryURL(paginatedBranches.getNext(), new GenericType<PaginatedBranches>() {
-                    });
-                } else {
-                    paginatedBranches = null;
-                }
-            }
+            refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.BRANCH);
+            return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage());
+            LOG.warn(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
 
         try {
-            PaginatedTags paginatedTags = refsApi
-                .repositoriesUsernameRepoSlugRefsTagsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedTags != null) {
-                if (paginatedTags.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.TAG);
-                }
-                if (paginatedTags.getNext() != null) {
-                    paginatedTags = getArbitraryURL(paginatedTags.getNext(), new GenericType<PaginatedTags>() {
-                    });
-                } else {
-                    paginatedTags = null;
-                }
-            }
+            refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.TAG);
+            return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage());
+            LOG.warn(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
+        throw new CustomWebApplicationException(name + " is not a Bitbucket branch or tag in " + repositoryId, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @Override
@@ -292,7 +293,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName) {
+        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         RefsApi refsApi = new RefsApi(apiClient);
         try {
             PaginatedRefs paginatedRefs = refsApi
@@ -300,24 +301,44 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             // this pagination structure is repetitive and should be refactored
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
-                    String branchName = ref.getName();
+                    final String branchName = ref.getName();
                     if (versionName.isEmpty() || Objects.equals(branchName, versionName.get())) {
-                        OffsetDateTime date = ref.getTarget().getDate();
-                        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
-                        version.setLastModified(Date.from(date.toInstant()));
-                        String calculatedPath = version.getWorkflowPath();
-                        // Now grab source files
-                        DescriptorLanguage.FileType identifiedType = workflow.getFileType();
-                        // TODO: No exceptions are caught here in the event of a failed call
-                        SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                        WorkflowVersion version = new WorkflowVersion();
+                        version.setName(branchName);
+                        version.setReference(branchName);
+                        final OffsetDateTime date = ref.getTarget().getDate();
+                        final Date lastModifiedDate = Date.from(date.toInstant());
+                        version.setLastModified(lastModifiedDate);
+                        final String commitId = getCommitID(repositoryId, version);
 
-                        // Use default test parameter file if either new version or existing version that hasn't been edited
-                        createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
-                        workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                        if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+                            LOG.info(gitUsername + ": Looking at Bitbucket reference: " + branchName);
+                            version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
 
-                        version.setCommitID(getCommitID(repositoryId, version));
+                            version.setLastModified(lastModifiedDate);
+                            String calculatedPath = version.getWorkflowPath();
+                            // Now grab source files
+                            DescriptorLanguage.FileType identifiedType = workflow.getFileType();
+                            // TODO: No exceptions are caught here in the event of a failed call
+                            SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                        version = versionValidation(version, workflow, calculatedPath);
+                            // Use default test parameter file if either new version or existing version that hasn't been edited
+                            createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
+                            workflow.addWorkflowVersion(combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+
+                            version.setCommitID(getCommitID(repositoryId, version));
+
+                            version = versionValidation(version, workflow, calculatedPath);
+                            if (version != null) {
+                                workflow.addWorkflowVersion(version);
+                            }
+                        } else {
+                            // Version didn't change, but we don't want to delete
+                            // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+                            LOG.info(gitUsername + ": Skipping Bitbucket reference: " + branchName);
+                            version.setCommitID(SKIP_COMMIT_ID);
+                            workflow.addWorkflowVersion(version);
+                        }
                     }
                 });
 
@@ -329,7 +350,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
         } catch (ApiException e) {
-            LOG.error("Could not find Bitbucket repository " + repositoryId + " for user.");
+            LOG.error("Could not find Bitbucket repository " + repositoryId + " for user.", e);
             throw new CustomWebApplicationException("Could not reach Bitbucket", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
         return workflow;
@@ -366,7 +387,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 Repository repository = api.repositoriesUsernameRepoSlugGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
                 return repository.getMainbranch().getName();
             } catch (ApiException e) {
-                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId, e);
                 return null;
             }
         }

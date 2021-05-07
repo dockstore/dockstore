@@ -54,6 +54,7 @@ public final class Utilities {
     private static final Map<String, ConfigurationBuilder<INIConfiguration>> MAP = new HashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
+    private static final long DEFAULT_TIMEOUT_MILLISECONDS = 0;  // if 0, do not set timeout at all
 
     private Utilities() {
         // hide the default constructor for a utility class
@@ -82,13 +83,16 @@ public final class Utilities {
     }
 
     public static ImmutablePair<String, String> executeCommand(String command) {
-        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), null);
+        return executeCommand(command, null);
     }
 
     public static ImmutablePair<String, String> executeCommand(String command, File workingDir) {
-        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), workingDir);
+        return executeCommand(command, workingDir, DEFAULT_TIMEOUT_MILLISECONDS);
     }
 
+    public static ImmutablePair<String, String> executeCommand(String command, File workingDir, long timeout) {
+        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), workingDir, timeout);
+    }
 
     public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream) {
         return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), null);
@@ -100,7 +104,7 @@ public final class Utilities {
 
     public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream,
             File workingDir, Map<String, String> additionalEnvironment) {
-        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), workingDir, additionalEnvironment);
+        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), workingDir, additionalEnvironment, DEFAULT_TIMEOUT_MILLISECONDS);
     }
 
     /**
@@ -111,7 +115,19 @@ public final class Utilities {
      */
     private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
             Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir) {
-        return executeCommand(command, dumpOutput, stdoutStream, stderrStream, workingDir, null);
+        return executeCommand(command, dumpOutput, stdoutStream, stderrStream, workingDir, null, DEFAULT_TIMEOUT_MILLISECONDS);
+    }
+
+    /**
+     * Execute a command with custom timeout and return stdout and stderr
+     *
+     * @param command the command to execute
+     * @param timeout the max time in milliseconds to wait for execution to finish
+     * @return the stdout and stderr
+     */
+    private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
+                                                                Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir, long timeout) {
+        return executeCommand(command, dumpOutput, stdoutStream, stderrStream, workingDir, null, timeout);
     }
 
     /**
@@ -122,7 +138,7 @@ public final class Utilities {
      * @return the stdout and stderr
      */
     private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
-            Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir, Map<String, String> additionalEnvironment) {
+            Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir, Map<String, String> additionalEnvironment, long timeout) {
         // TODO: limit our output in case the called program goes crazy
 
         // these are for returning the output for use by this
@@ -159,7 +175,13 @@ public final class Utilities {
                 // get stdout and stderr
                 executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
                 executor.execute(parse, procEnvironment, resultHandler);
-                resultHandler.waitFor();
+
+                // wait for the duration of the timeout, unless timeout set to 0
+                if (timeout == 0) {
+                    resultHandler.waitFor();
+                } else {
+                    resultHandler.waitFor(timeout);
+                }
                 // not sure why commons-exec does not throw an exception
                 if (resultHandler.getExitValue() != 0) {
                     resultHandler.getException().printStackTrace();

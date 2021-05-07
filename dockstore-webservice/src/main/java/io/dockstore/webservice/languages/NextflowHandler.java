@@ -38,6 +38,7 @@ import groovyjarjarantlr.TokenStreamException;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
@@ -48,6 +49,7 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -55,9 +57,15 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 /**
  * This class will eventually handle support for Nextflow
  */
-public class NextflowHandler implements LanguageHandlerInterface {
+public class NextflowHandler extends AbstractLanguageHandler implements LanguageHandlerInterface {
 
+    protected static final Pattern IMPORT_PATTERN = Pattern.compile("^\\s*include.+?from.+?'.+?'", Pattern.DOTALL | Pattern.MULTILINE);
     private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
+
+    @Override
+    protected DescriptorLanguage.FileType getFileType() {
+        return DescriptorLanguage.FileType.NEXTFLOW;
+    }
 
     @Override
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
@@ -131,14 +139,65 @@ public class NextflowHandler implements LanguageHandlerInterface {
             if (sourceFile.isPresent()) {
                 sourceFile.get().setPath(filename);
                 imports.put(filename, sourceFile.get());
+                imports.putAll(processOtherImports(repositoryId, sourceFile.get().getContent(), version, sourceCodeRepoInterface,
+                        sourceFile.get().getAbsolutePath()));
             }
         }
+
         // source files in /lib seem to be automatically added to the script classpath
         // binaries are also there and will need to be ignored
         List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
         handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
         handleNextflowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
         return imports;
+    }
+
+    /**
+     * Similar to processImports() of other handlers.
+     * The current processImports() method looks for main.nf and similar so is not suitable for recursion.
+     * Looks for imports by searching for lines that start "include"
+     * @param repositoryId  The Git repository (ex. nextflow-io/rnaseq-nf)
+     * @param content   The contents of the file being analyzed
+     * @param version   The Git version (branch/tag) of the repository
+     * @param sourceCodeRepoInterface   The source code repository interface
+     * @param workingDirectoryForFile   The parent directory of the file being analyzed
+     * @return
+     */
+    private Map<String, SourceFile> processOtherImports(String repositoryId, String content, Version version,
+            SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
+        Map<String, SourceFile> imports = new HashMap<>();
+        Matcher m = IMPORT_PATTERN.matcher(content);
+        while (m.find()) {
+            String path = getRelativeImportPathFromLine(m.group(), workingDirectoryForFile);
+            String absoluteImportPath = convertRelativePathToAbsolutePath(workingDirectoryForFile, path);
+            handleImport(repositoryId, version, imports, path, sourceCodeRepoInterface, absoluteImportPath);
+        }
+        Map<String, SourceFile> recursiveImports = new HashMap<>();
+        for (Map.Entry<String, SourceFile> importFile : imports.entrySet()) {
+            final Map<String, SourceFile> sourceFiles = processOtherImports(repositoryId, importFile.getValue().getContent(), version, sourceCodeRepoInterface, importFile.getKey());
+            recursiveImports.putAll(sourceFiles);
+        }
+        recursiveImports.putAll(imports);
+        return recursiveImports;
+    }
+
+    /**
+     * Give the line in the file that has the import, figure out what the relative path is
+     * @param line  A line in the file that has the import (ex. "include { RNASEQ } from './modules/rnaseq'")
+     * @return  The relative path
+     */
+    protected static String getRelativeImportPathFromLine(String line, String workingDirectoryForFile) {
+        final String nextflowFileExtension = ".nf";
+        String importPath = StringUtils.substringBetween(line, "'", "'");
+        importPath = importPath.replaceFirst(workingDirectoryForFile, "");
+        importPath = importPath.replaceFirst("^[.]/", "");
+        importPath = importPath.replaceFirst("^/", "");
+        // Sometimes the import line looks like "include { RNASEQ } from './modules/rnaseq'"
+        // "./modules/rnaseq" is not a file, it is actually "./modules/rnaseq.nf"
+        if (!importPath.endsWith(nextflowFileExtension)) {
+            importPath = importPath + nextflowFileExtension;
+        }
+        return importPath;
     }
 
     private void createValidationMessageForGeneralFailure(Version version, String filepath) {
@@ -222,10 +281,14 @@ public class NextflowHandler implements LanguageHandlerInterface {
      * Given an AST for a process, returns the name of the process
      *
      * @param processAST AST of a process
-     * @return Process name
+     * @return Process name or null if there isn't one
      */
     private String getProcessValue(GroovySourceAST processAST) {
-        return processAST == null ? null : processAST.getNextSibling().getFirstChild().getFirstChild().getText();
+        try {
+            return processAST == null ? null : processAST.getNextSibling().getFirstChild().getFirstChild().getText();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     /**
@@ -324,7 +387,7 @@ public class NextflowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public String getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
+    public Optional<String> getContent(String mainDescName, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
 
@@ -334,7 +397,13 @@ public class NextflowHandler implements LanguageHandlerInterface {
 
         // nextflow uses the main script from the manifest as the main descriptor
         // add the Nextflow scripts
-        final Configuration configuration = NextflowUtilities.grabConfig(mainDescriptor);
+
+        Configuration configuration = null;
+        try {
+            configuration = NextflowUtilities.grabConfig(mainDescriptor);
+        } catch (NextflowUtilities.NextflowParsingException e) {
+            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
         String mainScriptPath = "main.nf";
         if (configuration.containsKey("manifest.mainScript")) {
             mainScriptPath = configuration.getString("manifest.mainScript");
@@ -352,13 +421,21 @@ public class NextflowHandler implements LanguageHandlerInterface {
             defaultContainer = configuration.getString("process.container");
         }
 
-        Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);
+        Map<String, String> callToDockerMap = new HashMap<>();
+        String finalDefaultContainer = defaultContainer;
+
+        // Add all DockerMap from each secondary sourcefile
+        if (!secondarySourceFiles.isEmpty()) {
+            secondarySourceFiles.forEach(sourceFile -> callToDockerMap.putAll(this.getCallsToDockerMap(sourceFile.getContent(), finalDefaultContainer)));
+        }
+
+        callToDockerMap.putAll(this.getCallsToDockerMap(mainDescriptor, defaultContainer));
         // Iterate over each call, determine dependencies
         // Mapping of stepId -> array of dependencies for the step
         Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
         // Get import files
         Map<String, String> namespaceToPath = this.getImportMap(mainDescriptor);
-        Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(callToDockerMap, callToDependencies);
+        Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(WDLHandler.convertToDockerParameter(callToDockerMap), callToDependencies);
         return convertMapsToContent(mainScriptPath, type, dao, callType, toolType, toolInfoMap, namespaceToPath);
     }
 
@@ -486,6 +563,9 @@ public class NextflowHandler implements LanguageHandlerInterface {
 
             for (GroovySourceAST processAST : processList) {
                 String processName = getProcessValue(processAST);
+                if (processName == null) {
+                    continue;
+                }
                 GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
                 String containerName;
                 if (containerAST != null) {

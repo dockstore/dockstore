@@ -31,6 +31,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -49,8 +50,9 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
     @JsonProperty("last_built")
-    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 101)
-    Date lastBuilt;
+    @ApiModelProperty(value = "For automated tools: The last time the container backing this tool version was built. For hosted: N/A", position = 101, dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Date lastBuilt;
 
     @Column
     @JsonProperty("image_id")
@@ -235,19 +237,19 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, reference);
+        return Objects.hash(id, this.getName(), this.getReference());
     }
 
     @Override
     public int compareTo(@NotNull Tag that) {
-        return ComparisonChain.start().compare(this.name, that.name, Ordering.natural().nullsFirst())
-            .compare(this.reference, reference, Ordering.natural().nullsFirst())
-            .compare(this.lastBuilt, that.lastBuilt, Ordering.natural().nullsFirst()).result();
+        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsFirst())
+            .compare(this.getReference(), that.getReference(), Ordering.natural().nullsFirst())
+            .compare(this.getLastBuilt(), that.getLastBuilt(), Ordering.natural().nullsFirst()).result();
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("name", name).add("reference", reference).add("imageId", imageId)
+        return MoreObjects.toStringHelper(this).add("id", id).add("name", this.getName()).add("reference", this.getReference()).add("imageId", imageId)
             .add("dockerfilePath", dockerfilePath).toString();
     }
 }

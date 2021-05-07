@@ -16,7 +16,10 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -35,6 +38,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,6 +50,8 @@ import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.Hidden;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
@@ -74,6 +80,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.sourceControl = :sourceControl AND :user not in elements(c.users)"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId", query = "SELECT c FROM Workflow c, Version v WHERE v.id = :workflowVersionId AND c.id = v.parent"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.getPublishedEntriesByUserId", query = "SELECT w FROM Workflow w WHERE w.isPublished = true AND w.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
@@ -111,6 +118,11 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 
+    @Column
+    @Size(max = 256)
+    @ApiModelProperty(value = "This is a link to a forum or discussion board")
+    private String forumUrl;
+
     // DOCKSTORE-2428 - demo how to add new workflow language
     // this one is annoying since the codegen doesn't seem to pick up @JsonValue in the DescriptorLanguage enum
     @Column(nullable = false)
@@ -124,15 +136,16 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type subclass for the workflow. Currently it is only used for services.", required = true, position = 22)
     private DescriptorLanguageSubclass descriptorTypeSubclass = DescriptorLanguageSubclass.NOT_APPLICABLE;
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
     @Cascade({ CascadeType.DETACH, CascadeType.SAVE_UPDATE })
-    private final SortedSet<WorkflowVersion> workflowVersions;
+    @BatchSize(size = 25)
+    private SortedSet<WorkflowVersion> workflowVersions;
 
     @JsonIgnore
     @OneToOne(targetEntity = WorkflowVersion.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id")
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
     private WorkflowVersion actualDefaultVersion;
 
     protected Workflow() {
@@ -180,6 +193,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setEmail(getEmail());
         targetWorkflow.setDescription(getDescription());
         targetWorkflow.setLastModified(getLastModifiedDate());
+        targetWorkflow.setForumUrl(getForumUrl());
         targetWorkflow.setOrganization(getOrganization());
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
@@ -224,7 +238,12 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Override
     public Set<WorkflowVersion> getWorkflowVersions() {
-        return workflowVersions;
+        return this.workflowVersions;
+    }
+
+    @Hidden
+    public void setWorkflowVersionsOverride(SortedSet<WorkflowVersion> newWorkflowVersions) {
+        this.workflowVersions = newWorkflowVersions;
     }
 
     /**
@@ -244,6 +263,14 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     //TODO: odd side effect, this means that if the descriptor language is set wrong, we will get or set the wrong the default paths
     public void setDefaultWorkflowPath(String defaultWorkflowPath) {
         getDefaultPaths().put(this.getDescriptorType().getFileType(), defaultWorkflowPath);
+    }
+
+    @JsonProperty
+    public String getForumUrl() {
+        return forumUrl;
+    }
+    public void setForumUrl(String forumUrl) {
+        this.forumUrl = forumUrl;
     }
 
     @JsonProperty
@@ -328,6 +355,16 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
+    // Try to avoid using this because it will cause a big performance impact for workflows many versions.
+    public void updateLastModified() {
+        Optional<Date> max = this.getWorkflowVersions().stream().map(WorkflowVersion::getLastModified).max(Comparator.naturalOrder());
+        // TODO: this conversion is lossy
+        if (max.isPresent()) {
+            long time = max.get().getTime();
+            this.setLastModified(new Date(Math.max(time, 0L)));
+        }
+    }
+
     public abstract boolean isIsChecker();
 
     public abstract void setIsChecker(boolean isChecker);
@@ -336,7 +373,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
         @Override
         public String convertToDatabaseColumn(DescriptorLanguage attribute) {
-            return attribute.getLowerShortName();
+            return attribute.getShortName().toLowerCase();
         }
 
         @Override

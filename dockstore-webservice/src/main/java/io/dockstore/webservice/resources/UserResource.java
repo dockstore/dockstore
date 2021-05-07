@@ -29,10 +29,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -45,37 +47,46 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
-import io.dockstore.common.EntryUpdateTime;
-import io.dockstore.common.OrganizationUpdateTime;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
+import io.dockstore.webservice.api.PrivilegeRequest;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.TokenViews;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.MyWorkflows;
+import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
+import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
@@ -96,6 +107,11 @@ import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -121,11 +137,13 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
+    private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
+    private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
+    private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
     private final WorkflowResource workflowResource;
-    private final ServiceResource serviceResource;
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
@@ -133,10 +151,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
-    private PermissionsInterface authorizer;
+    private final DeletedUsernameDAO deletedUsernameDAO;
+    private final PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
-    private SessionFactory sessionFactory;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
@@ -144,7 +162,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
-        this.sessionFactory = sessionFactory;
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -153,8 +170,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
+        this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
         this.workflowResource = workflowResource;
-        this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
         this.cachingAuthenticator = cachingAuthenticator;
@@ -238,14 +255,23 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Change username if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User changeUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
-        Pattern pattern = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
-        if (!pattern.asPredicate().test(username)) {
+        if (!VALID_USERNAME_PATTERN.asPredicate().test(username)) {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
+        restrictUsername(username);
+
         User user = userDAO.findById(authUser.getId());
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
+
+        if (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
+            String errorMsg = "Cannot change user to " + username + " because it is already in use";
+            LOG.error(errorMsg);
+            throw new CustomWebApplicationException(errorMsg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+
         user.setUsername(username);
         user.setSetupComplete(true);
         userDAO.clearCache();
@@ -262,6 +288,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return userDAO.findById(user.getId());
     }
 
+    public static void restrictUsername(String username) {
+        Matcher matcher = USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
+        if (matcher.find()) {
+            throw new CustomWebApplicationException("Cannot change username to " + username
+                    + " because it contains one or more of the following keywords: dockstore, admin, curator, system, or manager", HttpStatus.SC_BAD_REQUEST);
+        }
+
+    }
+
     @DELETE
     @Timed
     @UnitOfWork
@@ -269,19 +304,34 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "selfDestruct", description = "Delete user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean selfDestruct(
-            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
-        checkUser(authUser, authUser.getId());
-        User user = userDAO.findById(authUser.getId());
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
+            @ApiParam(value = "Optional user id if deleting another user. Only admins can delete another user.") @Parameter(description = "Optional user id if deleting another user. Only admins can delete another user.", name = "userId", in = ParameterIn.QUERY) @QueryParam("userId") Long userId) {
+        User user;
+        if (userId != null) {
+            checkAdmin(authUser);
+            user = userDAO.findById(userId);
+        } else {
+            checkUser(authUser, authUser.getId());
+            user = userDAO.findById(authUser.getId());
+        }
+
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
+
         // Remove dangling sharing artifacts before getting rid of tokens
         this.authorizer.selfDestruct(user);
 
         // Delete entries for which this user is the only user
         deleteSelfFromEntries(user);
         invalidateTokensForUser(user);
-        return userDAO.delete(user);
+        deleteSelfFromLambdaEvents(user);
+        boolean isDeleted =  userDAO.delete(user);
+        if (isDeleted) {
+            DeletedUsername deletedUsername = new DeletedUsername(user.getUsername());
+            deletedUsernameDAO.create(deletedUsername);
+        }
+        return isDeleted;
     }
 
     private void invalidateTokensForUser(User user) {
@@ -311,6 +361,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                     eventDAO.deleteEventByEntryID(entry.getId());
                     entryDAO.delete(entry);
                 });
+    }
+
+    // We don't delete the LambdaEvent because it is useful for other users
+    private void deleteSelfFromLambdaEvents(User user) {
+        lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
     @DELETE
@@ -346,68 +401,25 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                    @ApiParam("User name to check") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
         User foundUser = userDAO.findByUsername(username);
-        return foundUser != null;
+        if (foundUser == null && !DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
+            return false;
+        }
+        return true;
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens")
-    @Operation(operationId = "getUserTokens", description = "Get tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @JsonView(TokenViews.User.class)
+    @Operation(operationId = "getUserTokens", description = "Get information about tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get information about tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
         return tokenDAO.findByUserId(userId);
     }
 
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/github.com")
-    @Operation(operationId = "getGithubUserTokens", description = "Get Github tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Github tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findGithubByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/gitlab.com")
-    @Operation(operationId = "getGitlabUserTokens", description = "Get Gitlab tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Gitlab tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findGitlabByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/quay.io")
-    @Operation(operationId = "getQuayUserTokens", description = "Get Quay tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Quay tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findQuayByUserId(userId);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/{userId}/tokens/dockstore")
-    @Operation(operationId = "getDockstoreUserTokens", description = "Get Dockstore tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get Dockstore tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
-    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-            @ApiParam("User to return") @PathParam("userId") long userId) {
-        checkUser(user, userId);
-        return tokenDAO.findQuayByUserId(userId);
-    }
 
     @GET
     @Timed
@@ -444,6 +456,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return repositories;
     }
 
+    /**
+     *
+     * @param authUser
+     * @param userId
+     * @param organization
+     * @param dockerRegistry not really a registry the way we use it now (ex: quay.io), rename in 1.10 this is actually a repository
+     * @return
+     */
     @GET
     @Timed
     @UnitOfWork
@@ -453,17 +473,17 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization,
-            @ApiParam(value = "Docker registry") @QueryParam("dockerRegistry") String dockerRegistry) {
+            @ApiParam(value = "Docker registry", required = true) @QueryParam("dockerRegistry") String dockerRegistry) {
 
         checkUser(authUser, userId);
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
-        if (dockerRegistry != null) {
-            dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
-        } else {
-            dockerRepoResource.refreshToolsForUser(userId, organization);
+        if (dockerRegistry == null) {
+            throw new CustomWebApplicationException("A repository is required", HttpStatus.SC_BAD_REQUEST);
         }
+        dockerRepoResource.refreshToolsForUser(userId, organization, dockerRegistry);
+
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
@@ -564,19 +584,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     }
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
+        services.forEach(service -> Hibernate.initialize(service.getWorkflowVersions()));
         EntryVersionHelper.stripContent(services, this.userDAO);
         return services;
-    }
-
-    private List<Workflow> getBioworkflows(User user) {
-        return workflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
-    }
-
-    // TODO: Replace with code similar to the new userWorkflows endpoint once it is optimised
-    private List<Workflow> getStrippedBioworkflows(User user) {
-        final List<Workflow> bioworkflows = getBioworkflows(user);
-        EntryVersionHelper.stripContent(bioworkflows, this.userDAO);
-        return bioworkflows;
     }
 
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
@@ -714,10 +724,71 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
-            u.updateUserMetadata(tokenDAO);
+            u.updateUserMetadata(tokenDAO, false);
         }
 
         return userDAO.findAll();
+    }
+
+    // TODO: Do equivalent of below, but for Google users.
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserMetadataToGetIds")
+    @Deprecated
+    @Operation(operationId = "updateUserMetadataToGetIds", description = "Attempt to update the metadata of all GitHub and Google users and then returns a list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list Dockstore users we were unable to get GitHub/Google IDs for.", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = User.class))))
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
+        List<Token> gitHubTokens = tokenDAO.findAllGitHubTokens();
+        List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
+        List<User> usersCouldNotBeUpdated = new ArrayList<>();
+
+        // Try to update Google metadata using user's token. This is the only option for Google.
+        for (Token t : googleTokens) {
+            User currentUser = userDAO.findById(t.getUserId());
+            if (currentUser != null) {
+                updateGoogleAccessToken(currentUser.getId());
+                try {
+                    currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
+                } catch (Exception ex) {
+                    LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
+                    usersCouldNotBeUpdated.add(currentUser);
+                }
+
+            }
+        }
+
+        // Try to update Google metadata using user's token and getMyself(). If not, try by using username in block below.
+        for (Token t : gitHubTokens) {
+            User currentUser = userDAO.findById(t.getUserId());
+            if (currentUser != null) {
+                try {
+                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, Optional.of(tokenDAO));
+                } catch (Exception ex) {
+                    gitHubUsersNotUpdatedWithToken.add(currentUser);
+                }
+            }
+        }
+
+        // Get the GitHub token of the admin making this call to avoid rate limiting
+        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+        for (User u : gitHubUsersNotUpdatedWithToken) {
+            try {
+                gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
+            } catch (Exception ex) {
+                usersCouldNotBeUpdated.add(u);
+                LOG.info(ex.getMessage(), ex);
+            }
+        }
+
+        return usersCouldNotBeUpdated;
     }
 
     /**
@@ -737,7 +808,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
         }
-        dbuser.updateUserMetadata(tokenDAO, source);
+        dbuser.updateUserMetadata(tokenDAO, source, true);
         return dbuser;
     }
 
@@ -796,6 +867,26 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/github/organizations")
+    @Operation(operationId = "getMyGitHubOrgs", description = "Gets GitHub organizations for current user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Descriptions of Github organizations (including but not limited to id, names)", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SourceControlOrganization.class)))),
+            @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
+    })
+    public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        Token githubToken = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
+                .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
+        if (githubToken != null) {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
+            return sourceCodeRepo.getOrganizations();
+        }
+        return Lists.newArrayList();
+    }
+
     @PATCH
     @Timed
     @UnitOfWork
@@ -818,18 +909,53 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
                 .collect(Collectors.toList());
 
-        scTokens.stream().forEach(token -> {
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+        scTokens.forEach(token -> {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
             Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
             Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
 
             organizations.forEach(organization -> {
-                List<Workflow> workflows = workflowDAO.findByOrganization(token.getTokenSource().getSourceControl(), organization);
-                workflows.stream().forEach(workflow -> workflow.getUsers().add(user));
+                List<Workflow> workflowsWithoutuser = workflowDAO.findByOrganizationWithoutUser(token.getTokenSource().getSourceControl(), organization, user);
+                workflowsWithoutuser.forEach(workflow -> workflow.addUser(user));
             });
         });
+        return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(user.getId()));
+    }
 
-        return getStrippedBioworkflows(userDAO.findById(user.getId()));
+    @PUT
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({"admin", "curator"})
+    @Path("/{userId}/privileges")
+    @Consumes("application/json")
+    @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
+    public User setUserPrivilege(@Parameter(hidden = true, name = "user")@Auth User authUser,
+                                 @Parameter(name = "User ID", required = true) @PathParam("userId") Long userID,
+                                 @Parameter(name = "Set privilege for a user", required = true) PrivilegeRequest privilegeRequest) {
+        User user = userDAO.findById(userID);
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        }
+
+        // This ensures that the user cannot modify their own privileges.
+        if (authUser.getId() == user.getId()) {
+            throw new CustomWebApplicationException("You cannot modify your own privileges", HttpStatus.SC_FORBIDDEN);
+        }
+
+        // If the request's admin setting is different than the admin status of the user that is being modified, and the auth user is not an admin: Throw an error.
+        // This ensures that a curator cannot modify the admin status of any user.
+        if (privilegeRequest.isAdmin() != user.getIsAdmin() && !authUser.getIsAdmin()) {
+            throw new CustomWebApplicationException("You do not have privileges to modify administrative rights", HttpStatus.SC_FORBIDDEN);
+        }
+
+        // Else if the request's settings is different from the privileges of the user that is being modified: update the privileges with the request
+        if (privilegeRequest.isAdmin() != user.getIsAdmin() || privilegeRequest.isCurator() != user.isCurator()) {
+            user.setIsAdmin(privilegeRequest.isAdmin());
+            user.setCurator(privilegeRequest.isCurator());
+            tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+        }
+        return user;
     }
 
     @GET
@@ -888,6 +1014,101 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .collect(Collectors.toList());
     }
 
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{userId}/cloudInstances")
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    @Operation(operationId = "getUserCloudInstances", description = "Get all cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
+    public Set<CloudInstance> getUserCloudInstances(@Parameter(hidden = true, name = "user")@Auth User authUser,
+        @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        return user.getCloudInstances();
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances")
+    @Operation(operationId = "postUserCloudInstance", description = "Create a new cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public Set<CloudInstance> postUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to create the cloud instance for", required = true) long userId,
+            @Parameter(description = "Cloud instance to add to the user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        CloudInstance cloudInstanceToBeAdded = new CloudInstance();
+        cloudInstanceToBeAdded.setPartner(cloudInstanceBody.getPartner());
+        cloudInstanceToBeAdded.setUrl(cloudInstanceBody.getUrl());
+        cloudInstanceToBeAdded.setSupportsFileImports(cloudInstanceBody.isSupportsFileImports());
+        cloudInstanceToBeAdded.setSupportsHttpImports(cloudInstanceBody.isSupportsHttpImports());
+        cloudInstanceToBeAdded.setSupportedLanguages(cloudInstanceBody.getSupportedLanguages());
+        // TODO: Figure how to make this not required (already adding the instance to the user)
+        cloudInstanceToBeAdded.setUser(user);
+
+        user.getCloudInstances().add(cloudInstanceToBeAdded);
+        return user.getCloudInstances();
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances/{cloudInstanceId}")
+    @Operation(operationId = "deleteUserCloudInstance", description = "Delete a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public void deleteUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to delete the cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        boolean deleted = user.getCloudInstances().removeIf(cloudInstance -> cloudInstance.getId() == cloudInstanceId);
+        if (!deleted) {
+            throw new CustomWebApplicationException("ID of cloud instance does not exist", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances/{cloudInstanceId}")
+    @Operation(operationId = "putUserCloudInstance", description = "Update a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    public void putUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to update the cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId,
+            @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        Optional<CloudInstance> optionalExistingCloudInstance = user.getCloudInstances().stream()
+                .filter(cloudInstance -> cloudInstance.getId() == cloudInstanceId).findFirst();
+        if (optionalExistingCloudInstance.isPresent()) {
+            CloudInstance cloudInstance = optionalExistingCloudInstance.get();
+            cloudInstance.setPartner(cloudInstanceBody.getPartner());
+            cloudInstance.setUrl(cloudInstanceBody.getUrl());
+            cloudInstance.setSupportsFileImports(cloudInstanceBody.isSupportsFileImports());
+            cloudInstance.setSupportsHttpImports(cloudInstanceBody.isSupportsHttpImports());
+            cloudInstance.setSupportedLanguages(cloudInstanceBody.getSupportedLanguages());
+        } else {
+            throw new CustomWebApplicationException("ID of cloud instance does not exist", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
     /**
      * Check if a workflow can be deleted.
      * For now this is simply if a workflow is a stub or not
@@ -916,7 +1137,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
         if (scTokens.size() > 0) {
             Token scToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken);
             return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
         } else {
             return new HashMap<>();

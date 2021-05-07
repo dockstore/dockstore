@@ -1,0 +1,124 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2020 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.10.0">
+    <!--
+    <changeSet author="dyuen" id="notification_seq">
+        <addAutoIncrement tableName="notification" columnName="id" startWith="100"/>
+    </changeSet>
+    -->
+    <changeSet author="natalieperez (generated)" id="adddescriptortypecolumn">
+        <addColumn tableName="tool">
+            <column defaultValue="" name="descriptortype" type="varchar">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            WITH upd as (SELECT tool.id as id, array_to_string(ARRAY_AGG(DISTINCT sourcefile.type), ',') as _descriptortypes
+            FROM tool, sourcefile, tag, version_sourcefile
+            WHERE tool.id = tag.parentid
+            AND tag.id = version_sourcefile.versionid
+            AND version_sourcefile.sourcefileid = sourcefile.id
+            AND (sourcefile.type = 'DOCKSTORE_CWL' OR sourcefile.type = 'DOCKSTORE_WDL')
+            GROUP BY tool.id)
+            UPDATE tool
+            set descriptortype = upd._descriptortypes
+            FROM upd
+            WHERE tool.id = upd.id;
+            UPDATE tool
+            SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_CWL', 'CWL');
+            UPDATE tool
+            SET descriptortype = REPLACE(descriptortype, 'DOCKSTORE_WDL', 'WDL');
+        </sql>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="add_parsed_information">
+        <createTable tableName="parsed_information">
+            <column name="version_metadata_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descriptorlanguage" type="VARCHAR(255)"/>
+            <column name="hashttpimports" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="haslocalimports" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="version_metadata_id" baseTableName="parsed_information" constraintName="version_metadata_parsed_information_fk_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
+    </changeSet>
+    <changeSet id="removeOrphanVersionMetadata" author="gluu">
+        <sql dbms="postgresql">delete from version_metadata vm where vm.id not in (select wv.id from workflowversion wv union select t.id from tag t);</sql>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="addLicenseInformation">
+        <addColumn tableName="service">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="licensename" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="nolwarre (generated)" id="notificationsCharLimit">
+        <modifyDataType columnName="message" newDataType="varchar(1024)" tableName="notification"/>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="addCollectionEntryVersion">
+        <createTable tableName="collection_entry_version">
+            <column autoIncrement="true" name="id" type="SERIAL">
+                <constraints primaryKey="true" primaryKeyName="entry_version_pkey"/>
+            </column>
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version_id" type="BIGINT"/>
+            <column name="collection_id" type="int8">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="collection_id" baseTableName="collection_entry_version" constraintName="fk_collection_entry_version" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+        <sql>INSERT into collection_entry_version(collection_id, entry_id) select collectionId, entryId from collection_entry</sql>
+        <dropForeignKeyConstraint baseTableName="collection_entry" constraintName="fk_collectionIdInCollectionEntry"/>
+        <sql dbms="postgresql">CREATE UNIQUE INDEX unique_collection_entry_version ON collection_entry_version USING btree (collection_id, entry_id, version_id) WHERE version_id IS NOT NULL;</sql>
+        <sql dbms="postgresql">CREATE UNIQUE INDEX unique_collection_entry ON collection_entry_version USING btree (collection_id, entry_id) WHERE version_id IS NULL;</sql>
+        <dropTable tableName="collection_entry"/>
+    </changeSet>
+    <changeSet id="fixSevenBridgesImageLinks" author="gfjhogue">
+        <sql dbms="postgresql">
+            UPDATE workflowversion
+            SET tooltablejson = REPLACE(tooltablejson, 'hub.docker.com/_/images.sbgenomics.com', 'images.sbgenomics.com')
+            WHERE tooltablejson LIKE '%hub.docker.com/\_/images.sbgenomics.com%';
+            UPDATE workflowversion
+            SET dagjson = REPLACE(dagjson, 'hub.docker.com/_/images.sbgenomics.com', 'images.sbgenomics.com')
+            WHERE dagjson LIKE '%hub.docker.com/\_/images.sbgenomics.com%';
+        </sql>
+    </changeSet>
+    <changeSet author="nzhao (generated)" id="workflowForumUrl">
+        <addColumn tableName="service">
+            <column name="forumurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="forumurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="nzhao (generated)" id="changeForumUrlType">
+        <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="service"/>
+        <modifyDataType columnName="forumurl" newDataType="varchar(256)" tableName="workflow"/>
+    </changeSet>
+</databaseChangeLog>

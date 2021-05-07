@@ -15,7 +15,13 @@
  */
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -26,6 +32,9 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Data about versions of a workflow/tool in Dockstore rather than about the original workflow.
@@ -76,9 +85,34 @@ public class VersionMetadata {
     @JoinColumn(name = "id")
     protected Version parent;
 
+    // Explicit LAZY, just in case.  Currently used by nothing on the frontend or CLI.
+    @ElementCollection
+    @CollectionTable(
+            name = "PARSED_INFORMATION",
+            joinColumns = @JoinColumn(name = "VERSION_METADATA_ID")
+    )
+    protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
+
+    @Column
+    @ApiModelProperty(value = "The presence of the put code indicates the version was exported to ORCID.")
+    protected String orcidPutCode;
+
     @Id
     @Column(name = "id")
     private long id;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbUpdateDate;
+
 
     public long getId() {
         return id;
@@ -86,5 +120,27 @@ public class VersionMetadata {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public List<ParsedInformation> getParsedInformationSet() {
+        return parsedInformationSet;
+    }
+
+    public void setParsedInformationSet(List<ParsedInformation> parsedInformationSet) {
+        this.parsedInformationSet.clear();
+
+        // Deserializer can call this method while parsedInformationSet is null, which causes a Null Pointer Exception
+        // Adding a checker here to avoid a Null Pointer Exception caused by the deserializer
+        if (parsedInformationSet != null) {
+            this.parsedInformationSet.addAll(parsedInformationSet);
+        }
+    }
+
+    public String getOrcidPutCode() {
+        return orcidPutCode;
+    }
+
+    public void setOrcidPutCode(String orcidPutCode) {
+        this.orcidPutCode = orcidPutCode;
     }
 }

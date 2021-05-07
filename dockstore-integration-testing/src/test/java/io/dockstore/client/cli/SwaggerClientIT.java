@@ -47,7 +47,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.Ga4Ghv1Api;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
@@ -65,17 +64,17 @@ import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
-import io.swagger.client.model.Token;
-import io.swagger.client.model.Tool;
+import io.swagger.client.model.TokenUser;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -109,8 +108,8 @@ public class SwaggerClientIT extends BaseIT {
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     private static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     private static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
-    private static final StarRequest STAR_REQUEST = SwaggerUtility.createStarRequest(true);
-    private static final StarRequest UNSTAR_REQUEST = SwaggerUtility.createStarRequest(false);
+    private static final StarRequest STAR_REQUEST = getStarRequest(true);
+    private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -124,6 +123,18 @@ public class SwaggerClientIT extends BaseIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.dropAndCreateWithTestDataAndAdditionalTools(SUPPORT, true);
+    }
+
+    private static StarRequest getStarRequest(boolean star) {
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(star);
+        return starRequest;
+    }
+
     @Test
     public void testListUsersTools() throws ApiException {
         ApiClient client = getAdminWebClient();
@@ -132,7 +143,7 @@ public class SwaggerClientIT extends BaseIT {
         User user = usersApi.getUser();
 
         List<DockstoreTool> tools = usersApi.userContainers(user.getId());
-        assertEquals(2, tools.size());
+        assertEquals(5, tools.size());
     }
 
     @Test
@@ -141,7 +152,7 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
-        assertEquals(1, containers.size());
+        assertEquals(2, containers.size());
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
@@ -162,7 +173,7 @@ public class SwaggerClientIT extends BaseIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
         thrown.expect(ApiException.class);
         containersApi.publish(containerId, pub);
     }
@@ -185,7 +196,7 @@ public class SwaggerClientIT extends BaseIT {
 
     @Test
     public void testWorkflowLabelling() throws ApiException {
-        // note db workflow seems to have no owner, so I need an admin user to label it
+
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
@@ -194,7 +205,15 @@ public class SwaggerClientIT extends BaseIT {
 
         long containerId = workflow.getId();
 
+        // Note db workflow seems to have no owner. Only owner should be able to update label, regardless of whether user is admin
+        thrown.expect(ApiException.class);
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
+
+        // make one user the owner to test updating label
+        testingPostgres.runUpdateStatement("INSERT INTO user_entry(userid, entryid) VALUES (" + 1 + ", " + workflow.getId() + ")");
+        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+
+        // updating label should fail since user is not owner
         workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
@@ -202,16 +221,17 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     @Test
+    @Ignore("this old test doesn't seem to set the github user token properly")
     public void testSuccessfulManualImageRegistration() throws ApiException {
-        ApiClient client = getAdminWebClient();
+        ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
-        DockstoreTool c = getContainer();
+        DockstoreTool c = getContainerWithoutSourcefiles();
 
         containersApi.registerManual(c);
     }
 
-    private DockstoreTool getContainer() {
+    private DockstoreTool getContainerWithoutSourcefiles() {
         DockstoreTool c = new DockstoreTool();
         c.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
         c.setName("seqware_full");
@@ -222,7 +242,7 @@ public class SwaggerClientIT extends BaseIT {
         c.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
         c.setIsPublished(true);
         c.setNamespace("seqware");
-        c.setToolname("test5");
+        c.setToolname("anotherName");
         c.setPrivateAccess(false);
         //c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
@@ -232,33 +252,6 @@ public class SwaggerClientIT extends BaseIT {
         tag.setImageId("123456");
         tag.setVerified(false);
         tag.setVerifiedSource(null);
-        // construct source files
-        SourceFile fileCWL = new SourceFile();
-        fileCWL.setContent("cwlstuff");
-        fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        fileCWL.setPath("/Dockstore.cwl");
-        fileCWL.setAbsolutePath("/Dockstore.cwl");
-        List<SourceFile> files = new ArrayList<>();
-        files.add(fileCWL);
-        tag.setSourceFiles(files);
-        SourceFile fileDockerFile = new SourceFile();
-        fileDockerFile.setContent("dockerstuff");
-        fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
-        fileDockerFile.setPath("/Dockerfile");
-        fileDockerFile.setAbsolutePath("/Dockerfile");
-        tag.getSourceFiles().add(fileDockerFile);
-        SourceFile testParameterFile = new SourceFile();
-        testParameterFile.setContent("testparameterstuff");
-        testParameterFile.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
-        testParameterFile.setPath("/test1.json");
-        testParameterFile.setAbsolutePath("/test1.json");
-        tag.getSourceFiles().add(testParameterFile);
-        SourceFile testParameterFile2 = new SourceFile();
-        testParameterFile2.setContent("moretestparameterstuff");
-        testParameterFile2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
-        testParameterFile2.setPath("/test2.json");
-        testParameterFile2.setAbsolutePath("/test2.json");
-        tag.getSourceFiles().add(testParameterFile2);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
         c.setWorkflowVersions(tags);
@@ -271,9 +264,8 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
-        DockstoreTool c = getContainer();
+        final DockstoreTool container = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        final DockstoreTool container = containersApi.registerManual(c);
         thrown.expect(ApiException.class);
         containersApi.registerManual(container);
     }
@@ -306,9 +298,7 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        containersApi.registerManual(c);
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
         assertEquals(3, tools.size());
@@ -320,6 +310,10 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(1, tools.size());
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.getDockerPath(), null, null, null, null, null, null, null);
         assertEquals(0, tools.size());
+        tools = toolApi.toolsGet(null, Registry.QUAY_IO.getDockerPath(), null, null, null, null, null, null, null);
+        assertEquals(1, tools.size());
+        tools = toolApi.toolsGet(null, null, null, null, null, "Foo", null, null, null);
+        assertEquals(0, tools.size());
     }
 
     @Test
@@ -327,9 +321,7 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        containersApi.registerManual(c);
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
@@ -354,22 +346,20 @@ public class SwaggerClientIT extends BaseIT {
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         ContainertagsApi containertagsApi = new ContainertagsApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        final DockstoreTool dockstoreTool = containersApi.registerManual(c);
+        final DockstoreTool dockstoreTool = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertNotNull(tool);
         assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        assertEquals(1, tags.size());
+        assertEquals(2, tags.size());
         // register more tags
         Tag tag = new Tag();
         tag.setName("funky_tag");
         tag.setReference("funky_tag");
         containertagsApi.addTags(dockstoreTool.getId(), Lists.newArrayList(tag));
         tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        assertEquals(2, tags.size());
+        assertEquals(3, tags.size());
         // attempt to register duplicates (should fail)
 
         Tag secondTag = new Tag();
@@ -384,9 +374,7 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        final DockstoreTool registeredDockstoreTool = containersApi.registerManual(c);
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
         final ToolDockerfile toolDockerfile = toolApi
             .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
@@ -422,38 +410,6 @@ public class SwaggerClientIT extends BaseIT {
         assertTrue(strings.get(1).contains("moretestparameterstuff"));
     }
 
-    /**
-     * This test should be removed once tag.setVerified is removed because verification should solely depend on the version's source files
-     *
-     * @throws ApiException
-     */
-    @Test
-    public void testVerifiedToolsViaGA4GH() throws ApiException {
-        ApiClient client = getAdminWebClient();
-        ContainersApi containersApi = new ContainersApi(client);
-        Ga4GhApi ga4GhApi = new Ga4GhApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        c.setIsPublished(true);
-        final Tag tag = c.getWorkflowVersions().get(0);
-        tag.setVerified(true);
-        tag.setVerifiedSources(Arrays.asList("funky source"));
-        containersApi.registerManual(c);
-
-        // hit up the plain text versions
-        final String basePath = client.getBasePath();
-        String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        Tool tool = ga4GhApi.toolsIdGet(encodedID);
-        // Verifying the tag does nothing because the TRS verification endpoint was not used
-        Assert.assertFalse(tool.isVerified());
-        Assert.assertEquals("[]", tool.getVerifiedSource());
-
-        // hit up a specific version
-        ToolVersion master = ga4GhApi.toolsIdVersionsVersionIdGet(encodedID, "master");
-        Assert.assertFalse(master.isVerified());
-        Assert.assertEquals("[]", master.getVerifiedSource());
-    }
-
     // Can't test publish repos that don't exist
     @Ignore
     public void testContainerRegistration() throws ApiException {
@@ -474,7 +430,7 @@ public class SwaggerClientIT extends BaseIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        PublishRequest pub = CommonTestUtilities.createPublishRequest(true);
 
         container = containersApi.publish(containerId, pub);
         assertTrue(container.isIsPublished());
@@ -482,7 +438,7 @@ public class SwaggerClientIT extends BaseIT {
         containers = containersApi.allPublishedContainers(null, null, null, null, null);
         assertEquals(2, containers.size());
 
-        pub = SwaggerUtility.createPublishRequest(false);
+        pub = CommonTestUtilities.createPublishRequest(false);
 
         container = containersApi.publish(containerId, pub);
         assertFalse(container.isIsPublished());
@@ -508,18 +464,15 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getAdminWebClient();
 
         ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        c.getWorkflowVersions().get(0).setHidden(true);
-        c = containersApi.registerManual(c);
+        // Tool contains 2 versions, 1 is hidden
+        DockstoreTool c = containersApi.getContainerByToolPath(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, null);
 
-        assertEquals("should see one tag as an admin, saw " + c.getWorkflowVersions().size(), 1, c.getWorkflowVersions().size());
+        assertEquals("should see all tags even if hidden as an admin", 2, c.getWorkflowVersions().size());
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
-        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getWorkflowVersions().size(), 0,
-            registeredContainer.getWorkflowVersions().size());
+        assertEquals("should only see non-hidden tags as a regular user", 1, registeredContainer.getWorkflowVersions().size());
     }
 
     @Test
@@ -529,7 +482,7 @@ public class SwaggerClientIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
 
-        List<Token> tokens = usersApi.getUserTokens(user.getId());
+        List<TokenUser> tokens = usersApi.getUserTokens(user.getId());
 
         assertFalse(tokens.isEmpty());
     }
@@ -542,7 +495,7 @@ public class SwaggerClientIT extends BaseIT {
         long containerId = container.getId();
         assertEquals(1, containerId);
 
-        containersApi.publish(containerId, SwaggerUtility.createPublishRequest(false));
+        containersApi.publish(containerId, CommonTestUtilities.createPublishRequest(false));
         final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME, testingPostgres);
         assertNotNull(new UsersApi(otherWebClient).getUser());
         boolean expectedFailure = false;
@@ -592,7 +545,7 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
         ApiClient adminApiClient = getAdminWebClient();
         WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminApiClient);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(false);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(false);
         adminWorkflowsApi.publish(11L, publishRequest);
         try {
             workflowsApi.starEntry(11L, STAR_REQUEST);
@@ -662,7 +615,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null, false);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null, false, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         workflowsApi.starEntry(workflowId, STAR_REQUEST);
@@ -683,7 +636,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null, false);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null, false, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         thrown.expect(ApiException.class);
@@ -782,23 +735,25 @@ public class SwaggerClientIT extends BaseIT {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "dockstore.org", null);
         thrown.expect(ApiException.class);
         userHostedApi
-            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getLowerShortName(), "dockstore.org", null);
+            .createHostedTool("hosted1", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "dockstore.org", null);
     }
 
     @Test
     public void testUploadZip() {
         final ApiClient webClient = getWebClient();
         final HostedApi hostedApi = new HostedApi(webClient);
+        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
         // Created workflow, no versions
         Assert.assertEquals(0, hostedWorkflow.getWorkflowVersions().size());
         final String smartseqZip = ResourceHelpers.resourceFilePath("smartseq.zip");
         final Workflow updatedWorkflow = hostedApi.addZip(hostedWorkflow.getId(), new File(smartseqZip));
         // A version should now exist.
-        Assert.assertEquals(1, updatedWorkflow.getWorkflowVersions().size());
+
+        Assert.assertEquals(1, workflowsApi.getWorkflowVersions(updatedWorkflow.getId()).size());
     }
 
     /**
@@ -882,12 +837,14 @@ public class SwaggerClientIT extends BaseIT {
         // Edit should now work!
         final Workflow workflow = user2HostedApi
             .editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
+        List<WorkflowVersion> workflowVersions = user2WorkflowsApi.getWorkflowVersions(workflow.getId());
 
         // Deleting the version should not fail
-        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+        Workflow deleteVersionFromWorkflow1 = user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflowVersions.get(0).getName());
+        assertTrue(deleteVersionFromWorkflow1.getWorkflowVersions().size() == 0);
 
         // Publishing the workflow should fail
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         try {
             user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
             Assert.fail("User 2 can unexpectedly publish a read/write workflow");
@@ -898,7 +855,8 @@ public class SwaggerClientIT extends BaseIT {
         // Give Owner permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.OWNER);
 
-        // Should be able to publish
+        // Should be able to publish after adding a version
+        user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
         user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
         checkAnonymousUser(anonWorkflowsApi, hostedWorkflow1);
 

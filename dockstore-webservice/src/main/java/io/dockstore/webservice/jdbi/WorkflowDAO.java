@@ -23,14 +23,18 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -174,6 +178,49 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
     }
 
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    public List<Workflow> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
+            String description, String author, Boolean checker) {
+
+        final SourceControlConverter converter = new SourceControlConverter();
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
+        final Root<Workflow> entryRoot = q.from(Workflow.class);
+
+        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
+        predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
+        predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
+        predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
+        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
+        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+
+        if (descriptorLanguage != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
+        }
+        if (registry != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
+        }
+
+        if (checker != null) {
+            predicate = cb.and(predicate, cb.isTrue(entryRoot.get("isChecker")));
+        }
+
+        q.where(predicate);
+        TypedQuery<Workflow> query = currentSession().createQuery(q);
+
+        List<Workflow> workflows = query.getResultList();
+        return workflows;
+    }
+
+    private Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
+        return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
+                .orElse(existingPredicate);
+    }
+
+    private String wildcardLike(String value) {
+        return '%' + value + '%';
+    }
+
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {
         List<Predicate> predicates = new ArrayList<>();
         SourceControlConverter converter = new SourceControlConverter();
@@ -230,23 +277,30 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));
     }
 
     public List<Workflow> findPublishedByOrganization(String organization) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
             .setParameter("organization", organization));
     }
 
     public List<Workflow> findByOrganization(SourceControl sourceControl, String organization) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
                 .setParameter("organization", organization)
                 .setParameter("sourceControl", sourceControl));
     }
 
+    public List<Workflow> findByOrganizationWithoutUser(SourceControl sourceControl, String organization, User user) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
+                .setParameter("organization", organization)
+                .setParameter("user", user)
+                .setParameter("sourceControl", sourceControl));
+    }
+
     public Workflow findByAlias(String alias) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
     /**
@@ -258,7 +312,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      */
     public Optional<Workflow> getWorkflowByWorkflowVersionId(long workflowVersionId) {
         try {
-            Workflow workflow = uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
+            Workflow workflow = uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
                     .setParameter("workflowVersionId", workflowVersionId));
             return Optional.of(workflow);
         } catch (NoResultException nre) {

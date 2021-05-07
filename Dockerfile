@@ -1,16 +1,9 @@
-FROM maven:3.6.2-jdk-11 AS maven
-RUN wget https://github.com/mikefarah/yq/releases/download/3.1.2/yq_linux_amd64 \
-    && chmod a+x yq_linux_amd64 \
-    && mv yq_linux_amd64 /usr/bin/yq
-
-COPY . /
-RUN mvn clean install -DskipTests
-
-FROM openjdk:11.0.6-jdk
+FROM openjdk:11.0.10-jdk
 
 # Update the APT cache
 # prepare for Java download
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     software-properties-common \
     telnet \
@@ -25,7 +18,7 @@ RUN apt-get update \
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
 # copy the jar not ending in 's', to make sure we get don't get the one ending in 'sources'
-COPY --from=maven /dockstore-webservice/target/dockstore-webservice*[^s].jar /home
+COPY dockstore-webservice/target/dockstore-webservice*[^s].jar /home
 
 # install dockerize
 ENV DOCKERIZE_VERSION v0.2.0

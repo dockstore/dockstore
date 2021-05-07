@@ -42,7 +42,7 @@ public final class DAGHelper {
         ElementsDefinition elementsDefinition = GSON.fromJson(dag, ElementsDefinition.class);
         Set<String> nodeIDs = elementsDefinition.nodes.stream().map(nodeDefinition -> nodeDefinition.data.id).collect(Collectors.toSet());
         elementsDefinition.edges = elementsDefinition.edges.stream().filter(edgeDefinition -> nodeIDs.contains(edgeDefinition.data.source))
-            .collect(Collectors.toList());
+                .collect(Collectors.toList());
         return GSON.toJson(elementsDefinition);
     }
 }

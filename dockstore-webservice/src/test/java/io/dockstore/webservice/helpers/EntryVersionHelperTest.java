@@ -74,4 +74,11 @@ public class EntryVersionHelperTest {
         Assert.assertTrue(zipAsString.contains("directory/actualSourcefile"));
         Assert.assertFalse(zipAsString.contains("/nullSourcefile"));
     }
+
+    @Test
+    public void testZipFileName() {
+        String path = "github.com/dockstore/hello_world";
+        String versionName = "master";
+        Assert.assertEquals("github.com-dockstore-hello_world-master.zip", EntryVersionHelper.generateZipFileName(path, versionName));
+    }
 }

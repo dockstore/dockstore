@@ -29,6 +29,8 @@ CREATE UNIQUE INDEX partial_service_name ON service USING btree (sourcecontrol, 
 
 -- unable to convert these to JPA properly
 ALTER TABLE token ADD CONSTRAINT fk_userid_with_enduser FOREIGN KEY (userid) REFERENCES public.enduser (id) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION;
+ALTER TABLE cloudinstance_supportedlanguages ADD CONSTRAINT cloudinstance_supportedlanguages_pkey PRIMARY KEY (cloudinstance_id, language);
+
 -- https://liquibase.jira.com/browse/CORE-2895
 CREATE UNIQUE INDEX organization_name_index on organization (LOWER(name));
 CREATE UNIQUE INDEX collection_name_index on collection (LOWER(name), organizationid);
@@ -38,3 +40,14 @@ ALTER TABLE workflowversion ADD CONSTRAINT fk_workflowVersionMetadata FOREIGN KE
 
 -- cannot seem to define these due to inheritance
 ALTER TABLE tag ADD CONSTRAINT parentid_constraint FOREIGN KEY(parentid) REFERENCES tool (id) DEFERRABLE INITIALLY DEFERRED;
+
+CREATE UNIQUE INDEX unique_collection_entry ON collection_entry_version USING btree (collection_id, entry_id) WHERE version_id IS NULL;
+CREATE UNIQUE INDEX unique_collection_entry_version ON collection_entry_version USING btree (collection_id, entry_id, version_id) WHERE version_id IS NOT NULL;
+
+ALTER TABLE user_profile DROP CONSTRAINT one_sign_in_method_by_profile;
+CREATE UNIQUE INDEX one_sign_in_method_by_profile_old ON user_profile USING btree (username, token_type) WHERE onlineprofileid IS NULL;
+CREATE UNIQUE INDEX one_sign_in_method_by_profile ON user_profile USING btree (onlineprofileid, token_type) WHERE onlineprofileid IS NOT NULL;
+
+ALTER TABLE token DROP CONSTRAINT one_token_link_per_identify;
+CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprofileid, tokensource) WHERE onlineprofileid IS NOT NULL;
+CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;

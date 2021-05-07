@@ -38,6 +38,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -94,6 +95,21 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
         return this.toolDAO;
     }
 
+    @Override
+    public void checkCanRead(User user, Entry tool) {
+        try {
+            checkUser(user, tool);
+        } catch (CustomWebApplicationException ex) {
+            LOG.info("permissions are not yet tool aware");
+            // should not throw away exception
+            throw ex;
+            //TODO permissions will eventually need to know about tools too
+            //            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
+            //                throw ex;
+            //            }
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -125,6 +141,9 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
 
         for (Tag tag : tags) {
             if (mapOfExistingTags.containsKey(tag.getId())) {
+                if (tool.getActualDefaultVersion() != null && tool.getActualDefaultVersion().getId() == tag.getId() && tag.isHidden()) {
+                    throw new CustomWebApplicationException("You cannot hide the default version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 // remove existing copy and add the new one
                 Tag existingTag = mapOfExistingTags.get(tag.getId());
 

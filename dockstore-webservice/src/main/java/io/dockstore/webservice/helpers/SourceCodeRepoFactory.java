@@ -27,7 +27,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +43,10 @@ public final class SourceCodeRepoFactory {
 
     public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
         // The gitUsername doesn't seem to matter
-        return new GitHubSourceCodeRepo("dockstore", token);
+        return new GitHubSourceCodeRepo("JWT", token);
     }
 
-    public static SourceCodeRepoInterface createSourceCodeRepo(Token token, HttpClient client) {
+    public static SourceCodeRepoInterface createSourceCodeRepo(Token token) {
         SourceCodeRepoInterface repo;
         if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
             repo = new GitHubSourceCodeRepo(token.getUsername(), token.getContent());
@@ -64,8 +63,8 @@ public final class SourceCodeRepoFactory {
         return repo;
     }
 
-    public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
-            String gitlabTokenContent, String githubTokenContent) {
+    public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, String bitbucketTokenContent, String gitlabTokenContent,
+            Token githubToken) {
 
         Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
 
@@ -78,7 +77,7 @@ public final class SourceCodeRepoFactory {
 
         SourceCodeRepoInterface repo;
         if (SourceControl.GITHUB.toString().equals(source)) {
-            repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent);
+            repo = new GitHubSourceCodeRepo(githubToken.getUsername(), githubToken.getContent());
         } else if (SourceControl.BITBUCKET.toString().equals(source)) {
             if (bitbucketTokenContent != null) {
                 repo = new BitBucketSourceCodeRepo(gitUsername, bitbucketTokenContent);

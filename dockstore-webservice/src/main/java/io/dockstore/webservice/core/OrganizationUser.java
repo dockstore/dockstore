@@ -16,6 +16,7 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -37,7 +38,7 @@ public class OrganizationUser implements Serializable {
     private Organization organization;
 
     public enum Role {
-        MAINTAINER, MEMBER
+        ADMIN, MAINTAINER, MEMBER
     }
 
     @Enumerated(EnumType.STRING)
@@ -49,10 +50,14 @@ public class OrganizationUser implements Serializable {
 
     @Column(updatable = false)
     @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     public OrganizationUser() {

@@ -23,8 +23,10 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.webservice.core.dag.ElementsDefinition;
+import io.dockstore.webservice.languages.WDLHandler;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
@@ -38,6 +40,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -66,7 +69,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertEquals(githubWorkflow.getWorkflowName(), testWorkflowName);
 
         // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+        Workflow refresh = workflowApi.refresh(githubWorkflow.getId(), false);
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
         Assert.assertEquals(refresh.getWorkflowName(), testWorkflowName);
@@ -115,6 +118,25 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
         Assert.assertTrue("edge should connect untar and compile",
             strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
+
+    }
+
+    @Test
+    public void testWorkflowDAGCWLRequirementMap() throws ApiException {
+        // Input: snaptools_create_snap_file.cwl
+        // Repo: SnapTools
+        // Branch: feature/docker_cwl_req_in_min
+        // Test: normal CWL workflow DAG with requirement map
+
+        final List<String> strings = getJSON("DockstoreTestUser2/SnapTools", "/snaptools_create_snap_file.cwl", DescriptorLanguage.CWL.getShortName(), "feature/docker_cwl_req_in_main");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have eight nodes (including start and end)", 8, countNode);
+        Assert.assertTrue("node data should have snaptools_preprocess_reads as tool", strings.get(0).contains("snaptools_preprocess_reads"));
+        Assert.assertTrue("node data should have snaptools_create_ref_genome_size_file as tool", strings.get(0).contains("snaptools_create_ref_genome_size_file"));
+        Assert.assertTrue("edge should connect snaptools_preprocess_reads and snaptools_create_ref_genome_size_file",
+                strings.get(0).contains("\"source\":\"dockstore_snaptools_create_ref_genome_size_file\",\"target\":\"dockstore_snaptools_preprocess_reads\""));
 
     }
 
@@ -205,11 +227,11 @@ public class DAGWorkflowTestIT extends BaseIT {
     public void testDAGImportSyntax() throws ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
-        // Branch: master
+        // Branch: update-to-valid-cwl
         // Test: "run: {import:.....}"
         // Return: DAG with two nodes and an edge connecting it (nodes:{{rev},{sorted}}, edges:{rev->sorted})
 
-        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "master");
+        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "update-to-valid-cwl");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -322,7 +344,7 @@ public class DAGWorkflowTestIT extends BaseIT {
             getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl", "test");
             fail("Invalid WDL somehow came back good");
         } catch (Exception ex) {
-            Assert.assertTrue(ex.getMessage().contains("could not process wdl into DAG: Failed to import workflow importC.wdl."));
+            assertThat(ex.getMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
         }
     }
 

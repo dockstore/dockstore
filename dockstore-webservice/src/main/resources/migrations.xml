@@ -25,6 +25,7 @@
     <include file="migrations.test.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.4.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.testworkflow.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.add_test_tools.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential1_1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential2_1.5.0.xml" relativeToChangelogFile="true"/>
@@ -34,7 +35,9 @@
     <include file="migrations.1.7.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.7.0.relinquish.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.add_service_1.7.0.xml" relativeToChangelogFile="true"/>
-    <include file="migrations.test.alter_test_user_1.7.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.alter_test_user_1.10.2.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.8.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.9.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.1.10.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.1.11.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -37,6 +37,7 @@ public final class ResourceConstants {
     public static final String OPENAPI_JWT_SECURITY_DEFINITION_NAME = "bearer";
     public static final String APPEASE_SWAGGER_PATCH = "This is here to appease Swagger. It requires PATCH methods to have a body, even if it is empty. Please leave it empty.";
     public static final String PAGINATION_LIMIT = "100";
+    public static final int VERSION_PAGINATION_LIMIT = 200;
     public static final String PAGINATION_LIMIT_TEXT = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT;
     public static final String PAGINATION_OFFSET_TEXT = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.";
 

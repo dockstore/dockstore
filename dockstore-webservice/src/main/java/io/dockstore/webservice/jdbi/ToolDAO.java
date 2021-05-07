@@ -36,19 +36,19 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findByUserRegistryNamespace(final long userId, final String registry, final String namespace) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
     }
 
     public List<Tool> findByUserRegistryNamespaceRepository(final long userId, final String registry, final String namespace, final String repository) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
     }
 
     public List<ToolPath> findAllPublishedPaths() {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPaths"));
     }
 
     public List<RSSToolPath> findAllPublishedPathsOrderByDbupdatedate() {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(RSS_ENTRY_LIMIT));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(RSS_ENTRY_LIMIT));
     }
 
     /**
@@ -145,7 +145,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findPublishedByNamespace(String namespace) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
     }
   
     /**
@@ -159,6 +159,6 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public Tool findByAlias(String alias) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
     }
 }

@@ -31,7 +31,6 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.model.SourceFile;
 import io.dockstore.webservice.resources.EventSearchType;
-import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -48,7 +47,6 @@ import io.swagger.model.DescriptorType;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -60,6 +58,7 @@ import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -126,7 +125,7 @@ public class BasicIT extends BaseIT {
 
         // Publish
         if (toPublish) {
-            tool = containersApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            tool = containersApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
             assertTrue(tool.isIsPublished());
         }
         return tool;
@@ -154,8 +153,7 @@ public class BasicIT extends BaseIT {
 
         final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         // should have 0 tools to start with
-        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
-        usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
+        usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", "quayandbitbucket");
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
         assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
@@ -165,8 +163,7 @@ public class BasicIT extends BaseIT {
 
         // refresh
         try {
-            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
-            usersApi.refreshToolsByOrganization((long)1, "dockstore_testuser2", null);
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", "quayandbitbucket");
             fail("Refresh should fail");
         } catch (ApiException e) {
             assertTrue("Should see error message since user has Quay tools but no Quay token.",
@@ -174,6 +171,18 @@ public class BasicIT extends BaseIT {
             // should not delete tools
             final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", long.class);
             Assert.assertEquals("there should be no change in count of tools", secondToolCount, thirdToolCount);
+        }
+    }
+
+    @Test
+    public void testDisallowedOrgRefresh() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        UsersApi usersApi = new UsersApi(client);
+        try {
+            usersApi.refreshToolsByOrganization((long)1, "DockstoreTestUser", null);
+            fail("Refresh by organization should fail");
+        } catch (ApiException e) {
+            assertTrue("Should see error message", e.getMessage().contains("Missing the required parameter"));
         }
     }
 
@@ -190,8 +199,25 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
                 .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
+    }
+
+    @Test
+    public void testRefreshToolNoVersions() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/noautobuild", null);
+        tool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        containersApi.updateContainer(tool.getId(), tool);
+        containersApi.refresh(tool.getId());
+
+
+        tool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/nobuildsatall", null);
+        tool.setGitUrl("git@github.com:DockstoreTestUser/dockstore-whalesay.git");
+        containersApi.updateContainer(tool.getId(), tool);
+        DockstoreTool refresh = containersApi.refresh(tool.getId());
+        assertNull(refresh.getDefaultVersion());
     }
 
 
@@ -203,8 +229,8 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getLowerShortName(), "");
-        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getLowerShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "", DescriptorLanguage.WDL.getShortName(), "");
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
 
 
         // should have a certain number of workflows based on github contents
@@ -214,14 +240,14 @@ public class BasicIT extends BaseIT {
         // refresh a specific workflow
         Workflow workflow = workflowsApi
             .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
         // refresh individual workflow
-        workflow = workflowsApi.refresh(workflow.getId());
+        workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", long.class);
@@ -245,7 +271,7 @@ public class BasicIT extends BaseIT {
 
         // refresh without github token
         try {
-            workflow = workflowsApi.refresh(workflow.getId());
+            workflow = workflowsApi.refresh(workflow.getId(), false);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("No GitHub or Google token found"));
         }
@@ -566,7 +592,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
         try {
-            toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+            toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
@@ -589,14 +615,14 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = toolsApi.getContainerByToolPath(toolPath, "");
 
         // Publish
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from tool where name = '" + toolPath.split("/")[2] + "' and ispublished='t'", long.class);
         Assert.assertEquals("there should be 1 registered", 1, count);
 
         // Unpublish
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(false));
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where name = '" + toolPath.split("/")[2] + "' and ispublished='t'", long.class);
@@ -630,7 +656,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries, there are " + count, 1, count);
 
         // Unpublish
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 
@@ -689,7 +715,7 @@ public class BasicIT extends BaseIT {
         ContainersApi toolsApi = new ContainersApi(client);
         DockstoreTool tool = toolsApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", "");
         tool = toolsApi.refresh(tool.getId());
-        tool = toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
+        tool = toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.getDockerPath()
             + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'", long.class);
         Assert.assertEquals("the given entry should be published", 1, count);
@@ -721,7 +747,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries", 1, count);
 
         // Unpublish
-        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublished='t'", long.class);
 
@@ -755,7 +781,7 @@ public class BasicIT extends BaseIT {
         Assert.assertEquals("there should be 1 entries", 1, count);
 
         // Unpublish
-        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", long.class);
 
@@ -796,46 +822,18 @@ public class BasicIT extends BaseIT {
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
         Assert.assertEquals("there should be 2 entries", 2, count2);
-        toolsApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(false));
 
         final long count3 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublished='t'", long.class);
 
         Assert.assertEquals("there should be 1 entry", 1, count3);
 
-        toolsApi.publish(duplicateTool.getId(), SwaggerUtility.createPublishRequest(false));
+        toolsApi.publish(duplicateTool.getId(), CommonTestUtilities.createPublishRequest(false));
         final long count4 = testingPostgres
             .runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", long.class);
 
         Assert.assertEquals("there should be 0 entries", 0, count4);
-    }
-
-    /**
-     * Will test attempting to manually publish a Dockerhub/Github entry using incorrect CWL and/or dockerfile locations
-     */
-    @Ignore
-    public void testDockerhubGithubWrongStructure() {
-        // Todo : Manual publish entry with wrong cwl and dockerfile locations, should not be able to manual publish
-        systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.getDockerPath(), "--namespace", "dockstoretestuser", "--name",
-            "dockerhubandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git",
-            "--git-reference", "master", "--toolname", "regular", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile",
-            "--script" });
-    }
-
-    /**
-     * Will test attempting to manually publish a Dockerhub/Bitbucket entry using incorrect CWL and/or dockerfile locations
-     */
-    @Ignore
-    public void testDockerhubBitbucketWrongStructure() {
-        // Todo : Manual publish entry with wrong cwl and dockerfile locations, should not be able to manual publish
-        systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-            Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.getDockerPath(), "--namespace", "dockstoretestuser", "--name",
-            "dockerhubandbitbucketalternate", "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalterante.git",
-            "--git-reference", "master", "--toolname", "alternate", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile",
-            "--script" });
     }
 
     /**
@@ -866,7 +864,7 @@ public class BasicIT extends BaseIT {
 
         // Shouldn't be able to publish
         try {
-            toolsApi.publish(toolId, SwaggerUtility.createPublishRequest(true));
+            toolsApi.publish(toolId, CommonTestUtilities.createPublishRequest(true));
             fail("Should not be able to publish");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish."));
@@ -1433,7 +1431,6 @@ public class BasicIT extends BaseIT {
         // Sourcefiles for tags
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser/quayandgithub", null);
         Tag tag = tool.getWorkflowVersions().stream().filter(existingTag -> Objects.equals(existingTag.getName(), "master")).findFirst().get();
-        tool = toolApi.publish(tool.getId(), SwaggerUtility.createPublishRequest(true));
 
         List<SourceFile> sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
         Assert.assertNotNull(sourceFiles);
@@ -1465,15 +1462,30 @@ public class BasicIT extends BaseIT {
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
         Tag tool2tag = tool2.getWorkflowVersions().get(0);
-        boolean throwsError = false;
+
         try {
             sourceFiles = toolTagsApi.getTagsSourcefiles(tool.getId(), tool2tag.getId(), null);
+            Assert.fail("Shouldn't be able to get a tag's sourcefiles if it doesn't belong to the tool.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            throwsError = true;
+            Assert.assertEquals("Version " + tool2tag.getId() + " does not exist for this entry", ex.getMessage());
         }
-        if (!throwsError) {
-            Assert.fail("Should not be able to grab sourcefile for a version not belonging to a tool");
+
+
+        // check that sourcefiles can't be viewed by another user if they aren't published
+        final io.dockstore.openapi.client.ApiClient user2OpenAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.ContainertagsApi user2toolTagsApi = new io.dockstore.openapi.client.api.ContainertagsApi(user2OpenAPIWebClient);
+        try {
+            sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
+            Assert.fail("Should not be able to grab sourcefiles if not published and doesn't belong to user.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            Assert.assertEquals("Forbidden: you do not have the credentials required to access this entry.", ex.getMessage());
         }
+
+        // sourcefiles can be viewed by others once published
+        tool = toolApi.publish(tool.getId(), CommonTestUtilities.createPublishRequest(true));
+        sourceFiles = user2toolTagsApi.getTagsSourcefiles(tool.getId(), tag.getId(), null);
+        Assert.assertNotNull(sourceFiles);
+        Assert.assertEquals(3, sourceFiles.size());
     }
 
 }

@@ -38,6 +38,9 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
@@ -49,6 +52,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.slf4j.Logger;
@@ -62,6 +67,9 @@ import org.slf4j.LoggerFactory;
 @ApiModel("SourceFile")
 @Entity
 @Table(name = "sourcefile")
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion", query = "SELECT sourcefiles FROM Version version INNER JOIN version.sourceFiles as sourcefiles WHERE version.id = :versionId"),
+})
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile implements Comparable<SourceFile> {
 
@@ -70,12 +78,15 @@ public class SourceFile implements Comparable<SourceFile> {
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sourcefile_id_seq")
+    @SequenceGenerator(name = "sourcefile_id_seq", sequenceName = "sourcefile_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", position = 0)
+    @Column(columnDefinition = "bigint default nextval('sourcefile_id_seq')")
     private long id;
 
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
+    @Schema(description = "Enumerates the type of file", required = true)
     private DescriptorLanguage.FileType type;
 
     @Column(columnDefinition = "TEXT")
@@ -84,10 +95,12 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
+    @Schema(description = "Path to sourcefile relative to its parent", required = true)
     private String path;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
+    @Schema(description = "Absolute path of sourcefile in git repo", required = true)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")
@@ -109,10 +122,11 @@ public class SourceFile implements Comparable<SourceFile> {
     private Timestamp dbUpdateDate;
 
     @ElementCollection(targetClass = VerificationInformation.class, fetch = FetchType.EAGER)
-    @JoinTable(name = "sourcefile_verified", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = {
+    @JoinTable(name = "sourcefile_verified", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = @UniqueConstraint(columnNames = {
         "id", "source" }))
     @MapKeyColumn(name = "source", columnDefinition = "text")
     @ApiModelProperty(value = "maps from platform to whether an entry successfully ran on it using this test json")
+    @BatchSize(size = 25)
     private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
 
     public Map<String, VerificationInformation> getVerifiedBySource() {

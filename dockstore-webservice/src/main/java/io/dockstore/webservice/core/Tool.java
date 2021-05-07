@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -38,6 +40,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -48,6 +51,7 @@ import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
@@ -95,6 +99,7 @@ import org.hibernate.annotations.Check;
 
 @Check(constraints = "(toolname NOT LIKE '\\_%')")
 @SuppressWarnings("checkstyle:magicnumber")
+@Schema(name = "DockstoreTool")
 public class Tool extends Entry<Tool, Tag> {
 
     static final String PUBLISHED_QUERY = " FROM Tool c WHERE c.isPublished = true ";
@@ -136,19 +141,30 @@ public class Tool extends Entry<Tool, Tag> {
 
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last built. For automated builds: When refresh is hit, the last time the tool was built gets stored here. "
-            + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25)
+            + "If tool was never built on quay.io, then last build will be null. N/A for hosted/manual path tools", position = 25, dataType = "long")
     private Date lastBuild;
+
+    @Column(nullable = false, columnDefinition = "varchar default ''")
+    @Convert(converter = DescriptorTypeConverter.class)
+    @ApiModelProperty(position = 28, accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    private List<String> descriptorType = new ArrayList<>();
+
+    @Column
+    @Size(max = 256)
+    @ApiModelProperty(value = "This is a link to a forum or discussion board")
+    private String forumUrl;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, targetEntity = Version.class, mappedBy = "parent")
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @JsonAlias({ "tags", "workflowVersions"})
     @OrderBy("id")
     @Cascade(CascadeType.DETACH)
+    @BatchSize(size = 25)
     private final SortedSet<Tag> workflowVersions;
 
     @JsonIgnore
     @OneToOne(targetEntity = Tag.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id")
+    @JoinColumn(name = "actualDefaultVersion", referencedColumnName = "id", unique = true)
     private Tag actualDefaultVersion;
 
     @Transient
@@ -265,19 +281,6 @@ public class Tool extends Entry<Tool, Tag> {
         return registry + '/' + namespace + '/' + name;
     }
 
-    /**
-     * Calculated property for demonstrating search by language, inefficient
-     *
-     * @return the languages that this tool supports
-     */
-    @JsonProperty
-    @ApiModelProperty(position = 28)
-    public List<String> getDescriptorType() {
-        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(Collectors.toSet());
-        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> set.contains(lang.getFileType()))
-            .map(lang -> lang.toString().toUpperCase()).distinct().collect(Collectors.toList());
-    }
-
     @JsonProperty
     public Date getLastBuild() {
         return lastBuild;
@@ -299,6 +302,14 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setMode(ToolMode mode) {
         this.mode = mode;
+    }
+
+    public List<String> getDescriptorType() {
+        return this.descriptorType;
+    }
+
+    public void setDescriptorType(final List<String> descriptorType) {
+        this.descriptorType = descriptorType;
     }
 
     @JsonProperty("default_dockerfile_path")
@@ -332,6 +343,14 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty
+    public String getForumUrl() {
+        return forumUrl;
+    }
+    public void setForumUrl(String forumUrl) {
+        this.forumUrl = forumUrl;
+    }
+
+    @JsonProperty
     public String getToolname() {
         return toolname;
     }
@@ -347,14 +366,12 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     /**
-     * Change name of JsonProperty back to "registry_provider" once users no longer use the older client (CommonTestUtilities.OLD_DOCKSTORE_VERSION)
+     * We cannot only use an enum because Custom Docker Registry Path for Seven Bridges, Amazon ECR, and etc requires a string property.
+     * We cannot only use the string because in many situations, it's easier to use an enum
      * @return the registry as an enum
      */
     @Enumerated(EnumType.STRING)
     @JsonProperty("registry")
-    //FIXME: breaks this for OpenAPI, if we don't break it, the enum is generated using dockerPath via toString which
-    // fails horribly
-    @Schema(type = "integer")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
         if (this.registry == null) {
@@ -376,10 +393,6 @@ public class Tool extends Entry<Tool, Tag> {
         }
     }
 
-    /**
-     * Remove this once users no longer use the old client (1.3.6)
-     * @param registryThing
-     */
     public void setRegistryProvider(Registry registryThing) {
         switch (registryThing) {
         case GITLAB:
@@ -396,10 +409,6 @@ public class Tool extends Entry<Tool, Tag> {
 
     }
 
-    /**
-     * Remove this once users no longer use the old client (1.3.6)
-     * @param newCustomDockerRegistryString
-     */
     public void setCustomerDockerRegistryPath(String newCustomDockerRegistryString) {
         if (newCustomDockerRegistryString != null) {
             this.setRegistry(newCustomDockerRegistryString);
@@ -410,10 +419,6 @@ public class Tool extends Entry<Tool, Tag> {
         return new Event.Builder().withTool(this);
     }
 
-    /**
-     * Remove this once users no longer use the old client (1.3.6)
-     * @return
-     */
     @JsonProperty("custom_docker_registry_path")
     public String getCustomDockerRegistryPath() {
         return this.registry;
@@ -453,5 +458,12 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         getDefaultPaths().put(DescriptorLanguage.FileType.CWL_TEST_JSON, defaultTestCwlParameterFile);
+    }
+
+    public List<String> calculateDescriptorType() {
+        Set<DescriptorLanguage.FileType> set = this.getWorkflowVersions().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType).collect(
+                Collectors.toSet());
+        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> !(lang.toString().equals("cwl") || lang.toString().equals("wdl"))).filter(lang -> set.contains(lang.getFileType()))
+                .map(lang -> lang.toString()).distinct().collect(Collectors.toList());
     }
 }

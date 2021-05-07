@@ -11,11 +11,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.Size;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -37,18 +39,20 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Notification {
 
     @Id
-    @Column
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // id is auto incremented by the database
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notification_id_seq")
+    @SequenceGenerator(name = "notification_id_seq", sequenceName = "notification_id_seq", allocationSize = 1)
+    @Column(name = "id", unique = true, nullable = false, columnDefinition = "bigint default nextval('notification_id_seq')")
     @ApiModelProperty(value = "ID for the notification", position = 0)
     private long id;
 
     @Column
-    @Size(max = 280)
+    @Size(max = 1024) // increase for extra markdown characters such as hyper-links
     @ApiModelProperty(value = "Text content of the notification to be displayed", position = 1)
     private String message;
 
     @Column
-    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2)
+    @ApiModelProperty(value = "Timestamp at which the notification is expired", position = 2, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp expiration;
 
     @Column
@@ -64,12 +68,14 @@ public class Notification {
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
-    @ApiModelProperty(value = "Timestamp at which the notification was created", position = 5)
+    @ApiModelProperty(value = "Timestamp at which the notification was created", position = 5, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbCreateDate;
 
     @Column()
     @UpdateTimestamp
-    @ApiModelProperty(value = "Timestamp at which the notification was last updated", position = 6)
+    @ApiModelProperty(value = "Timestamp at which the notification was last updated", position = 6, dataType = "long")
+    @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
     public Notification() { }  // blank constructor called by POST request

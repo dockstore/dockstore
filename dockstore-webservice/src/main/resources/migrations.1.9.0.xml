@@ -114,12 +114,16 @@
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="workflow" constraintName="fk_workflow_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="service" constraintName="fk_service_default_workflowversion" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="tool" constraintName="fk_tool_default_tag" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tag"/>
-        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update tool s set actualdefaultversion = t.id from tag t join tool e on e.id = t.parentid where s.defaultversion = t.name</sql>
-        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update workflow s set actualdefaultversion = t.id from workflowversion t join workflow e on e.id = t.parentid where s.defaultversion = t.name</sql>
-        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.reference</sql>
-        <sql>update service s set actualdefaultversion = t.id from workflowversion t join service e on e.id = t.parentid where s.defaultversion = t.name</sql>
+        <sql>update tool e set actualdefaultversion = t.id from tag t where t.parentid = e.id and e.defaultversion = t.reference</sql>
+        <sql>update tool e set actualdefaultversion = t.id from tag t where t.parentid = e.id and e.defaultversion = t.name</sql>
+        <sql>update workflow e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.reference</sql>
+        <sql>update workflow e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.name</sql>
+        <sql>update service e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.reference</sql>
+        <sql>update service e set actualdefaultversion = t.id from workflowversion t where e.id = t.parentid and e.defaultversion = t.name</sql>
+        <!-- No two entries should have the same actualdefaultversion -->
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="tool" constraintName="unique_default_version_tool" deferrable="false" initiallyDeferred="false"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="workflow" constraintName="unique_default_version_workflow" deferrable="false" initiallyDeferred="false"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" tableName="service" constraintName="unique_default_version_service" deferrable="false" initiallyDeferred="false"/>
     </changeSet>
     <changeSet author="gluu (generated)" id="removeOldDefaultVersionColumn">
         <dropColumn columnName="defaultversion" tableName="service"/>
@@ -141,8 +145,10 @@
     </changeSet>
 
     <changeSet author="aduncan (generated)" id="addLambdaEvents">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="lambdaevent_id_seq"/>
         <createTable tableName="lambdaevent">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('lambdaevent_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="lambdaevent_pkey"/>
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
@@ -168,5 +174,39 @@
             UPDATE lambdaevent SET organization = split_part(repository,'/',1);
             UPDATE lambdaevent SET repository = split_part(repository,'/',2);
         </sql>
+    </changeSet>
+
+    <changeSet author="aduncan" id="addSyncedColumnToWorkflowVersion">
+        <addColumn tableName="workflowversion">
+            <column name="synced" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <sql dbms="postgresql">
+            UPDATE workflowversion SET synced = TRUE;
+        </sql>
+    </changeSet>
+
+    <changeSet id="changeOrganizationUserRoles" author="natalieperez">
+        <sql dbms="postgresql">
+            UPDATE organization_user
+            SET role = REPLACE(role, 'MAINTAINER', 'ADMIN');
+            UPDATE organization_user
+            SET role = REPLACE(role, 'MEMBER', 'MAINTAINER');
+        </sql>
+    </changeSet>
+    <!-- There's a workflow and a tool  that both have the same checker workflow. Unlinking it from the workflow -->
+    <changeSet id="removeCheckerId" author="gluu">
+        <sql dbms="postgresql">
+            UPDATE workflow
+            SET checkerid = null where checkerid = 9332 and id = 8168;
+        </sql>
+    </changeSet>
+    <!-- This does not solve the case where there's identical checkerid in different tables -->
+    <changeSet author="gluu (generated)" id="uniqueCheckerId">
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_uniqueWorkflowCheckerId" tableName="workflow"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_uniqueServiceCheckerId" tableName="service"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_uniqueToolCheckerId" tableName="tool"/>
     </changeSet>
 </databaseChangeLog>

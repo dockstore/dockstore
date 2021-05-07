@@ -60,6 +60,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
@@ -87,6 +88,7 @@ import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
 import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
+    public static final Response BAD_DECODE_RESPONSE = Response.status(getExtendedStatus(Status.BAD_REQUEST, "Could not decode version")).build();
     private static final String GITHUB_PREFIX = "git@github.com:";
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
@@ -96,6 +98,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
+    private static FileDAO fileDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
     private static TRSListener trsListener = null;
@@ -111,6 +114,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         ToolsApiServiceImpl.workflowHelper = () -> workflowDAO;
     }
 
+    public static void setFileDAO(FileDAO fileDAO) {
+        ToolsApiServiceImpl.fileDAO = fileDAO;
+    }
+
     public static void setTrsListener(TRSListener listener) {
         ToolsApiServiceImpl.trsListener = listener;
     }
@@ -121,14 +128,24 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @Override
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, false);
     }
 
     @Override
     public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, true);
     }
@@ -164,12 +181,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value,
         Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         String newVersionId;
         try {
             newVersionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, newVersionId, false);
@@ -259,11 +281,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "checkstyle:MethodLength"})
     @Override
-    public Response toolsGet(String id, String alias, String toolClass, String registry, String organization, String name, String toolname,
+    public Response toolsGet(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
 
-        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(registry).append(organization).append(name)
+        final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(descriptorType).append(registry).append(organization).append(name)
             .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
             .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
@@ -271,75 +293,48 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return trsResponses.get().build();
         }
 
-        final List<Entry<?, ?>> all = new ArrayList<>();
-
-        // short circuit id and alias filters, these are a bit weird because they have a max of one result
-        if (id != null) {
-            ParsedRegistryID parsedID = new ParsedRegistryID(id);
-            Entry<?, ?> entry = getEntry(parsedID, user);
-            all.add(entry);
-        } else if (alias != null) {
-            all.add(toolDAO.getGenericEntryByAlias(alias));
-        } else {
-            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
-                all.addAll(toolDAO.findAllPublished());
-            }
-            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
-                all.addAll(workflowDAO.findAllPublished());
-            }
-            all.sort(Comparator.comparing(Entry::getGitUrl));
+        final List<Entry<?, ?>> all;
+        try {
+            all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
         }
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
+
         for (Entry<?, ?> c : all) {
-            // filters just for tools
+            // filter tools
             if (c instanceof Tool) {
                 Tool tool = (Tool)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && tool.getRegistry() != null && !tool.getRegistry().contains(registry)) {
+                if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
                     continue;
                 }
-                if (organization != null && tool.getNamespace() != null && !tool.getNamespace().contains(organization)) {
+                if (organization != null && (tool.getNamespace() == null || !tool.getNamespace().contains(organization))) {
                     continue;
                 }
-                if (name != null && tool.getName() != null && !tool.getName().contains(name)) {
+                if (name != null && (tool.getName() == null || !tool.getName().contains(name))) {
                     continue;
                 }
-                if (toolname != null && tool.getToolname() != null && !tool.getToolname().contains(toolname)) {
+                if (toolname != null && (tool.getToolname() == null || !tool.getToolname().contains(toolname))) {
+                    continue;
+                }
+                if (descriptorType != null && !tool.getDescriptorType().contains(descriptorType)) {
                     continue;
                 }
                 if (checker != null && checker) {
                     // tools are never checker workflows
                     continue;
                 }
-            }
-            // filters just for tools
-            if (c instanceof Workflow) {
-                Workflow workflow = (Workflow)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && workflow.getSourceControl() != null && !workflow.getSourceControl().toString().contains(registry)) {
+                // description and author exists for both tools and workflows, but workflows have already been filtered above.
+                if (description != null && (c.getDescription() == null || !c.getDescription().contains(description))) {
                     continue;
                 }
-                if (organization != null && workflow.getOrganization() != null && !workflow.getOrganization().contains(organization)) {
-                    continue;
-                }
-                if (name != null && workflow.getRepository() != null && !workflow.getRepository().contains(name)) {
-                    continue;
-                }
-                if (toolname != null && workflow.getWorkflowName() != null && !workflow.getWorkflowName().contains(toolname)) {
-                    continue;
-                }
-                if (checker != null && workflow.isIsChecker() != checker) {
+                if (author != null && (c.getAuthor() == null || !c.getAuthor().contains(author))) {
                     continue;
                 }
             }
-            // common filters between tools and workflows
-            if (description != null && c.getDescription() != null && !c.getDescription().contains(description)) {
-                continue;
-            }
-            if (author != null && c.getAuthor() != null && !c.getAuthor().contains(author)) {
-                continue;
-            }
+
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
@@ -397,6 +392,52 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return responseBuilder.build();
     }
 
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    private List<Entry<?, ?>> getEntries(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
+            String description, String author, Boolean checker, Optional<User> user) throws UnsupportedEncodingException {
+
+        final List<Entry<?, ?>> all = new ArrayList<>();
+
+        if (id != null) {
+            ParsedRegistryID parsedID = new ParsedRegistryID(id);
+            Entry<?, ?> entry = getEntry(parsedID, user);
+            all.add(entry);
+        } else if (alias != null) {
+            all.add(toolDAO.getGenericEntryByAlias(alias));
+        } else {
+            DescriptorLanguage descriptorLanguage = null;
+            if (descriptorType != null) {
+                try {
+                    // Tricky case for GALAXY because it doesn't match the rules of the other languages
+                    if ("galaxy".equalsIgnoreCase(descriptorType)) {
+                        descriptorType = DescriptorLanguage.GXFORMAT2.getShortName();
+                    }
+
+                    descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(descriptorType);
+                } catch (UnsupportedOperationException ex) {
+                    // If unable to match descriptor language, do not return any entries.
+                    LOG.info(ex.getMessage());
+                    return all;
+                }
+            }
+
+            // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
+            // Add tools if user didn't provide a tool class or the tool class provided matches to tools, AND
+            // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
+            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+                if (descriptorType == null  || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
+                    all.addAll(toolDAO.findAllPublished());
+                }
+
+            }
+            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+                // filter published workflows using criteria builder
+                all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker));
+            }
+        }
+        return all;
+    }
+
     private void handleParameter(String parameter, String queryName, List<String> filters) {
         if (parameter != null) {
             filters.add(queryName + "=" + parameter);
@@ -430,12 +471,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         boolean unwrap, Optional<User> user) {
 
         // if a version is provided, get that version, otherwise return the newest
-        ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(registryId);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         String versionId;
         try {
             versionId = URLDecoder.decode(versionIdParam, StandardCharsets.UTF_8.displayName());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
 
@@ -492,12 +538,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 // this only works for test parameters associated with tools
                 List<SourceFile> testSourceFiles = new ArrayList<>();
                 try {
-                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user));
+                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
                 } catch (CustomWebApplicationException e) {
                     LOG.warn("intentionally ignoring failure to get test parameters", e);
                 }
                 try {
-                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user));
+                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
                 } catch (CustomWebApplicationException e) {
                     LOG.warn("intentionally ignoring failure to get source files", e);
                 }
@@ -583,7 +629,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return trsChecksums;
     }
 
-    private Response.StatusType getExtendedStatus(Status status, String additionalMessage) {
+    private static Response.StatusType getExtendedStatus(Status status, String additionalMessage) {
         return new Response.StatusType() {
             @Override
             public int getStatusCode() {
@@ -633,7 +679,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext containerRequestContext, Optional<User> user) {
-        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        ParsedRegistryID parsedID = null;
+        try {
+            parsedID = new ParsedRegistryID(id);
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return BAD_DECODE_RESPONSE;
+        }
         Entry<?, ?> entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
         if (entry instanceof Workflow) {
@@ -739,13 +790,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         private final String name;
         private final String toolName;
 
-        public ParsedRegistryID(String paramId) {
+        public ParsedRegistryID(String paramId) throws UnsupportedEncodingException {
             String id;
-            try {
-                id = URLDecoder.decode(paramId, StandardCharsets.UTF_8.displayName());
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            id = URLDecoder.decode(paramId, StandardCharsets.UTF_8.displayName());
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             List<String> list = new ArrayList<>(textSegments);
             String firstTextSegment = list.get(0);

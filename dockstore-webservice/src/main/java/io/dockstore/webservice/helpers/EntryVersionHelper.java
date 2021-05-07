@@ -58,6 +58,9 @@ import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
 /**
  * This interface contains code for interacting with the files of versions for all types of entries (currently, tools and workflows)
@@ -103,6 +106,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @return the filtered entry
      */
     default T filterContainersForHiddenTags(T entry) {
+        Hibernate.initialize(entry.getWorkflowVersions());
         return filterContainersForHiddenTags(Lists.newArrayList(entry)).get(0);
     }
 
@@ -112,6 +116,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     default List<T> filterContainersForHiddenTags(List<T> entries) {
         for (T entry : entries) {
+            Hibernate.initialize(entry.getWorkflowVersions());
             getDAO().evict(entry);
             // clear users which are also lazy loaded
             entry.setUsers(null);
@@ -134,13 +139,22 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             dao.evict(entry);
             // clear users which are also lazy loaded
             entry.setUsers(null);
-            // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<Version> versions = entry.getWorkflowVersions();
-            versions.forEach(version ->
-                version.getSourceFiles().forEach(sourceFile ->
-                        ((SourceFile)sourceFile).setContent(null))
-            );
         }
+    }
+
+    /**
+     * This function does the following: Saves the current state of the entry, forces the data between the session and the database to synchronize (flush),
+     * and removes the entry from the session so that the cleared sourcefiles are not saved to the database.
+     */
+    static void removeSourceFilesFromEntry(Entry entry, SessionFactory sessionFactory) {
+        Session currentSession = sessionFactory.getCurrentSession();
+        currentSession.save(entry);
+        currentSession.flush();
+        currentSession.evict(entry);
+        Set<Version> versions = entry.getWorkflowVersions();
+        versions.forEach(version ->
+                version.getSourceFiles().clear()
+        );
     }
 
     default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO) {
@@ -162,8 +176,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType narrow the file to a specific type
      * @return return the primary descriptor or Dockerfile
      */
-    default SourceFile getSourceFile(long entryId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
-        return getSourceFileByPath(entryId, tag, fileType, null, user);
+    default SourceFile getSourceFile(long entryId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
+        return getSourceFileByPath(entryId, tag, fileType, null, user, fileDAO);
     }
 
     /**
@@ -176,8 +190,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param path     a specific path to a file
      * @return a single file depending on parameters
      */
-    default SourceFile getSourceFileByPath(long entryId, String tag, DescriptorLanguage.FileType fileType, String path, Optional<User> user) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user);
+    default SourceFile getSourceFileByPath(long entryId, String tag, DescriptorLanguage.FileType fileType, String path, Optional<User> user, FileDAO fileDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user, fileDAO);
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
             if (path != null) {
                 //db stored paths are absolute, convert relative to absolute
@@ -198,8 +212,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
+    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO);
         return sourceFiles.entrySet().stream()
             .filter(entry -> entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor)
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
@@ -212,8 +226,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
+    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user, fileDAO);
         return sourceFiles.entrySet().stream().filter(entry -> entry.getValue().getLeft().getType().equals(fileType))
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
     }
@@ -226,21 +240,21 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      */
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
-            DescriptorLanguage.FileType fileType, Optional<User> user) {
+            DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
         T entry = getDAO().findById(workflowId);
         checkEntry(entry);
         checkOptionalAuthRead(user, entry);
 
         // tighten permissions for hosted tools and workflows
-        if (!entry.getIsPublished()) {
-            if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
-                throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-            }
-            if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
-                throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
-            }
-        }
         if (!user.isPresent() || AuthenticatedResourceInterface.userCannotRead(user.get(), entry)) {
+            if (!entry.getIsPublished()) {
+                if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {
+                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                }
+                if (entry instanceof Workflow && ((Workflow)entry).getMode() == WorkflowMode.HOSTED) {
+                    throw new CustomWebApplicationException("Entry not published", HttpStatus.SC_FORBIDDEN);
+                }
+            }
             this.filterContainersForHiddenTags(entry);
         }
         Version tagInstance = null;
@@ -261,7 +275,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
         if (tagInstance instanceof WorkflowVersion) {
             final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
-            List<SourceFile> filteredTypes = workflowVersion.getSourceFiles().stream()
+            List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersion.getId());
+            List<SourceFile> filteredTypes = sourceFiles.stream()
                 .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
                 if (fileType == DescriptorLanguage.FileType.CWL_TEST_JSON || fileType == DescriptorLanguage.FileType.WDL_TEST_JSON || fileType == DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS) {
@@ -279,7 +294,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         } else {
             final Tool tool = (Tool)entry;
             final Tag toolTag = (Tag)tagInstance;
-            List<SourceFile> filteredTypes = toolTag.getSourceFiles().stream().filter(file -> Objects.equals(file.getType(), fileType))
+            List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(toolTag.getId());
+            List<SourceFile> filteredTypes = sourceFiles.stream().filter(file -> Objects.equals(file.getType(), fileType))
                 .collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
                 // dockerfile is a special case since there always is only a max of one
@@ -364,6 +380,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    static String generateZipFileName(String path, String versionName) {
+        final String pathName = path.replaceAll("/", "-");
+        return pathName + '-' + versionName + ".zip";
     }
 
     static String removeWorkingDirectory(String path, String filename) {

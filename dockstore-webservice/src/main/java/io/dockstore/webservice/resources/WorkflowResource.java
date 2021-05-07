@@ -23,12 +23,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,8 +48,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -115,6 +115,8 @@ import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -130,13 +132,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.common.DescriptorLanguage.OLD_CWL;
-import static io.dockstore.common.DescriptorLanguage.OLD_WDL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -160,12 +161,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String ALIASES = "aliases";
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
+    private static final String VERSIONS = "versions";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
     private final LabelDAO labelDAO;
     private final FileFormatDAO fileFormatDAO;
-    private final EntryResource entryResource;
     private final ServiceEntryDAO serviceEntryDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
     private final VersionDAO versionDAO;
@@ -181,7 +182,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     public WorkflowResource(HttpClient client, SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
             EntryResource entryResource, DockstoreWebserviceConfiguration configuration) {
-        super(client, sessionFactory, configuration, Workflow.class);
+        super(client, sessionFactory, entryResource, configuration);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.labelDAO = new LabelDAO(sessionFactory);
         this.serviceEntryDAO = new ServiceEntryDAO(sessionFactory);
@@ -190,8 +191,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         this.versionDAO = new VersionDAO(sessionFactory);
 
         this.permissionsInterface = permissionsInterface;
-
-        this.entryResource = entryResource;
 
 
         zenodoUrl = configuration.getZenodoUrl();
@@ -233,6 +232,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        if (workflow.isIsChecker()) {
+            throw new CustomWebApplicationException("A checker workflow cannot be restubed.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         checkNotHosted(workflow);
         checkCanWriteWorkflow(user, workflow);
 
@@ -251,131 +254,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         return workflow;
 
-    }
-
-    /**
-     * For each valid token for a git hosting service, refresh all workflows
-     *
-     * @param user             a user to refresh workflows for
-     * @param organization     limit the refresh to particular organizations if given
-     * @param alreadyProcessed skip particular workflows if already refreshed, previously used for debugging
-     */
-    void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
-
-        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
-
-        boolean foundAtLeastOneToken = false;
-        for (TokenType type : TokenType.values()) {
-            if (!type.isSourceControlToken()) {
-                continue;
-            }
-            // Check if tokens for git hosting services are valid and refresh corresponding workflows
-            // Refresh Bitbucket
-            Token token = Token.extractToken(tokens, type);
-            // create each type of repo and check its validity
-            SourceCodeRepoInterface sourceCodeRepo = null;
-            if (token != null) {
-                sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
-            }
-            boolean hasToken = token != null && token.getContent() != null;
-            foundAtLeastOneToken = foundAtLeastOneToken || hasToken;
-
-            try {
-                if (hasToken) {
-                    // get workflows from source control for a user and updates db
-                    refreshHelper(sourceCodeRepo, user, organization, alreadyProcessed);
-                }
-                // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
-            } catch (WebApplicationException ex) {
-                String msg = user.getUsername() + ": " + "Failed to refresh user " + user.getId();
-                LOG.error(msg);
-                LOG.error(ex.getMessage());
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-        }
-
-        if (!foundAtLeastOneToken) {
-            throw new CustomWebApplicationException(
-                "No source control repository token found.  Please link at least one source control repository token to your account.",
-                HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Gets a mapping of all workflows from git host, and updates/adds as appropriate
-     *
-     * @param sourceCodeRepoInterface interface to read data from source control
-     * @param user                    the user that made the request to refresh
-     * @param organization            if specified, only refresh if workflow belongs to the organization
-     */
-    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization,
-        Set<Long> alreadyProcessed) {
-
-        // Mapping of git url to repository name (owner/repo)
-        final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
-
-        /* helpful code for testing, this was used to refresh a users existing workflows
-           with a fixed github token for all users
-         */
-        boolean statsCollection = false;
-        if (statsCollection) {
-            List<Workflow> workflows = bioWorkflowDAO.findMyEntries(user.getId()).stream()
-                .map(obj -> (Workflow)obj).collect(Collectors.toList());
-            for (Workflow workflow : workflows) {
-                workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
-            }
-        }
-
-
-        LOG.info("found giturl to workflow name map" + Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
-        if (organization != null) {
-            workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
-        }
-        // For each entry found of the associated git hosting service
-        for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
-            LOG.info("refreshing " + entry.getKey());
-
-            // Get all workflows with the same giturl (ignore dockstore.yml workflows)
-            final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
-            if (byGitUrl.size() > 0) {
-                // Workflows exist with the given git url
-                for (Workflow workflow : byGitUrl) {
-                    // check whitelist for already processed workflows
-                    if (alreadyProcessed.contains(workflow.getId()) || Objects.equals(workflow.getMode(), DOCKSTORE_YML)) {
-                        continue;
-                    }
-
-                    logFullWorkflowRefresh(workflow);
-                    // Update existing workflows with new information from the repository
-                    // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.of(workflow), Optional.empty());
-
-                    // Take ownership of these workflows
-                    workflow.getUsers().add(user);
-
-                    // Update the existing matching workflows based off of the new information
-                    updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow, user, Optional.empty());
-                    alreadyProcessed.add(workflow.getId());
-                }
-            } else {
-                // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.createWorkflowFromGitRepository(entry.getValue(), Optional.empty(), Optional.empty());
-
-                // The workflow was successfully created
-                if (newWorkflow != null) {
-                    logFullWorkflowRefresh(newWorkflow);
-                    final long workflowID = workflowDAO.create(newWorkflow);
-
-                    // need to create nested data models
-                    final Workflow workflowFromDB = workflowDAO.findById(workflowID);
-                    workflowFromDB.getUsers().add(user);
-
-                    // Update newly created template workflow (workflowFromDB) with found data from the repository
-                    updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow, user, Optional.empty());
-                    alreadyProcessed.add(workflowFromDB.getId());
-                }
-            }
-        }
     }
 
     /**
@@ -409,8 +287,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        return refreshWorkflow(user, workflowId, Optional.empty());
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "completely refresh all versions, even if they have not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.empty(), hardRefresh);
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     @GET
@@ -422,13 +303,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refreshVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "version", required = true) @PathParam("version") String version) {
+            @ApiParam(value = "version", required = true) @PathParam("version") String version,
+            @ApiParam(value = "completely refresh version, even if it has not changed", defaultValue = "true") @QueryParam("hardRefresh") @DefaultValue("true") Boolean hardRefresh) {
         if (version == null || version.isBlank()) {
             String msg = "Version is a required field for this endpoint.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        return refreshWorkflow(user, workflowId, Optional.of(version));
+        Workflow workflow = refreshWorkflow(user, workflowId, Optional.of(version), hardRefresh);
+        EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
+        return workflow;
     }
 
     /**
@@ -437,12 +321,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * @param user User who made call
      * @param workflowId ID of workflow
      * @param version Name of the workflow version
+     * @param hardRefresh refresh all versions, even if no changes
      * @return Updated workflow
      */
-    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version) {
+    private Workflow refreshWorkflow(User user, Long workflowId, Optional<String> version, boolean hardRefresh) {
         Workflow existingWorkflow = workflowDAO.findById(workflowId);
         checkEntry(existingWorkflow);
-        checkUser(user, existingWorkflow);
+        checkUserOwnsEntry(user, existingWorkflow);
         checkNotHosted(existingWorkflow);
         checkNotService(existingWorkflow);
         // get a live user for the following
@@ -476,25 +361,29 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         // Create a new workflow based on the current state of the Git repository
         final Workflow newWorkflow = sourceCodeRepo
-                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version);
+                .createWorkflowFromGitRepository(existingWorkflow.getOrganization() + '/' + existingWorkflow.getRepository(), Optional.of(existingWorkflow), version, hardRefresh);
         existingWorkflow.getUsers().add(user);
 
         // Use new workflow to update existing workflow
         updateDBWorkflowWithSourceControlWorkflow(existingWorkflow, newWorkflow, user, version);
-        FileFormatHelper.updateFileFormats(newWorkflow.getWorkflowVersions(), fileFormatDAO);
+        // Update file formats in each version and then the entry
+        FileFormatHelper.updateFileFormats(existingWorkflow, newWorkflow.getWorkflowVersions(), fileFormatDAO, true);
 
-        // Refresh checker workflow
-        if (!existingWorkflow.isIsChecker() && existingWorkflow.getCheckerWorkflow() != null) {
-            if (version.isEmpty()) {
-                refresh(user, existingWorkflow.getCheckerWorkflow().getId());
-            } else {
-                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get());
-            }
-        }
+        // Keep this code that updates the existing workflow BEFORE refreshing its checker workflow below. Refreshing the checker workflow will eventually call
+        // EntryVersionHelper.removeSourceFilesFromEntry() which performs a session.flush and commits to the db. It's important the parent workflow is updated completely before committing to the db..
         existingWorkflow.getWorkflowVersions().forEach(Version::updateVerified);
         String repositoryId = sourceCodeRepo.getRepositoryId(existingWorkflow);
         sourceCodeRepo.setDefaultBranchIfNotSet(existingWorkflow, repositoryId);
         existingWorkflow.syncMetadataWithDefault();
+
+        // Refresh checker workflow
+        if (!existingWorkflow.isIsChecker() && existingWorkflow.getCheckerWorkflow() != null) {
+            if (version.isEmpty()) {
+                refresh(user, existingWorkflow.getCheckerWorkflow().getId(), hardRefresh);
+            } else {
+                refreshVersion(user, existingWorkflow.getCheckerWorkflow().getId(), version.get(), hardRefresh);
+            }
+        }
 
         PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow, StateManagerMode.UPDATE);
         return existingWorkflow;
@@ -512,12 +401,34 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkCanRead(user, workflow);
-
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        // This should be removed once we have a workflows/{workflowId}/version/{versionId} endpoint
+        workflow.getWorkflowVersions().forEach(version -> Hibernate.initialize(version.getVersionMetadata().getParsedInformationSet()));
+        initializeAdditionalFields(include, workflow);
         return workflow;
+    }
+
+    @GET
+    @Path("/{workflowId}/workflowVersions")
+    @UnitOfWork
+    @ApiOperation(nickname = "getWorkflowVersions", value = "Return first 200 versions in an entry", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+    @Operation(operationId = "getWorkflowVersions", description = "Return first 200 versions in an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list workflow versions in a workflow", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = WorkflowVersion.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public Set<WorkflowVersion> getWorkflowVersions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            @ApiParam(value = "workflowID", required = true) @Parameter(name = "workflowId", description = "id of the worflow", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkCanRead(user, workflow);
+
+        List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
+        SortedSet<WorkflowVersion> setOfVersions = new TreeSet<>(versions);
+        return setOfVersions;
     }
 
     @PUT
@@ -531,7 +442,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return this.updateLabels(user, workflowId, labelStrings, labelDAO);
+        Workflow workflow = this.updateLabels(user, workflowId, labelStrings, labelDAO);
+        Hibernate.initialize(workflow.getWorkflowVersions());
+        return workflow;
     }
 
     @PUT
@@ -559,6 +472,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         updateInfo(wf, workflow);
+        wf.getWorkflowVersions().stream().forEach(workflowVersion -> workflowVersion.setSynced(false));
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
         PublicStateManager.getInstance().handleIndexUpdate(result, StateManagerMode.UPDATE);
@@ -594,6 +508,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
@@ -618,7 +533,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 String refreshUrl = zenodoUrl + "/oauth/token";
                 String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
                         + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
-                refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
+                refreshToken(refreshUrl, zenodoToken, client, tokenDAO, payload);
             }
         }
         return tokenDAO.findByUserId(user.getId());
@@ -638,7 +553,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-        checkUser(user, workflow);
+        checkUserOwnsEntry(user, workflow);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -743,6 +658,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+                version.setSynced(false);
             }
         }
         PublicStateManager.getInstance().handleIndexUpdate(wf, StateManagerMode.UPDATE);
@@ -808,54 +724,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         checkCanShareWorkflow(user, workflow);
 
-        Workflow checker = workflow.getCheckerWorkflow();
-
-        if (workflow.isIsChecker()) {
-            String msg = "Cannot directly publish/unpublish a checker workflow.";
-            LOG.error(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
-        if (request.getPublish()) {
-            boolean validTag = false;
-            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
-            for (WorkflowVersion workflowVersion : versions) {
-                if (workflowVersion.isValid()) {
-                    validTag = true;
-                    break;
-                }
-            }
-
-            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
-                workflow.setIsPublished(true);
-                if (checker != null) {
-                    checker.setIsPublished(true);
-                }
-            } else {
-                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
-            }
-        } else {
-            workflow.setIsPublished(false);
-            if (checker != null) {
-                checker.setIsPublished(false);
-            }
-        }
-
-        long id = workflowDAO.create(workflow);
-        workflow = workflowDAO.findById(id);
-        if (request.getPublish()) {
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
-            if (workflow.getTopicId() == null) {
-                try {
-                    entryResource.createAndSetDiscourseTopic(id);
-                } catch (CustomWebApplicationException ex) {
-                    LOG.error("Error adding discourse topic.", ex);
-                }
-            }
-        } else {
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
-        }
-        return workflow;
+        Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish());
+        Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
+        return publishedWorkflow;
     }
 
     @GET
@@ -931,10 +802,27 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
-
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        initializeAdditionalFields(include, workflow);
         return workflow;
+    }
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
+        sessionFactory.getCurrentSession().detach(workflow);
+
+        // Almost all observed workflows have under 200 version, this number should be lowered once the frontend actually supports pagination
+        List<WorkflowVersion> ids = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
+        SortedSet<WorkflowVersion> workflowVersions = new TreeSet<>(ids);
+        if (versionName != null && workflowVersions.stream().noneMatch(version -> version.getName().equals(versionName))) {
+            WorkflowVersion workflowVersionByWorkflowIdAndVersionName = this.workflowVersionDAO
+                    .getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), versionName);
+            if (workflowVersionByWorkflowIdAndVersionName != null) {
+                workflowVersions.add(workflowVersionByWorkflowIdAndVersionName);
+            }
+        }
+        workflow.setWorkflowVersionsOverride(workflowVersions);
+        initializeAdditionalFields(include, workflow);
+        ids.forEach(id -> sessionFactory.getCurrentSession().detach(id));
     }
 
     /**
@@ -964,7 +852,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      */
     private void checkCanWriteWorkflow(User user, Workflow workflow) {
         try {
-            checkUser(user, workflow);
+            checkUserOwnsEntry(user, workflow);
         } catch (CustomWebApplicationException ex) {
             if (!permissionsInterface.canDoAction(user, workflow, Role.Action.WRITE)) {
                 throw ex;
@@ -1121,25 +1009,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Operation(operationId = "getPublishedWorkflowByPath", description = "Get a published workflow by path")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
+        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @ApiParam(value = "Version name", required = false) @QueryParam("versionName") String versionName) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 
-        initializeAdditionalFields(include, workflow);
         Hibernate.initialize(workflow.getAliases());
+        setWorkflowVersionSubset(workflow, include, versionName);
         filterContainersForHiddenTags(workflow);
-
-        // evil hack for backwards compatibility with 1.6.0 CLI, sorry
-        // https://github.com/dockstore/dockstore/issues/2860
-        this.mutateBasedOnUserAgent(workflow, entry -> {
-            if (workflow.getDescriptorType() == CWL) {
-                workflow.setDescriptorType(OLD_CWL);
-            } else if (workflow.getDescriptorType() == WDL) {
-                workflow.setDescriptorType(OLD_WDL);
-            }
-        }, containerContext);
-
         return workflow;
     }
 
@@ -1168,7 +1045,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
         @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFile(workflowId, tag, fileType, user);
+        return getSourceFile(workflowId, tag, fileType, user, fileDAO);
     }
 
     @GET
@@ -1183,7 +1060,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getSourceFileByPath(workflowId, tag, fileType, path, user);
+        return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
     }
 
     @GET
@@ -1197,7 +1074,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
         final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
-        return getAllSecondaryFiles(workflowId, tag, fileType, user);
+        return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
     }
 
 
@@ -1216,7 +1093,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         FileType testParameterType = workflow.getTestParameterType();
-        return getAllSourceFiles(workflowId, version, testParameterType, user);
+        return getAllSourceFiles(workflowId, version, testParameterType, user, fileDAO);
     }
 
     @PUT
@@ -1254,6 +1131,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
         checkNotFrozen(workflowVersion);
+        workflowVersion.setSynced(false);
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
@@ -1292,6 +1170,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         WorkflowVersion workflowVersion = potentialWorkflowVersion.get();
         checkNotFrozen(workflowVersion);
+        workflowVersion.setSynced(false);
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
@@ -1386,8 +1265,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         for (WorkflowVersion version : workflowVersions) {
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
+                if (w.getActualDefaultVersion() != null && w.getActualDefaultVersion().getId() == version.getId() && version.isHidden()) {
+                    throw new CustomWebApplicationException("You cannot hide the default version.", HttpStatus.SC_BAD_REQUEST);
+                }
                 // remove existing copy and add the new one
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+
+                existingTag.setSynced(false);
 
                 // If path changed then update dirty bit to true
                 if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
@@ -1404,18 +1288,20 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean nowFrozen = existingTag.isFrozen();
                 // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
-                    String toolsJSONTable;
+                    Optional<String> toolsJSONTable;
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
                     // Store tool table json
                     if (existingTag.getToolTableJson() == null) {
                         toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-                        existingTag.setToolTableJson(toolsJSONTable);
+                        existingTag.setToolTableJson(toolsJSONTable.get());
                     } else {
-                        toolsJSONTable = existingTag.getToolTableJson();
+                        toolsJSONTable = Optional.of(existingTag.getToolTableJson());
                     }
-                    Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable);
-                    existingTag.getImages().addAll(images);
 
+                    if (toolsJSONTable.isPresent()) {
+                        Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
+                        existingTag.getImages().addAll(images);
+                    }
                     // Grab checksum for file descriptors if not already available.
                     for (SourceFile sourceFile : existingTag.getSourceFiles()) {
                         Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
@@ -1516,10 +1402,19 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            final String toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final Optional<String> toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
-            workflowVersion.setToolTableJson(toolTableJson);
-            return toolTableJson;
+
+            final String json = toolTableJson.orElse(null);
+
+            // Can't UPDATE workflowversion when frozen = true
+            if (workflowVersion.isFrozen()) {
+                LOG.warn("workflow version " + workflowVersionId + " is frozen without toolTableJson");
+            } else {
+                workflowVersion.setToolTableJson(json);
+            }
+
+            return json;
         }
 
         return null;
@@ -1612,20 +1507,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
     }
 
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/unstar")
-    @Operation(operationId = "unstarEntry", description = "Unstar a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(nickname =  "unstarEntry", value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @Deprecated(since = "1.8.0")
-    public void unstarEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findById(workflowId);
-        unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
-        PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
-    }
-
     @GET
     @Path("/{workflowId}/starredUsers")
     @Timed
@@ -1638,6 +1519,46 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkEntry(workflow);
 
         return workflow.getStarredUsers();
+    }
+
+    /**
+     *
+     * @param user  The user the workflow belongs to
+     * @param workflowId    The ID of the workflow to change descriptor type
+     * @param descriptorLanguage    The descriptor type to change to
+     * @return  The modified workflow
+     */
+    @POST
+    @Path("/{workflowId}/descriptorType")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "updateDescriptorType", summary = "Changes the descriptor type of an unpublished, invalid workflow.", description = "Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "hidden", hidden = true)
+    public Workflow updateLanguage(
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+            @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "Descriptor type to update to", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkUser(user, workflow);
+        if (workflow.getIsPublished()) {
+            throw new CustomWebApplicationException("Cannot change descriptor type of a published workflow", Response.Status.BAD_REQUEST.getStatusCode());
+        } else {
+            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+            workflowVersions.forEach(workflowVersion -> {
+                if (workflowVersion.isValid()) {
+                    throw new CustomWebApplicationException("Cannot change descriptor type of a valid workflow", Response.Status.BAD_REQUEST.getStatusCode());
+                }
+            });
+            // If the language was wrong, then is any workflowVersion even worth keeping?
+            // If there's no workflowVersions, is the workflow even worth keeping? Maybe just delete the workflow? Maybe keep for events?
+            workflow.setWorkflowVersions(new HashSet<>());
+            if (descriptorLanguage == null) {
+                throw new CustomWebApplicationException("Descriptor type must be not be null", Response.Status.BAD_REQUEST.getStatusCode());
+            }
+            workflow.setDescriptorType(descriptorLanguage);
+            return workflow;
+        }
     }
 
     @POST
@@ -1751,7 +1672,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             } else if (workflow.getDescriptorType() == WDL) {
                 workflowName += WDL_CHECKER;
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getLowerShortName()
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().getShortName()
                     + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {
@@ -1790,7 +1711,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         entry.setCheckerWorkflow(checkerWorkflow);
 
         // Return the original entry
-        return toolDAO.getGenericEntryById(entryId);
+        Entry<? extends Entry, ? extends Version> genericEntry = toolDAO.getGenericEntryById(entryId);
+        Hibernate.initialize(genericEntry.getWorkflowVersions());
+        return genericEntry;
     }
 
     /**
@@ -1809,6 +1732,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, IMAGES)) {
             workflow.getWorkflowVersions().stream().filter(v -> v.isFrozen()).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
+        }
+        if (checkIncludes(include, VERSIONS)) {
+            Hibernate.initialize(workflow.getWorkflowVersions());
         }
     }
 
@@ -1850,6 +1776,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
+        if (workflow == null) {
+            throw new CustomWebApplicationException("could not find tool", HttpStatus.SC_NOT_FOUND);
+        }
         checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
@@ -1859,7 +1788,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
-        String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+        String fileName = EntryVersionHelper.generateZipFileName(workflow.getWorkflowPath(), workflowVersion.getName());
 
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
@@ -1908,7 +1837,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         final Token gitToken = scTokens.get(0);
 
-        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken, client);
+        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken);
         final String tokenSource = gitToken.getTokenSource().toString();
         final String repository = organization + "/" + repositoryName;
 
@@ -1980,6 +1909,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkUser(foundUser, workflow);
         if (Objects.equals(workflow.getMode(), WorkflowMode.STUB)) {
             PublicStateManager.getInstance().handleIndexUpdate(existingWorkflow.get(), StateManagerMode.DELETE);
+            eventDAO.deleteEventByEntryID(workflow.getId());
             workflowDAO.delete(workflow);
         } else {
             String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
@@ -1996,14 +1926,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @RolesAllowed({ "curator", "admin" })
     @Operation(description = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void handleGitHubRelease(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @Parameter(name = "repository", description = "Repository path (ex. dockstore/dockstore-ui2)", required = true) @FormParam("repository") String repository,
         @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
         @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
-        return githubWebhookRelease(repository, username, gitReference, installationId);
+        githubWebhookRelease(repository, username, gitReference, installationId);
     }
 
     @POST
