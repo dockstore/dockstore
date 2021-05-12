@@ -87,6 +87,7 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
         cloudInstanceToBeAdded.setSupportsFileImports(cloudInstance.isSupportsFileImports());
         cloudInstanceToBeAdded.setSupportsHttpImports(cloudInstance.isSupportsHttpImports());
         cloudInstanceToBeAdded.setSupportedLanguages(cloudInstance.getSupportedLanguages());
+        cloudInstanceToBeAdded.setDisplayName(cloudInstance.getDisplayName());
         cloudInstanceToBeAdded.setUser(null);
         this.cloudInstanceDAO.create(cloudInstanceToBeAdded);
     }

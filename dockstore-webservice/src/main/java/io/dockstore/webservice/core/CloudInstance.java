@@ -52,6 +52,10 @@ public class CloudInstance implements Serializable {
     @ApiModelProperty(value = "The URL of the launch-with partner's private cloud instance")
     private String url;
 
+    @Column(name = "display_name", nullable = false)
+    @ApiModelProperty(value = "User friendly display name")
+    private String displayName;
+
     @Column(name = "supports_http_imports")
     @ApiModelProperty(value = "Whether the CloudInstance supports http imports or not")
     private boolean supportsHttpImports;
@@ -136,5 +140,13 @@ public class CloudInstance implements Serializable {
 
     public void setSupportedLanguages(Set<Language> supportedLanguages) {
         this.supportedLanguages = supportedLanguages;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(final String displayName) {
+        this.displayName = displayName;
     }
 }
