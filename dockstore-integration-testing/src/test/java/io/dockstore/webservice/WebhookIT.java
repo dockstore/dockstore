@@ -85,7 +85,7 @@ public class WebhookIT extends BaseIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
+    private static final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
     private final String installationId = "1179416";
     private FileDAO fileDAO;
@@ -205,7 +205,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
-        io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
@@ -216,10 +216,10 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, workflowCount);
 
         // Ensure that existing workflow is updated
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        workflow = getFoobar1Workflow(client);
 
         // Ensure that new workflow is created and is what is expected
-        io.dockstore.openapi.client.model.Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         assertEquals("Should be a CWL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
@@ -237,12 +237,12 @@ public class WebhookIT extends BaseIT {
             assertEquals("Should be able to get license after manual GitHub App version update", "Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName());
         });
 
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        workflow = getFoobar1Workflow(client);
         assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
         assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
         assertTrue("Should have a 0.2 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        workflow2 = getFoobar2Workflow(client);
         assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
         assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
@@ -266,9 +266,9 @@ public class WebhookIT extends BaseIT {
 
         // Delete tag 0.2
         client.handleGitHubBranchDeletion(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.2", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        workflow = getFoobar1Workflow(client);
         assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        workflow2 = getFoobar2Workflow(client);
         assertTrue("Should not have a 0.2 version.", workflow2.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
         // Add version that doesn't exist
@@ -317,10 +317,35 @@ public class WebhookIT extends BaseIT {
 
         // Try adding version with empty test parameter file (should work)
         client.handleGitHubRelease("refs/heads/emptytestparameter", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
-
+        workflow2 = getFoobar2Workflow(client);
         assertTrue("Should have emptytestparameter version that is valid", workflow2.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "emptytestparameter")).findFirst().get().isValid());
         testValidationUpdate(client);
+        testDefaultVersion(client);
+    }
+
+    private void testDefaultVersion(io.dockstore.openapi.client.api.WorkflowsApi client) {
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
+        assertNull(workflow2.getDefaultVersion());
+        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
+        assertEquals("master", workflow.getDefaultVersion());
+        client.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        workflow2 = getFoobar2Workflow(client);
+        assertEquals("0.4", workflow2.getDefaultVersion());
+        workflow = getFoobar1Workflow(client);
+        assertEquals("master", workflow.getDefaultVersion());
+
+    }
+    
+    private static io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+    }
+
+    private static io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+    }
+
+    private static Workflow getFoobar1Workflow(WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
     }
 
     /**
@@ -330,12 +355,12 @@ public class WebhookIT extends BaseIT {
     private void testValidationUpdate(io.dockstore.openapi.client.api.WorkflowsApi client) {
         testingPostgres.runUpdateStatement("update workflowversion set valid='f'");
 
-        io.dockstore.openapi.client.model.Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertFalse("Master version should be invalid because it was manually changed", masterVersion.get().isValid());
 
         client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        workflow2 = getFoobar2Workflow(client);
         masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertTrue("Master version should be valid after GitHub App triggered again", masterVersion.get().isValid());
     }
@@ -389,7 +414,7 @@ public class WebhookIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertEquals(1, workflowCount);
 
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be able to get license after GitHub App register", "Apache License 2.0", workflow.getLicenseInformation().getLicenseName());
 
         // Ensure that new workflow is created and is what is expected
@@ -445,7 +470,7 @@ public class WebhookIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertEquals(1, workflowCount);
         // Ensure that new workflow is created and is what is expected
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version", 1, workflow.getWorkflowVersions().size());
@@ -467,7 +492,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
@@ -508,7 +533,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
@@ -580,7 +605,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().equals("/dockstore.wdl.json")).findFirst().isPresent());
