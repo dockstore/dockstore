@@ -26,6 +26,7 @@ CREATE UNIQUE INDEX partial_workflow_name ON workflow USING btree (sourcecontrol
 CREATE UNIQUE INDEX partial_tool_name ON tool USING btree (registry, namespace, name) WHERE toolname IS NULL;
 CREATE UNIQUE INDEX full_service_name ON service USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX partial_service_name ON service USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+CREATE UNIQUE INDEX partial_cloud_instance ON cloud_instance USING btree (url) WHERE user_id IS NULL;
 
 -- unable to convert these to JPA properly
 ALTER TABLE token ADD CONSTRAINT fk_userid_with_enduser FOREIGN KEY (userid) REFERENCES public.enduser (id) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION;

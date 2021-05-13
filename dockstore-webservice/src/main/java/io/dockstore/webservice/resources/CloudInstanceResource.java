@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
@@ -50,7 +51,9 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
     public List<CloudInstance> getCloudInstances() {
-        return this.cloudInstanceDAO.findAllWithoutUser();
+        List<CloudInstance> allWithoutUser = this.cloudInstanceDAO.findAllWithoutUser();
+        allWithoutUser.forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
+        return allWithoutUser;
     }
 
     @DELETE

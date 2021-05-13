@@ -231,5 +231,10 @@
             <column name="partner"/>
         </createIndex>
     </changeSet>
+    <changeSet id="global_cloud_instances_constraint" author="dyuen">
+        <sql dbms="postgresql">
+            create unique index if not exists partial_cloud_instance ON cloud_instance USING btree (url) WHERE user_id IS NULL
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
