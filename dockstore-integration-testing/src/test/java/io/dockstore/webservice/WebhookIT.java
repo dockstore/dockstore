@@ -85,7 +85,7 @@ public class WebhookIT extends BaseIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private static final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
+    private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
     private final String installationId = "1179416";
     private FileDAO fileDAO;
@@ -336,16 +336,16 @@ public class WebhookIT extends BaseIT {
 
     }
     
-    private static io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
+    private io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
         return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
     }
 
-    private static io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
+    private Workflow getFoobar1Workflow(WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+    }
+
+    private io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
         return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
-    }
-
-    private static Workflow getFoobar1Workflow(WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
     }
 
     /**
