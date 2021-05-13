@@ -223,4 +223,13 @@
         <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="token"/>
         <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="user_profile"/>
     </changeSet>
+
+    <changeSet author="dyuen (generated)" id="add_cloud_instances_constraint">
+        <createIndex indexName="unique_user_instances" tableName="cloud_instance" unique="true">
+            <column name="url"/>
+            <column name="user_id"/>
+            <column name="partner"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
