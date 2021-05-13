@@ -437,10 +437,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
                 Boolean publish = wf.getPublish();
-                final DefaultVersion defaultVersion = wf.getDefaultVersion();
+                final var defaultVersion = wf.getDefaultVersion();
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
+                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -481,7 +481,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             final Boolean publish = service.getPublish();
-            final DefaultVersion defaultVersion = service.getDefaultVersion();
+            final var defaultVersion = service.getDefaultVersion();
 
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
