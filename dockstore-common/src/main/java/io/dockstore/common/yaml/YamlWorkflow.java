@@ -46,6 +46,8 @@ public class YamlWorkflow {
      */
     private Boolean publish;
 
+    private DefaultVersion defaultVersion;
+
     private Filters filters = new Filters();
 
     private List<String> testParameterFiles = new ArrayList<>();
@@ -100,5 +102,13 @@ public class YamlWorkflow {
 
     public void setTestParameterFiles(final List<String> testParameterFiles) {
         this.testParameterFiles = testParameterFiles;
+    }
+
+    public DefaultVersion getDefaultVersion() {
+        return defaultVersion;
+    }
+
+    public void setDefaultVersion(DefaultVersion defaultVersion) {
+        this.defaultVersion = defaultVersion;
     }
 }

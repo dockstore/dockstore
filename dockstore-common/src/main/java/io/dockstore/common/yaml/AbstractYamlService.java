@@ -62,6 +62,8 @@ public abstract class AbstractYamlService {
      */
     private Map<String, DataSet> data;
 
+    private DefaultVersion defaultVersion;
+
     public String getAuthor() {
         return author;
     }
@@ -132,6 +134,14 @@ public abstract class AbstractYamlService {
 
     public void setData(final Map<String, DataSet> data) {
         this.data = data;
+    }
+
+    public DefaultVersion getDefaultVersion() {
+        return defaultVersion;
+    }
+
+    public void setDefaultVersion(DefaultVersion defaultVersion) {
+        this.defaultVersion = defaultVersion;
     }
 
     /**
