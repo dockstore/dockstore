@@ -76,8 +76,9 @@ public class CloudInstanceIT extends BaseIT {
         }
 
         adminCloudInstancesApi.postCloudInstance(newCloudInstance);
+
+        newCloudInstance.setSupportsFileImports(true);
         try {
-            newCloudInstance.setSupportsFileImports(true);
             adminCloudInstancesApi.postCloudInstance(newCloudInstance);
             Assert.fail("Cannot create a new global launch with partner with the same URL even if slightly different");
         } catch (ApiException e) {
@@ -168,8 +169,8 @@ public class CloudInstanceIT extends BaseIT {
         newCloudInstance.setPartner(MEMBER_PARTNER_2);
         memberUsersApi.postUserCloudInstance(newCloudInstance, memberUserId);
 
+        newCloudInstance.setSupportsFileImports(true);
         try {
-            newCloudInstance.setSupportsFileImports(true);
             memberUsersApi.postUserCloudInstance(newCloudInstance, memberUserId);
             Assert.fail("Cannot create a new user launch with partner with the same URL even if slightly different");
         } catch (ApiException e) {
