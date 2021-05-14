@@ -146,7 +146,7 @@ public class CloudInstance implements Serializable {
         return displayName;
     }
 
-    public void setDisplayName(final String displayName) {
+    public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
 }

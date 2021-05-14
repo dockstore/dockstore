@@ -60,6 +60,7 @@ public class CloudInstanceIT extends BaseIT {
         newCloudInstance.setId(ignoredId);
         newCloudInstance.setPartner(CloudInstance.PartnerEnum.DNA_STACK);
         newCloudInstance.setUrl("www.google.ca");
+        newCloudInstance.setDisplayName("google.ca");
         newCloudInstance.setSupportsFileImports(null);
         newCloudInstance.setSupportsHttpImports(null);
         newCloudInstance.setSupportedLanguages(new ArrayList<>());
@@ -97,6 +98,7 @@ public class CloudInstanceIT extends BaseIT {
         Assert.assertNotEquals("Should have ignored the ID passed in", ignoredId, dnaNexusId);
         newCloudInstance.setPartner(CloudInstance.PartnerEnum.DNA_NEXUS);
         newCloudInstance.setUrl("www.google.com");
+        newCloudInstance.setDisplayName("google.com");
         adminCloudInstancesApi.postCloudInstance(newCloudInstance);
         adminCloudInstances = adminCloudInstancesApi.getCloudInstances();
         memberCloudInstances = memberCloudInstancesApi.getCloudInstances();
