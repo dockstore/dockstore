@@ -1026,7 +1026,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
-        return user.getCloudInstances();
+        Set<CloudInstance> cloudInstances = user.getCloudInstances();
+        cloudInstances.forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
+        return cloudInstances;
     }
 
     @POST
@@ -1052,8 +1054,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         cloudInstanceToBeAdded.setSupportedLanguages(cloudInstanceBody.getSupportedLanguages());
         // TODO: Figure how to make this not required (already adding the instance to the user)
         cloudInstanceToBeAdded.setUser(user);
-
         user.getCloudInstances().add(cloudInstanceToBeAdded);
+        user.getCloudInstances().forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
         return user.getCloudInstances();
     }
 

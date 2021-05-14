@@ -223,4 +223,18 @@
         <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="token"/>
         <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="user_profile"/>
     </changeSet>
+
+    <changeSet author="dyuen (generated)" id="add_cloud_instances_constraint">
+        <createIndex indexName="unique_user_instances" tableName="cloud_instance" unique="true">
+            <column name="url"/>
+            <column name="user_id"/>
+            <column name="partner"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="global_cloud_instances_constraint" author="dyuen">
+        <sql dbms="postgresql">
+            create unique index if not exists partial_cloud_instance ON cloud_instance USING btree (url) WHERE user_id IS NULL
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

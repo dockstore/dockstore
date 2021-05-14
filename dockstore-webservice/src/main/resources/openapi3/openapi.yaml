@@ -7461,6 +7461,18 @@ components:
           - PUBLISH
     Language:
       type: object
+      properties:
+        language:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+        version:
+          type: string
     LicenseInformation:
       type: object
       properties:

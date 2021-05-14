@@ -9,6 +9,7 @@ import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.CloudInstancesApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.model.CloudInstance;
+import io.dockstore.openapi.client.model.Language;
 import io.dockstore.openapi.client.model.User;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -62,6 +63,11 @@ public class CloudInstanceIT extends BaseIT {
         newCloudInstance.setSupportsFileImports(null);
         newCloudInstance.setSupportsHttpImports(null);
         newCloudInstance.setSupportedLanguages(new ArrayList<>());
+        // testing out languages
+        Language language = new Language();
+        language.setLanguage(Language.LanguageEnum.WDL);
+        language.setVersion("draft-1.0");
+        newCloudInstance.getSupportedLanguages().add(language);
         try {
             anonymousCloudInstancesApi.postCloudInstance(newCloudInstance);
             Assert.fail("Only admins can create a new cloud instance");
@@ -69,13 +75,18 @@ public class CloudInstanceIT extends BaseIT {
             Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
         }
 
-        try {
-            memberCloudInstancesApi.postCloudInstance(newCloudInstance);
-            Assert.fail("Only admins can create a new cloud instance");
-        } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, e.getCode());
-        }
         adminCloudInstancesApi.postCloudInstance(newCloudInstance);
+
+        newCloudInstance.setSupportsFileImports(true);
+        try {
+            adminCloudInstancesApi.postCloudInstance(newCloudInstance);
+            Assert.fail("Cannot create a new global launch with partner with the same URL even if slightly different");
+        } catch (ApiException e) {
+            Assert.assertTrue(e.getMessage().contains("constraint"));
+            //TODO: catch and return a proper error code
+            //Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+
         adminCloudInstances = adminCloudInstancesApi.getCloudInstances();
         memberCloudInstances = memberCloudInstancesApi.getCloudInstances();
         anonymousCloudInstances = anonymousCloudInstancesApi.getCloudInstances();
@@ -157,6 +168,17 @@ public class CloudInstanceIT extends BaseIT {
         adminUsersApi.postUserCloudInstance(newCloudInstance, adminUserId);
         newCloudInstance.setPartner(MEMBER_PARTNER_2);
         memberUsersApi.postUserCloudInstance(newCloudInstance, memberUserId);
+
+        newCloudInstance.setSupportsFileImports(true);
+        try {
+            memberUsersApi.postUserCloudInstance(newCloudInstance, memberUserId);
+            Assert.fail("Cannot create a new user launch with partner with the same URL even if slightly different");
+        } catch (ApiException e) {
+            Assert.assertTrue(e.getMessage().contains("constraint"));
+            //TODO: catch and return a proper error code
+            //Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+
         memberUserCloudInstances = memberUsersApi.getUserCloudInstances(memberUserId);
         adminUserCloudInstances = adminUsersApi.getUserCloudInstances(adminUserId);
         Assert.assertEquals(2, memberUserCloudInstances.size());

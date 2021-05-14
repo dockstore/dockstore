@@ -18,6 +18,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
@@ -28,7 +29,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @ApiModel(value = "CloudInstance", description = "Instances that launch-with cloud partners have")
 @Entity
-@Table(name = "cloud_instance")
+@Table(name = "cloud_instance", uniqueConstraints = @UniqueConstraint(name = "unique_user_instances", columnNames = { "url", "user_id",
+        "partner" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT ci from CloudInstance ci where user_id is null")
 })
