@@ -238,6 +238,9 @@ jobs:
       - store_artifacts:
           path: ~/junit
       - run:
+          name: SonarCloud scan - coverage
+          command: mvn sonar:sonar
+      - run:
           name: Make jar directory
           command: mkdir /tmp/artifacts
       - run:
@@ -361,6 +364,9 @@ commands:
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+      - run:
+          name: SonarCloud scan - coverage
+          command: mvn sonar:sonar
   save_test_results:
     steps:
       - save_cache:
