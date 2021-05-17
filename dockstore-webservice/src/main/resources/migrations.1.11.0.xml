@@ -237,4 +237,13 @@
         </sql>
     </changeSet>
 
+    <changeSet author="dyuen (generated)" id="add_lambda_index">
+        <createIndex indexName="organization_index" tableName="lambdaevent">
+            <column name="organization"/>
+        </createIndex>
+        <createIndex indexName="user_index" tableName="lambdaevent">
+            <column name="userid"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

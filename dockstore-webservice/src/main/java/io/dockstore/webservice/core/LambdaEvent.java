@@ -10,6 +10,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
@@ -30,7 +31,8 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel("LambdaEvent")
 @Entity
-@Table(name = "LambdaEvent")
+@Table(name = "LambdaEvent", indexes = { @Index(name = "organization_index", columnList = "organization"),
+        @Index(name = "user_index", columnList = "userid") })
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByRepository", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository = :repository"),
         @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByOrganization", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository like :organization"),
