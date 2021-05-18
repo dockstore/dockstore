@@ -6718,6 +6718,8 @@ components:
     CloudInstance:
       type: object
       properties:
+        displayName:
+          type: string
         id:
           type: integer
           format: int64
