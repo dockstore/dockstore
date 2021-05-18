@@ -246,4 +246,11 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="natalieperez (generated)" id="add_display_name_column">
+        <addColumn tableName="cloud_instance">
+            <column name="display_name" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

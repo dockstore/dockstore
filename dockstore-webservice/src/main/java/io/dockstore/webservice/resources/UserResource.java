@@ -1052,6 +1052,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         cloudInstanceToBeAdded.setSupportsFileImports(cloudInstanceBody.isSupportsFileImports());
         cloudInstanceToBeAdded.setSupportsHttpImports(cloudInstanceBody.isSupportsHttpImports());
         cloudInstanceToBeAdded.setSupportedLanguages(cloudInstanceBody.getSupportedLanguages());
+        cloudInstanceToBeAdded.setDisplayName(cloudInstanceBody.getDisplayName());
         // TODO: Figure how to make this not required (already adding the instance to the user)
         cloudInstanceToBeAdded.setUser(user);
         user.getCloudInstances().add(cloudInstanceToBeAdded);
