@@ -44,23 +44,26 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-          context: sonarcloud
       - unit_test:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - workflow-integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - tool-integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - regression-integration-tests:
           filters:
             branches:
@@ -146,9 +149,6 @@ jobs:
           root: .
           paths:
             - .
-      - run:
-          name: SonarCloud scan
-          command: mvn verify sonar:sonar
       - run:
           name: check generated flattened POMs match checked-in files.
           command: |
