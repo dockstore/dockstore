@@ -237,6 +237,15 @@
         </sql>
     </changeSet>
 
+    <changeSet author="dyuen (generated)" id="add_lambda_index">
+        <createIndex indexName="organization_index" tableName="lambdaevent">
+            <column name="organization"/>
+        </createIndex>
+        <createIndex indexName="user_index" tableName="lambdaevent">
+            <column name="userid"/>
+        </createIndex>
+    </changeSet>
+
     <changeSet author="natalieperez (generated)" id="add_display_name_column">
         <addColumn tableName="cloud_instance">
             <column name="display_name" type="varchar(255 BYTE)">
