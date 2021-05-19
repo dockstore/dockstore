@@ -722,7 +722,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String scope;
         long expirationTime;
 
-        if (code.isEmpty()) {
+        if (code == null || code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
         }
 
