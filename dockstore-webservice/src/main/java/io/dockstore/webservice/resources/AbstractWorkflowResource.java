@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +19,6 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguageSubclass;
-import io.dockstore.common.yaml.DefaultVersion;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
@@ -437,7 +437,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
                 Boolean publish = wf.getPublish();
-                final var defaultVersion = wf.getDefaultVersion();
+                final var defaultVersion = wf.getLatestTagAsDefault();
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
@@ -481,7 +481,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             final Boolean publish = service.getPublish();
-            final var defaultVersion = service.getDefaultVersion();
+            final var defaultVersion = service.getLatestTagAsDefault();
 
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
             addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
@@ -562,7 +562,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return New or updated workflow
      */
     private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
-            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, DefaultVersion defaultVersion) {
+            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault) {
         Instant startTime = Instant.now();
         try {
             // Create version and pull relevant files
@@ -601,10 +601,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 Set<WorkflowVersion> workflowVersions = new HashSet<>();
                 workflowVersions.add(addedVersion);
                 FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
-                if ((DefaultVersion.TAG.equals(defaultVersion)
-                        && Version.ReferenceType.TAG.equals(addedVersion.getReferenceType()))
-                        || (DefaultVersion.BRANCH.equals(defaultVersion)
-                        && Version.ReferenceType.BRANCH.equals(addedVersion.getReferenceType()))) {
+                boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
+                                .before(addedVersion.getLastModified());
+                if (latestTagAsDefault && Version.ReferenceType.TAG.equals(addedVersion.getReferenceType()) && addedVersionIsNewer) {
                     workflow.setActualDefaultVersion(addedVersion);
                 }
             }

@@ -327,12 +327,12 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         assertNull(workflow2.getDefaultVersion());
         io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
-        assertEquals("master", workflow.getDefaultVersion());
+        assertEquals(null, workflow.getDefaultVersion());
         client.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         workflow2 = getFoobar2Workflow(client);
-        assertEquals("0.4", workflow2.getDefaultVersion());
+        assertEquals("The new tag says the latest tag should be the default version", "0.4", workflow2.getDefaultVersion());
         workflow = getFoobar1Workflow(client);
-        assertEquals("master", workflow.getDefaultVersion());
+        assertEquals(null, workflow.getDefaultVersion());
 
     }
     

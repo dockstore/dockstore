@@ -62,7 +62,7 @@ public abstract class AbstractYamlService {
      */
     private Map<String, DataSet> data;
 
-    private DefaultVersion defaultVersion;
+    private boolean latestTagAsDefault = false;
 
     public String getAuthor() {
         return author;
@@ -136,12 +136,12 @@ public abstract class AbstractYamlService {
         this.data = data;
     }
 
-    public DefaultVersion getDefaultVersion() {
-        return defaultVersion;
+    public boolean getLatestTagAsDefault() {
+        return latestTagAsDefault;
     }
 
-    public void setDefaultVersion(DefaultVersion defaultVersion) {
-        this.defaultVersion = defaultVersion;
+    public void setLatestTagAsDefault(boolean latestTagAsDefault) {
+        this.latestTagAsDefault = latestTagAsDefault;
     }
 
     /**

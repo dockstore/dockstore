@@ -46,7 +46,8 @@ public class YamlWorkflow {
      */
     private Boolean publish;
 
-    private DefaultVersion defaultVersion;
+    // If true, the most recent tag that Dockstore processes from AWS lambda becomes the default version
+    private boolean latestTagAsDefault = false;
 
     private Filters filters = new Filters();
 
@@ -104,11 +105,11 @@ public class YamlWorkflow {
         this.testParameterFiles = testParameterFiles;
     }
 
-    public DefaultVersion getDefaultVersion() {
-        return defaultVersion;
+    public boolean getLatestTagAsDefault() {
+        return latestTagAsDefault;
     }
 
-    public void setDefaultVersion(DefaultVersion defaultVersion) {
-        this.defaultVersion = defaultVersion;
+    public void setLatestTagAsDefault(boolean latestTagAsDefault) {
+        this.latestTagAsDefault = latestTagAsDefault;
     }
 }
