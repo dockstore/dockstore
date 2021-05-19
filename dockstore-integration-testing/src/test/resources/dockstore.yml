@@ -127,7 +127,7 @@ uiConfig:
 
   orcidAuthUrl: https://sandbox.orcid.org/oauth/authorize
   orcidRedirectPath: /auth/orcid.org
-  orcidScope: /authorize
+  orcidScope: /activities/update
 
   googleScope: profile email
 
