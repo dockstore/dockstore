@@ -226,7 +226,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -240,7 +240,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -258,7 +258,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }

@@ -142,7 +142,7 @@ public enum DescriptorLanguage {
         return fileType;
     }
 
-    public static Optional<FileType> getFileType(String descriptorType) {
+    public static Optional<FileType> getOptionalFileType(String descriptorType) {
         // Tricky case for GALAXY because it doesn't match the rules of the other languages
         if (StringUtils.containsIgnoreCase(descriptorType, "galaxy")) {
             return Optional.of(GXFORMAT2.fileType);
