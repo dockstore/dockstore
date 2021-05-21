@@ -783,7 +783,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
-        private enum ToolType { TOOL, SERVICE, WORKFLOW };
+        private enum ToolType { TOOL, SERVICE, WORKFLOW }
+
         private ToolType type = ToolType.TOOL;
         private final String registry;
         private final String organization;
