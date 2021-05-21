@@ -436,9 +436,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 String subclass = wf.getSubclass();
                 String workflowName = wf.getName();
                 Boolean publish = wf.getPublish();
+                final var defaultVersion = wf.getLatestTagAsDefault();
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -451,7 +452,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                     lambdaEventDAO.create(lambdaEvent);
                 }
-
                 updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
@@ -480,9 +480,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             final Boolean publish = service.getPublish();
+            final var defaultVersion = service.getLatestTagAsDefault();
 
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
-            workflow = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow);
+            addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
 
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -560,7 +561,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return New or updated workflow
      */
     private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
-            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow) {
+            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault) {
         Instant startTime = Instant.now();
         try {
             // Create version and pull relevant files
@@ -594,12 +595,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 if (workflow.getLastModified() == null || (addedVersion.getLastModified() != null && workflow.getLastModifiedDate().before(addedVersion.getLastModified()))) {
                     workflow.setLastModified(addedVersion.getLastModified());
                 }
-
                 // Update file formats for the version and then the entry.
                 // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
                 Set<WorkflowVersion> workflowVersions = new HashSet<>();
                 workflowVersions.add(addedVersion);
                 FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
+                boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
+                                .before(addedVersion.getLastModified());
+                if (latestTagAsDefault && Version.ReferenceType.TAG.equals(addedVersion.getReferenceType()) && addedVersionIsNewer) {
+                    workflow.setActualDefaultVersion(addedVersion);
+                }
             }
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
