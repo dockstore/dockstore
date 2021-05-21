@@ -67,6 +67,7 @@
         <option name="ARRAY_INITIALIZER_WRAP" value="1"/>
         <option name="VARIABLE_ANNOTATION_WRAP" value="2"/>
         <indentOptions>
+            <option name="CONTINUATION_INDENT_SIZE" value="4" />
             <option name="SMART_TABS" value="true"/>
         </indentOptions>
         <arrangement>
