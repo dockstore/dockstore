@@ -764,7 +764,7 @@ public class DockerRepoResource
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
         checkEntry(tools);
-        AuthenticatedResourceInterface.checkUser(user, tools);
+        AuthenticatedResourceInterface.checkUserAccessEntries(user, tools);
         return tools;
     }
 

@@ -281,7 +281,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public Organization updateOrganizationDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Organization's description in markdown.", required = true) @Parameter(description = "Organization's description in markdown.", name = "description", required = true) String description) {
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -417,7 +417,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             // User is given, check if organization is either approved or the user has access
             // Admins and curators should be able to see unapproved organizations
             boolean doesOrgExist =
-                doesOrganizationExistToUser(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+                doesOrganizationExistToUserResourceDAO(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
             if (!doesOrgExist) {
                 String msg = "Organization not found";
                 LOG.info(msg);
@@ -549,7 +549,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization to update with.", required = true) @Parameter(description = "Organization to register.", name = "organization", required = true) Organization organization,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
 
-        boolean doesOrgExist = doesOrganizationExistToUser(id, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(id, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -779,7 +779,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Accept or reject.", required = true) @Parameter(description = "Accept or reject.", name = "accept", in = ParameterIn.QUERY, required = true) @QueryParam("accept") boolean accept) {
 
         // Check that the organization exists
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -861,7 +861,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
-    private boolean doesOrganizationExistToUser(Long organizationId, Long userId) {
+    private boolean doesOrganizationExistToUserResourceDAO(Long organizationId, Long userId) {
         return doesOrganizationExistToUser(organizationId, userId, organizationDAO);
     }
 
@@ -917,7 +917,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      */
     private Pair<Organization, User> commonUserOrg(Long organizationId, Long userId, User user) {
         // Check that the organization exists
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);

@@ -128,13 +128,13 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     default void stripContent(List<? extends Entry> entries) {
-        stripContent(entries, getDAO());
+        stripContentFromEntries(entries, getDAO());
     }
 
     /**
      * For convenience, filters a list of entries
      */
-    static void stripContent(List<? extends Entry> entries, AbstractDockstoreDAO dao) {
+    static void stripContentFromEntries(List<? extends Entry> entries, AbstractDockstoreDAO dao) {
         for (Entry entry : entries) {
             dao.evict(entry);
             // clear users which are also lazy loaded

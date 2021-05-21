@@ -585,13 +585,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
         services.forEach(service -> Hibernate.initialize(service.getWorkflowVersions()));
-        EntryVersionHelper.stripContent(services, this.userDAO);
+        EntryVersionHelper.stripContentFromEntries(services, this.userDAO);
         return services;
     }
 
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
         final List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
-        EntryVersionHelper.stripContent(workflows, this.userDAO);
+        EntryVersionHelper.stripContentFromEntries(workflows, this.userDAO);
         return workflows;
 
     }
@@ -611,7 +611,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUser(user, userId);
         final User byId = this.userDAO.findById(userId);
         List<Tool> tools = getTools(byId);
-        EntryVersionHelper.stripContent(tools, this.userDAO);
+        EntryVersionHelper.stripContentFromEntries(tools, this.userDAO);
         return tools;
     }
     @GET

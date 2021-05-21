@@ -998,7 +998,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
         checkEntry(workflows);
-        AuthenticatedResourceInterface.checkUser(user, workflows);
+        AuthenticatedResourceInterface.checkUserAccessEntries(user, workflows);
         return workflows;
     }
 
