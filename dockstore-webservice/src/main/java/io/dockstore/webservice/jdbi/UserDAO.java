@@ -70,10 +70,18 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return (User)query.uniqueResult();
     }
 
+    public User findByGoogleOnlineProfileId(String id) {
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findByGoogleUserId").setParameter("id", id));
+    }
+
     public User findByGitHubUsername(String username) {
         final Query query = namedQuery("io.dockstore.webservice.core.User.findByGitHubUsername")
             .setParameter("username", username);
         return (User)query.uniqueResult();
+    }
+
+    public User findByGitHubUserId(String id) {
+        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findByGitHubUserId").setParameter("id", id));
     }
 
     public long findPublishedEntries(String username)  {

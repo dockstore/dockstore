@@ -772,6 +772,10 @@ public class OrganizationIT extends BaseIT {
         memberships = usersOtherUser.getUserMemberships();
         assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
 
+        // Should not appear in the organization's members list because they haven't approved the request yet
+        List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(orgId);
+        assertEquals("There should be 1 user, there are " + users.size(), 1, users.size());
+
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
 
@@ -789,7 +793,7 @@ public class OrganizationIT extends BaseIT {
             long.class);
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
-        List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(organization.getId());
+        users = organizationsApiUser2.getOrganizationMembers(organization.getId());
         assertEquals("There should be 2 users, there are " + users.size(), 2, users.size());
 
         // Should be able to update email of Organization

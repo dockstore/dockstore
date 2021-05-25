@@ -64,7 +64,7 @@ import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
-import io.swagger.client.model.Token;
+import io.swagger.client.model.TokenUser;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersionV1;
@@ -482,7 +482,7 @@ public class SwaggerClientIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
 
-        List<Token> tokens = usersApi.getUserTokens(user.getId());
+        List<TokenUser> tokens = usersApi.getUserTokens(user.getId());
 
         assertFalse(tokens.isEmpty());
     }

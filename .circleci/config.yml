@@ -2,8 +2,9 @@ version: 2.1
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9
+      - image: cimg/openjdk:11.0.10
         environment:
+          JAVA_TOOL_OPTIONS: -Xmx512m # Nothing to do with surefire plugin, it has its own JVM. The two of these plus ES (1.3 GB) must add up to a bit less than 6GB.
           PGHOST: 127.0.0.1
       - image: circleci/postgres:11.8
         command: postgres -c max_connections=200
@@ -13,7 +14,7 @@ executors:
           PG_HOST: localhost
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_PASSWORD: postgres
-      - image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
+      - image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
         environment:
           - xpack.security.enabled: false
           - transport.host: localhost
@@ -43,23 +44,26 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-          context: sonarcloud
       - unit_test:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - workflow-integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - tool-integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - regression-integration-tests:
           filters:
             branches:
@@ -117,7 +121,7 @@ jobs:
       - save_test_results
   build:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9
+      - image: cimg/openjdk:11.0.10
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
@@ -146,11 +150,14 @@ jobs:
           paths:
             - .
       - run:
-          name: SonarCloud scan
-          command: mvn verify sonar:sonar
+          name: check generated flattened POMs match checked-in files.
+          command: |
+            scripts/check_poms.sh
+          environment:
+            TESTING_PROFILE: automated-review
   unit_test: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9
+      - image: cimg/openjdk:11.0.10
         environment:
           PGHOST: 127.0.0.1
       - image: circleci/postgres:11.8
@@ -178,7 +185,7 @@ jobs:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-            /usr/local/jdk-11.0.9/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+            /usr/local/jdk-11.0.10/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             export SKIP_SIGNATURE_CHECK=false
             if [[ -z "${CIRCLE_TAG}" ]]; then
               # If it is a branch, skip the signature check
@@ -230,6 +237,9 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: ~/junit
+      - run:
+          name: SonarCloud scan - coverage
+          command: mvn sonar:sonar
       - run:
           name: Make jar directory
           command: mkdir /tmp/artifacts
@@ -354,6 +364,9 @@ commands:
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+      - run:
+          name: SonarCloud scan - coverage
+          command: mvn sonar:sonar
   save_test_results:
     steps:
       - save_cache:

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
@@ -316,7 +317,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Operation(operationId = "getOrganizationMembers", summary = "Retrieve all members for an organization.", description = "Retrieve all members for an organization. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public Set<OrganizationUser> getOrganizationMembers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
-        return getOrganizationByIdOptionalAuth(user, id).getUsers();
+        Set<OrganizationUser> acceptedUsers = getOrganizationByIdOptionalAuth(user, id).getUsers()
+                .stream()
+                .filter(orgUser -> orgUser.isAccepted())
+                .collect(Collectors.toSet());
+
+        return acceptedUsers;
     }
 
     @GET

@@ -200,6 +200,61 @@
         </update>
     </changeSet>
 
+    <changeSet author="natalieperez (generated)" id="add_ids_from_github">
+        <addColumn tableName="user_profile">
+            <column name="onlineprofileid" type="int8"/>
+        </addColumn>
+        <addColumn tableName="token">
+            <column name="onlineprofileid" type="int8"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            ALTER TABLE user_profile DROP CONSTRAINT one_sign_in_method_by_profile;
+            CREATE UNIQUE INDEX one_sign_in_method_by_profile_old ON user_profile USING btree (username, token_type) WHERE onlineprofileid IS NULL;
+            CREATE UNIQUE INDEX one_sign_in_method_by_profile ON user_profile USING btree (onlineprofileid, token_type) WHERE onlineprofileid IS NOT NULL;
+            ALTER TABLE token DROP CONSTRAINT one_token_link_per_identify;
+            CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprofileid, tokensource) WHERE onlineprofileid IS NOT NULL;
+            CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;
+        </sql>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="fix_onlineprofileid_datatype">
+        <sql dbms="postgresql">
+            UPDATE token SET onlineprofileid = null;
+            UPDATE user_profile SET onlineprofileid = null;
+        </sql>
+        <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="token"/>
+        <modifyDataType columnName="onlineprofileid" newDataType="varchar(255)" tableName="user_profile"/>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="add_cloud_instances_constraint">
+        <createIndex indexName="unique_user_instances" tableName="cloud_instance" unique="true">
+            <column name="url"/>
+            <column name="user_id"/>
+            <column name="partner"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="global_cloud_instances_constraint" author="dyuen">
+        <sql dbms="postgresql">
+            create unique index if not exists partial_cloud_instance ON cloud_instance USING btree (url) WHERE user_id IS NULL
+        </sql>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="add_lambda_index">
+        <createIndex indexName="organization_index" tableName="lambdaevent">
+            <column name="organization"/>
+        </createIndex>
+        <createIndex indexName="user_index" tableName="lambdaevent">
+            <column name="userid"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="add_display_name_column">
+        <addColumn tableName="cloud_instance">
+            <column name="display_name" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
     <changeSet author="ghogue (generated)" id="multipleAuthorsTable">
         <createTable tableName="author">
             <column autoIncrement="true" name="id" type="BIGINT">

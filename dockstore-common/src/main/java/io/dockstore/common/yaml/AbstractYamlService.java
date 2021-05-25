@@ -62,6 +62,8 @@ public abstract class AbstractYamlService {
      */
     private Map<String, DataSet> data;
 
+    private boolean latestTagAsDefault = false;
+
     public String getAuthor() {
         return author;
     }
@@ -132,6 +134,14 @@ public abstract class AbstractYamlService {
 
     public void setData(final Map<String, DataSet> data) {
         this.data = data;
+    }
+
+    public boolean getLatestTagAsDefault() {
+        return latestTagAsDefault;
+    }
+
+    public void setLatestTagAsDefault(boolean latestTagAsDefault) {
+        this.latestTagAsDefault = latestTagAsDefault;
     }
 
     /**

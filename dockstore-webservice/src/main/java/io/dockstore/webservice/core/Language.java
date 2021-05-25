@@ -37,4 +37,20 @@ public class Language implements Serializable {
     @ApiModelProperty(dataType = "long")
     @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
+
+    public DescriptorLanguage getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(DescriptorLanguage language) {
+        this.language = language;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
 }

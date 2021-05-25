@@ -53,6 +53,8 @@
         <sonar.organization>dockstore</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
+        <!-- this is not an aggregated path -->      
+	<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/jacoco.xml,${project.basedir}/target/jacoco-it.xml,${project.basedir}/../reports/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <!-- end sonarcloud properties -->
     </properties>
 
@@ -70,38 +72,9 @@
 
     <repositories>
         <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jcenter</id>
-            <name>bintray</name>
-            <url>https://jcenter.bintray.com</url>
-        </repository>
-        <repository>
             <id>artifacts.oicr.on.ca</id>
             <name>artifacts.oicr.on.ca</name>
             <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
-        </repository>
-        <repository>
-            <id>seqware.sourceforge.net</id>
-            <name>SeqWare Maven Repository</name>
-            <url>https://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>seqwaremaven.oicr.on.ca</id>
-            <name>seqwaremaven.oicr.on.ca-releases</name>
-            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
-        </repository>
-        <repository>
-            <id>apache-releases</id>
-            <name>Apache Releases repository</name>
-            <url>https://repository.apache.org/content/repositories/releases/</url>
         </repository>
         <!-- broad -->
         <repository>
@@ -115,22 +88,12 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <repository>
-            <id>sagebionetworks</id>
-            <name>sagebionetworks-releases</name>
-            <url>https://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
-        </repository>
-        <repository>
-            <id>mockito</id>
-            <name>mockito</name>
-            <url>https://dl.bintray.com/mockito/maven/</url>
-        </repository>
     </repositories>
 
     <licenses>
         <license>
             <name>Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
 

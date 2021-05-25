@@ -339,7 +339,8 @@ public class GeneralIT extends BaseIT {
         tool.setDefaultCWLTestParameterFile("/test.cwl.json");
         tool.setDefaultWDLTestParameterFile("/test.wdl.json");
         tool.setIsPublished(false);
-        tool.setGitUrl("git@bitbucket.org:dockstoretestuser2/dockstore-whalesay-2.git");
+        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+        tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/dockstore-whalesay-2.git");
         tool.setToolname("alternate");
         tool.setPrivateAccess(false);
         return tool;

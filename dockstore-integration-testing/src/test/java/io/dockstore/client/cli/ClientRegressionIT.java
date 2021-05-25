@@ -73,7 +73,7 @@ public class ClientRegressionIT extends BaseIT {
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
-        URL url = new URL("https://github.com/dockstore/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
+        URL url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         assertTrue(dockstore.setExecutable(true));
