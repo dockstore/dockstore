@@ -1063,6 +1063,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
+        LOG.info("GitHub user profile id is {} and GitHub username is {} for Dockstore user {}", ghUser.getId(), ghUser.getLogin(), user.getUsername());
         User.Profile profile = new User.Profile();
         profile.onlineProfileId = String.valueOf(ghUser.getId());
         profile.username = ghUser.getLogin();

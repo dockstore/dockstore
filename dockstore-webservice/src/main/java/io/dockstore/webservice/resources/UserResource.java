@@ -749,6 +749,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         List<User> usersCouldNotBeUpdated = new ArrayList<>();
 
         // Try to update Google metadata using user's token. This is the only option for Google.
+        LOG.info("Beginning update for " + googleTokens.size() + " Google users.");
         for (Token t : googleTokens) {
             User currentUser = userDAO.findById(t.getUserId());
             if (currentUser != null) {
@@ -764,12 +765,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         // Try to update Google metadata using user's token and getMyself(). If not, try by using username in block below.
+        LOG.info("Beginning update for " + gitHubTokens.size() + " GitHub users.");
         for (Token t : gitHubTokens) {
             User currentUser = userDAO.findById(t.getUserId());
             if (currentUser != null) {
                 try {
                     GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
                     gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, Optional.of(tokenDAO));
+                    LOG.info("Updated " + currentUser.getUsername());
                 } catch (Exception ex) {
                     gitHubUsersNotUpdatedWithToken.add(currentUser);
                 }
@@ -777,11 +780,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         // Get the GitHub token of the admin making this call to avoid rate limiting
+        LOG.info("Beginning update for " + gitHubUsersNotUpdatedWithToken.size() + " GitHub users who could not be updated with token.");
         Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
         for (User u : gitHubUsersNotUpdatedWithToken) {
             try {
                 gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
+                LOG.info("Updated " + u.getUsername());
             } catch (Exception ex) {
                 usersCouldNotBeUpdated.add(u);
                 LOG.info(ex.getMessage(), ex);
