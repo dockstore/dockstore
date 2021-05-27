@@ -149,7 +149,7 @@
             <where>tokensource = 'orcid.org'</where>
         </update>
     </changeSet>
-  
+
     <changeSet author="dyuen (generated)" id="date_more_things">
         <addColumn tableName="cloud_instance">
             <column name="dbcreatedate" type="timestamp"/>
@@ -182,6 +182,7 @@
             <column name="dbupdatedate" type="timestamp"/>
         </addColumn>
     </changeSet>
+
 
     <changeSet author="dyuen (generated)" id="standard_sequences">
         <alterSequence sequenceName="container_id_seq" incrementBy="1" />
@@ -252,5 +253,31 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+    </changeSet>
+
+    <changeSet author="ghogue (generated)" id="multipleAuthorsTable">
+        <createTable tableName="author">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="author_pkey"/>
+            </column>
+            <column name="affiliation" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="VARCHAR(255)"/>
+            <column name="versionid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="ghogue" id="multipleAuthorsMigrate">
+        <sql>
+            INSERT INTO author (versionid,name,email)
+            SELECT id,author,email FROM version_metadata
+            WHERE author IS NOT NULL;
+        </sql>
     </changeSet>
 </databaseChangeLog>

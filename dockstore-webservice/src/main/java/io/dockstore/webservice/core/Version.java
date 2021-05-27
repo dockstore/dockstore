@@ -185,6 +185,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinColumn(name = "versionid", referencedColumnName = "id", nullable = false)
+    @ApiModelProperty(value = "Non-ORCID Authors for each version.")
+    private Set<Author> authors = new HashSet<>();
+
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
@@ -397,7 +402,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
-        return this.getVersionMetadata().author;
+        Optional<Author> author = this.authors.stream().findFirst();
+        if (author.isPresent()) {
+            return author.get().getName();
+        } else {
+            return null;
+        }
     }
 
     @ApiModelProperty(position = 22)
@@ -412,7 +422,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(position = 24)
     public String getEmail() {
-        return this.getVersionMetadata().email;
+        Optional<Author> author = this.authors.stream().findFirst();
+        if (author.isPresent()) {
+            return author.get().getEmail();
+        } else {
+            return null;
+        }
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
@@ -425,11 +440,21 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;
+        this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
+        authors.clear();
+        if (newAuthor != null) {
+            authors.add(new Author(newAuthor));
+        }
     }
 
     public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;
+        this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
+        if (authors.size() == 1) {
+            Optional<Author> author = authors.stream().findFirst();
+            if (author.isPresent() && author.get().getEmail() == null) {
+                author.get().setEmail(newEmail);
+            }
+        }
     }
 
     public ReferenceType getReferenceType() {
