@@ -457,6 +457,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    public void setAuthors(final Set<Author> authors) {
+        this.authors = authors;
+    }
+
     public ReferenceType getReferenceType() {
         return referenceType;
     }

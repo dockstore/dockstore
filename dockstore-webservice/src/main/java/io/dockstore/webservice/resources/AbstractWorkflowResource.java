@@ -21,9 +21,11 @@ import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
+import io.dockstore.common.yaml.YamlAuthor;
 import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.LambdaEvent;
@@ -437,9 +439,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 String workflowName = wf.getName();
                 Boolean publish = wf.getPublish();
                 final var defaultVersion = wf.getLatestTagAsDefault();
+                final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
                 Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
+                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -481,9 +484,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             final Boolean publish = service.getPublish();
             final var defaultVersion = service.getLatestTagAsDefault();
+            final List<YamlAuthor> yamlAuthors = service.getAuthors();
 
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
-            addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion);
+            addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -561,13 +565,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return New or updated workflow
      */
     private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
-            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault) {
+            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault, final List<YamlAuthor> yamlAuthors) {
         Instant startTime = Instant.now();
         try {
             // Create version and pull relevant files
             WorkflowVersion remoteWorkflowVersion = gitHubSourceCodeRepo
                     .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
+            // Add authors
+            addDockstoreYmlAuthorsToVersion(yamlAuthors, remoteWorkflowVersion);
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
@@ -615,6 +621,27 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         long timeElasped = Duration.between(startTime, endTime).toSeconds();
         LOG.info("Processing .dockstore.yml workflow version " + gitReference + " for repo: " + repository + " took " + timeElasped + " seconds");
         return workflow;
+    }
+
+    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version) {
+        final Set<Author> authors = yamlAuthors.stream()
+                .filter(yamlAuthor -> yamlAuthor.getOrcid() == null)
+                .map(yamlAuthor -> {
+                    Author author = new Author();
+                    author.setName(yamlAuthor.getName());
+                    author.setRole(yamlAuthor.getRole());
+                    author.setAffiliation(yamlAuthor.getAffiliation());
+                    author.setEmail(yamlAuthor.getEmail());
+                    return author;
+                })
+                .collect(Collectors.toSet());
+        version.setAuthors(authors);
+        yamlAuthors.stream()
+                .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
+                .map(yamlAuthor -> {
+                    return yamlAuthor.getOrcid();
+                })
+                .collect(Collectors.toSet());
     }
 
     private Version.ReferenceType getReferenceTypeFromGitRef(String gitRef) {
