@@ -80,6 +80,22 @@ public class Author {
         this.name = name;
     }
 
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(final String role) {
+        this.role = role;
+    }
+
+    public String getAffiliation() {
+        return affiliation;
+    }
+
+    public void setAffiliation(final String affiliation) {
+        this.affiliation = affiliation;
+    }
+
     public String getEmail() {
         return email;
     }
