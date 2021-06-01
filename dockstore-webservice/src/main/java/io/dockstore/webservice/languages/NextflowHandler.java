@@ -36,6 +36,8 @@ import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.DockerParameter;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -421,7 +423,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             defaultContainer = configuration.getString("process.container");
         }
 
-        Map<String, String> callToDockerMap = new HashMap<>();
+        Map<String, DockerParameter> callToDockerMap = new HashMap<String, DockerParameter>();
         String finalDefaultContainer = defaultContainer;
 
         // Add all DockerMap from each secondary sourcefile
@@ -435,7 +437,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
         // Get import files
         Map<String, String> namespaceToPath = this.getImportMap(mainDescriptor);
-        Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(WDLHandler.convertToDockerParameter(callToDockerMap), callToDependencies);
+        Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(callToDockerMap, callToDependencies);
         return convertMapsToContent(mainScriptPath, type, dao, callType, toolType, toolInfoMap, namespaceToPath);
     }
 
@@ -556,8 +558,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         return map;
     }
 
-    private Map<String, String> getCallsToDockerMap(String mainDescriptor, String defaultContainer) {
-        Map<String, String> map = new HashMap<>();
+    protected Map<String, DockerParameter> getCallsToDockerMap(String mainDescriptor, String defaultContainer) {
+        Map<String, DockerParameter> map = new HashMap<String, DockerParameter>();
         try {
             List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
 
@@ -575,7 +577,11 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 }
 
                 if (containerName != null) {
-                    map.put(processName, containerName);
+                    if (containerName.startsWith("$")) { // Parameterized container name
+                        map.put(processName, new DockerParameter(containerName, DockerImageReference.DYNAMIC));
+                    } else {
+                        map.put(processName, new DockerParameter(containerName, DockerImageReference.LITERAL));
+                    }
                     LOG.debug("found container: " + containerName + " in process " + processName);
                 }
             }

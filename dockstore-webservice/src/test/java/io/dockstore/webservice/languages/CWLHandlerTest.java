@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.FileFormat;
@@ -58,6 +59,39 @@ public class CWLHandlerTest {
     }
 
     @Test
+    public void testDeterminingImageSpecifier() {
+        LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
+        Assert.assertEquals(
+                "Should be NO_TAG",
+                LanguageHandlerInterface.DockerSpecifier.NO_TAG,
+                LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid", DockerImageReference.LITERAL)
+        );
+        Assert.assertEquals(
+                "Should be LATEST",
+                LanguageHandlerInterface.DockerSpecifier.LATEST,
+                LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid:latest", DockerImageReference.LITERAL)
+        );
+        Assert.assertEquals(
+                "Should be TAG",
+                LanguageHandlerInterface.DockerSpecifier.TAG,
+                LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid:1.30.0", DockerImageReference.LITERAL)
+        );
+        Assert.assertEquals(
+                "Should be DIGEST",
+                LanguageHandlerInterface.DockerSpecifier.DIGEST,
+                LanguageHandlerInterface.determineImageSpecifier(
+                        "quay.io/ucsc_cgl/verifybamid@sha256:05442f015018fb6a315b666f80d205e9ac066b3c53a217d5f791d22831ae98ac",
+                        DockerImageReference.LITERAL
+                )
+        );
+        Assert.assertEquals(
+                "Should be PARAMETER",
+                LanguageHandlerInterface.DockerSpecifier.PARAMETER,
+                LanguageHandlerInterface.determineImageSpecifier("docker_image", DockerImageReference.DYNAMIC)
+        );
+    }
+
+    @Test
     public void testURLHandler() {
         ParsedInformation parsedInformation = new ParsedInformation();
         CWLHandler.setImportsBasedOnMapValue(parsedInformation, "https://potato.com");
@@ -87,25 +121,25 @@ public class CWLHandlerTest {
         final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
 
         // Cases that don't rely on toolDAO
-        Assert.assertNull(handler.getURLFromEntry("", toolDAO));
-        Assert.assertEquals("https://images.sbgenomics.com/foo/bar", handler.getURLFromEntry("images.sbgenomics.com/foo/bar", toolDAO));
-        Assert.assertEquals("https://images.sbgenomics.com/foo/bar", handler.getURLFromEntry("images.sbgenomics.com/foo/bar:1", toolDAO));
-        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo", toolDAO));
-        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo:1", toolDAO));
+        Assert.assertNull(handler.getURLFromEntry("", toolDAO, null));
+        Assert.assertEquals("https://images.sbgenomics.com/foo/bar", handler.getURLFromEntry("images.sbgenomics.com/foo/bar", toolDAO, null));
+        Assert.assertEquals("https://images.sbgenomics.com/foo/bar", handler.getURLFromEntry("images.sbgenomics.com/foo/bar:1", toolDAO, null));
+        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo", toolDAO, null));
+        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo:1", toolDAO, null));
 
         // When toolDAO.findAllByPath() returns null/empty
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
-        Assert.assertEquals("https://quay.io/repository/foo/bar", handler.getURLFromEntry("quay.io/foo/bar", toolDAO));
-        Assert.assertEquals("https://quay.io/repository/foo/bar", handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO));
-        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar", toolDAO));
-        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar:1", toolDAO));
+        Assert.assertEquals("https://quay.io/repository/foo/bar", handler.getURLFromEntry("quay.io/foo/bar", toolDAO, null));
+        Assert.assertEquals("https://quay.io/repository/foo/bar", handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO, null));
+        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar", toolDAO, null));
+        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar:1", toolDAO, null));
 
         // When toolDAO.findAllByPath() returns non-empty List<Tool>
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(Tool.class)));
-        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar", handler.getURLFromEntry("quay.io/foo/bar", toolDAO));
-        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar", handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO));
-        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar", handler.getURLFromEntry("foo/bar", toolDAO));
-        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar", handler.getURLFromEntry("foo/bar:1", toolDAO));
+        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar", handler.getURLFromEntry("quay.io/foo/bar", toolDAO, null));
+        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar", handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO, null));
+        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar", handler.getURLFromEntry("foo/bar", toolDAO, null));
+        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar", handler.getURLFromEntry("foo/bar:1", toolDAO, null));
     }
 
     @Test

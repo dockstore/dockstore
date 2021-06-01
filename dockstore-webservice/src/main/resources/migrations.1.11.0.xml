@@ -280,4 +280,9 @@
             WHERE author IS NOT NULL;
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addImageSpecifier">
+        <addColumn tableName="image">
+            <column name="specifier" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

@@ -484,7 +484,8 @@ public class WDLHandler implements LanguageHandlerInterface {
         toolInfoMap = new HashMap<>();
         callsToDockerMap.forEach((toolName, dockerParameter) -> toolInfoMap.compute(toolName, (key, value) -> {
             if (value == null) {
-                return new ToolInfo(dockerParameter.imageName(), new ArrayList<>());
+                DockerSpecifier dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(dockerParameter.imageName(), dockerParameter.imageReference());
+                return new ToolInfo(dockerParameter.imageName(), new ArrayList<>(), dockerSpecifier);
             } else {
                 value.dockerContainer = dockerParameter.imageName();
                 return value;
