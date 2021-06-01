@@ -6685,6 +6685,17 @@ components:
       properties:
         content:
           type: string
+    Author:
+      type: object
+      properties:
+        affiliation:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
     BioWorkflow:
       type: object
       allOf:
@@ -7521,6 +7532,11 @@ components:
           enum:
           - SITEWIDE
           - NEWSBODY
+    OrcidAuthor:
+      type: object
+      properties:
+        orcid:
+          type: string
     Organization:
       type: object
       properties:
@@ -7906,6 +7922,12 @@ components:
       properties:
         author:
           type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          uniqueItems: true
+          writeOnly: true
         automated:
           type: boolean
         commitID:
@@ -7963,6 +7985,12 @@ components:
           description: "Implementation specific, can be a quay.io or docker hub tag\
             \ name"
           example: latest
+        orcidAuthors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          uniqueItems: true
+          writeOnly: true
         output_file_formats:
           type: array
           items:
@@ -8444,6 +8472,12 @@ components:
       properties:
         author:
           type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          uniqueItems: true
+          writeOnly: true
         commitID:
           type: string
         dbUpdateDate:
@@ -8490,6 +8524,12 @@ components:
           description: "Implementation specific, can be a quay.io or docker hub tag\
             \ name"
           example: latest
+        orcidAuthors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          uniqueItems: true
+          writeOnly: true
         output_file_formats:
           type: array
           items:
@@ -8716,6 +8756,12 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          uniqueItems: true
+          writeOnly: true
         commitID:
           type: string
         dbUpdateDate:
@@ -8767,6 +8813,12 @@ components:
           description: "Implementation specific, can be a quay.io or docker hub tag\
             \ name"
           example: latest
+        orcidAuthors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          uniqueItems: true
+          writeOnly: true
         output_file_formats:
           type: array
           items:

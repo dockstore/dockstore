@@ -29,6 +29,7 @@ import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -636,12 +637,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 })
                 .collect(Collectors.toSet());
         version.setAuthors(authors);
-        yamlAuthors.stream()
+        final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
                 .map(yamlAuthor -> {
-                    return yamlAuthor.getOrcid();
+                    return new OrcidAuthor(yamlAuthor.getOrcid());
                 })
                 .collect(Collectors.toSet());
+        version.setOrcidAuthors(orcidAuthors);
     }
 
     private Version.ReferenceType getReferenceTypeFromGitRef(String gitRef) {
