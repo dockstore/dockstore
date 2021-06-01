@@ -417,10 +417,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
                 }
 
-                // CWL doesn't support parameterized docker pulls. Must be a string.
-                DockerSpecifier dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerRequirement, DockerImageReference.LITERAL);
+                DockerSpecifier dockerSpecifier = null;
                 String dockerUrl = null;
                 if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
+                    // CWL doesn't support parameterized docker pulls. Must be a string.
+                    dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerRequirement, DockerImageReference.LITERAL);
                     dockerUrl = getURLFromEntry(stepDockerRequirement, dao, dockerSpecifier);
                 }
 

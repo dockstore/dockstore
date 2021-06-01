@@ -287,7 +287,10 @@ public interface LanguageHandlerInterface {
             dataToolEntry.put("file", fileName);
             dataToolEntry.put("docker", dockerPullName);
             dataToolEntry.put("link", dockerLink);
-            dataToolEntry.put("specifier", dockerSpecifier.name());
+
+            if (dockerSpecifier != null) {
+                dataToolEntry.put("specifier", dockerSpecifier.name());
+            }
 
             // Only add if docker and link are present
             if (dockerLink != null && dockerPullName != null) {
