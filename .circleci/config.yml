@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  aws-s3: circleci/aws-s3@1.0.0
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
@@ -48,7 +50,9 @@ workflows:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
+          context:
+            - sonarcloud
+            - aws
       - workflow-integration-tests:
           <<: *common_filters
           requires:
@@ -156,6 +160,10 @@ jobs:
           environment:
             TESTING_PROFILE: automated-review
   unit_test: # runs not using Workflows must have a `build` job as entry point
+    parameters:
+      aws_bucket:
+        type: string
+        default: "${AWS_BUCKET}"
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.10
         environment:
@@ -265,7 +273,12 @@ jobs:
             export dockerVersion=${tagOrBranch//\//_}
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
+            # Gather the checksum information
+            docker inspect --format='{{index .RepoDigests 0}}' quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -oPm1 'sha256:\K\w+' > image-digest.txt
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
+      - aws-s3/copy:
+          from: image-digest.txt
+          to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
 commands:
   install-git-secrets:
     steps:
