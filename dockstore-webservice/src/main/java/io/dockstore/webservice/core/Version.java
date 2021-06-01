@@ -190,6 +190,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "Non-ORCID Authors for each version.")
     private Set<Author> authors = new HashSet<>();
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "version_orcidauthor", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "orcidauthorid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @ApiModelProperty(value = "ORCID Authors for versions.")
+    private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
+
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
@@ -459,6 +464,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setAuthors(final Set<Author> authors) {
         this.authors = authors;
+    }
+
+    public void setOrcidAuthors(final Set<OrcidAuthor> orcidAuthors) {
+        this.orcidAuthors = orcidAuthors;
     }
 
     public ReferenceType getReferenceType() {
