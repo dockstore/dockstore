@@ -38,6 +38,21 @@ public interface AuthenticatedResourceInterface {
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
 
     /**
+     * Check if admin or if container belongs to user
+     *
+     * @param user the user that is requesting something
+     * @param list
+     */
+    static void checkUserAccessEntries(User user, List<? extends Entry> list) {
+        for (Entry entry : list) {
+            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                    HttpStatus.SC_FORBIDDEN);
+            }
+        }
+    }
+
+    /**
      * Check if tool is null
      *
      * @param entry entry to check permissions for
@@ -82,21 +97,6 @@ public interface AuthenticatedResourceInterface {
         if (userCannotRead(user, entry)) {
             throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
                     HttpStatus.SC_FORBIDDEN);
-        }
-    }
-
-    /**
-     * Check if admin or if container belongs to user
-     *
-     * @param user the user that is requesting something
-     * @param list
-     */
-    static void checkUser(User user, List<? extends Entry> list) {
-        for (Entry entry : list) {
-            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-            }
         }
     }
 

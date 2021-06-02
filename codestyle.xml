@@ -32,8 +32,10 @@
     </option>
     <option name="RIGHT_MARGIN" value="140"/>
     <option name="FORMATTER_TAGS_ENABLED" value="true"/>
+    <JavaCodeStyleSettings>
+        <option name="SPACE_INSIDE_ONE_LINE_ENUM_BRACES" value="true" />
+    </JavaCodeStyleSettings>
     <codeStyleSettings language="JAVA">
-        <option name="KEEP_LINE_BREAKS" value="false"/>
         <option name="KEEP_FIRST_COLUMN_COMMENT" value="false"/>
         <option name="KEEP_CONTROL_STATEMENT_IN_ONE_LINE" value="false"/>
         <option name="KEEP_BLANK_LINES_IN_DECLARATIONS" value="1"/>
@@ -63,6 +65,7 @@
         <option name="ARRAY_INITIALIZER_WRAP" value="1"/>
         <option name="VARIABLE_ANNOTATION_WRAP" value="2"/>
         <indentOptions>
+            <option name="CONTINUATION_INDENT_SIZE" value="4" />
             <option name="SMART_TABS" value="true"/>
         </indentOptions>
         <arrangement>

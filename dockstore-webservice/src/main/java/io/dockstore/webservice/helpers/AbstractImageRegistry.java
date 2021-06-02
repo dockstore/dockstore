@@ -414,10 +414,10 @@ public abstract class AbstractImageRegistry {
 
     private Optional<String> getDockerHubToolAsString(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
-        return getDockerHubToolAsString(repo);
+        return getDockerHubToolAsOptionalString(repo);
     }
 
-    public static Optional<String> getDockerHubToolAsString(String repo) {
+    public static Optional<String> getDockerHubToolAsOptionalString(String repo) {
         final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
         Optional<String> response;
         try {
