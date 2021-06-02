@@ -34,7 +34,7 @@ public class CollectionEntry implements Serializable {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
-        setEntryPath(sourceControl.toString(), organization, repository, entryName);
+        setEntryPathFromFragments(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
     }
@@ -49,12 +49,12 @@ public class CollectionEntry implements Serializable {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
-        setEntryPath(registry, organization, repository, entryName);
+        setEntryPathFromFragments(registry, organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
     }
 
-    private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
+    private void setEntryPathFromFragments(String sourceControl, String organization, String repository, String entryName) {
         setEntryPath(sourceControl + '/' + organization + '/' + repository + (entryName == null || "".equals(entryName) ? "" : '/' + entryName));
     }
 

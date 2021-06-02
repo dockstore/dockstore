@@ -212,7 +212,8 @@
         <module name="AvoidStarImport"/>
         <!-- ban new references to old commons lang and configuration -->
         <module name="IllegalImport">
-            <property name="illegalPkgs" value="sun, org.apache.commons.lang, org.apache.commons.configuration, org.apache.commons.httpclient"/>
+            <property name="illegalPkgs"
+                      value="sun, org.apache.commons.lang, org.apache.commons.configuration, org.apache.commons.httpclient"/>
         </module>
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
@@ -282,7 +283,6 @@
         <!-- Checks for common coding problems               -->
         <!-- See http://checkstyle.sf.net/config_coding.html -->
         <module name="CovariantEquals"/>
-        <module name="DeclarationOrder"/>
         <module name="EmptyStatement"/>
         <module name="EqualsAvoidNull"/>
         <module name="EqualsHashCode"/>
