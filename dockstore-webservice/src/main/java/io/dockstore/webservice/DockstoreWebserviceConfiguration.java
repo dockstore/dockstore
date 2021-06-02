@@ -722,6 +722,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String featuredContentUrl;
 
+        private String featuredNewsUrl;
+
         private String deployVersion;
 
         private String composeSetupVersion;
@@ -957,6 +959,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setComposeSetupVersion(final String composeSetupVersion) {
             this.composeSetupVersion = composeSetupVersion;
+        }
+
+        public String getFeaturedNewsUrl() {
+            return featuredNewsUrl;
+        }
+
+        public void setFeaturedNewsUrl(String featuredNewsUrl) {
+            this.featuredNewsUrl = featuredNewsUrl;
         }
     }
 }
