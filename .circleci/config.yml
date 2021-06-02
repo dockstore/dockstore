@@ -274,7 +274,7 @@ jobs:
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
             # Gather the checksum information
-            docker inspect --format='{{index .RepoDigests 0}}' quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -oPm1 'sha256:\K\w+' > image-digest.txt
+            docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
       - aws-s3/copy:
           from: image-digest.txt
