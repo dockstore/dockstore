@@ -106,7 +106,7 @@ dockstore-common/src/test/resources/fixtures/dockerImagesPre10.wdl:56:.*sha256:f
 
 
 # dockstore-webservice/src/main/java/io/swagger/model/ToolDockerfile.java
-dockstore-webservice/src/main/java/io/swagger/model/ToolDockerfile.java:71:.*pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71
+dockstore-webservice/src/main/java/io/swagger/model/ToolDockerfile.java:.*pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71
 
 # swagger-java-sam-client/pom.xml
 swagger-java-sam-client/pom.xml:.*broadinstitute/sam/de13d1d
