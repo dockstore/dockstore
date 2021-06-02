@@ -82,6 +82,18 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <version>3.10.3</version>
+      <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jaxb-api</artifactId>
+          <groupId>javax.xml.bind</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>openapi-java-client</artifactId>
       <version>1.12.0-alpha.0-SNAPSHOT</version>
