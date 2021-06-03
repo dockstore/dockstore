@@ -624,6 +624,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return workflow;
     }
 
+    /**
+     * Add authors from .dockstore.yml to a version
+     * @param yamlAuthors
+     * @param version
+     */
     private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version) {
         final Set<Author> authors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() == null)

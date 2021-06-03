@@ -7927,7 +7927,6 @@ components:
           items:
             $ref: '#/components/schemas/Author'
           uniqueItems: true
-          writeOnly: true
         automated:
           type: boolean
         commitID:
@@ -7990,7 +7989,6 @@ components:
           items:
             $ref: '#/components/schemas/OrcidAuthor'
           uniqueItems: true
-          writeOnly: true
         output_file_formats:
           type: array
           items:
@@ -8477,7 +8475,6 @@ components:
           items:
             $ref: '#/components/schemas/Author'
           uniqueItems: true
-          writeOnly: true
         commitID:
           type: string
         dbUpdateDate:
@@ -8529,7 +8526,6 @@ components:
           items:
             $ref: '#/components/schemas/OrcidAuthor'
           uniqueItems: true
-          writeOnly: true
         output_file_formats:
           type: array
           items:
@@ -8761,7 +8757,6 @@ components:
           items:
             $ref: '#/components/schemas/Author'
           uniqueItems: true
-          writeOnly: true
         commitID:
           type: string
         dbUpdateDate:
@@ -8818,7 +8813,6 @@ components:
           items:
             $ref: '#/components/schemas/OrcidAuthor'
           uniqueItems: true
-          writeOnly: true
         output_file_formats:
           type: array
           items:

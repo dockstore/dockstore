@@ -435,6 +435,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    public Set<Author> getAuthors() {
+        return authors;
+    }
+
+    public Set<OrcidAuthor> getOrcidAuthors() {
+        return orcidAuthors;
+    }
+
     public void setDoiStatus(DOIStatus doiStatus) {
         this.getVersionMetadata().doiStatus = doiStatus;
     }

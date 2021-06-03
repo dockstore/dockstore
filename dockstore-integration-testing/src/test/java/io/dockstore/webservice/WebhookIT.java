@@ -37,7 +37,9 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Author;
 import io.swagger.client.model.LambdaEvent;
+import io.swagger.client.model.OrcidAuthor;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Validation;
 import io.swagger.client.model.Workflow;
@@ -719,5 +721,24 @@ public class WebhookIT extends BaseIT {
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/unpublish", installationId);
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
         assertFalse(workflow.isIsPublished());
+    }
+
+    /**
+     * This tests multiple authors functionality in .dockstore.yml
+     * @throws Exception
+     */
+    @Test
+    public void testDockstoreYmlAuthors() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/authors", installationId);
+        final Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        final WorkflowVersion version = workflow.getWorkflowVersions().get(0);
+        final List<Author> authors = version.getAuthors();
+        assertEquals(2, authors.size());
+        final List<OrcidAuthor> orcidAuthors = version.getOrcidAuthors();
+        assertEquals(2, orcidAuthors.size());
     }
 }
