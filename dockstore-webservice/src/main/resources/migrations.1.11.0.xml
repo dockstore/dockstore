@@ -300,6 +300,6 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addForeignKeyConstraint baseColumnNames="orcidauthorid" baseTableName="version_orcidauthor" constraintName="fk_version_orcidauthor" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="orcidauthor" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="orcidauthorid" baseTableName="version_orcidauthor" constraintName="fk_version_orcidauthor" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="orcidauthor"/>
     </changeSet>
 </databaseChangeLog>
