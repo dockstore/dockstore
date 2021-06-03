@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  aws-s3: circleci/aws-s3@1.0.0
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
@@ -48,7 +50,9 @@ workflows:
           <<: *common_filters
           requires:
             - build
-          context: sonarcloud
+          context:
+            - sonarcloud
+            - aws
       - workflow-integration-tests:
           <<: *common_filters
           requires:
@@ -156,6 +160,10 @@ jobs:
           environment:
             TESTING_PROFILE: automated-review
   unit_test: # runs not using Workflows must have a `build` job as entry point
+    parameters:
+      aws_bucket:
+        type: string
+        default: "${AWS_BUCKET}"
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.10
         environment:
@@ -265,7 +273,14 @@ jobs:
             export dockerVersion=${tagOrBranch//\//_}
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
+            # Gather the checksum information
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
+            docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests
+            docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt
+      - install-pip
+      - aws-s3/copy:
+          from: image-digest.txt
+          to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
 commands:
   install-git-secrets:
     steps:
@@ -276,6 +291,17 @@ commands:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install
+  install-pip:
+    steps:
+      - run:
+          name: install pip
+          command: |
+            sudo apt update
+            sudo apt install python3-distutils python3-dev python3-pip
+            # For debug purposes, a python3 version was installed in the image, pip is untagged
+            python3 --version
+            pip3 --version
+            alias pip=pip3
   setup_postgres:
     steps:
       - run:
@@ -326,16 +352,7 @@ commands:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
     steps:
-      - run:
-          name: install pip
-          command: |
-            sudo apt update
-            sudo apt install python3-distutils python3-dev
-            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-            python3 get-pip.py
-            # For debug purposes, a python3 version was installed in the image, pip is untagged
-            python3 --version
-            pip3 --version
+      - install-pip
       - run:
           name: install pip dependencies
           command: scripts/install-tests.sh
