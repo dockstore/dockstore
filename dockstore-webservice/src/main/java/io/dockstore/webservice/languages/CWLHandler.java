@@ -40,6 +40,7 @@ import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.DescriptionSource;
@@ -262,7 +263,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String defaultDockerPath = null;
 
             // Initialize data structures for Tool table
-            Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
+            Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url, docker specifier)
 
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
@@ -416,9 +417,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
                 }
 
+                DockerSpecifier dockerSpecifier = null;
                 String dockerUrl = null;
                 if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
-                    dockerUrl = getURLFromEntry(stepDockerRequirement, dao);
+                    // CWL doesn't support parameterized docker pulls. Must be a string.
+                    dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerRequirement, DockerImageReference.LITERAL);
+                    dockerUrl = getURLFromEntry(stepDockerRequirement, dao, dockerSpecifier);
                 }
 
                 if (type == LanguageHandlerInterface.Type.DAG) {
@@ -426,9 +430,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
 
                 if (secondaryFile != null) {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(secondaryFile, stepDockerRequirement, dockerUrl));
+                    nodeDockerInfo.put(workflowStepId, new DockerInfo(secondaryFile, stepDockerRequirement, dockerUrl, dockerSpecifier));
                 } else {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(mainDescriptorPath, stepDockerRequirement, dockerUrl));
+                    nodeDockerInfo.put(workflowStepId, new DockerInfo(mainDescriptorPath, stepDockerRequirement, dockerUrl, dockerSpecifier));
                 }
 
             }

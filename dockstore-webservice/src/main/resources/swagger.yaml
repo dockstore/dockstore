@@ -6973,6 +6973,15 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The size of the image in bytes"
+      specifier:
+        type: "string"
+        description: "How the image is specified"
+        enum:
+        - "PARAMETER"
+        - "NO_TAG"
+        - "LATEST"
+        - "TAG"
+        - "DIGEST"
       checksums:
         type: "array"
         position: 1

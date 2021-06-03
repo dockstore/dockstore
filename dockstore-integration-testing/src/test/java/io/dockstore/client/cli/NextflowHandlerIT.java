@@ -70,7 +70,7 @@ public class NextflowHandlerIT extends BaseIT {
         ToolDAO toolDAO = new ToolDAO(sessionFactory);
         Optional<String> content = nextflowHandler
                 .getContent("main.nf", mainDescriptorContents, new HashSet<>(stringSourceFileMap.values()), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-        Assert.assertEquals("[{\"id\":\"FASTQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"},{\"id\":\"MULTIQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"},{\"id\":\"INDEX\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"},{\"id\":\"QUANT\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"}]", content.get());
+        Assert.assertEquals("[{\"id\":\"FASTQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"MULTIQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"INDEX\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"QUANT\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"}]", content.get());
 
 
     }

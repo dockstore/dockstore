@@ -1,7 +1,11 @@
 package io.dockstore.webservice.languages;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 
+import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.DockerParameter;
+import io.dropwizard.testing.FixtureHelpers;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,5 +33,20 @@ public class NextflowHandlerTest {
         m = NextflowHandler.IMPORT_PATTERN.matcher(content);
         matches = m.matches();
         Assert.assertTrue(matches);
+    }
+
+    @Test
+    public void testDockerImageReference() {
+        NextflowHandler nextflowHandler = new NextflowHandler();
+        final String dockerImagesNextflow = FixtureHelpers.fixture("fixtures/dockerImages.nf");
+        final Map<String, DockerParameter> callsToDockerMap = nextflowHandler.getCallsToDockerMap(dockerImagesNextflow, "");
+
+        callsToDockerMap.entrySet().stream().forEach(entry -> {
+            if ("parameterizedDocker".equals(entry.getKey())) {
+                Assert.assertEquals(DockerImageReference.DYNAMIC, entry.getValue().imageReference());
+            } else {
+                Assert.assertEquals(DockerImageReference.LITERAL, entry.getValue().imageReference());
+            }
+        });
     }
 }

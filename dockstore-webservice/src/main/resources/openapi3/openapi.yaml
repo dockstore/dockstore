@@ -7386,6 +7386,14 @@ components:
         size:
           type: integer
           format: int64
+        specifier:
+          type: string
+          enum:
+          - PARAMETER
+          - NO_TAG
+          - LATEST
+          - TAG
+          - DIGEST
         tag:
           type: string
     ImageData:
