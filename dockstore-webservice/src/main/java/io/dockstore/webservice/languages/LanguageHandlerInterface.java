@@ -82,6 +82,8 @@ public interface LanguageHandlerInterface {
     Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*):(.+)");
     // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
     Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+:(.+)");
+    Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):?(\\S++)?");
+    Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@?(\\S++)?");
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -321,66 +323,68 @@ public interface LanguageHandlerInterface {
      * Given a docker entry (quay or dockerhub), return a URL to the given entry
      *
      * @param dockerEntry has the docker name
+     * @param toolDAO
+     * @param dockerSpecifier has the type of specifier used to refer to the docker image
      * @return URL
      */
     // TODO: Potentially add support for other registries and add message that the registry is unsupported
-    default String getURLFromEntry(String dockerEntry, ToolDAO toolDAO, DockerSpecifier dockerSpecifier) {
+    default String getURLFromEntry(final String dockerEntry, final ToolDAO toolDAO, final DockerSpecifier dockerSpecifier) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
         String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
         String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
         String dockstorePath = "https://www.dockstore.org/containers/"; // Update to tools once UI is updated to use /tools instead of /containers
 
+        String dockerImage = dockerEntry;
         String url;
 
         // Remove tag or digest if exists
-        Pattern p;
+        Matcher m;
         if (dockerSpecifier == DockerSpecifier.DIGEST) {
-            p = Pattern.compile("([^@]+)@?(\\S+)?");
+            m = IMAGE_DIGEST_PATTERN.matcher(dockerImage);
         } else {
-            p = Pattern.compile("([^:]+):?(\\S+)?");
+            m = IMAGE_TAG_PATTERN.matcher(dockerImage);
         }
-        Matcher m = p.matcher(dockerEntry);
         if (m.matches()) {
-            dockerEntry = m.group(1);
+            dockerImage = m.group(1);
         }
 
-        if (dockerEntry.isEmpty()) {
+        if (dockerImage.isEmpty()) {
             return null;
         }
 
         // Regex for determining registry requires a tag; add a fake "0" tag
-        Optional<Registry> registry = determineImageRegistry(dockerEntry + ":0");
+        Optional<Registry> registry = determineImageRegistry(dockerImage + ":0");
 
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
         if (registry.isPresent() && registry.get().equals(Registry.QUAY_IO)) {
-            List<Tool> byPath = toolDAO.findAllByPath(dockerEntry, true);
+            List<Tool> byPath = toolDAO.findAllByPath(dockerImage, true);
             if (byPath == null || byPath.isEmpty()) {
                 // when we cannot find a published tool on Dockstore, link to quay.io
-                url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
+                url = dockerImage.replaceFirst("quay\\.io/", quayIOPath);
             } else {
                 // when we found a published tool, link to the tool on Dockstore
-                url = dockstorePath + dockerEntry;
+                url = dockstorePath + dockerImage;
             }
         } else if (registry.isEmpty() || !registry.get().equals(Registry.DOCKER_HUB)) {
             // if the registry is neither Quay nor Docker Hub, return the entry as the url
-            url = "https://" + dockerEntry;
+            url = "https://" + dockerImage;
         } else {  // DOCKER_HUB
-            String[] parts = dockerEntry.split("/");
+            String[] parts = dockerImage.split("/");
             if (parts.length == 2) {
                 // if the path looks like pancancer/pcawg-oxog-tools
-                List<Tool> publishedByPath = toolDAO.findAllByPath("registry.hub.docker.com/" + dockerEntry, true);
+                List<Tool> publishedByPath = toolDAO.findAllByPath("registry.hub.docker.com/" + dockerImage, true);
                 if (publishedByPath == null || publishedByPath.isEmpty()) {
                     // when we cannot find a published tool on Dockstore, link to docker hub
-                    url = dockerHubPathR + dockerEntry;
+                    url = dockerHubPathR + dockerImage;
                 } else {
                     // when we found a published tool, link to the tool on Dockstore
-                    url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
+                    url = dockstorePath + "registry.hub.docker.com/" + dockerImage;
                 }
             } else {
                 // if the path looks like debian:8 or debian
-                url = dockerHubPathUnderscore + dockerEntry;
+                url = dockerHubPathUnderscore + dockerImage;
             }
 
         }
@@ -447,6 +451,10 @@ public interface LanguageHandlerInterface {
             String[] splitDocker;
             String[] splitSpecifier; // Specifier is either a tag or a digest
             String specifierSymbol; // The symbol that separates the image name and specifier name
+
+            if (imageSpecifier == DockerSpecifier.PARAMETER) {
+                continue;
+            }
 
             // Add the implicit "latest" tag if there's no tag specified
             if (imageSpecifier == DockerSpecifier.NO_TAG) {

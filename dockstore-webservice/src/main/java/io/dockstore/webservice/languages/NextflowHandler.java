@@ -423,7 +423,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
             defaultContainer = configuration.getString("process.container");
         }
 
-        Map<String, DockerParameter> callToDockerMap = new HashMap<String, DockerParameter>();
+        Map<String, DockerParameter> callToDockerMap = new HashMap<>();
         String finalDefaultContainer = defaultContainer;
 
         // Add all DockerMap from each secondary sourcefile
@@ -559,7 +559,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     }
 
     protected Map<String, DockerParameter> getCallsToDockerMap(String mainDescriptor, String defaultContainer) {
-        Map<String, DockerParameter> map = new HashMap<String, DockerParameter>();
+        Map<String, DockerParameter> map = new HashMap<>();
         try {
             List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
 

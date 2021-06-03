@@ -1084,10 +1084,6 @@ public class WorkflowIT extends BaseIT {
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
         verifyTRSImageConversion(versions, "1.0.1", 1);
 
-        // Test that a workflow version containing an unversioned image isn't saved
-        WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", DescriptorType.CWL.toString(), "/cwl/workflow_docker.cwl", "1.0");
-        assertEquals("Should not have grabbed any images", 0, workflowVersionWithoutVersionedImage.getImages().size());
-
         // Test that a workflow version that contains duplicate images will not store multiples
         WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", DescriptorType.CWL.toString(), "/main.cwl", "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());

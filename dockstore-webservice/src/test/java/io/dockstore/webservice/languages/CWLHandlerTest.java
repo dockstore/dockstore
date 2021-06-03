@@ -60,24 +60,19 @@ public class CWLHandlerTest {
 
     @Test
     public void testDeterminingImageSpecifier() {
-        LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
         Assert.assertEquals(
-                "Should be NO_TAG",
                 LanguageHandlerInterface.DockerSpecifier.NO_TAG,
                 LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid", DockerImageReference.LITERAL)
         );
         Assert.assertEquals(
-                "Should be LATEST",
                 LanguageHandlerInterface.DockerSpecifier.LATEST,
                 LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid:latest", DockerImageReference.LITERAL)
         );
         Assert.assertEquals(
-                "Should be TAG",
                 LanguageHandlerInterface.DockerSpecifier.TAG,
                 LanguageHandlerInterface.determineImageSpecifier("quay.io/ucsc_cgl/verifybamid:1.30.0", DockerImageReference.LITERAL)
         );
         Assert.assertEquals(
-                "Should be DIGEST",
                 LanguageHandlerInterface.DockerSpecifier.DIGEST,
                 LanguageHandlerInterface.determineImageSpecifier(
                         "quay.io/ucsc_cgl/verifybamid@sha256:05442f015018fb6a315b666f80d205e9ac066b3c53a217d5f791d22831ae98ac",
@@ -85,7 +80,6 @@ public class CWLHandlerTest {
                 )
         );
         Assert.assertEquals(
-                "Should be PARAMETER",
                 LanguageHandlerInterface.DockerSpecifier.PARAMETER,
                 LanguageHandlerInterface.determineImageSpecifier("docker_image", DockerImageReference.DYNAMIC)
         );
