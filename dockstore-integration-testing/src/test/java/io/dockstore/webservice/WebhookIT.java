@@ -734,7 +734,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/authors", installationId);
-        final Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        final Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
         final WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         final List<Author> authors = version.getAuthors();
         assertEquals(2, authors.size());
