@@ -37,6 +37,9 @@ public class OrcidAuthor {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    public OrcidAuthor() {
+    }
+
     public OrcidAuthor(String orchid) {
         this.orcid = orchid;
     }

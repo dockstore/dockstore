@@ -645,7 +645,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
                 .map(yamlAuthor -> {
-                    return new OrcidAuthor(yamlAuthor.getOrcid());
+                    final OrcidAuthor orcidAuthor = new OrcidAuthor(yamlAuthor.getOrcid());
+                    return orcidAuthor;
                 })
                 .collect(Collectors.toSet());
         version.setOrcidAuthors(orcidAuthors);
