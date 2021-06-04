@@ -152,7 +152,10 @@ jobs:
       - run:
           name: check generated flattened POMs match checked-in files.
           command: |
-            scripts/check_poms.sh
+            # need better solution, but leaving this as-is fouls up the release since the Maven release plugin doesn't know about the flattened poms
+            if [[ -z "${CIRCLE_TAG}" ]]; then
+              scripts/check_poms.sh
+            fi
           environment:
             TESTING_PROFILE: automated-review
   unit_test: # runs not using Workflows must have a `build` job as entry point
