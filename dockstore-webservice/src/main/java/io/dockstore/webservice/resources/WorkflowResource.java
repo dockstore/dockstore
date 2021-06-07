@@ -162,6 +162,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
+    private static final String AUTHORS = "authors";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -1735,6 +1736,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, VERSIONS)) {
             Hibernate.initialize(workflow.getWorkflowVersions());
+        }
+        if (checkIncludes(include, AUTHORS)) {
+            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getOrcidAuthors()));
         }
     }
 
