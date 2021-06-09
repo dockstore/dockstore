@@ -1360,8 +1360,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             final String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
-
-            workflowVersion.setDagJson(dagJson);
+            if (!workflowVersion.isFrozen()) {
+                workflowVersion.setDagJson(dagJson);
+            }
             return dagJson;
         }
         return null;
