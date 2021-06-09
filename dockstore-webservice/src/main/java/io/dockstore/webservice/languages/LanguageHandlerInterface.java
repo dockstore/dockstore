@@ -40,6 +40,7 @@ import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.ParsedInformation;
@@ -62,6 +63,7 @@ import io.swagger.quay.client.model.QuayTag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -320,6 +322,84 @@ public interface LanguageHandlerInterface {
     }
 
     /**
+     * Takes in a list of strings ["image_1", "image_2",..., "image_n"] and returns a formatted string: "image_1, image_2, ... and image_n"
+     *
+     * @param images : A list of docker image names
+     * @return
+     */
+    default String formatImageStrings(final List<String> images) {
+        int lastIndex = images.size() - 1;
+        if (images.size() == 1) {
+            return images.get(lastIndex);
+        } else {
+            String imagesString = String.join(", ", images.subList(0, lastIndex));
+            imagesString = String.join(" and ", imagesString, images.get(lastIndex));
+            return imagesString;
+        }
+    }
+
+    /**
+     * Check that all images are specified using a digest or tag.
+     *
+     * @param versionName of the workflow that the snapshot is being requested for
+     * @param toolsJSONTable
+     * @throws CustomWebApplicationException if there is at least one image that is specified by 'latest' tag, no tag, or parameter.
+     */
+    default void checkSnapshotImages(final String versionName, final String toolsJSONTable) throws CustomWebApplicationException {
+        List<Map<String, String>> dockerTools = new ArrayList<>();
+        dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
+
+        // Eliminate duplicate docker strings
+        Map<String, DockerSpecifier> dockerStrings = dockerTools.stream().collect(Collectors.toMap(
+            dockerTool -> dockerTool.get("docker"), dockerTool -> DockerSpecifier.valueOf(dockerTool.get("specifier")), (x, y) -> x));
+
+        // Find invalid images
+        Map<String, DockerSpecifier> invalidSnapshotImages = dockerStrings.entrySet().stream()
+                .filter(image -> image.getValue() == DockerSpecifier.PARAMETER || image.getValue() == DockerSpecifier.LATEST
+                        || image.getValue() == DockerSpecifier.NO_TAG)
+                .collect(Collectors.toMap(image -> image.getKey(), image -> image.getValue()));
+
+        // Create error message
+        if (invalidSnapshotImages.size() > 0) {
+            List<String> parameterImages = invalidSnapshotImages.entrySet().stream()
+                    .filter(image -> image.getValue() == DockerSpecifier.PARAMETER)
+                    .map(image -> image.getKey())
+                    .collect(Collectors.toList());
+            List<String> latestImages = invalidSnapshotImages.entrySet().stream()
+                    .filter(image -> image.getValue() == DockerSpecifier.LATEST)
+                    .map(image -> image.getKey())
+                    .collect(Collectors.toList());
+            List<String> noTagImages = invalidSnapshotImages.entrySet().stream()
+                    .filter(image -> image.getValue() == DockerSpecifier.NO_TAG)
+                    .map(image -> image.getKey())
+                    .collect(Collectors.toList());
+            StringBuilder errorMessage = new StringBuilder(String.format(
+                    "Snapshot for workflow version %s failed because not all images are specified using a digest or a valid tag.",
+                    versionName));
+
+            if (parameterImages.size() > 1) {
+                errorMessage.append(String.format(" Images %s are parameters.", formatImageStrings(parameterImages)));
+            } else if (parameterImages.size() == 1) {
+                errorMessage.append(String.format(" Image %s is a parameter.", parameterImages.get(0)));
+            }
+
+            if (noTagImages.size() > 1) {
+                errorMessage.append(String.format(" Images %s have no tag.", formatImageStrings(noTagImages)));
+            } else if (noTagImages.size() == 1) {
+                errorMessage.append(String.format(" Image %s has no tag.", noTagImages.get(0)));
+            }
+
+            if (latestImages.size() > 1) {
+                errorMessage.append(String.format(" Images %s are using the 'latest' tag.", formatImageStrings(latestImages)));
+            } else if (latestImages.size() == 1) {
+                errorMessage.append(String.format(" Image %s is using the 'latest' tag.", latestImages.get(0)));
+            }
+
+            throw new CustomWebApplicationException(errorMessage.toString(), HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
      * Given a docker entry (quay or dockerhub), return a URL to the given entry
      *
      * @param dockerEntry has the docker name
@@ -451,15 +531,6 @@ public interface LanguageHandlerInterface {
             String[] splitDocker;
             String[] splitSpecifier; // Specifier is either a tag or a digest
             String specifierSymbol; // The symbol that separates the image name and specifier name
-
-            if (imageSpecifier == DockerSpecifier.PARAMETER) {
-                continue;
-            }
-
-            // Add the implicit "latest" tag if there's no tag specified
-            if (imageSpecifier == DockerSpecifier.NO_TAG) {
-                image += ":latest";
-            }
 
             // Determine what symbol to use for splitting the image string
             if (imageSpecifier == DockerSpecifier.DIGEST) {
