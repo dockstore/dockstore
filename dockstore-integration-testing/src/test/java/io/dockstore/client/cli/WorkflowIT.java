@@ -1106,6 +1106,7 @@ public class WorkflowIT extends BaseIT {
         try {
             noTagImageVersion.setFrozen(true);
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(noTagImageVersion));
+            Assert.fail("Should not be able to snapshot a workflow version containing an image with no tag.");
         } catch (ApiException ex) {
             Assert.assertTrue(ex.getMessage().contains("Snapshot for workflow version noTagImage failed because not all images are specified using a digest or a valid tag."));
         }
@@ -1114,6 +1115,7 @@ public class WorkflowIT extends BaseIT {
         try {
             latestTagImageVersion.setFrozen(true);
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(latestTagImageVersion));
+            Assert.fail("Should not be able to snapshot a workflow version containing an image with the 'latest' tag.");
         } catch (ApiException ex) {
             Assert.assertTrue(ex.getMessage().contains("Snapshot for workflow version latestTagImage failed because not all images are specified using a digest or a valid tag."));
         }
@@ -1122,6 +1124,7 @@ public class WorkflowIT extends BaseIT {
         try {
             parameterImageVersion.setFrozen(true);
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(parameterImageVersion));
+            Assert.fail("Should not be able to snapshot a workflow version containing an image specified using a parameter.");
         } catch (ApiException ex) {
             Assert.assertTrue(ex.getMessage().contains("Snapshot for workflow version parameterImage failed because not all images are specified using a digest or a valid tag."));
         }

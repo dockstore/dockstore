@@ -1291,8 +1291,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     Optional<String> toolsJSONTable;
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
 
+                    // Check if tooltablejson in the DB has the "specifier" key because this key was added later on, so there may be entries in the DB that are missing it.
+                    // If tooltablejson is missing it, retrieve it again so it has this new key.
+                    // Don't need to re-retrieve tooltablejson if it's an empty array because it will just return an empty array again (since the workflow has no Docker images).
                     String existingToolTableJson = existingTag.getToolTableJson();
-                    if (existingToolTableJson != null && (existingToolTableJson.contains("specifier") || "[]".equals(existingToolTableJson))) {
+                    if (existingToolTableJson != null && (existingToolTableJson.contains("\"specifier\"") || "[]".equals(existingToolTableJson))) {
                         toolsJSONTable = Optional.of(existingToolTableJson);
                     } else {
                         // Store tool table json
@@ -1301,13 +1304,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     }
 
                     if (toolsJSONTable.isPresent()) {
-                        try {
-                            // Check that a snapshot can occur (all images are referenced by tag or digest)
-                            lInterface.checkSnapshotImages(existingTag.getName(), toolsJSONTable.get());
-                        } catch (CustomWebApplicationException ex) {
-                            existingTag.setFrozen(false);
-                            throw ex;
-                        }
+                        // Check that a snapshot can occur (all images are referenced by tag or digest)
+                        lInterface.checkSnapshotImages(existingTag.getName(), toolsJSONTable.get());
 
                         Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
                         existingTag.getImages().addAll(images);
@@ -1405,9 +1403,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // json in db cleared after a refresh
+        // tooltablejson in DB cleared after a refresh
+        // Check if tooltablejson in the DB has the "specifier" key because this key was added later on, so there may be entries in the DB that are missing it.
+        // If tooltablejson is missing it, retrieve it again so it has this new key.
+        // Don't need to re-retrieve tooltablejson if it's an empty array because it will just return an empty array again (since the workflow has no Docker images).
         String toolTableJson = workflowVersion.getToolTableJson();
-        if (toolTableJson != null && (toolTableJson.contains("specifier") || "[]".equals(toolTableJson))) {
+        if (toolTableJson != null && (toolTableJson.contains("\"specifier\"") || "[]".equals(toolTableJson))) {
             return toolTableJson;
         }
 

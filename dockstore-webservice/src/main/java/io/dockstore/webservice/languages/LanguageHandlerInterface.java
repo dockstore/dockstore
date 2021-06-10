@@ -346,8 +346,7 @@ public interface LanguageHandlerInterface {
      * @throws CustomWebApplicationException if there is at least one image that is specified by 'latest' tag, no tag, or parameter.
      */
     default void checkSnapshotImages(final String versionName, final String toolsJSONTable) throws CustomWebApplicationException {
-        List<Map<String, String>> dockerTools = new ArrayList<>();
-        dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
+        List<Map<String, String>> dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, ArrayList.class);
 
         // Eliminate duplicate docker strings
         Map<String, DockerSpecifier> dockerStrings = dockerTools.stream().collect(Collectors.toMap(
@@ -374,7 +373,7 @@ public interface LanguageHandlerInterface {
                     .map(image -> image.getKey())
                     .collect(Collectors.toList());
             StringBuilder errorMessage = new StringBuilder(String.format(
-                    "Snapshot for workflow version %s failed because not all images are specified using a digest or a valid tag.",
+                    "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.",
                     versionName));
 
             if (parameterImages.size() > 1) {
@@ -517,8 +516,7 @@ public interface LanguageHandlerInterface {
 
     // TODO: Implement then gitlab, seven bridges, amazon, google if possible;
     default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
-        List<Map<String, String>> dockerTools = new ArrayList<>();
-        dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
+        List<Map<String, String>> dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, ArrayList.class);
 
         // Eliminate duplicate docker strings
         Map<String, DockerSpecifier> dockerStrings = dockerTools.stream().collect(Collectors.toMap(dockertool -> dockertool.get("docker"), dockertool -> DockerSpecifier.valueOf(dockertool.get("specifier")), (x, y) -> x));
