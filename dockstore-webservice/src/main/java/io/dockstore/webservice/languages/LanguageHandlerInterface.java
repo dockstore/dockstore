@@ -730,13 +730,13 @@ public interface LanguageHandlerInterface {
                     }
                 }
                 if (!imageFound) {
-                    LOG.error("Unable to get find image with digest: " + specifierName + " from Quay in repo " + repo);
+                    LOG.error("Unable to find image with digest: {} from Quay in repo {}", specifierName, repo);
                     return quayImages;
                 }
             } else {
                 QuayTag tag = quayRepo.getTags().get(specifierName);
                 if (tag == null) {
-                    LOG.error("Unable to get find tag: " + specifierName + " from Quay in repo " + repo);
+                    LOG.error("Unable to find tag: {} from Quay in repo {}", specifierName, repo);
                     return quayImages;
                 }
                 final String digest = tag.getManifestDigest();

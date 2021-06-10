@@ -1101,6 +1101,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion noTagImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("noTagImage")).findFirst().get();
         WorkflowVersion latestTagImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("latestTagImage")).findFirst().get();
         WorkflowVersion parameterImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("parameterImage")).findFirst().get();
+        String errorMessage = "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.";
 
         // Test that the snapshot fails for a workflow version containing an image with no tag
         try {
@@ -1108,7 +1109,7 @@ public class WorkflowIT extends BaseIT {
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(noTagImageVersion));
             Assert.fail("Should not be able to snapshot a workflow version containing an image with no tag.");
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Snapshot for workflow version noTagImage failed because not all images are specified using a digest or a valid tag."));
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, noTagImageVersion.getName())));
         }
 
         // Test that the snapshot fails for a workflow version containing an image with the 'latest' tag
@@ -1117,7 +1118,7 @@ public class WorkflowIT extends BaseIT {
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(latestTagImageVersion));
             Assert.fail("Should not be able to snapshot a workflow version containing an image with the 'latest' tag.");
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Snapshot for workflow version latestTagImage failed because not all images are specified using a digest or a valid tag."));
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, latestTagImageVersion.getName())));
         }
 
         // Test that the snapshot fails for a workflow version containing an image specified using a parameter
@@ -1126,7 +1127,7 @@ public class WorkflowIT extends BaseIT {
             workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(parameterImageVersion));
             Assert.fail("Should not be able to snapshot a workflow version containing an image specified using a parameter.");
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Snapshot for workflow version parameterImage failed because not all images are specified using a digest or a valid tag."));
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, parameterImageVersion.getName())));
         }
     }
 

@@ -1288,7 +1288,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean nowFrozen = existingTag.isFrozen();
                 // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
-                    Optional<String> toolsJSONTable;
+                    Optional<String> toolsJSONTable = Optional.empty();
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
 
                     // Check if tooltablejson in the DB has the "specifier" key because this key was added later on, so there may be entries in the DB that are missing it.
@@ -1298,9 +1298,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     if (existingToolTableJson != null && (existingToolTableJson.contains("\"specifier\"") || "[]".equals(existingToolTableJson))) {
                         toolsJSONTable = Optional.of(existingToolTableJson);
                     } else {
-                        // Store tool table json
-                        toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-                        existingTag.setToolTableJson(toolsJSONTable.get());
+                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
+                        if (mainDescriptor != null) {
+                            // Store tool table json
+                            toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), mainDescriptor.getContent(),
+                                    extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                            existingTag.setToolTableJson(toolsJSONTable.get());
+                        }
                     }
 
                     if (toolsJSONTable.isPresent()) {
@@ -1328,9 +1332,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                     // store dag
                     if (existingTag.getDagJson() == null) {
-                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(),
-                                extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
-                        existingTag.setDagJson(dagJson);
+                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
+                        if (mainDescriptor != null) {
+                            String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), mainDescriptor.getContent(),
+                                    extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                            existingTag.setDagJson(dagJson);
+                        }
                     }
                 }
             }
