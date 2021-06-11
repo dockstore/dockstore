@@ -492,16 +492,14 @@ public class WorkflowIT extends BaseIT {
         branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
         assertNull(branchToolJson);
 
-        // Test freezing versions
-        tagVersion.setFrozen(true);
-
-        List<WorkflowVersion> versions = workflowApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(tagVersion));
-        WorkflowVersion frozenVersion = versions.stream().filter(version -> version.getName().equals("test")).findFirst().get();
+        // Test freezing versions (uses a different workflow that has versioned images)
+        WorkflowVersion frozenVersion = snapshotWorkflowVersion(workflowApi, "dockstore-testing/hello_world", DescriptorType.CWL.toString(), "/hello_world.cwl", "1.0.1");
         String frozenDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         String frozenToolTableJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         assertNotNull(frozenDagJson);
         assertNotNull(frozenToolTableJson);
     }
+
     /**
      * This tests that you are able to download zip files for versions of a workflow
      */
@@ -1090,6 +1088,47 @@ public class WorkflowIT extends BaseIT {
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
         verifyTRSImageConversion(versions, "1.0", 3);
+    }
+
+    /**
+     * Tests that snapshotting a workflow version fails if any of the images have no tag, use the 'latest' tag, or are specified using a parameter.
+     */
+    @Test
+    public void testSnapshotImageFailures() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
+        WorkflowVersion noTagImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("noTagImage")).findFirst().get();
+        WorkflowVersion latestTagImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("latestTagImage")).findFirst().get();
+        WorkflowVersion parameterImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("parameterImage")).findFirst().get();
+        String errorMessage = "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.";
+
+        // Test that the snapshot fails for a workflow version containing an image with no tag
+        try {
+            noTagImageVersion.setFrozen(true);
+            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(noTagImageVersion));
+            Assert.fail("Should not be able to snapshot a workflow version containing an image with no tag.");
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, noTagImageVersion.getName())));
+        }
+
+        // Test that the snapshot fails for a workflow version containing an image with the 'latest' tag
+        try {
+            latestTagImageVersion.setFrozen(true);
+            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(latestTagImageVersion));
+            Assert.fail("Should not be able to snapshot a workflow version containing an image with the 'latest' tag.");
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, latestTagImageVersion.getName())));
+        }
+
+        // Test that the snapshot fails for a workflow version containing an image specified using a parameter
+        try {
+            parameterImageVersion.setFrozen(true);
+            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(parameterImageVersion));
+            Assert.fail("Should not be able to snapshot a workflow version containing an image specified using a parameter.");
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, parameterImageVersion.getName())));
+        }
     }
 
     @Test
