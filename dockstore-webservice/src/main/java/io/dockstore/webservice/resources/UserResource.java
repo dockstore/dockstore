@@ -136,10 +136,10 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
+    protected static final Pattern GITHUB_ID_PATTERN = Pattern.compile(".*/u/(\\d+).*");
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
-    private static final Pattern GITHUB_ID_PATTERN = Pattern.compile(".*/u/(\\d+).*");
     private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -745,7 +745,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
-        List<Token> gitHubTokens = tokenDAO.findAllGitHubTokens();
         List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
         List<User> usersCouldNotBeUpdated = new ArrayList<>();
 
@@ -757,6 +756,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 updateGoogleAccessToken(currentUser.getId());
                 try {
                     currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
+                    LOG.info("Updated " + currentUser.getUsername());
                 } catch (Exception ex) {
                     LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
                     usersCouldNotBeUpdated.add(currentUser);
@@ -778,6 +778,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                     LOG.info("Could not retrieve GitHub ID for user: " + u.getUsername());
                     gitHubUsersNotUpdatedWithToken.add(u);
                 }
+            } else {
+                LOG.info("No GitHub token for user: " + u.getUsername());
+                gitHubUsersNotUpdatedWithToken.add(u);
             }
         }
 
@@ -792,7 +795,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                     Matcher m = GITHUB_ID_PATTERN.matcher(avatarUrl);
                     if (m.matches()) {
                         String id = m.group(1);
-                        u.getUserProfiles();
                         userProfile.onlineProfileId = id;
                         List<Token> userTokens = tokenDAO.findGithubByUserId(u.getId());
                         if (!userTokens.isEmpty()) {
