@@ -139,6 +139,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
+    private static final Pattern GITHUB_ID_PATTERN = Pattern.compile(".*/u/(\\d+).*");
     private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -760,36 +761,50 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                     LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
                     usersCouldNotBeUpdated.add(currentUser);
                 }
-
             }
         }
 
-        // Try to update Google metadata using user's token and getMyself(). If not, try by using username in block below.
-        LOG.info("Beginning update for " + gitHubTokens.size() + " GitHub users.");
-        for (Token t : gitHubTokens) {
-            User currentUser = userDAO.findById(t.getUserId());
-            if (currentUser != null) {
+        // Try to update GitHub metadata using user's token and getMyself().
+        List<User> gitHubUsers = userDAO.findAllGitHubUsers();
+        LOG.info("Beginning update for " + gitHubUsers.size() + " GitHub users.");
+        for (User u: gitHubUsers) {
+            List<Token> tokens = tokenDAO.findGithubByUserId(u.getId());
+            if (!tokens.isEmpty()) {
                 try {
-                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, Optional.of(tokenDAO));
-                    LOG.info("Updated " + currentUser.getUsername());
+                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(u, Optional.of(tokenDAO));
+                    LOG.info("Updated " + u.getUsername());
                 } catch (Exception ex) {
-                    gitHubUsersNotUpdatedWithToken.add(currentUser);
+                    LOG.info("Could not retrieve GitHub ID for user: " + u.getUsername());
+                    gitHubUsersNotUpdatedWithToken.add(u);
                 }
             }
         }
 
-        // Get the GitHub token of the admin making this call to avoid rate limiting
+        // For users we could not get their GitHub id using their token, get the GitHub id from the avatarurl we have stored.
         LOG.info("Beginning update for " + gitHubUsersNotUpdatedWithToken.size() + " GitHub users who could not be updated with token.");
-        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
         for (User u : gitHubUsersNotUpdatedWithToken) {
-            try {
-                gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
-                LOG.info("Updated " + u.getUsername());
-            } catch (Exception ex) {
-                usersCouldNotBeUpdated.add(u);
-                LOG.info(ex.getMessage(), ex);
+            if (!u.isBanned()) {
+                User.Profile userProfile = u.getUserProfiles().get(TokenType.GITHUB_COM.toString());
+                String avatarUrl = userProfile.avatarURL;
+
+                if (avatarUrl != null) {
+                    Matcher m = GITHUB_ID_PATTERN.matcher(avatarUrl);
+                    if (m.matches()) {
+                        String id = m.group(1);
+                        u.getUserProfiles();
+                        userProfile.onlineProfileId = id;
+                        List<Token> userTokens = tokenDAO.findGithubByUserId(u.getId());
+                        if (!userTokens.isEmpty()) {
+                            userTokens.get(0).setOnlineProfileId(id);
+                        }
+                        LOG.info("Updated " + u.getUsername() + " with GitHub id " + id);
+                    }
+
+                } else {
+                    usersCouldNotBeUpdated.add(u);
+                    LOG.info(u.getUsername() + "could not be updated.");
+                }
             }
         }
 
