@@ -137,11 +137,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public Entry<? extends Entry, ? extends Version> getGenericEntryById(long id) {
-        return uniqueResult(namedTypedQuery("Entry.getGenericEntryById").setParameter("id", id));
+        return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryById").setParameter("id", id));
     }
 
     public Entry<? extends Entry, ? extends Version> getGenericEntryByAlias(String alias) {
-        return uniqueResult(namedTypedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
+        return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
@@ -157,10 +157,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntryLiteByUserId").setParameter("userId", userId));
     }
     public List<T> findMyEntries(long userId) {
-        return list(namedTypedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getEntriesByUserId").setParameter("userId", userId));
     }
     public List<T> findMyEntriesPublished(long userId) {
-        return list(namedTypedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId").setParameter("userId", userId));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".getPublishedEntriesByUserId").setParameter("userId", userId));
     }
 
     public List<CollectionEntry> getCollectionWorkflows(long collectionId) {
@@ -216,7 +216,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public List<T> findAllPublished() {
-        return list(namedTypedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }
 
     public long countAllHosted(long userid) {
