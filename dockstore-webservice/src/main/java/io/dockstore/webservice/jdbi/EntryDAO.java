@@ -149,8 +149,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public T findPublishedById(long id) {
-        return uniqueResult(
-                namedTypedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
+        return (T)uniqueResult(
+                this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 
     public List<EntryLite> findEntryVersions(long userId) {
