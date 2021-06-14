@@ -722,7 +722,7 @@
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -830,7 +830,7 @@
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-client</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -850,7 +850,7 @@
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-high-level-client</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -874,7 +874,7 @@
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch-x-content</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -906,7 +906,7 @@
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch-core</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
