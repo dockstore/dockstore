@@ -28,10 +28,10 @@ public class DeletedUsernameDAO extends AbstractDAO<DeletedUsername> {
     }
 
     public List<DeletedUsername> findByUsername(String username) {
-        return list((this.currentSession().getNamedQuery("io.dockstore.webservice.core.DeletedUsername.findByUsername").setParameter("username", username)));
+        return list((namedTypedQuery("io.dockstore.webservice.core.DeletedUsername.findByUsername").setParameter("username", username)));
     }
 
     public DeletedUsername findNonReusableUsername(String username, Timestamp timestamp) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.DeletedUsername.findNonReusableUsername").setParameter("username", username).setParameter("timestamp", timestamp));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.DeletedUsername.findNonReusableUsername").setParameter("username", username).setParameter("timestamp", timestamp));
     }
 }

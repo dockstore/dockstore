@@ -39,6 +39,6 @@ public class FileDAO extends AbstractDAO<SourceFile> {
     }
 
     public List<SourceFile> findSourceFilesByVersion(Long versionId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion").setParameter("versionId", versionId));
+        return list(namedTypedQuery("io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion").setParameter("versionId", versionId));
     }
 }

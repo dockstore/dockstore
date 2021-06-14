@@ -41,19 +41,19 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
     }
 
     public List<LambdaEvent> findByRepository(String repository) {
-        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByRepository")
+        Query<LambdaEvent> query = namedTypedQuery("io.dockstore.webservice.core.LambdaEvent.findByRepository")
                 .setParameter("repository", repository);
         return list(query);
     }
 
     public List<LambdaEvent> findByUsername(String username) {
-        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByUsername")
+        Query<LambdaEvent> query = namedTypedQuery("io.dockstore.webservice.core.LambdaEvent.findByUsername")
                 .setParameter("username", username);
         return list(query);
     }
 
     public List<LambdaEvent> findByUser(User user) {
-        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByUser")
+        Query<LambdaEvent> query = namedTypedQuery("io.dockstore.webservice.core.LambdaEvent.findByUser")
                 .setParameter("user", user);
         return list(query);
     }

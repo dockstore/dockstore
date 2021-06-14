@@ -41,7 +41,7 @@ public class EncryptionTest {
         String data = "foo";
 
         // Instantiate the SDK
-        final AwsCrypto crypto = new AwsCrypto();
+        final AwsCrypto crypto = AwsCrypto.builder().build();
 
         // Set up the master key provider
         SecretKey cryptoKey = retrieveEncryptionKey();

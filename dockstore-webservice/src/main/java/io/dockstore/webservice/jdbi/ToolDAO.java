@@ -36,11 +36,11 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findByUserRegistryNamespace(final long userId, final String registry, final String namespace) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
     }
 
     public List<Tool> findByUserRegistryNamespaceRepository(final long userId, final String registry, final String namespace, final String repository) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
     }
 
     public List<ToolPath> findAllPublishedPaths() {
@@ -82,12 +82,12 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
 
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Tool> toolQuery = namedTypedQuery(fullQueryName)
             .setParameter("registry", registry)
             .setParameter("namespace", namespace)
             .setParameter("name", name);
 
-        return list(query);
+        return list(toolQuery);
     }
 
     /**
@@ -132,7 +132,7 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
 
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Tool> query = namedTypedQuery(fullQueryName)
             .setParameter("registry", registry)
             .setParameter("namespace", namespace)
             .setParameter("name", name);
@@ -145,7 +145,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findPublishedByNamespace(String namespace) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
     }
   
     /**
@@ -159,6 +159,6 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public Tool findByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
     }
 }

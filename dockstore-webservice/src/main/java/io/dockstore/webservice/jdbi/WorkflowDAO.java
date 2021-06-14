@@ -87,7 +87,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
         SourceControlConverter converter = new SourceControlConverter();
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Workflow> query = namedTypedQuery(fullQueryName)
             .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
@@ -141,7 +141,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         SourceControlConverter converter = new SourceControlConverter();
 
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Workflow> query = namedTypedQuery(fullQueryName)
             .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
@@ -277,30 +277,30 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));
     }
 
     public List<Workflow> findPublishedByOrganization(String organization) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
             .setParameter("organization", organization));
     }
 
     public List<Workflow> findByOrganization(SourceControl sourceControl, String organization) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
                 .setParameter("organization", organization)
                 .setParameter("sourceControl", sourceControl));
     }
 
     public List<Workflow> findByOrganizationWithoutUser(SourceControl sourceControl, String organization, User user) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
                 .setParameter("organization", organization)
                 .setParameter("user", user)
                 .setParameter("sourceControl", sourceControl));
     }
 
     public Workflow findByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
     /**
@@ -312,7 +312,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      */
     public Optional<Workflow> getWorkflowByWorkflowVersionId(long workflowVersionId) {
         try {
-            Workflow workflow = uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
+            Workflow workflow = uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
                     .setParameter("workflowVersionId", workflowVersionId));
             return Optional.of(workflow);
         } catch (NoResultException nre) {

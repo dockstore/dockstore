@@ -32,30 +32,30 @@ public class CollectionDAO extends AbstractDAO<Collection> {
     }
 
     public List<Collection> findAllByOrg(long organizationId) {
-        Query query = namedQuery("io.dockstore.webservice.core.Collection.findAllByOrg")
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findAllByOrg")
                 .setParameter("organizationId", organizationId);
         return list(query);
     }
 
     public Collection findByNameAndOrg(String name, long organizationId) {
-        Query query = namedQuery("io.dockstore.webservice.core.Collection.findByNameAndOrg")
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findByNameAndOrg")
                 .setParameter("name", name)
                 .setParameter("organizationId", organizationId);
         return uniqueResult(query);
     }
 
     public void deleteCollectionsByOrgId(long organizationId) {
-        Query query = namedQuery("io.dockstore.webservice.core.Collection.deleteByOrgId")
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.deleteByOrgId")
                 .setParameter("organizationId", organizationId);
         query.executeUpdate();
     }
 
     public void deleteEntryVersionByCollectionId(long collectionId) {
-        Query query = namedQuery("io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId").setParameter("collectionId", collectionId);
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId").setParameter("collectionId", collectionId);
         query.executeUpdate();
     }
 
     public Collection getByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Collection.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Collection.getByAlias").setParameter("alias", alias));
     }
 }

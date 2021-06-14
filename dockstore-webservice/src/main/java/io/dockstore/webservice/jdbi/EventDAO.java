@@ -41,7 +41,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsForOrganization(long organizationId, Integer offset, Integer limit) {
-        Query query = namedQuery("io.dockstore.webservice.core.Event.findAllForOrganization")
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllForOrganization")
                 .setParameter("organizationId", organizationId)
                 .setFirstResult(offset)
                 .setMaxResults(limit);
@@ -59,7 +59,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
         query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
@@ -69,7 +69,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (organizationIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
         query.setParameterList("organizationIDs", organizationIds).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
@@ -109,14 +109,14 @@ public class EventDAO extends AbstractDAO<Event> {
 
     public void deleteEventByEntryID(long entryId) {
         currentSession().flush();
-        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
         query.setParameter("entryId", entryId);
         query.executeUpdate();
         currentSession().flush();
     }
 
     public void deleteEventByOrganizationID(long organizationId) {
-        Query query = namedQuery("io.dockstore.webservice.core.Event.deleteByOrganizationId");
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.deleteByOrganizationId");
         query.setParameter("organizationId", organizationId);
         query.executeUpdate();
         // Flush after executing the DELETE query. This would force Hibernate to synchronize the state of the
