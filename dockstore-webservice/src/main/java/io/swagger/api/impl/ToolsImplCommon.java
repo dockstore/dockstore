@@ -35,6 +35,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -46,6 +47,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
@@ -239,6 +241,36 @@ public final class ToolsImplCommon {
         return tool;
     }
 
+    /**
+     * Construct the image_name for ImageData
+     *
+     * @return The full image name
+     */
+    private static String constructImageName(final Image image) {
+        DockerSpecifier specifier = image.getSpecifier();
+        Registry registry = image.getImageRegistry();
+        String fullRepositoryName = image.getRepository();
+
+        if (registry != Registry.DOCKER_HUB) {
+            // If the registry is not Docker Hub (ex: Quay), prepend the image registry docker path
+            fullRepositoryName = String.join("/", image.getImageRegistry().getDockerPath(), fullRepositoryName);
+        }
+
+        // Check if specifier is null because tool images don't have the DockerSpecifier set properly yet. For now, if it's null, assume that it's a tag
+        // TODO: Remove null check once the DockerSpecifier for tool images are set properly
+        if (specifier == null || specifier == DockerSpecifier.TAG) {
+            return String.join(":", fullRepositoryName, image.getTag());
+        } else if (specifier == DockerSpecifier.DIGEST) {
+            // The image's checksum is the image's digest
+            String imageDigest = image.getChecksums().get(0).toString();
+            return String.join("@", fullRepositoryName, imageDigest);
+        } else {
+            // Shouldn't really get here because all saved images are specified by tag or digest
+            LOG.error("DockerSpecifier should be TAG or DIGEST, not {}", specifier);
+            return "";
+        }
+    }
+
     private static List<ImageData> processImageDataForWorkflowVersions(final Version<?> version) {
         Set<Image> images = version.getImages();
         List<ImageData> trsImages = new ArrayList<>();
@@ -251,7 +283,7 @@ public final class ToolsImplCommon {
                 continue;
             }
             imageData.setRegistryHost(image.getImageRegistry().getDockerPath());
-            imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
+            imageData.setImageName(constructImageName(image));
             imageData.setUpdated(image.getImageUpdateDate());
             imageData.setSize(image.getSize());
             List<Checksum> trsChecksums = new ArrayList<>();
@@ -291,8 +323,8 @@ public final class ToolsImplCommon {
                 data.setImageType(ImageType.DOCKER);
                 data.setSize(image.getSize());
                 data.setUpdated(image.getImageUpdateDate());
-                data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
-                data.setRegistryHost(castedContainer.getRegistry());
+                data.setRegistryHost(image.getImageRegistry().getDockerPath());
+                data.setImageName(constructImageName(image));
                 data.setChecksum(trsChecksums);
                 toolVersion.getImages().add(data);
             });
