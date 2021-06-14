@@ -640,7 +640,8 @@ public interface LanguageHandlerInterface {
                         // For every version, DockerHub can provide multiple images, one for each os/architecture
                         images.stream().forEach(dockerHubImage -> {
                             final String manifestDigest = dockerHubImage.getDigest();
-                            if (manifestDigest.equals(specifierName)) {
+                            // Must perform null check for manifestDigest because there are Docker Hub images where the digest is null
+                            if (manifestDigest != null && manifestDigest.equals(specifierName)) {
                                 String tagName = r.getName(); // Tag that's associated with the image specified by digest
                                 Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
                                 List<Checksum> checksums = Collections.singletonList(checksum);
@@ -694,7 +695,7 @@ public interface LanguageHandlerInterface {
         } while (response.isPresent() && !versionFound && dockerHubTag.getNext() != null);
 
         if (!versionFound) {
-            LOG.error("Unable to find image with digest: {} from Docker Hub in repo {}", specifierName, repo);
+            LOG.error("Unable to find image with {}: {} from Docker Hub in repo {}", specifierType.name(), specifierName, repo);
         }
 
         return dockerHubImages;
