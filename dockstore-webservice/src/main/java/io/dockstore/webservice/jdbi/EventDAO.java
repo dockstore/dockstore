@@ -109,14 +109,14 @@ public class EventDAO extends AbstractDAO<Event> {
 
     public void deleteEventByEntryID(long entryId) {
         currentSession().flush();
-        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
+        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.deleteByEntryId");
         query.setParameter("entryId", entryId);
         query.executeUpdate();
         currentSession().flush();
     }
 
     public void deleteEventByOrganizationID(long organizationId) {
-        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.deleteByOrganizationId");
+        Query query = namedQuery("io.dockstore.webservice.core.Event.deleteByOrganizationId");
         query.setParameter("organizationId", organizationId);
         query.executeUpdate();
         // Flush after executing the DELETE query. This would force Hibernate to synchronize the state of the
