@@ -70,9 +70,9 @@ POM as their parent.
         <netty.version>4.1.60.Final</netty.version>
         <scala.version>2.12.13</scala.version>
         <cromwell.version>60</cromwell.version>
-        <jackson.version>2.12.1</jackson.version>
-        <jackson.major.version>2.12.1</jackson.major.version>
-        <docker-client.version>3.2.7</docker-client.version>
+        <jackson.version>2.12.3</jackson.version>
+        <jackson.major.version>2.12.3</jackson.major.version>
+        <docker-client.version>3.2.8</docker-client.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
@@ -921,7 +921,7 @@ POM as their parent.
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>5.5.0</version>
+                <version>5.8.0</version>
             </dependency>
 
             <dependency>

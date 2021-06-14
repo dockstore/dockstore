@@ -30,25 +30,25 @@
     <dependency>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java-transport-httpclient5</artifactId>
-      <version>3.2.7</version>
+      <version>3.2.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java-core</artifactId>
-      <version>3.2.7</version>
+      <version>3.2.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java-transport</artifactId>
-      <version>3.2.7</version>
+      <version>3.2.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java-api</artifactId>
-      <version>3.2.7</version>
+      <version>3.2.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
