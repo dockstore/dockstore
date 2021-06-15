@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
@@ -261,8 +262,12 @@ public final class ToolsImplCommon {
         if (specifier == null || specifier == DockerSpecifier.TAG) {
             return String.join(":", fullRepositoryName, image.getTag());
         } else if (specifier == DockerSpecifier.DIGEST) {
-            // The image's checksum is the image's digest
-            String imageDigest = image.getChecksums().get(0).toString();
+            // The image's sha256 checksum is the image's digest
+            String imageDigest = image.getChecksums().stream()
+                    .filter(checksum -> checksum.getType().equals("sha256"))
+                    .collect(Collectors.toList())
+                    .get(0)
+                    .toString();
             return String.join("@", fullRepositoryName, imageDigest);
         } else {
             // Shouldn't really get here because all saved images are specified by tag or digest

@@ -1286,6 +1286,8 @@ public class WorkflowIT extends BaseIT {
         assertTrue("Snapshotted version should be in the list", snapshotInList);
     }
 
+
+
     /**
      * Test that the image_name is set correctly after TRS image conversion.
      * This is a separate test from verifyTRSImageConversion because it's difficult to map the snapshot version's images to the
@@ -1310,6 +1312,7 @@ public class WorkflowIT extends BaseIT {
         snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, quayTagVersionName);
         assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
         trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", quayTagVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
         trsVersion.getImages().stream().forEach(image -> assertEquals("quay.io/ga4gh-dream/dockstore-tool-helloworld:1.0.2", image.getImageName()));
 
         // Workflow with Quay image specified using a digest
@@ -1317,6 +1320,7 @@ public class WorkflowIT extends BaseIT {
         snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, quayDigestVersionName);
         assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
         trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", quayDigestVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
         trsVersion.getImages().stream().forEach(image -> assertEquals(
                 "quay.io/ga4gh-dream/dockstore-tool-helloworld@sha256:3a854fd1ebd970011fa57c8c099347314eda36cc746fd831f4deff9a1d433718",
                 image.getImageName()));
@@ -1326,6 +1330,7 @@ public class WorkflowIT extends BaseIT {
         snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, dockerHubTagVersionName);
         assertEquals("Should only be six images in this workflow", 6, snapshotVersion.getImages().size()); // 1 image per architecture type
         trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", dockerHubTagVersionName);
+        assertEquals("Should be six images in this TRS version", 6, trsVersion.getImages().size());
         trsVersion.getImages().stream().forEach(image -> assertEquals("library/ubuntu:16.04", image.getImageName()));
 
         // Workflow with Docker Hub image specified using a digest
@@ -1333,6 +1338,8 @@ public class WorkflowIT extends BaseIT {
         snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, dockerHubDigestVersionName);
         assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
         trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", dockerHubDigestVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
+        // library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c refers to ubuntu version 16.04, amd64 os/arch
         trsVersion.getImages().stream().forEach(image ->
             assertEquals("library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c", image.getImageName()));
     }
