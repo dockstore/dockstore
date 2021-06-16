@@ -176,7 +176,7 @@ public class ServiceIT extends BaseIT {
      * @param path         Path of endpoint
      */
     private void testXTotalCount(Client jerseyClient, String path) {
-        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT,    0).get();
+        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Object xTotalCount = headers.getFirst("X-total-count");
