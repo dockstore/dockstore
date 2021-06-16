@@ -49,8 +49,11 @@
         <property name="max" value="140"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
-
+    <!-- Dockstore override, addition -->
+    <module name="SuppressWarningsFilter"/>
     <module name="TreeWalker">
+        <!-- Dockstore override, addition -->
+        <module name="SuppressWarningsHolder"/>
         <module name="OuterTypeFilename"/>
         <module name="IllegalTokenText">
             <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
@@ -180,9 +183,8 @@
             <property name="option" value="nl"/>
         </module>
         <module name="PackageName">
-            <!-- Dockstore override, addition -->
-            <property name="severity" value="warning"/>
-            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+            <!-- Dockstore override, removal -->
+<!--            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>-->
             <message key="name.invalidPattern"
               value="Package name ''{0}'' must match pattern ''{1}''."/>
         </module>
@@ -192,16 +194,14 @@
               value="Type name ''{0}'' must match pattern ''{1}''."/>
         </module>
         <module name="MemberName">
-            <!-- Dockstore override, addition -->
-            <property name="severity" value="warning"/>
-            <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9]*$"/>
+            <!-- Dockstore override, removal -->
+<!--            <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9]*$"/>-->
             <message key="name.invalidPattern"
               value="Member name ''{0}'' must match pattern ''{1}''."/>
         </module>
         <module name="ParameterName">
-            <!-- Dockstore override, addition -->
-            <property name="severity" value="warning"/>
-            <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>
+            <!-- Dockstore override, removal -->
+<!--            <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>-->
             <message key="name.invalidPattern"
               value="Parameter name ''{0}'' must match pattern ''{1}''."/>
         </module>
@@ -216,9 +216,8 @@
               value="Catch parameter name ''{0}'' must match pattern ''{1}''."/>
         </module>
         <module name="LocalVariableName">
-            <!-- Dockstore override, addition -->
-            <property name="severity" value="warning"/>
-            <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>
+            <!-- Dockstore override, removal -->
+<!--            <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>-->
             <message key="name.invalidPattern"
               value="Local variable name ''{0}'' must match pattern ''{1}''."/>
         </module>
@@ -252,7 +251,7 @@
             <!-- Dockstore override, 2 to 4 -->
             <property name="basicOffset" value="4"/>
             <property name="braceAdjustment" value="0"/>
-            <!-- Dockstore override, addition 2 to 0 -->
+            <!-- Dockstore override, 2 to 0 -->
             <property name="caseIndent" value="0"/>
             <property name="throwsIndent" value="4"/>
             <property name="lineWrappingIndentation" value="4"/>
