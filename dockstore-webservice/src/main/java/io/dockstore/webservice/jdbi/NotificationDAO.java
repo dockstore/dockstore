@@ -34,6 +34,6 @@ public class NotificationDAO extends AbstractDAO<Notification> {
     }
 
     public List<Notification> getActiveNotifications() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notification.getActiveNotifications"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Notification.getActiveNotifications"));
     }
 }
