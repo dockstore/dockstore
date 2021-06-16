@@ -40,7 +40,7 @@
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
         <openapi-annotations-version>2.1.7</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
-        <postgresql.version>42.2.19</postgresql.version>
+        <postgresql.version>42.2.21</postgresql.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
