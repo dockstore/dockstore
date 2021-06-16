@@ -35,6 +35,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -46,6 +48,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.openapi.api.impl.ToolsApiServiceImpl;
 import io.openapi.model.Checksum;
 import io.openapi.model.DescriptorType;
@@ -56,6 +59,7 @@ import io.openapi.model.ImageType;
 import io.openapi.model.Tool;
 import io.openapi.model.ToolVersion;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -239,6 +243,43 @@ public final class ToolsImplCommon {
         return tool;
     }
 
+    /**
+     * Constructs the image_name for ImageData
+     *
+     * @param image
+     * @return The image_name
+     * @throws CustomWebApplicationException if the sha256 digest does not exist for a Docker image that's specified by digest
+     */
+    private static String constructImageName(final Image image) throws CustomWebApplicationException {
+        DockerSpecifier specifier = image.getSpecifier();
+        Registry registry = image.getImageRegistry();
+        String fullRepositoryName = image.getRepository();
+
+        if (registry != Registry.DOCKER_HUB) {
+            // If the registry is not Docker Hub (ex: Quay), prepend the image registry docker path
+            fullRepositoryName = String.join("/", image.getImageRegistry().getDockerPath(), fullRepositoryName);
+        }
+
+        // Check if specifier is null because tool images don't have the DockerSpecifier set properly yet. For now, if it's null, assume that it's a tag
+        // TODO: Remove null check once the DockerSpecifier for tool images are set properly
+        if (specifier == null || specifier == DockerSpecifier.TAG) {
+            return String.join(":", fullRepositoryName, image.getTag());
+        } else if (specifier == DockerSpecifier.DIGEST) {
+            // The image's sha256 checksum is the image's digest
+            String imageDigest = image.getChecksums().stream()
+                    .filter(checksum -> checksum.getType().equals("sha256"))
+                    .findFirst()
+                    .orElseThrow(() -> new CustomWebApplicationException("Could not find sha256 digest for Docker image specified by digest",
+                            HttpStatus.SC_BAD_REQUEST))
+                    .toString();
+            return String.join("@", fullRepositoryName, imageDigest);
+        } else {
+            // Shouldn't really get here because all saved images are specified by tag or digest
+            LOG.error("DockerSpecifier should be TAG or DIGEST, not {}", specifier);
+            return "";
+        }
+    }
+
     private static List<ImageData> processImageDataForWorkflowVersions(final Version<?> version) {
         Set<Image> images = version.getImages();
         List<ImageData> trsImages = new ArrayList<>();
@@ -251,7 +292,7 @@ public final class ToolsImplCommon {
                 continue;
             }
             imageData.setRegistryHost(image.getImageRegistry().getDockerPath());
-            imageData.setImageName(constructName(Arrays.asList(image.getRepository(), image.getTag())));
+            imageData.setImageName(constructImageName(image));
             imageData.setUpdated(image.getImageUpdateDate());
             imageData.setSize(image.getSize());
             List<Checksum> trsChecksums = new ArrayList<>();
@@ -291,8 +332,8 @@ public final class ToolsImplCommon {
                 data.setImageType(ImageType.DOCKER);
                 data.setSize(image.getSize());
                 data.setUpdated(image.getImageUpdateDate());
-                data.setImageName(constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
-                data.setRegistryHost(castedContainer.getRegistry());
+                data.setRegistryHost(image.getImageRegistry().getDockerPath());
+                data.setImageName(constructImageName(image));
                 data.setChecksum(trsChecksums);
                 toolVersion.getImages().add(data);
             });
