@@ -68,9 +68,9 @@ import org.slf4j.LoggerFactory;
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_RESPONSE;
 
 /**
+ * Implementations of methods to return responses containing organization related information
  * @author kcao on 01/03/17.
  *
- * Implementations of methods to return responses containing organization related information
  */
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 

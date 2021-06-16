@@ -311,7 +311,8 @@ public class Organization implements Serializable, Aliasable {
         this.displayName = displayName;
     }
 
-    public enum ApplicationState { PENDING, REJECTED, APPROVED }
+    public enum ApplicationState { PENDING, REJECTED, APPROVED
+    }
 
     public String getAvatarUrl() {
         return avatarUrl;

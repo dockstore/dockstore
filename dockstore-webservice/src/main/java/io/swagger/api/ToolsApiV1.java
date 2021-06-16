@@ -54,6 +54,7 @@ import org.apache.http.HttpStatus;
 @io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)
 public class ToolsApiV1 {
     private final ToolsApiService delegate = ToolsApiServiceFactory.getToolsApi();
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     @GET
     @UnitOfWork(readOnly = true)

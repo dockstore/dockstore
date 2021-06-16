@@ -85,8 +85,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
 
             try {
-                return ((RecommendedLanguageInterface)minimalLanguageInterface).
-                        validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
+                return ((RecommendedLanguageInterface)minimalLanguageInterface)
+                    .validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }

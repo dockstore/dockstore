@@ -39,8 +39,8 @@ public class ToolDescriptor {
     @JsonProperty("url")
     private String url = null;
 
+    /** default constructor used by Jackson */
     public ToolDescriptor() {
-        /** default constructor used by Jackson */
     }
 
     public ToolDescriptor(ExtendedFileWrapper fileWrapper) {

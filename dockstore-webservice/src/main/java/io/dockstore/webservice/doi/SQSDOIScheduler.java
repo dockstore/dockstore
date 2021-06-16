@@ -62,9 +62,9 @@ public class SQSDOIScheduler implements DOIGeneratorInterface {
         message.setEntryId(id);
         message.setEntryVersionId(versionId);
         // You must provide a non-empty MessageGroupId when sending messages to a FIFO queue
-        final SendMessageRequest sendMessageRequest = SendMessageRequest.builder().
-            queueUrl(sqsURL).messageBody(gson.toJson(message)).messageGroupId("messageGroup1").
-            build();
+        final SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
+            .queueUrl(sqsURL).messageBody(gson.toJson(message)).messageGroupId("messageGroup1")
+            .build();
         final MessageAttributeValue attributeValue = MessageAttributeValue.builder().stringValue(message.getClass().getName()).build();
         sendMessageRequest.messageAttributes().put("type", attributeValue);
         final SendMessageResponse sendMessageResponse = sqs.sendMessage(sendMessageRequest);

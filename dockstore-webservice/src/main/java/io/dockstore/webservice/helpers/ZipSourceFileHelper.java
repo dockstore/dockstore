@@ -183,8 +183,8 @@ public final class ZipSourceFileHelper {
     /**
      * Given a FileType for a descriptor, return the FileType of the corresponding parameter file.
      * @param workFileType a filetype for a descriptor
-     * @throws CustomWebApplicationException if workFileType is not the file type of a descriptor
      * @return filetype of the parameter descriptor
+     * @throws CustomWebApplicationException if workFileType is not the file type of a descriptor
      */
     private static DescriptorLanguage.FileType paramFileType(DescriptorLanguage.FileType workFileType) {
         switch (workFileType) {

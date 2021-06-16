@@ -24,6 +24,7 @@ import org.hibernate.query.Query;
 public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
     public static final String PAGINATION_RANGE = "range[1,100]";
+
     public EventDAO(SessionFactory factory) {
         super(factory);
     }

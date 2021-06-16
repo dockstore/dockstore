@@ -118,6 +118,7 @@ public enum DescriptorLanguage {
         this.pluginLanguage = pluginLanguage;
         this.defaultPrimaryDescriptorExtensions = defaultPrimaryDescriptorExtensions;
     }
+
     @Override
     public String toString() {
         return shortName;

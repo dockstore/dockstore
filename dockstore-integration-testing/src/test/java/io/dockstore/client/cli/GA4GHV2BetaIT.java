@@ -42,6 +42,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class GA4GHV2BetaIT extends GA4GHIT {
     private static final String API_VERSION = "api/ga4gh/v2/";
+
     public String getApiVersion() {
         return API_VERSION;
     }

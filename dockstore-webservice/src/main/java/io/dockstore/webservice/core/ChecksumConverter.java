@@ -17,6 +17,7 @@ public class ChecksumConverter implements AttributeConverter<List<Checksum>, Str
      * Checksums are stored in the database as a string with the format type:checksum and are comma separated.
      */
     private static final Logger LOG = LoggerFactory.getLogger(ChecksumConverter.class);
+
     @Override
     public String convertToDatabaseColumn(List<Checksum> checksums) {
         if (checksums != null && !checksums.isEmpty()) {

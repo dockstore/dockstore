@@ -345,8 +345,8 @@ public class MetadataResource {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
         Arrays.stream(DescriptorLanguage.values()).filter(lang ->
             // only include plugin languages that have installed plugins
-            !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang)).
-            forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
+            !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang))
+            .forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
     }
 

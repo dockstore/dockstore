@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class FileFormatHelper {
     private static final Logger LOG = LoggerFactory.getLogger(FileFormatHelper.class);
+
     private FileFormatHelper() { }
 
     /**

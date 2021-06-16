@@ -21,6 +21,7 @@ import static io.dockstore.common.PipHelper.DEV_SEM_VER;
 
 public class ServiceInfoApiServiceImpl extends ServiceInfoApiService {
     public static final Date UPDATE_DATE = new Date();
+
     @Override
     public Response getServiceInfo(SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         Service service = getService();

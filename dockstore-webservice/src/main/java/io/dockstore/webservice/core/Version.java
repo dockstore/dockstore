@@ -551,9 +551,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.parent = parent;
     }
 
-    public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
+    public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED
+    }
 
-    public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
+    public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET
+    }
 
 
 }
