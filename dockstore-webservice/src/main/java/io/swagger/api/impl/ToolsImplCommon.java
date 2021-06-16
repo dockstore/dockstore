@@ -30,13 +30,13 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -59,6 +59,7 @@ import io.openapi.model.ImageType;
 import io.openapi.model.Tool;
 import io.openapi.model.ToolVersion;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -243,11 +244,13 @@ public final class ToolsImplCommon {
     }
 
     /**
-     * Construct the image_name for ImageData
+     * Constructs the image_name for ImageData
      *
-     * @return The full image name
+     * @param image
+     * @return The image_name
+     * @throws CustomWebApplicationException if the sha256 digest does not exist for a Docker image that's specified by digest
      */
-    private static String constructImageName(final Image image) {
+    private static String constructImageName(final Image image) throws CustomWebApplicationException {
         DockerSpecifier specifier = image.getSpecifier();
         Registry registry = image.getImageRegistry();
         String fullRepositoryName = image.getRepository();
@@ -265,8 +268,9 @@ public final class ToolsImplCommon {
             // The image's sha256 checksum is the image's digest
             String imageDigest = image.getChecksums().stream()
                     .filter(checksum -> checksum.getType().equals("sha256"))
-                    .collect(Collectors.toList())
-                    .get(0)
+                    .findFirst()
+                    .orElseThrow(() -> new CustomWebApplicationException("Could not find sha256 digest for Docker image specified by digest",
+                            HttpStatus.SC_BAD_REQUEST))
                     .toString();
             return String.join("@", fullRepositoryName, imageDigest);
         } else {
