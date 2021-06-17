@@ -123,8 +123,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion));
 
         // Webhook call should convert workflow to DOCKSTORE_YML
-        workflowApi.
-                handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        workflowApi.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
         workflow = workflowApi.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
         assertEquals("Workflow should be DOCKSTORE_YML mode", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertTrue("One version should be not legacy", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()));

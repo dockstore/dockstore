@@ -80,9 +80,10 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
     }
 
     public String getGitCommitId() {
-        return gitCommitId; }
+        return gitCommitId;
+    }
 
     public String getGitBuildVersion() {
-        return gitBuildVersion; }
-
+        return gitBuildVersion;
+    }
 }

@@ -284,8 +284,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 if (tempMainDescriptor != null) {
                     validationMessageObject.put(primaryDescriptorFilePath,
-                            getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).
-                                    orElse(e.getMessage()));
+                            getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath())
+                                .orElse(e.getMessage()));
                 } else {
                     validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 }

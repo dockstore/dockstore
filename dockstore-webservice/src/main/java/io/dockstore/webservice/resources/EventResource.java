@@ -70,6 +70,7 @@ public class EventResource {
     private static final String DESCRIPTION = "Optional authentication.";
     private final EventDAO eventDAO;
     private final UserDAO userDAO;
+
     public EventResource(EventDAO eventDAO, UserDAO userDAO) {
         this.eventDAO = eventDAO;
         this.userDAO = userDAO;

@@ -170,16 +170,16 @@ public abstract class AbstractYamlService {
          */
         private String prestart;
 
-        @NotNull
         /**
          * The script to run to start up the service
          */
+        @NotNull
         private String start;
 
-        @NotNull
         /**
          * The script to run to start the service
          */
+        @NotNull
         private String stop;
 
         public String getPort() {

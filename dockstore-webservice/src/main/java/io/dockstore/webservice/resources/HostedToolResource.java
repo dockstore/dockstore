@@ -236,7 +236,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     protected boolean isVersionTypeValidated(SortedSet<Validation> validations, DescriptorLanguage.FileType fileType) {
         Optional<Validation> foundFile = validations
                 .stream()
-                .filter(Validation -> Objects.equals(Validation.getType(), fileType))
+                .filter(validation -> Objects.equals(validation.getType(), fileType))
                 .findFirst();
 
         return foundFile.isPresent() && foundFile.get().isValid();

@@ -220,7 +220,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      * @param dockstoreGA4GHBaseUrl The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
      * @return TRS URL to workflow (e.g. https://dockstore.org/api/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere
-     * %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
+     *     %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
      */
     protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion, String dockstoreGA4GHBaseUrl) {
         final String sourceControlPath = workflow.getWorkflowPath();

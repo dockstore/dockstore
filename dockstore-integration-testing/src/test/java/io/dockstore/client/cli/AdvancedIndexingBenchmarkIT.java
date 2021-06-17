@@ -91,10 +91,10 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private SessionFactory sessionFactory;
     private javax.ws.rs.client.Client client;
 
+    /** do nothing, do not load sample data */
     @Before
     @Override
     public void resetDBBetweenTests() {
-        /** do nothing, do not load sample data */
     }
 
     private String randomIdentifier() {

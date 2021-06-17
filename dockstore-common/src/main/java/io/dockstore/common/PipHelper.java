@@ -14,6 +14,7 @@ import com.github.zafarkhaja.semver.Version;
  */
 public final class PipHelper {
     public static final String DEV_SEM_VER = "development-build";
+
     private PipHelper() { }
 
     /**

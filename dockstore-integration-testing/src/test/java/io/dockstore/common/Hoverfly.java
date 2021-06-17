@@ -203,6 +203,7 @@ public final class Hoverfly {
             .get("/user/orgs").willReturn(success(GITHUB_ORGANIZATIONS, MediaType.APPLICATION_JSON))
 
             .get("/user/emails").willReturn(success(GITHUB_EMAIL, MediaType.APPLICATION_JSON)));
+
     private Hoverfly() {
         // utility class
     }

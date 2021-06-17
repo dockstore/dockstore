@@ -36,7 +36,8 @@ import io.swagger.annotations.ApiModel;
 })
 public class Service extends Workflow {
 
-    public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM }
+    public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM
+    }
 
     @Override
     public Entry getParentEntry() {
