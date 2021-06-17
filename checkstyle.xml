@@ -111,7 +111,7 @@
         <module name="WhitespaceAfter">
             <!-- Dockstore override, see comment -->
             <property name="tokens"
-              value="SEMI, LITERAL_IF, LITERAL_ELSE,
+              value="COMMA, SEMI, LITERAL_IF, LITERAL_ELSE,
                     LITERAL_WHILE, LITERAL_DO, LITERAL_FOR, DO_WHILE"/>
 <!--            <property name="tokens"-->
 <!--              value="COMMA, SEMI, TYPECAST, LITERAL_IF, LITERAL_ELSE,-->
