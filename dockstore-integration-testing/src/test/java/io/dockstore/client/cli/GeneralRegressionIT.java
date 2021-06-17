@@ -280,7 +280,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests that tool2JSON works for entries on Dockstore
      */
     @Test
-    public void testTool2JSONWDLOldClient() {
+    public void testTool2JsonWdlOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });

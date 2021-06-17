@@ -257,11 +257,9 @@
             <property name="arrayInitIndent" value="2"/>
         </module>
         <module name="AbbreviationAsWordInName">
-            <!-- Dockstore override, addition -->
-            <property name="severity" value="warning"/>
             <property name="ignoreFinal" value="false"/>
-            <!-- Dockstore override, 1 to 5 -->
-            <property name="allowedAbbreviationLength" value="5"/>
+            <!-- Dockstore override, 1 to 6 -->
+            <property name="allowedAbbreviationLength" value="6"/>
             <property name="tokens"
               value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, ANNOTATION_DEF, ANNOTATION_FIELD_DEF,
                     PARAMETER_DEF, VARIABLE_DEF, METHOD_DEF"/>
