@@ -140,8 +140,7 @@
         <module name="MultipleVariableDeclarations"/>
         <module name="ArrayTypeStyle"/>
         <module name="MissingSwitchDefault"/>
-        <!-- Dockstore override, removal -->
-<!--        <module name="FallThrough"/>-->
+        <module name="FallThrough"/>
         <module name="UpperEll"/>
         <module name="ModifierOrder"/>
 

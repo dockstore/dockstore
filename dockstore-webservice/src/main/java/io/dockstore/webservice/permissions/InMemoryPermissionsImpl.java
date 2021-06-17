@@ -98,6 +98,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
         throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
     }
 
+    @SuppressWarnings("checkstyle:FallThrough")
     @Override
     public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
         if (workflow.getUsers().contains(user)) {

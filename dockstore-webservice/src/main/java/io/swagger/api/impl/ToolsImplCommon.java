@@ -215,6 +215,7 @@ public final class ToolsImplCommon {
                     break;
                 case DOCKERFILE:
                     toolVersion.setContainerfile(true);
+                    break;
                 default:
                     // Unhandled file type is apparently ignored
                     break;
