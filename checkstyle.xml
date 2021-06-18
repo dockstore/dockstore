@@ -109,9 +109,9 @@
                                                  or preceding-sibling::*[last()][self::LCURLY]]"/>
         </module>
         <module name="WhitespaceAfter">
-            <!-- Dockstore override, see comment -->
+            <!-- Dockstore override, see comment, 200+ errors with TYPECAST added back in-->
             <property name="tokens"
-              value="SEMI, LITERAL_IF, LITERAL_ELSE,
+              value="COMMA, SEMI, LITERAL_IF, LITERAL_ELSE,
                     LITERAL_WHILE, LITERAL_DO, LITERAL_FOR, DO_WHILE"/>
 <!--            <property name="tokens"-->
 <!--              value="COMMA, SEMI, TYPECAST, LITERAL_IF, LITERAL_ELSE,-->
@@ -140,8 +140,7 @@
         <module name="MultipleVariableDeclarations"/>
         <module name="ArrayTypeStyle"/>
         <module name="MissingSwitchDefault"/>
-        <!-- Dockstore override, removal -->
-<!--        <module name="FallThrough"/>-->
+        <module name="FallThrough"/>
         <module name="UpperEll"/>
         <module name="ModifierOrder"/>
 
@@ -149,7 +148,7 @@
             <!-- Dockstore override, see comment -->
             <property name="tokens"
               value="IMPORT, STATIC_IMPORT, INTERFACE_DEF, ENUM_DEF,
-                    STATIC_INIT, INSTANCE_INIT, VARIABLE_DEF"/>
+                    STATIC_INIT, INSTANCE_INIT, CTOR_DEF, VARIABLE_DEF"/>
             <!--            <property name="tokens"-->
             <!--              value="PACKAGE_DEF, IMPORT, STATIC_IMPORT, CLASS_DEF, INTERFACE_DEF, ENUM_DEF,-->
             <!--                    STATIC_INIT, INSTANCE_INIT, METHOD_DEF, CTOR_DEF, VARIABLE_DEF"/>-->
@@ -258,11 +257,9 @@
             <property name="arrayInitIndent" value="2"/>
         </module>
         <module name="AbbreviationAsWordInName">
-            <!-- Dockstore override, addition -->
-            <property name="severity" value="warning"/>
             <property name="ignoreFinal" value="false"/>
-            <!-- Dockstore override, 1 to 5 -->
-            <property name="allowedAbbreviationLength" value="5"/>
+            <!-- Dockstore override, 1 to 6 -->
+            <property name="allowedAbbreviationLength" value="6"/>
             <property name="tokens"
               value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, ANNOTATION_DEF, ANNOTATION_FIELD_DEF,
                     PARAMETER_DEF, VARIABLE_DEF, METHOD_DEF"/>

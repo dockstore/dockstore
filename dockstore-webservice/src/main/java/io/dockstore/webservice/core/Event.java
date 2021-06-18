@@ -110,6 +110,7 @@ public class Event {
     private Timestamp dbUpdateDate;
 
     public Event() { }
+
     public Event(User user, Organization organization, Collection collection, BioWorkflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
         this.organization = organization;
