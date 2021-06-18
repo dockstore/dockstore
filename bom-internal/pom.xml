@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.11.0</version>
+    <version>1.11.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
