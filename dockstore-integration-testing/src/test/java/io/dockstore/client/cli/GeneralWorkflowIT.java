@@ -819,6 +819,12 @@ public class GeneralWorkflowIT extends BaseIT {
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
+
+        // Tests that a frozen version without a saved DAG could generate a DAG does not try to save it
+        testingPostgres.runUpdateStatement("update workflowversion set frozen='t'");
+        String workflowDag = workflowsApi.getWorkflowDag(workflow.getId(), defaultVersionNumber);
+        Assert.assertTrue(workflowDag.contains("nodes"));
+        Assert.assertTrue(workflowDag.contains("edges"));
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package io.dockstore.common.yaml;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,9 +30,13 @@ public abstract class AbstractYamlService {
      */
     private String name;
     /**
-     * The service's author
+     * (TO BE DEPRECATED) The service's author
      */
     private String author;
+    /**
+     * The service's authors
+     */
+    private List<YamlAuthor> authors = new ArrayList<>();
     /**
      * The service's description
      */
@@ -70,6 +75,14 @@ public abstract class AbstractYamlService {
 
     public void setAuthor(final String author) {
         this.author = author;
+    }
+
+    public List<YamlAuthor> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(final List<YamlAuthor> authors) {
+        this.authors = authors;
     }
 
     public String getName() {

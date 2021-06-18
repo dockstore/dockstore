@@ -105,6 +105,10 @@ public class DockstoreYamlTest {
         final List<String> tags = filters.getTags();
         assertEquals(1, tags.size());
         assertEquals("gwas*", tags.get(0));
+        List<YamlAuthor> authors = workflow.getAuthors();
+        assertEquals(2, authors.size());
+        assertEquals("0000-0002-6130-1021", authors.get(0).getOrcid());
+        assertEquals("UCSC", authors.get(1).getAffiliation());
 
         workflow = workflows.get(1);
         assertFalse(workflow.getPublish());
@@ -114,6 +118,9 @@ public class DockstoreYamlTest {
         final Service12 service = dockstoreYaml.getService();
         assertNotNull(service);
         assertTrue(service.getPublish());
+        authors = service.getAuthors();
+        assertEquals(1, authors.size());
+        assertEquals("Institute", authors.get(0).getRole());
     }
 
     @Test

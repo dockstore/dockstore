@@ -280,4 +280,26 @@
             WHERE author IS NOT NULL;
         </sql>
     </changeSet>
+
+    <changeSet author="ghogue (generated)" id="yamlOrcidAuthors">
+        <createTable tableName="version_orcidauthor">
+            <column name="versionid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_orcidauthor_pkey"/>
+            </column>
+            <column name="orcidauthorid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_orcidauthor_pkey"/>
+            </column>
+        </createTable>
+        <createTable tableName="orcidauthor">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="orcidauthor_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="orcid" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="orcidauthorid" baseTableName="version_orcidauthor" constraintName="fk_version_orcidauthor" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="orcidauthor"/>
+    </changeSet>
 </databaseChangeLog>
