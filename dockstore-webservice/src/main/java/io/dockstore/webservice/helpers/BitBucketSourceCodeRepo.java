@@ -35,6 +35,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -45,10 +46,8 @@ import io.swagger.bitbucket.client.Configuration;
 import io.swagger.bitbucket.client.api.RefsApi;
 import io.swagger.bitbucket.client.api.RepositoriesApi;
 import io.swagger.bitbucket.client.model.Branch;
-import io.swagger.bitbucket.client.model.PaginatedBranches;
 import io.swagger.bitbucket.client.model.PaginatedRefs;
 import io.swagger.bitbucket.client.model.PaginatedRepositories;
-import io.swagger.bitbucket.client.model.PaginatedTags;
 import io.swagger.bitbucket.client.model.PaginatedTreeentries;
 import io.swagger.bitbucket.client.model.Repository;
 import io.swagger.bitbucket.client.model.Tag;
@@ -73,6 +72,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
+
+
 
     /**
      * @param gitUsername           username that owns the bitbucket token
@@ -209,48 +210,39 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public List<SourceControlOrganization> getOrganizations() {
+        throw new UnsupportedOperationException("apps not supported for bitbucket yet");
+    }
+
+    @Override
     public void updateReferenceType(String repositoryId, Version version) {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
         }
+        String workspace = repositoryId.split("/")[0];
+        String repoSlug = repositoryId.split("/")[1];
+        String name = version.getReference();
         RefsApi refsApi = new RefsApi(apiClient);
+        // There isn't exactly a single Bitbucket endpoint to get a version which then allows us to determine if it's a branch or tag.
+        // This code checks two endpoints (branches and tags) to see if it belongs in which.
         try {
-            PaginatedBranches paginatedBranches = refsApi
-                .repositoriesUsernameRepoSlugRefsBranchesGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedBranches != null) {
-                if (paginatedBranches.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.BRANCH);
-                }
-                if (paginatedBranches.getNext() != null) {
-                    paginatedBranches = getArbitraryURL(paginatedBranches.getNext(), new GenericType<PaginatedBranches>() {
-                    });
-                } else {
-                    paginatedBranches = null;
-                }
-            }
+            refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.BRANCH);
+            return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
+            LOG.warn(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
 
         try {
-            PaginatedTags paginatedTags = refsApi
-                .repositoriesUsernameRepoSlugRefsTagsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedTags != null) {
-                if (paginatedTags.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.TAG);
-                }
-                if (paginatedTags.getNext() != null) {
-                    paginatedTags = getArbitraryURL(paginatedTags.getNext(), new GenericType<PaginatedTags>() {
-                    });
-                } else {
-                    paginatedTags = null;
-                }
-            }
+            refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.TAG);
+            return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
+            LOG.warn(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
+        throw new CustomWebApplicationException(name + " is not a Bitbucket branch or tag in " + repositoryId, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @Override

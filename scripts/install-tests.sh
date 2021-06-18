@@ -12,7 +12,7 @@ if [ "${TESTING_PROFILE}" = "unit-tests" ] || [ "${TESTING_PROFILE}" == "automat
 fi
 
 if [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
-    pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.6.0/requirements3.txt
+    pip3 install -r dockstore-webservice/src/main/resources/requirements/1.7.0/requirements3.txt
 else
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.10.0/requirements3.txt
 fi

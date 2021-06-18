@@ -40,7 +40,18 @@ public class YamlWorkflow {
     @NotNull
     private String primaryDescriptorPath;
 
+    /**
+     * Change the workflow's publish-state, if set.
+     * null does nothing; True & False correspond with the current API behaviour of publishing & unpublishing.
+     */
+    private Boolean publish;
+
+    // If true, the most recent tag that Dockstore processes from AWS lambda becomes the default version
+    private boolean latestTagAsDefault = false;
+
     private Filters filters = new Filters();
+
+    private List<YamlAuthor> authors = new ArrayList<>();
 
     private List<String> testParameterFiles = new ArrayList<>();
 
@@ -72,6 +83,14 @@ public class YamlWorkflow {
         this.primaryDescriptorPath = primaryDescriptorPath;
     }
 
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(final Boolean publish) {
+        this.publish = publish;
+    }
+
     public Filters getFilters() {
         return filters;
     }
@@ -80,11 +99,27 @@ public class YamlWorkflow {
         this.filters = filters;
     }
 
+    public List<YamlAuthor> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(final List<YamlAuthor> authors) {
+        this.authors = authors;
+    }
+
     public List<String> getTestParameterFiles() {
         return testParameterFiles;
     }
 
     public void setTestParameterFiles(final List<String> testParameterFiles) {
         this.testParameterFiles = testParameterFiles;
+    }
+
+    public boolean getLatestTagAsDefault() {
+        return latestTagAsDefault;
+    }
+
+    public void setLatestTagAsDefault(boolean latestTagAsDefault) {
+        this.latestTagAsDefault = latestTagAsDefault;
     }
 }

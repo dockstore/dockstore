@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SimpleAuthorizer implements Authorizer<User> {
 
+    public static final String ADMIN = "admin";
     private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthorizer.class);
 
     @Override
@@ -34,7 +35,7 @@ public class SimpleAuthorizer implements Authorizer<User> {
             LOG.error("Denying access to " + principal.toString());
             return false;
         }
-        if ("admin".equalsIgnoreCase(role)) {
+        if (ADMIN.equalsIgnoreCase(role)) {
             return principal.getIsAdmin();
         } else if  ("curator".equalsIgnoreCase(role)) {
             return principal.isCurator();

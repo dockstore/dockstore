@@ -145,8 +145,10 @@
     </changeSet>
 
     <changeSet author="aduncan (generated)" id="addLambdaEvents">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="lambdaevent_id_seq"/>
         <createTable tableName="lambdaevent">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('lambdaevent_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="lambdaevent_pkey"/>
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>

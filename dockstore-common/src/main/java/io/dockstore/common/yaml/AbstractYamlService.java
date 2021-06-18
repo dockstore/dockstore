@@ -15,6 +15,7 @@
  */
 package io.dockstore.common.yaml;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,13 +30,22 @@ public abstract class AbstractYamlService {
      */
     private String name;
     /**
-     * The service's author
+     * (TO BE DEPRECATED) The service's author
      */
     private String author;
+    /**
+     * The service's authors
+     */
+    private List<YamlAuthor> authors = new ArrayList<>();
     /**
      * The service's description
      */
     private String description;
+    /**
+     * Change the service's publish-state, if set.
+     * null does nothing; True & False correspond with the current API behaviour of publishing & unpublishing.
+     */
+    private Boolean publish;
     /**
      * A list of files that Dockstore should index
      */
@@ -57,12 +67,22 @@ public abstract class AbstractYamlService {
      */
     private Map<String, DataSet> data;
 
+    private boolean latestTagAsDefault = false;
+
     public String getAuthor() {
         return author;
     }
 
     public void setAuthor(final String author) {
         this.author = author;
+    }
+
+    public List<YamlAuthor> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(final List<YamlAuthor> authors) {
+        this.authors = authors;
     }
 
     public String getName() {
@@ -79,6 +99,14 @@ public abstract class AbstractYamlService {
 
     public void setDescription(final String description) {
         this.description = description;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(final Boolean publish) {
+        this.publish = publish;
     }
 
     public List<String> getFiles() {
@@ -119,6 +147,14 @@ public abstract class AbstractYamlService {
 
     public void setData(final Map<String, DataSet> data) {
         this.data = data;
+    }
+
+    public boolean getLatestTagAsDefault() {
+        return latestTagAsDefault;
+    }
+
+    public void setLatestTagAsDefault(boolean latestTagAsDefault) {
+        this.latestTagAsDefault = latestTagAsDefault;
     }
 
     /**

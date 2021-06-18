@@ -93,16 +93,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tag_id_seq")
-    @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq")
+    @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the tag in this web service", position = 0)
     protected long id;
 
     @Column
-    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1)
+    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 1, example = "master")
+    @Schema(description = "git commit/tag/branch", required = true, example = "master")
     private String reference;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2)
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 2, example = "latest")
+    @Schema(description = "Implementation specific, can be a quay.io or docker hub tag name", required = true, example = "latest")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -127,7 +129,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // watch out for https://hibernate.atlassian.net/browse/HHH-3799 if this is set to EAGER
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
+    @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 6)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
     @OrderBy("path")
@@ -152,6 +154,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 9)
     @OneToOne
+    @JoinColumn(name = "versioneditor_id", referencedColumnName = "id", columnDefinition = "bigint")
     private User versionEditor;
 
     // database timestamps
@@ -169,28 +172,38 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 12)
     @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 13)
     @OrderBy("id")
     @BatchSize(size = 25)
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinColumn(name = "versionid", referencedColumnName = "id", nullable = false)
+    @ApiModelProperty(value = "Non-ORCID Authors for each version.")
+    private Set<Author> authors = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(name = "version_orcidauthor", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "orcidauthorid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @ApiModelProperty(value = "ORCID Authors for versions.")
+    private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
+
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
+    @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Cached validations for each version.", position = 14)
     @OrderBy("type")
     @BatchSize(size = 25)
     private final SortedSet<Validation> validations;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_version_image", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "imageid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "The images that belong to this version", position = 15)
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
@@ -239,7 +252,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
-    void updateByUser(final Version version) {
+    void updateByUser(final Version<?> version) {
         this.getVersionMetadata().hidden = version.isHidden();
         this.setDoiStatus(version.getDoiStatus());
         this.setDoiURL(version.getDoiURL());
@@ -325,7 +338,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.valid = valid;
     }
 
-    public abstract Version createEmptyVersion();
+    public abstract Version<?> createEmptyVersion();
 
     @JsonProperty
     public String getName() {
@@ -394,7 +407,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     // Warning: these 4 are forcing eager loaded version metadata
     @ApiModelProperty(position = 21)
     public String getAuthor() {
-        return this.getVersionMetadata().author;
+        Optional<Author> author = this.authors.stream().findFirst();
+        if (author.isPresent()) {
+            return author.get().getName();
+        } else {
+            return null;
+        }
     }
 
     @ApiModelProperty(position = 22)
@@ -409,7 +427,20 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     @ApiModelProperty(position = 24)
     public String getEmail() {
-        return this.getVersionMetadata().email;
+        Optional<Author> author = this.authors.stream().findFirst();
+        if (author.isPresent()) {
+            return author.get().getEmail();
+        } else {
+            return null;
+        }
+    }
+
+    public Set<Author> getAuthors() {
+        return authors;
+    }
+
+    public Set<OrcidAuthor> getOrcidAuthors() {
+        return orcidAuthors;
     }
 
     public void setDoiStatus(DOIStatus doiStatus) {
@@ -422,11 +453,29 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;
+        this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
+        authors.clear();
+        if (newAuthor != null) {
+            authors.add(new Author(newAuthor));
+        }
     }
 
     public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;
+        this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
+        if (authors.size() == 1) {
+            Optional<Author> author = authors.stream().findFirst();
+            if (author.isPresent() && author.get().getEmail() == null) {
+                author.get().setEmail(newEmail);
+            }
+        }
+    }
+
+    public void setAuthors(final Set<Author> authors) {
+        this.authors = authors;
+    }
+
+    public void setOrcidAuthors(final Set<OrcidAuthor> orcidAuthors) {
+        this.orcidAuthors = orcidAuthors;
     }
 
     public ReferenceType getReferenceType() {

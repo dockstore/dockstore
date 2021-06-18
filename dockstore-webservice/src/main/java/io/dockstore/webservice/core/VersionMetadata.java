@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,9 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Data about versions of a workflow/tool in Dockstore rather than about the original workflow.
@@ -89,9 +93,26 @@ public class VersionMetadata {
     )
     protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
 
+    @Column
+    @ApiModelProperty(value = "The presence of the put code indicates the version was exported to ORCID.")
+    protected String orcidPutCode;
+
     @Id
     @Column(name = "id")
     private long id;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbUpdateDate;
+
 
     public long getId() {
         return id;
@@ -113,5 +134,13 @@ public class VersionMetadata {
         if (parsedInformationSet != null) {
             this.parsedInformationSet.addAll(parsedInformationSet);
         }
+    }
+
+    public String getOrcidPutCode() {
+        return orcidPutCode;
+    }
+
+    public void setOrcidPutCode(String orcidPutCode) {
+        this.orcidPutCode = orcidPutCode;
     }
 }

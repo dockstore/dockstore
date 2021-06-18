@@ -39,4 +39,5 @@
     <include file="migrations.1.8.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.9.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.10.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.1.11.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

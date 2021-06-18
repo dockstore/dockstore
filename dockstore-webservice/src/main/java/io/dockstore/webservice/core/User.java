@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -50,6 +51,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -81,14 +83,18 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.onlineProfileId = :id)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.countPublishedEntries", query = "SELECT count(e) FROM User u INNER JOIN u.entries e where e.isPublished=true and u.username = :username"),
-    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)")
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com' AND p.onlineProfileId = :id)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findAllGitHubUsers", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com')"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", unique = true, nullable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "enduser_id_seq")
+    @SequenceGenerator(name = "enduser_id_seq", sequenceName = "enduser_id_seq", allocationSize = 1)
+    @Column(name = "id", unique = true, nullable = false, columnDefinition = "bigint default nextval('enduser_id_seq')")
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0, readOnly = true)
     private long id;
 
@@ -105,9 +111,8 @@ public class User implements Principal, Comparable<User>, Serializable {
     private boolean isBanned;
 
     @ElementCollection(targetClass = Profile.class)
-    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = {
-            @UniqueConstraint(columnNames = { "id", "token_type" }),
-            @UniqueConstraint(columnNames = { "username", "token_type" }) }, indexes = {
+    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = {
+            @UniqueConstraint(columnNames = { "id", "token_type" })}, indexes = {
             @Index(name = "profile_by_username", columnList = "username"), @Index(name = "profile_by_email", columnList = "email") })
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
@@ -128,14 +133,14 @@ public class User implements Principal, Comparable<User>, Serializable {
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
     @OrderBy("id")
     @JsonIgnore
     private final SortedSet<Entry> entries;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
     @OrderBy("id")
     @JsonIgnore
@@ -174,7 +179,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     private Set<OrganizationUser> organizations;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Organizations in Dockstore that this user starred", position = 14)
     @OrderBy("id")
     @JsonIgnore
@@ -205,6 +210,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Transient
     @JsonIgnore
     private String temporaryCredential;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user", orphanRemoval = true)
+    @JsonIgnore
+    private Set<CloudInstance> cloudInstances;
 
     /**
      * The user's ORCID id in the format xxxx-xxxx-xxxx-xxxx
@@ -293,9 +302,9 @@ public class User implements Principal, Comparable<User>, Serializable {
             return false;
         } else {
             Token githubToken = githubByUserId.get(0);
-            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
+            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
             sourceCodeRepo.checkSourceCodeValidity();
-            sourceCodeRepo.syncUserMetadataFromGitHub(this);
+            sourceCodeRepo.syncUserMetadataFromGitHub(this, Optional.of(tokenDAO));
             return true;
         }
     }
@@ -312,7 +321,7 @@ public class User implements Principal, Comparable<User>, Serializable {
             return false;
         } else {
             Token googleToken = googleByUserId.get(0);
-            return GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
+            return GoogleHelper.updateGoogleUserData(googleToken, this);
         }
     }
 
@@ -524,6 +533,14 @@ public class User implements Principal, Comparable<User>, Serializable {
         isBanned = banned;
     }
 
+    public void setCloudInstances(Set<CloudInstance> cloudInstances) {
+        this.cloudInstances = cloudInstances;
+    }
+
+    public Set<CloudInstance> getCloudInstances() {
+        return cloudInstances;
+    }
+
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)
      * The order of the properties are important, the UI lists these properties in this order.
@@ -549,6 +566,9 @@ public class User implements Principal, Comparable<User>, Serializable {
          */
         @Column(columnDefinition = "text")
         public String username;
+        @Column
+        @JsonIgnore
+        public String onlineProfileId;
 
         @Column(updatable = false)
         @CreationTimestamp

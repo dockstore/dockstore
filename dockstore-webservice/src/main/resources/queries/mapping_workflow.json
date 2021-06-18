@@ -1,6 +1,7 @@
 {
   "settings": {
     "index": {
+      "number_of_replicas": 0,
       "analysis": {
         "filter": {
           "english_stop": {
@@ -46,57 +47,55 @@
     }
   },
   "mappings": {
-    "_doc": {
-      "properties": {
-        "author": {
-          "type": "keyword"
-        },
-        "defaultVersion": {
-          "type": "keyword"
-        },
-        "description": {
-          "type": "text",
-          "fielddata": true,
-          "index": true,
-          "analyzer": "text_analyzer"
-        },
-        "descriptorType": {
-          "type": "keyword"
-        },
-        "email": {
-          "type": "text"
-        },
-        "gitUrl": {
-          "type": "text"
-        },
-        "id": {
-          "type": "long"
-        },
-        "is_published": {
-          "type": "boolean"
-        },
-        "lastUpdated": {
-          "format": "epoch_millis",
-          "type": "date"
-        },
-        "mode": {
-          "type": "text"
-        },
-        "organization": {
-          "type": "keyword"
-        },
-        "path": {
-          "type": "text"
-        },
-        "repository": {
-          "type": "keyword"
-        },
-        "workflowName": {
-          "type": "keyword"
-        },
-        "workflow_path": {
-          "type": "keyword"
-        }
+    "properties": {
+      "author": {
+        "type": "keyword"
+      },
+      "defaultVersion": {
+        "type": "keyword"
+      },
+      "description": {
+        "type": "text",
+        "fielddata": true,
+        "index": true,
+        "analyzer": "text_analyzer"
+      },
+      "descriptorType": {
+        "type": "keyword"
+      },
+      "email": {
+        "type": "text"
+      },
+      "gitUrl": {
+        "type": "text"
+      },
+      "id": {
+        "type": "long"
+      },
+      "is_published": {
+        "type": "boolean"
+      },
+      "lastUpdated": {
+        "format": "epoch_millis",
+        "type": "date"
+      },
+      "mode": {
+        "type": "text"
+      },
+      "organization": {
+        "type": "keyword"
+      },
+      "path": {
+        "type": "text"
+      },
+      "repository": {
+        "type": "keyword"
+      },
+      "workflowName": {
+        "type": "keyword"
+      },
+      "workflow_path": {
+        "type": "keyword"
       }
     }
   }

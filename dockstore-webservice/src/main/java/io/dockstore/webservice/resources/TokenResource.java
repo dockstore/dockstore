@@ -17,13 +17,17 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.SecureRandom;
+import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -36,6 +40,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
@@ -57,12 +62,16 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.PrivacyPolicyVersion;
 import io.dockstore.webservice.core.TOSVersion;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.TokenViews;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -113,13 +122,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
-    private static final String ORCID_URL = "https://orcid.org/";
     private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_2;
     private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
+    private final DeletedUsernameDAO deletedUsernameDAO;
 
     private final String githubClientID;
     private final String githubClientSecret;
@@ -137,16 +146,19 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String googleClientSecret;
     private final String orcidClientID;
     private final String orcidClientSecret;
+    private final String orcidScope;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     private final String orcidSummary = "Add a new orcid.org token";
     private final String orcidDescription = "Using OAuth code from ORCID, request and store tokens from ORCID API";
+    private String orcidUrl = null;
 
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, DeletedUsernameDAO deletedUsernameDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
             DockstoreWebserviceConfiguration configuration) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
+        this.deletedUsernameDAO = deletedUsernameDAO;
         this.githubClientID = configuration.getGithubClientID();
         this.githubClientSecret = configuration.getGithubClientSecret();
         this.bitbucketClientID = configuration.getBitbucketClientID();
@@ -162,17 +174,26 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
         this.orcidClientID = configuration.getOrcidClientID();
+        this.orcidScope = configuration.getUiConfig().getOrcidScope();
         this.orcidClientSecret = configuration.getOrcidClientSecret();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
+        try {
+            URL orcidAuthUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
+            // orcidUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
+            orcidUrl = orcidAuthUrl.getProtocol() + "://" + orcidAuthUrl.getHost() + "/";
+        } catch (MalformedURLException e) {
+            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
+        }
     }
 
     @GET
     @Path("/{tokenId}")
+    @JsonView(TokenViews.User.class)
     @Timed
     @UnitOfWork(readOnly = true)
-    @Operation(operationId = "listToken", description = "Get a specific token by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get a specific token by id.", authorizations = {
+    @Operation(operationId = "listToken", description = "Get information about a specific token by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get information about a specific token by id.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
@@ -188,6 +209,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/quay.io")
+    @JsonView(TokenViews.User.class)
     @Operation(operationId = "addQuayToken", description = "Add a new quay IO token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("access_token") String accessToken) {
@@ -211,7 +233,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
 
-            checkIfAccountHasBeenLinked(username, TokenType.QUAY_IO);
+            checkIfAccountHasBeenLinked(token, TokenType.QUAY_IO);
             long create = tokenDAO.create(token);
             LOG.info("Quay token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -224,13 +246,25 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     /**
      * Checks if an account has already been connected to Dockstore
      * For services that don't require refresh tokens
-     * @param username Username on account being added
+     * @param token Newly created Token for account being linked
      * @param tokenType The type of token being added
      */
-    private void checkIfAccountHasBeenLinked(String username, TokenType tokenType) {
-        Token existingToken = tokenDAO.findTokenByUserNameAndTokenSource(username, tokenType);
+    private void checkIfAccountHasBeenLinked(Token token, TokenType tokenType) {
+        Token existingToken;
+        // TODO: Check if tokentype is Google after Google ids have been gathered
+        if (tokenType == TokenType.GITHUB_COM) {
+            existingToken = tokenDAO.findTokenByOnlineProfileIdAndTokenSource(token.getOnlineProfileId(), tokenType);
+        } else {
+            existingToken = tokenDAO.findTokenByUserNameAndTokenSource(token.getUsername(), tokenType);
+        }
+
         if (existingToken != null) {
-            String msg = "A '" + tokenType.toString() + "' token already exists on Dockstore for the account '" + username + "'";
+            User dockstoreUser = userDAO.findById(existingToken.getUserId());
+            final String tokenAccount = "\"" + tokenType.toString() + "\"";
+            final String tokenAccountName = "\"" + token.getUsername() + "\"";
+            final String dockstoreUserName = "\"" + dockstoreUser.getName() + "\"";
+            String msg = MessageFormat.format("The {0} account {1} is already linked to the Dockstore user {2}. "
+                + "Login to Dockstore using your {0} {1} user.", tokenAccount, tokenAccountName, dockstoreUserName);
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_CONFLICT);
         }
@@ -270,6 +304,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/gitlab.com")
+    @JsonView(TokenViews.User.class)
     @Operation(operationId = "addGitlabToken", description = "Add a new gitlab.com token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGitlabToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("code") String code) {
@@ -307,7 +342,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
 
-            checkIfAccountHasBeenLinked(username, TokenType.GITLAB_COM);
+            checkIfAccountHasBeenLinked(token, TokenType.GITLAB_COM);
             long create = tokenDAO.create(token);
             LOG.info("Gitlab token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -360,6 +395,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/google")
+    @JsonView(TokenViews.Auth.class)
     @Operation(operationId = "addGoogleToken", description = "Allow satellizer to post a new Google token to Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Allow satellizer to post a new Google token to Dockstore.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the Google token", response = Token.class)
@@ -379,13 +415,25 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Token dockstoreToken = null;
         Token googleToken = null;
         String googleLoginName = userinfo.getEmail();
-        User user = userDAO.findByGoogleEmail(googleLoginName);
+        String googleOnlineProfileId = userinfo.getId();
 
+        // We will not be able to get everyone's Google profile ID so check if we can match a user by id first, and then by username if that fails.
+        User user = userDAO.findByGoogleOnlineProfileId(googleOnlineProfileId);
+        if (user == null) {
+            user = userDAO.findByGoogleEmail(googleLoginName);
+        }
         if (registerUser && authUser.isEmpty()) {
             if (user == null) {
+                String googleLogin = userinfo.getEmail();
+                String username = googleLogin;
+                int count = 1;
+
+                while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
+                    username = googleLogin + count++;
+                }
+
                 user = new User();
-                // Pull user information from Google
-                user.setUsername(userinfo.getEmail());
+                user.setUsername(username);
                 userID = userDAO.create(user);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
@@ -424,8 +472,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         if (googleToken == null) {
             LOG.info("Could not find user's Google token. Making new one...");
             // CREATE GOOGLE TOKEN
-            googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM);
-            checkIfAccountHasBeenLinked(googleLoginName, TokenType.GOOGLE_COM);
+            googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM, googleOnlineProfileId);
+            checkIfAccountHasBeenLinked(googleToken, TokenType.GOOGLE_COM);
             tokenDAO.create(googleToken);
             // Update user profile too
             user = userDAO.findById(userID);
@@ -435,6 +483,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // Update tokens if exists
             googleToken.setContent(accessToken);
             googleToken.setRefreshToken(refreshToken);
+            googleToken.setUsername(googleLoginName);
+            googleToken.setOnlineProfileId(googleOnlineProfileId);
+
             tokenDAO.update(googleToken);
         }
         return dockstoreToken;
@@ -471,6 +522,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github")
+    @JsonView(TokenViews.Auth.class)
     @Operation(operationId = "addToken", description = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
@@ -486,6 +538,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github.com")
+    @JsonView(TokenViews.User.class)
     @Operation(operationId = "addGithubToken", description = "Add a new github.com token, used by accounts page.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new github.com token, used by accounts page.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
@@ -502,20 +555,22 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String githubLogin;
         Token dockstoreToken = null;
         Token githubToken = null;
+        long gitHubId;
         try {
             GitHub github = new GitHubBuilder().withOAuthToken(accessToken).build();
             githubLogin = github.getMyself().getLogin();
+            gitHubId = github.getMyself().getId();
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Token ignored due to IOException", HttpStatus.SC_CONFLICT);
         }
 
-        User user = userDAO.findByGitHubUsername(githubLogin);
+        User user = userDAO.findByGitHubUserId(String.valueOf(gitHubId));
         long userID;
         if (registerUser) {
             // check that there was no previous user, but by default use the github login
             String username = githubLogin;
             int count = 1;
-            while (userDAO.findByUsername(username) != null) {
+            while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
                 username = githubLogin + count++;
             }
 
@@ -523,7 +578,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 User newUser = new User();
                 newUser.setUsername(username);
                 userID = userDAO.create(newUser);
-                user = userDAO.findById(userID);
+                userDAO.findById(userID);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
             }
@@ -562,20 +617,19 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             githubToken.setContent(accessToken);
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
-            checkIfAccountHasBeenLinked(githubLogin, TokenType.GITHUB_COM);
+            githubToken.setOnlineProfileId(String.valueOf(gitHubId));
+            checkIfAccountHasBeenLinked(githubToken, TokenType.GITHUB_COM);
             tokenDAO.create(githubToken);
             user = userDAO.findById(userID);
-            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
-            gitHubSourceCodeRepo.syncUserMetadataFromGitHub(user);
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
+            gitHubSourceCodeRepo.syncUserMetadataFromGitHub(user, Optional.empty());
         }
         return dockstoreToken;
     }
 
-
-
     private Token createDockstoreToken(long userID, String githubLogin) {
         Token dockstoreToken;
-        final Random random = new Random();
+        final SecureRandom random = new SecureRandom();
         final int bufferLength = 1024;
         final byte[] buffer = new byte[bufferLength];
         random.nextBytes(buffer);
@@ -596,6 +650,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org")
+    @JsonView(TokenViews.User.class)
     @Operation(operationId = "addBitbucketToken", description = "Add a new bitbucket.org token, used by quay.io redirect.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
@@ -639,7 +694,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 LOG.info("Bitbucket.org token username is null, did not create token");
                 throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
             }
-            checkIfAccountHasBeenLinked(username, TokenType.BITBUCKET_ORG);
+            checkIfAccountHasBeenLinked(token, TokenType.BITBUCKET_ORG);
             long create = tokenDAO.create(token);
             LOG.info("Bitbucket token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -653,6 +708,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/orcid.org")
+    @JsonView(TokenViews.User.class)
     @ApiOperation(value = orcidSummary, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = orcidDescription, response = Token.class)
     @Operation(operationId = "addOrcidToken", summary = orcidSummary, description = orcidDescription,
@@ -663,19 +719,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         String refreshToken;
         String username;
         String orcid;
+        String scope;
+        long expirationTime;
 
-        if (code.isEmpty()) {
+        if (code == null || code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
         }
 
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                JSON_FACTORY, new GenericUrl(ORCID_URL + "oauth/token"),
+                JSON_FACTORY, new GenericUrl(orcidUrl + "oauth/token"),
                 new ClientParametersAuthentication(orcidClientID, orcidClientSecret), orcidClientID,
-                ORCID_URL + "/authorize").build();
+                orcidUrl + "/authorize").build();
 
         try {
-            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList("/authenticate"))
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList(orcidScope))
+                    .setRequestInitializer(request -> request.getHeaders().setAccept(MediaType.APPLICATION_JSON)).execute();
             accessToken = tokenResponse.getAccessToken();
             refreshToken = tokenResponse.getRefreshToken();
 
@@ -683,6 +741,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // get them to store in the token and user tables
             username = tokenResponse.get("name").toString();
             orcid = tokenResponse.get("orcid").toString();
+            scope = tokenResponse.getScope();
+            Instant instant = Instant.now();
+            instant.plusSeconds(tokenResponse.getExpiresInSeconds());
+            expirationTime = instant.getEpochSecond();
 
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful" + e.getMessage(), e);
@@ -700,8 +762,15 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             token.setRefreshToken(refreshToken);
             token.setUserId(user.getId());
             token.setUsername(username);
+            TokenScope tokenScope = TokenScope.getEnumByString(scope);
+            if (tokenScope == null) {
+                LOG.error("Could not convert scope string to enum: " + scope);
+                throw new CustomWebApplicationException("Could not save ORCID token, contact Dockstore team", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+            token.setScope(tokenScope);
+            token.setExpirationTime(expirationTime);
 
-            checkIfAccountHasBeenLinked(username, TokenType.ORCID_ORG);
+            checkIfAccountHasBeenLinked(token, TokenType.ORCID_ORG);
             long create = tokenDAO.create(token);
             LOG.info("ORCID token created for {}", user.getUsername());
             return tokenDAO.findById(create);
@@ -716,6 +785,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/zenodo.org")
+    @JsonView(TokenViews.User.class)
     @Operation(operationId = "addZenodoToken", description = "Add a new zenodo.org token, used by accounts page.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add a new zenodo.org token, used by accounts page.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
@@ -756,7 +826,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             // otherwise we will get a DB error when trying to
             // link another user's Zenodo credentials
             token.setUsername(user.getUsername());
-            checkIfAccountHasBeenLinked(user.getUsername(), TokenType.ZENODO_ORG);
+            checkIfAccountHasBeenLinked(token, TokenType.ZENODO_ORG);
             long create = tokenDAO.create(token);
             LOG.info("Zenodo token created for {}", user.getUsername());
             return tokenDAO.findById(create);

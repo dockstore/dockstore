@@ -57,7 +57,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -339,7 +339,8 @@ public class GeneralIT extends BaseIT {
         tool.setDefaultCWLTestParameterFile("/test.cwl.json");
         tool.setDefaultWDLTestParameterFile("/test.wdl.json");
         tool.setIsPublished(false);
-        tool.setGitUrl("git@bitbucket.org:dockstoretestuser2/dockstore-whalesay-2.git");
+        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+        tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/dockstore-whalesay-2.git");
         tool.setToolname("alternate");
         tool.setPrivateAccess(false);
         return tool;
@@ -400,7 +401,7 @@ public class GeneralIT extends BaseIT {
         List<Tag> tags = tool.getWorkflowVersions();
         verifySourcefileChecksumsSaved(tags);
 
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         // Dockerfile
         List<FileWrapper> fileWrappers = ga4Ghv20Api.toolsIdVersionsVersionIdContainerfileGet("quay.io/dockstoretestuser2/quayandgithub/alternate", "master");
@@ -439,7 +440,8 @@ public class GeneralIT extends BaseIT {
                 .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
 
         workflow = workflowApi.refresh(workflow.getId(), false);
-        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflow.getWorkflowVersions().get(0).getId());
+        long workflowVersionId = workflow.getWorkflowVersions().stream().filter(w -> w.getReference().equals("testBoth")).findFirst().get().getId();
+        List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(workflowVersionId);
         List<VersionVerifiedPlatform> versionsVerified = entriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(0, versionsVerified.size());
 
@@ -468,7 +470,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // verified platforms can be viewed by others once published
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         workflowApi.publish(workflow.getId(), publishRequest);
         versionsVerified = user1EntriesApi.getVerifiedPlatforms(workflow.getId());
         Assert.assertEquals(1, versionsVerified.size());
@@ -478,8 +480,10 @@ public class GeneralIT extends BaseIT {
     public void testGettingVersionsFileTypes() {
         io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         final HostedApi hostedApi = new HostedApi(webClient);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflowApi = new io.dockstore.openapi.client.api.WorkflowsApi(openApiWebClient);
         io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(client);
 
         Workflow workflow = hostedApi.createHostedWorkflow("wdlHosted", null, DescriptorLanguage.WDL.toString(), null, null);
@@ -490,7 +494,7 @@ public class GeneralIT extends BaseIT {
         sourceFile.setAbsolutePath("/Dockstore.wdl");
 
         workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile));
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
+        io.dockstore.openapi.client.model.WorkflowVersion workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("1")).findFirst().get();
         List<String> fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(1, fileTypes.size());
         assertEquals(SourceFile.TypeEnum.DOCKSTORE_WDL.toString(), fileTypes.get(0));
@@ -502,7 +506,7 @@ public class GeneralIT extends BaseIT {
         testFile.setAbsolutePath("/test.wdl.json");
 
         workflow = hostedApi.editHostedWorkflow(workflow.getId(), Lists.newArrayList(sourceFile, testFile));
-        workflowVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
+        workflowVersion = openApiWorkflowApi.getWorkflowVersions(workflow.getId()).stream().filter(wv -> wv.getName().equals("2")).findFirst().get();
         fileTypes = entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
         assertFalse(fileTypes.get(0) == fileTypes.get(1));
@@ -542,7 +546,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // file types can be viewed by others once published
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         workflowApi.publish(workflow.getId(), publishRequest);
         fileTypes = user1entriesApi.getVersionsFileTypes(workflow.getId(), workflowVersion.getId());
         assertEquals(2, fileTypes.size());
@@ -1059,7 +1063,7 @@ public class GeneralIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
         DockstoreTool tool = toolApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
         tool = toolApi.refresh(tool.getId());
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
         Tool ga4ghatool = ga4Ghv20Api.toolsIdGet("quay.io/dockstoretestuser2/quayandgithub");
 
@@ -1314,6 +1318,30 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
+     * Test to update the tool's forum and it should change the in the database
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void testUpdateToolForumUrl() throws ApiException {
+        final String forumUrl = "hello.com";
+        //setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+
+        DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
+        toolsApi.refresh(toolTest.getId());
+
+        //change the forumurl
+        toolTest.setForumUrl(forumUrl);
+        toolsApi.updateContainer(toolTest.getId(), toolTest);
+        toolsApi.refresh(toolTest.getId());
+
+        //check the tool's forumurl is updated in the database
+        final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
+        assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
+    }
+
+    /**
      * Creates a basic Manual Tool with Quay
      *
      * @param gitUrl
@@ -1445,7 +1473,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // Publish tool
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(refresh.getId(), publishRequest);
 
         // Get published tool by alias as owner
@@ -1460,6 +1488,23 @@ public class GeneralIT extends BaseIT {
         publishedAliasTool = anonContainersApi.getToolByAlias("foobar");
         Assert.assertNotNull("Should retrieve the tool by alias", publishedAliasTool);
 
+    }
+
+    /**
+     * This tests a not found zip file
+     */
+    @Test
+    public void sillyContainerZipFile() throws IOException {
+        final ApiClient anonWebClient = CommonTestUtilities.getWebClient(false, null, testingPostgres);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+        boolean success = false;
+        try {
+            anonContainersApi.getToolZip(100000000L, 1000000L);
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_NOT_FOUND);
+            success = true;
+        }
+        assertTrue("should have got 404", success);
     }
 
     /**
@@ -1506,7 +1551,7 @@ public class GeneralIT extends BaseIT {
         }
 
         // Publish
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         ownerContainersApi.publish(toolId, publishRequest);
 
         // Try downloading published

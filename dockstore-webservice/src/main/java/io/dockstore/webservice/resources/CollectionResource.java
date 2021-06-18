@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -25,6 +26,7 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -35,6 +37,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -85,6 +88,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     private final CollectionDAO collectionDAO;
     private final OrganizationDAO organizationDAO;
     private final WorkflowDAO workflowDAO;
+    private final ToolDAO toolDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
@@ -95,6 +99,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.versionDAO = new VersionDAO(sessionFactory);
@@ -172,7 +177,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @UnitOfWork(readOnly = true)
     @Path("{organizationName}/collections/{collectionName}/name")
     @ApiOperation(value = "Retrieve a collection by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
-    @Operation(operationId = "getCollectionById", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
+    @Operation(operationId = "getCollectionByName", summary = "Retrieve a collection by name.", description = "Retrieve a collection by name. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public Collection getCollectionByName(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
             @ApiParam(value = "Organization name.", required = true) @Parameter(description = "Organization name.", name = "organizationName", in = ParameterIn.PATH, required = true) @PathParam("organizationName") String organizationName,
             @ApiParam(value = "Collection name.", required = true) @Parameter(description = "Collection name.", name = "collectionName", in = ParameterIn.PATH, required = true) @PathParam("collectionName") String collectionName) {
@@ -219,11 +224,23 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         List<CollectionEntry> collectionEntries = new ArrayList<>();
         collectionEntries.addAll(collectionWorkflows);
         collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);
+        collectionEntries.addAll(collectionTools);        
         collectionEntries.addAll(collectionWorkflowsWithVersions);
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
+        collectionEntries.forEach(entry -> {
+            List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
+            List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
+            entry.setLabels(labelStrings);
+            if (entry.getEntryType().equals("tool")) {
+                entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
+            } else if (entry.getEntryType().equals("workflow")) {
+                entry.setDescriptorTypes(workflowDAO.getWorkflowsDescriptorTypes(entry.getId()));
+            }
+        });
         collection.setCollectionEntries(collectionEntries);
+        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
+        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
@@ -419,6 +436,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             collections.forEach(collection -> {
                 currentSession.evict(collection);
                 collection.setEntries(new HashSet<>());
+                collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
+                collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
             });
         }
         return collections;

@@ -16,6 +16,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -25,6 +26,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -170,7 +172,7 @@ public class WDLHandlerTest {
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
             Assert.fail("Expected parsing error");
         } catch (CustomWebApplicationException e) {
-            Assert.assertEquals(400, e.getResponse().getStatus());
+            Assert.assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, e.getResponse().getStatus());
             assertThat(e.getErrorMessage()).contains(WDLHandler.WDL_PARSE_ERROR);
         }
     }
@@ -255,6 +257,11 @@ public class WDLHandlerTest {
 
         @Override
         public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
+            return null;
+        }
+
+        @Override
+        public List<SourceControlOrganization> getOrganizations() {
             return null;
         }
 

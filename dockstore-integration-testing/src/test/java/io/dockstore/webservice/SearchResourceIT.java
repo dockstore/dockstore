@@ -16,7 +16,6 @@
 package io.dockstore.webservice;
 
 import io.dockstore.client.cli.BaseIT;
-import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.swagger.client.ApiClient;
@@ -79,7 +78,7 @@ public class SearchResourceIT extends BaseIT {
             String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
             // There's actually two "total", one for shards and one for hits.
             // Need to only look at the hits one
-            if (!s.contains("hits\":{\"total\":" + hit + ",")) {
+            if (!s.contains("hits\":{\"total\":{\"value\":" + hit + ",")) {
                 if (counter > 5) {
                     Assert.fail(s + " does not have the correct amount of hits");
                 } else {
@@ -107,11 +106,11 @@ public class SearchResourceIT extends BaseIT {
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         entriesApi.addAliases(workflow.getId(), "potatoAlias");
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(false));
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         waitForIndexRefresh(1, extendedGa4GhApi,  0);
         // after publication index should include workflow
         String s = extendedGa4GhApi.toolsIndexSearch(exampleESQuery);
@@ -155,7 +154,7 @@ public class SearchResourceIT extends BaseIT {
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
-        workflowApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         waitForIndexRefresh(1, extendedGa4GhApi,  0);
 

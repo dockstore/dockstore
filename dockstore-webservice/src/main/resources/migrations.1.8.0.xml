@@ -58,6 +58,7 @@
         <addForeignKeyConstraint baseColumnNames="id" baseTableName="workflowversion_alias" constraintName="fk_workflowversion_alias" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
     </changeSet>
     <changeSet author="natalieperez (generated)" id="create_images_checksums">
+        <validCheckSum>ANY</validCheckSum>
         <createTable tableName="entry_version_image">
             <column name="versionid" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="entry_version_image_pkey"/>
@@ -66,8 +67,9 @@
                 <constraints primaryKey="true" primaryKeyName="entry_version_image_pkey"/>
             </column>
         </createTable>
+        <createSequence sequenceName="image_id_seq"/>
         <createTable tableName="image">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('event_id_seq')">
                 <constraints primaryKey="true" primaryKeyName="image_pkey"/>
             </column>
             <column name="checksums" type="VARCHAR"/>
@@ -103,8 +105,10 @@
         </sql>
     </changeSet>
     <changeSet author="esoth" id="notifications">
-        <createTable tableName="notification">
-            <column name="id" type="bigserial">
+        <validCheckSum>ANY</validCheckSum>
+        <createSequence sequenceName="notification_id_seq"/>
+        <createTable tableName="notification" >
+            <column autoIncrement="false" name="id" type="bigint" defaultValueComputed="nextVal('notification_id_seq')">
                 <constraints primaryKey="true"/>
             </column>
             <column name="message" type="varchar(280)"/>

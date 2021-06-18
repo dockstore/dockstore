@@ -274,7 +274,7 @@ public class ValidationIT extends BaseIT {
         // Register tool, should be valid
         DockstoreTool tool = getTool();
         tool = toolsApi.registerManual(tool);
-        Assert.assertNull(tool.getLicenseInformation().getLicenseName());
+        Assert.assertNotNull(tool.getLicenseInformation().getLicenseName());
         tool = toolsApi.refresh(tool.getId());
         Assert.assertTrue("Should be valid", isTagValid(tool, "master"));
 
@@ -406,7 +406,7 @@ public class ValidationIT extends BaseIT {
         client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/heads/missingFile", installationId);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "", true);
+        Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "versions", true);
         Assert.assertFalse("Should be invalid due to missing file in dockstore.yml", isWorkflowVersionValid(service, "missingFile"));
     }
 

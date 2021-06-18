@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.10.2-SNAPSHOT"
+  version: "1.11.0-rc.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -519,9 +519,9 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Search the index of tools"
-      description: "This endpoint searches the index for all published tools and workflows.\
-        \ Used by utilities that expect to talk to an elastic search endpoint."
+      summary: "Search the tools and workflows indices."
+      description: "This endpoint searches the indices for all published tools and\
+        \ workflows. Used by utilities that expect to talk to an elastic search endpoint."
       operationId: "toolsIndexSearch"
       produces:
       - "application/json"
@@ -541,15 +541,16 @@ paths:
     post:
       tags:
       - "extendedGA4GH"
-      summary: "Update the index of tools"
-      description: "This endpoint updates the index for all published tools and workflows."
+      summary: "Update the workflows and tools indices"
+      description: "This endpoint updates the indices for all published tools and\
+        \ workflows."
       operationId: "toolsIndexGet"
       produces:
       - "text/plain"
       parameters: []
       responses:
         200:
-          description: "An array of Tools of the input organization."
+          description: "Workflows and tools indices populated with entries."
       security:
       - BEARER: []
   /api/ga4gh/v2/extended/tools/{organization}:
@@ -1110,7 +1111,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/github:
@@ -1134,7 +1135,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_Auth"
       security:
       - BEARER: []
   /auth/tokens/github.com:
@@ -1157,7 +1158,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/gitlab.com:
@@ -1180,7 +1181,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/google:
@@ -1203,7 +1204,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_Auth"
       security:
       - BEARER: []
   /auth/tokens/orcid.org:
@@ -1225,7 +1226,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/quay.io:
@@ -1248,7 +1249,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/zenodo.org:
@@ -1271,14 +1272,14 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /auth/tokens/{tokenId}:
     get:
       tags:
       - "tokens"
-      summary: "Get a specific token by id."
+      summary: "Get information about a specific token by id."
       description: ""
       operationId: "listToken"
       produces:
@@ -1294,7 +1295,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Token"
+            $ref: "#/definitions/Token_User"
         400:
           description: "Invalid ID supplied"
         404:
@@ -1321,23 +1322,6 @@ paths:
           description: "Invalid token value"
       security:
       - BEARER: []
-  /containers/dockerRegistryList:
-    get:
-      tags:
-      - "containers"
-      summary: "Get the list of docker registries supported on Dockstore."
-      description: "Does not need authentication"
-      operationId: "getDockerRegistries"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/RegistryBean"
   /containers/hostedEntry:
     post:
       tags:
@@ -1414,6 +1398,8 @@ paths:
       summary: "Non-idempotent operation for creating new revisions of hosted tools."
       description: ""
       operationId: "editHostedTool"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3085,6 +3071,8 @@ paths:
       description: "Currently only name, display name, description, topic, email,\
         \ link, avatarUrl, and location can be updated."
       operationId: "updateOrganization"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3964,6 +3952,22 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/LambdaEvent"
+  /users/github/organizations:
+    get:
+      tags:
+      - "users"
+      operationId: "getMyGitHubOrgs"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceControlOrganization"
   /users/github/sync:
     post:
       tags:
@@ -4163,7 +4167,14 @@ paths:
       operationId: "selfDestruct"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "userId"
+        in: "query"
+        description: "Optional user id if deleting another user. Only admins can delete\
+          \ another user."
+        required: false
+        type: "integer"
+        format: "int64"
       responses:
         200:
           description: "successful operation"
@@ -4540,7 +4551,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get tokens with user id."
+      summary: "Get information about tokens with user id."
       description: ""
       operationId: "getUserTokens"
       produces:
@@ -4558,7 +4569,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/Token"
+              $ref: "#/definitions/Token_User"
       security:
       - BEARER: []
   /users/{userId}/workflows:
@@ -4847,6 +4858,8 @@ paths:
       summary: "Non-idempotent operation for creating new revisions of hosted workflows"
       description: ""
       operationId: "editHostedWorkflow"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6107,6 +6120,30 @@ paths:
       security:
       - BEARER: []
   /workflows/{workflowId}/workflowVersions:
+    get:
+      tags:
+      - "workflows"
+      summary: "Return first 200 versions in an entry"
+      description: ""
+      operationId: "getWorkflowVersions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "workflowID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/WorkflowVersion"
+      security:
+      - BEARER: []
     put:
       tags:
       - "workflows"
@@ -6177,6 +6214,25 @@ definitions:
     properties:
       content:
         type: "string"
+  Author:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      affiliation:
+        type: "string"
+        description: "Affiliation of the author"
+      email:
+        type: "string"
+        description: "Email of the author"
+      role:
+        type: "string"
+        description: "Role of the author"
+      name:
+        type: "string"
+        position: 1
+        description: "Name of the author"
+    description: "This describes a non-ORCID author of a version in Dockstore"
   BioWorkflow:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -6186,9 +6242,6 @@ definitions:
           type: "integer"
           format: "int64"
           readOnly: true
-        is_checker:
-          type: "boolean"
-          position: 23
       description: "This describes one workflow in the dockstore"
   Checksum:
     type: "object"
@@ -6256,12 +6309,26 @@ definitions:
         type: "string"
         position: 4
         description: "Short description of the collection"
+      workflowsLength:
+        type: "integer"
+        format: "int64"
+        position: 5
+        description: "Number of workflows inside this collection"
+      toolsLength:
+        type: "integer"
+        format: "int64"
+        position: 6
+        description: "Number of tools inside this collection"
   CollectionEntry:
     type: "object"
     properties:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      descriptorTypes:
+        type: "array"
+        items:
+          type: "string"
       entryPath:
         type: "string"
       entryType:
@@ -6269,6 +6336,12 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+      labels:
+        type: "array"
+        items:
+          type: "string"
+      verified:
+        type: "boolean"
       versionName:
         type: "string"
   CollectionOrganization:
@@ -6314,6 +6387,8 @@ definitions:
       documentationUrl:
         type: "string"
       featuredContentUrl:
+        type: "string"
+      featuredNewsUrl:
         type: "string"
       gitBuildVersion:
         type: "string"
@@ -6406,6 +6481,11 @@ definitions:
       dbUpdateDate:
         type: "integer"
         format: "int64"
+      forumUrl:
+        type: "string"
+        description: "This is a link to a forum or discussion board"
+        minLength: 0
+        maxLength: 256
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6413,24 +6493,16 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       last_modified_date:
         type: "integer"
         format: "int64"
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       tags:
         type: "array"
         uniqueItems: true
@@ -6514,11 +6586,6 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      conceptDoi:
-        type: "string"
-        position: 13
-        description: "The Digital Object Identifier (DOI) representing all of the\
-          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
@@ -6529,6 +6596,11 @@ definitions:
         - "AUTO_DETECT_QUAY_TAGS_WITH_MIXED"
         - "MANUAL_IMAGE_PATH"
         - "HOSTED"
+      conceptDoi:
+        type: "string"
+        position: 14
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       name:
         type: "string"
         position: 14
@@ -6538,11 +6610,27 @@ definitions:
         position: 15
         description: "This indicates for the associated git repository, the default\
           \ path to the Dockerfile, required: GA4GH"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       default_cwl_path:
         type: "string"
         position: 16
         description: "This indicates for the associated git repository, the default\
           \ path to the CWL document, required: GA4GH"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       default_wdl_path:
         type: "string"
         position: 17
@@ -6651,24 +6739,16 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       last_modified_date:
         type: "integer"
         format: "int64"
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       topicId:
         type: "integer"
         format: "int64"
@@ -6754,9 +6834,25 @@ definitions:
         readOnly: true
       conceptDoi:
         type: "string"
-        position: 13
+        position: 14
         description: "The Digital Object Identifier (DOI) representing all of the\
           \ versions of your workflow"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
   EntryUpdateTime:
     type: "object"
     properties:
@@ -6888,6 +6984,16 @@ definitions:
   Image:
     type: "object"
     properties:
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      imageUpdateDate:
+        type: "string"
+        description: "The date the image was updated in the Docker repository"
+      size:
+        type: "integer"
+        format: "int64"
+        description: "The size of the image in bytes"
       checksums:
         type: "array"
         position: 1
@@ -6992,6 +7098,7 @@ definitions:
         - "PUSH"
         - "DELETE"
         - "INSTALL"
+        - "PUBLISH"
   LicenseInformation:
     type: "object"
     properties:
@@ -7082,6 +7189,16 @@ definitions:
         format: "int64"
         position: 6
         description: "Timestamp at which the notification was last updated"
+  OrcidAuthor:
+    type: "object"
+    required:
+    - "orcid"
+    properties:
+      orcid:
+        type: "string"
+        position: 1
+        description: "ORCID id of the author"
+    description: "This describes an ORCID-author of a version in Dockstore"
   Organization:
     type: "object"
     required:
@@ -7094,6 +7211,10 @@ definitions:
         description: "aliases can be used as an alternate unique id for organizations"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      collectionsLength:
+        type: "integer"
+        format: "int64"
+        description: "collectionsLength"
       dbCreateDate:
         type: "integer"
         format: "int64"
@@ -7227,8 +7348,6 @@ definitions:
         - "SWL"
         - "NEXTFLOW"
         - "SERVICE"
-        - "OLD_CWL"
-        - "OLD_WDL"
       hasHTTPImports:
         type: "boolean"
       hasLocalImports:
@@ -7266,7 +7385,6 @@ definitions:
     properties:
       publish:
         type: "boolean"
-        readOnly: true
   RegistryBean:
     type: "object"
     properties:
@@ -7329,6 +7447,17 @@ definitions:
         type: "string"
       value:
         type: "string"
+  SourceControlOrganization:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Id for the organization e.g. 1"
+      name:
+        type: "string"
+        description: "Name of the organization e.g. dockstore"
+    description: "This describes a source control organization"
   SourceFile:
     type: "object"
     required:
@@ -7401,19 +7530,33 @@ definitions:
     - "name"
     - "reference"
     properties:
+      authors:
+        type: "array"
+        description: "Non-ORCID Authors for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      orcidAuthors:
+        type: "array"
+        description: "ORCID Authors for versions."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
@@ -7566,17 +7709,15 @@ definitions:
         type: "string"
         position: 108
     description: "This describes one tag associated with a container."
-  Token:
+  Token_Auth:
     type: "object"
     properties:
       dbCreateDate:
         type: "integer"
         format: "int64"
-        readOnly: true
       dbUpdateDate:
         type: "integer"
         format: "int64"
-        readOnly: true
       id:
         type: "integer"
         format: "int64"
@@ -7606,7 +7747,35 @@ definitions:
         type: "string"
         position: 6
         description: "Contents of the access token"
+    description: "Access tokens for this web service and integrated services like\
+      \ quay.io and github"
+  Token_User:
+    type: "object"
+    properties:
+      dbCreateDate:
+        type: "integer"
+        format: "int64"
+      dbUpdateDate:
+        type: "integer"
+        format: "int64"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the token in this web service"
         readOnly: true
+      tokenSource:
+        type: "string"
+        position: 1
+        description: "Source website for this token"
+      username:
+        type: "string"
+        position: 3
+        description: "When an integrated service is not aware of the username, we\
+          \ store it"
+      userId:
+        type: "integer"
+        format: "int64"
+        position: 5
     description: "Access tokens for this web service and integrated services like\
       \ quay.io and github"
   Tool:
@@ -8032,21 +8201,35 @@ definitions:
     - "name"
     - "reference"
     properties:
+      authors:
+        type: "array"
+        description: "Non-ORCID Authors for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      orcidAuthors:
+        type: "array"
+        description: "ORCID Authors for versions."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
         type: "string"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
@@ -8171,6 +8354,10 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the version was exported\
+          \ to ORCID."
       parsedInformationSet:
         type: "array"
         items:
@@ -8212,12 +8399,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      input_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
       isChecker:
         type: "boolean"
       last_modified_date:
@@ -8226,12 +8407,10 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      output_file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
+      orcidPutCode:
+        type: "string"
+        description: "The presence of the put code indicates the entry was exported\
+          \ to ORCID."
       parentEntry:
         $ref: "#/definitions/Entry"
       topicId:
@@ -8312,11 +8491,6 @@ definitions:
         position: 12
         description: "The id of the associated checker workflow"
         readOnly: true
-      conceptDoi:
-        type: "string"
-        position: 13
-        description: "The Digital Object Identifier (DOI) representing all of the\
-          \ versions of your workflow"
       mode:
         type: "string"
         position: 13
@@ -8327,15 +8501,36 @@ definitions:
         - "STUB"
         - "HOSTED"
         - "DOCKSTORE_YML"
+      conceptDoi:
+        type: "string"
+        position: 14
+        description: "The Digital Object Identifier (DOI) representing all of the\
+          \ versions of your workflow"
       workflowName:
         type: "string"
         position: 14
         description: "This is the name of the workflow, not needed when only one workflow\
           \ in a repo"
+      input_file_formats:
+        type: "array"
+        position: 15
+        description: "File formats for describing the input file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       organization:
         type: "string"
         position: 15
         description: "This is a git organization for the workflow"
+      output_file_formats:
+        type: "array"
+        position: 16
+        description: "File formats for describing the output file formats of every\
+          \ version of an entry"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       repository:
         type: "string"
         position: 16
@@ -8408,6 +8603,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for workflow versions"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        description: "Non-ORCID Authors for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       id:
         type: "integer"
         format: "int64"
@@ -8415,16 +8616,24 @@ definitions:
         readOnly: true
       legacyVersion:
         type: "boolean"
+      orcidAuthors:
+        type: "array"
+        description: "ORCID Authors for versions."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
         type: "string"
       reference:
         type: "string"
+        example: "master"
         position: 1
         description: "git commit/tag/branch"
       name:
         type: "string"
+        example: "latest"
         position: 2
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"

@@ -163,37 +163,7 @@ public class DockerRepoResource
         this.toolDAO = new ToolDAO(sessionFactory);
     }
 
-    List<Tool> refreshToolsForUser(Long userId, String organization) {
-        refreshBitbucketToken(userId);
-
-        // Get user's quay and git tokens
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
-
-        // with Docker Hub support it is now possible that there is no quayToken
-        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
-
-        // Get a list of all image registries
-        ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
-        final List<AbstractImageRegistry> allRegistries = factory.getAllRegistries();
-
-        // Get a list of all namespaces from all image registries
-        List<Tool> updatedTools = new ArrayList<>();
-        for (AbstractImageRegistry abstractImageRegistry : allRegistries) {
-            Registry registry = abstractImageRegistry.getRegistry();
-            LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
-
-            updatedTools.addAll(abstractImageRegistry
-                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
-                    gitlabToken, organization, eventDAO, dashboardPrefix));
-        }
-        return updatedTools;
-    }
-
-    List<Tool> refreshToolsForUser(Long userId, String organization, String repository) {
+    void refreshToolsForUser(Long userId, String organization, String repository) {
         refreshBitbucketToken(userId);
 
         // Get user's quay and git tokens
@@ -211,7 +181,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("Missing required Quay.io token", HttpStatus.SC_BAD_REQUEST);
         }
         QuayImageRegistry registry = new QuayImageRegistry(quayToken);
-        return registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken,
+        registry.refreshTool(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, githubToken, bitbucketToken,
             gitlabToken, organization, eventDAO, dashboardPrefix, repository);
     }
 
@@ -299,8 +269,8 @@ public class DockerRepoResource
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+            .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(quayToken);
@@ -430,6 +400,7 @@ public class DockerRepoResource
         }
 
         originalTool.setGitUrl(newTool.getGitUrl());
+        originalTool.setForumUrl(newTool.getForumUrl());
 
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());
@@ -618,7 +589,7 @@ public class DockerRepoResource
         Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
-                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
         if (sourceCodeRepo != null) {
             sourceCodeRepo.checkSourceCodeValidity();
             String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
@@ -957,18 +928,6 @@ public class DockerRepoResource
         }
     }
 
-    /*
-     * TODO: This endpoint has been moved to metadata, though it still exists here to deal with the case of users trying to interact with this endpoint.
-     */
-    @GET
-    @Timed
-    @Path("/dockerRegistryList")
-    @Operation(operationId = "getDockerRegistries", description = "Get the list of docker registries supported on Dockstore.")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
-    public List<Registry.RegistryBean> getDockerRegistries() {
-        return rc.getResource(MetadataResource.class).getDockerRegistries();
-    }
-
     @PUT
     @Timed
     @UnitOfWork
@@ -1175,6 +1134,9 @@ public class DockerRepoResource
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
 
         Tool tool = toolDAO.findById(toolId);
+        if (tool == null) {
+            throw new CustomWebApplicationException("could not find tool", HttpStatus.SC_NOT_FOUND);
+        }
         if (tool.getIsPublished()) {
             checkEntry(tool);
         } else {

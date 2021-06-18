@@ -16,21 +16,19 @@
 package io.dockstore.webservice.helpers.statelisteners;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -42,15 +40,21 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.entity.ContentType;
-import org.apache.http.nio.entity.NStringEntity;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.RestClient;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,16 +64,17 @@ import org.slf4j.LoggerFactory;
  */
 public class ElasticListener implements StateListenerInterface {
     public static DockstoreWebserviceConfiguration config;
+    public static final String TOOLS_INDEX = "tools";
+    public static final String WORKFLOWS_INDEX = "workflows";
+    public static final String ALL_INDICES = "tools,workflows";
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticListener.class);
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final String MAPPER_ERROR = "Could not convert Dockstore entry to Elasticsearch object";
-    private String hostname;
-    private int port;
+    private DockstoreWebserviceConfiguration.ElasticSearchConfig elasticSearchConfig;
 
     @Override
     public void setConfig(DockstoreWebserviceConfiguration config) {
-        hostname = config.getEsConfiguration().getHostname();
-        port = config.getEsConfiguration().getPort();
+        this.elasticSearchConfig = config.getEsConfiguration();
     }
 
     /**
@@ -90,7 +95,7 @@ public class ElasticListener implements StateListenerInterface {
             return;
         }
         LOGGER.info("Performing index update with " + command + ".");
-        if (hostname == null || hostname.isEmpty()) {
+        if (StringUtils.isEmpty(elasticSearchConfig.getHostname())) {
             LOGGER.error("No elastic search host found.");
             return;
         }
@@ -98,30 +103,33 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
-        String json;
-        json = getDocumentValueFromEntry(entry);
-        try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-            String entryType = entry instanceof Tool ? "tools" : "workflows";
-            HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
-            String baseEndpoint = "/" + entryType + "/_doc/" + entry.getId();
-            Response post;
+        try {
+            RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
+            String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
+            DocWriteResponse post;
             switch (command) {
             case PUBLISH:
             case UPDATE:
-                post = restClient
-                    .performRequest("POST", baseEndpoint + "/_update", Collections.emptyMap(), entity);
+                UpdateRequest updateRequest = new UpdateRequest(entryType, String.valueOf(entry.getId()));
+                String json = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
+                // The below should've worked but it doesn't, the 2 lines after are used instead
+                // updateRequest.upsert(json, XContentType.JSON);
+                updateRequest.doc(json, XContentType.JSON);
+                updateRequest.docAsUpsert(true);
+                post = client.update(updateRequest, RequestOptions.DEFAULT);
                 break;
             case DELETE:
-                post = restClient.performRequest("DELETE", baseEndpoint, Collections.emptyMap(), entity);
+                DeleteRequest deleteRequest = new DeleteRequest(entryType, String.valueOf(entry.getId()));
+                post  = client.delete(deleteRequest, RequestOptions.DEFAULT);
                 break;
             default:
                 throw new RuntimeException("Unknown index command: " + command);
             }
-            int statusCode = post.getStatusLine().getStatusCode();
+            int statusCode = post.status().getStatus();
             if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED) {
                 LOGGER.info("Successful " + command + ".");
             } else {
-                LOGGER.error("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
+                LOGGER.error("Could not submit index to elastic search " + post.status());
             }
         } catch (Exception e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
@@ -166,76 +174,76 @@ public class ElasticListener implements StateListenerInterface {
         List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
         List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool)).collect(Collectors.toList());
         if (!workflowsEntryList.isEmpty()) {
-            postBulkUpdate("workflows", workflowsEntryList);
+            postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
         }
         if (!toolsEntryList.isEmpty()) {
-            postBulkUpdate("tools", toolsEntryList);
+            postBulkUpdate(TOOLS_INDEX, toolsEntryList);
         }
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
-        try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-            String newlineDJSON = getNDJSON(entries);
-            String endpoint = "/" + index + "/_doc/_bulk";
-            HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
-            Response post = restClient.performRequest("POST", endpoint, Collections.emptyMap(), bulkEntity);
-            if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+        BulkProcessor.Listener listener = new BulkProcessor.Listener() {
+            @Override
+            public void beforeBulk(long executionId, BulkRequest request) {
+                int numberOfActions = request.numberOfActions();
+                LOGGER.info("Executing bulk [{}] with {} requests",
+                        executionId, numberOfActions);
+            }
+
+            @Override
+            public void afterBulk(long executionId, BulkRequest request,
+                    BulkResponse response) {
+                if (response.hasFailures()) {
+                    LOGGER.error("Bulk [{}] executed with failures", executionId);
+                } else {
+                    LOGGER.info("Bulk [{}] completed in {} milliseconds",
+                            executionId, response.getTook().getMillis());
+                }
+            }
+
+            @Override
+            public void afterBulk(long executionId, BulkRequest request,
+                    Throwable failure) {
+                LOGGER.error("Failed to execute bulk", failure);
+            }
+        };
+
+        try {
+            RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
+            BulkProcessor.Builder builder = BulkProcessor.builder(
+                (request, bulkListener) ->
+                        client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
+                listener);
+            // Set size of actions with `builder.setBulkSize()`, defaults to 5 MB
+            BulkProcessor bulkProcessor = builder.build();
+            entries.forEach(entry -> {
+                try {
+                    String s = MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry));
+                    bulkProcessor.add(new IndexRequest(index).id(String.valueOf(entry.getId())).source(s, XContentType.JSON));
+
+                } catch (IOException e) {
+                    LOGGER.error(MAPPER_ERROR, e);
+                    throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            });
+            try {
+                // When doing a bulk index, this is the max amount of time the bulk listener should wait before considering the
+                // bulk request as failed. 1 minute appears to be more than enough time to index all the current Dockstore entries.
+                // However, 5 minutes is used instead (just in case)
+                final long bulkProcessorWaitTimeInMinutes = 5L;
+                boolean terminated = bulkProcessor.awaitClose(bulkProcessorWaitTimeInMinutes, TimeUnit.MINUTES);
+                if (!terminated) {
+                    LOGGER.error("Could not submit " + index + " index to elastic search in time");
+                    throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search in time", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
+            throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * This converts the entry into a document for elastic search to use
-     *
-     * @param entry The entry that needs updating
-     * @return The entry converted into a json string
-     */
-    private String getDocumentValueFromEntry(Entry<?, ?> entry) {
-        ObjectMapper mapper = Jackson.newObjectMapper();
-        StringBuilder builder = new StringBuilder();
-        Map<String, Object> doc = new HashMap<>();
-        try {
-            JsonNode jsonNode = dockstoreEntryToElasticSearchObject(entry);
-            doc.put("doc", jsonNode);
-            doc.put("doc_as_upsert", true);
-            builder.append(mapper.writeValueAsString(doc));
-        } catch (IOException e) {
-            throw new CustomWebApplicationException(MAPPER_ERROR,
-                HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        return builder.toString();
-    }
-
-    /**
-     * Gets the json used for bulk insert
-     *
-     * @param publishedEntries A list of published entries
-     * @return The json used for bulk insert
-     */
-    private String getNDJSON(List<Entry> publishedEntries) {
-        Gson gson = new GsonBuilder().create();
-        StringBuilder builder = new StringBuilder();
-        publishedEntries.forEach(entry -> {
-            entry.getWorkflowVersions().forEach(entryVersion -> {
-                ((Version)entryVersion).updateVerified();
-            });
-            Map<String, Map<String, String>> index = new HashMap<>();
-            Map<String, String> internal = new HashMap<>();
-            internal.put("_id", String.valueOf(entry.getId()));
-            index.put("index", internal);
-            builder.append(gson.toJson(index));
-            builder.append('\n');
-            try {
-                builder.append(MAPPER.writeValueAsString(dockstoreEntryToElasticSearchObject(entry)));
-            } catch (IOException e) {
-                throw new CustomWebApplicationException(MAPPER_ERROR, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-            builder.append('\n');
-        });
-        return builder.toString();
     }
 
     /**
@@ -306,6 +314,7 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
         Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
         detachedEntry.setWorkflowVersions(detachedVersions);
+        detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
         String defaultVersion = entry.getDefaultVersion();
         if (defaultVersion != null) {
@@ -328,7 +337,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private static Set<Version> cloneWorkflowVersion(final Set<Version> originalWorkflowVersions) {
-        Set<Version> detatchedVersions = new HashSet<>();
+        Set<Version> detachedVersions = new HashSet<>();
         originalWorkflowVersions.forEach(workflowVersion -> {
             Version detatchedVersion = workflowVersion.createEmptyVersion();
             detatchedVersion.setDescriptionAndDescriptionSource(workflowVersion.getDescription(), workflowVersion.getDescriptionSource());
@@ -344,9 +353,9 @@ public class ElasticListener implements StateListenerInterface {
                 detatchedVersion.addSourceFile(detachedSourceFile);
             });
             detatchedVersion.updateVerified();
-            detatchedVersions.add(detatchedVersion);
+            detachedVersions.add(detatchedVersion);
         });
-        return detatchedVersions;
+        return detachedVersions;
     }
 
 

@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.10.3-SNAPSHOT</version>
+        <version>1.11.0-rc.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
@@ -42,32 +42,35 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java-transport-httpclient5 -->
         <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>dockstore-client</artifactId>
-            <version>${dockstore-client.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.dockstore</groupId>
-                    <artifactId>dockstore-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.dockstore</groupId>
-                    <artifactId>swagger-java-client</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport-httpclient5</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-api</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.10.3-SNAPSHOT</version>
+            <version>1.11.0-rc.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.10.3-SNAPSHOT</version>
+            <version>1.11.0-rc.1-SNAPSHOT</version>
+            <!-- looks like these are excluded because they bring in duplicate liquibase.build.properties -->
             <exclusions>
-                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
                 <exclusion>
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-core</artifactId>
@@ -77,9 +80,9 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.10.3-SNAPSHOT</version>
+            <version>1.11.0-rc.1-SNAPSHOT</version>
+            <!-- looks like these are excluded because they bring in duplicate liquibase.build.properties -->
             <exclusions>
-                <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
                 <exclusion>
                     <groupId>org.liquibase</groupId>
                     <artifactId>liquibase-core</artifactId>
@@ -90,7 +93,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
-            <version>1.10.3-SNAPSHOT</version>
+            <version>1.11.0-rc.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -203,7 +206,7 @@
                 <configuration>
                     <!-- nothing to do with the JAVA_TOOL_OPTIONS in .cirleci/config.yml because surefire has its own JVM-->
                     <!-- This plus the .circle/config.yml must add to a bit less than 4GB -->
-                    <argLine>-Xmx3g</argLine>
+                    <argLine>-Xmx4g</argLine>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
                 </configuration>
@@ -233,18 +236,6 @@
                             <!-- we don't really distribute this -->
                             <skip>true</skip>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.scala-tools</groupId>
-                <artifactId>maven-scala-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>testCompile</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -305,6 +296,10 @@
                         </fileset>
                     </filesets>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

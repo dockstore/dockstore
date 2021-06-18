@@ -47,6 +47,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
@@ -56,7 +57,9 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.api.PrivilegeRequest;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.DeletedUsername;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.EntryUpdateTime;
 import io.dockstore.webservice.core.ExtendedUserData;
@@ -65,20 +68,25 @@ import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUpdateTime;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.TokenViews;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.MyWorkflows;
+import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
+import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
@@ -99,6 +107,11 @@ import io.swagger.jaxrs.PATCH;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.http.HttpStatus;
@@ -123,14 +136,15 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
+    protected static final Pattern GITHUB_ID_PATTERN = Pattern.compile(".*/u/(\\d+).*");
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
+    private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
     private final WorkflowResource workflowResource;
-    private final ServiceResource serviceResource;
     private final DockerRepoResource dockerRepoResource;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
@@ -138,10 +152,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
-    private PermissionsInterface authorizer;
+    private final DeletedUsernameDAO deletedUsernameDAO;
+    private final PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
     private final HttpClient client;
-    private SessionFactory sessionFactory;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
@@ -149,7 +163,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
                         DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
-        this.sessionFactory = sessionFactory;
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -158,8 +171,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
+        this.deletedUsernameDAO = new DeletedUsernameDAO(sessionFactory);
         this.workflowResource = workflowResource;
-        this.serviceResource = serviceResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
         this.cachingAuthenticator = cachingAuthenticator;
@@ -252,6 +265,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
+
+        if (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
+            String errorMsg = "Cannot change user to " + username + " because it is already in use";
+            LOG.error(errorMsg);
+            throw new CustomWebApplicationException(errorMsg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+
         user.setUsername(username);
         user.setSetupComplete(true);
         userDAO.clearCache();
@@ -284,12 +305,21 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "selfDestruct", description = "Delete user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean selfDestruct(
-            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
-        checkUser(authUser, authUser.getId());
-        User user = userDAO.findById(authUser.getId());
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
+            @ApiParam(value = "Optional user id if deleting another user. Only admins can delete another user.") @Parameter(description = "Optional user id if deleting another user. Only admins can delete another user.", name = "userId", in = ParameterIn.QUERY) @QueryParam("userId") Long userId) {
+        User user;
+        if (userId != null) {
+            checkAdmin(authUser);
+            user = userDAO.findById(userId);
+        } else {
+            checkUser(authUser, authUser.getId());
+            user = userDAO.findById(authUser.getId());
+        }
+
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
+
         // Remove dangling sharing artifacts before getting rid of tokens
         this.authorizer.selfDestruct(user);
 
@@ -297,7 +327,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         deleteSelfFromEntries(user);
         invalidateTokensForUser(user);
         deleteSelfFromLambdaEvents(user);
-        return userDAO.delete(user);
+        boolean isDeleted =  userDAO.delete(user);
+        if (isDeleted) {
+            DeletedUsername deletedUsername = new DeletedUsername(user.getUsername());
+            deletedUsernameDAO.create(deletedUsername);
+        }
+        return isDeleted;
     }
 
     private void invalidateTokensForUser(User user) {
@@ -367,15 +402,19 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                    @ApiParam("User name to check") @PathParam("username") String username) {
         @SuppressWarnings("deprecation")
         User foundUser = userDAO.findByUsername(username);
-        return foundUser != null;
+        if (foundUser == null && !DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
+            return false;
+        }
+        return true;
     }
 
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens")
-    @Operation(operationId = "getUserTokens", description = "Get tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @JsonView(TokenViews.User.class)
+    @Operation(operationId = "getUserTokens", description = "Get information about tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get information about tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
@@ -692,6 +731,88 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return userDAO.findAll();
     }
 
+    // TODO: Do equivalent of below, but for Google users.
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserMetadataToGetIds")
+    @Deprecated
+    @Operation(operationId = "updateUserMetadataToGetIds", description = "Attempt to update the metadata of all GitHub and Google users and then returns a list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list Dockstore users we were unable to get GitHub/Google IDs for.", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = User.class))))
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
+        List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
+        List<User> usersCouldNotBeUpdated = new ArrayList<>();
+
+        // Try to update Google metadata using user's token. This is the only option for Google.
+        LOG.info("Beginning update for " + googleTokens.size() + " Google users.");
+        for (Token t : googleTokens) {
+            User currentUser = userDAO.findById(t.getUserId());
+            if (currentUser != null) {
+                updateGoogleAccessToken(currentUser.getId());
+                try {
+                    currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
+                    LOG.info("Updated " + currentUser.getUsername());
+                } catch (Exception ex) {
+                    LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
+                    usersCouldNotBeUpdated.add(currentUser);
+                }
+            }
+        }
+
+        // Try to update GitHub metadata using user's token and getMyself().
+        List<User> gitHubUsers = userDAO.findAllGitHubUsers();
+        LOG.info("Beginning update for " + gitHubUsers.size() + " GitHub users.");
+        for (User u: gitHubUsers) {
+            List<Token> tokens = tokenDAO.findGithubByUserId(u.getId());
+            if (!tokens.isEmpty()) {
+                try {
+                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(u, Optional.of(tokenDAO));
+                    LOG.info("Updated " + u.getUsername());
+                } catch (Exception ex) {
+                    LOG.info("Could not retrieve GitHub ID for user: " + u.getUsername());
+                    gitHubUsersNotUpdatedWithToken.add(u);
+                }
+            } else {
+                LOG.info("No GitHub token for user: " + u.getUsername());
+                gitHubUsersNotUpdatedWithToken.add(u);
+            }
+        }
+
+        // For users we could not get their GitHub id using their token, get the GitHub id from the avatarurl we have stored.
+        LOG.info("Beginning update for " + gitHubUsersNotUpdatedWithToken.size() + " GitHub users who could not be updated with token.");
+        for (User u : gitHubUsersNotUpdatedWithToken) {
+            if (!u.isBanned()) {
+                User.Profile userProfile = u.getUserProfiles().get(TokenType.GITHUB_COM.toString());
+                String avatarUrl = userProfile.avatarURL;
+
+                if (avatarUrl != null) {
+                    Matcher m = GITHUB_ID_PATTERN.matcher(avatarUrl);
+                    if (m.matches()) {
+                        String id = m.group(1);
+                        userProfile.onlineProfileId = id;
+                        List<Token> userTokens = tokenDAO.findGithubByUserId(u.getId());
+                        if (!userTokens.isEmpty()) {
+                            userTokens.get(0).setOnlineProfileId(id);
+                        }
+                        LOG.info("Updated " + u.getUsername() + " with GitHub id " + id);
+                    }
+
+                } else {
+                    usersCouldNotBeUpdated.add(u);
+                    LOG.info(u.getUsername() + "could not be updated.");
+                }
+            }
+        }
+
+        return usersCouldNotBeUpdated;
+    }
+
     /**
      * TODO: Use enum for the source parameter
      * @param user      The Authorized user
@@ -768,6 +889,26 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return getStrippedWorkflowsAndServices(userDAO.findById(user.getId()));
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/github/organizations")
+    @Operation(operationId = "getMyGitHubOrgs", description = "Gets GitHub organizations for current user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Descriptions of Github organizations (including but not limited to id, names)", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SourceControlOrganization.class)))),
+            @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
+    })
+    public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
+        final User user = userDAO.findById(authUser.getId());
+        Token githubToken = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
+                .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
+        if (githubToken != null) {
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
+            return sourceCodeRepo.getOrganizations();
+        }
+        return Lists.newArrayList();
+    }
+
     @PATCH
     @Timed
     @UnitOfWork
@@ -791,7 +932,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .collect(Collectors.toList());
 
         scTokens.forEach(token -> {
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(token);
             Map<String, String> gitUrlToRepositoryId = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
             Set<String> organizations = gitUrlToRepositoryId.values().stream().map(repository -> repository.split("/")[0]).collect(Collectors.toSet());
 
@@ -895,6 +1036,104 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 .collect(Collectors.toList());
     }
 
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{userId}/cloudInstances")
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    @Operation(operationId = "getUserCloudInstances", description = "Get all cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
+    public Set<CloudInstance> getUserCloudInstances(@Parameter(hidden = true, name = "user")@Auth User authUser,
+        @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        Set<CloudInstance> cloudInstances = user.getCloudInstances();
+        cloudInstances.forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
+        return cloudInstances;
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances")
+    @Operation(operationId = "postUserCloudInstance", description = "Create a new cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public Set<CloudInstance> postUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to create the cloud instance for", required = true) long userId,
+            @Parameter(description = "Cloud instance to add to the user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        CloudInstance cloudInstanceToBeAdded = new CloudInstance();
+        cloudInstanceToBeAdded.setPartner(cloudInstanceBody.getPartner());
+        cloudInstanceToBeAdded.setUrl(cloudInstanceBody.getUrl());
+        cloudInstanceToBeAdded.setSupportsFileImports(cloudInstanceBody.isSupportsFileImports());
+        cloudInstanceToBeAdded.setSupportsHttpImports(cloudInstanceBody.isSupportsHttpImports());
+        cloudInstanceToBeAdded.setSupportedLanguages(cloudInstanceBody.getSupportedLanguages());
+        cloudInstanceToBeAdded.setDisplayName(cloudInstanceBody.getDisplayName());
+        // TODO: Figure how to make this not required (already adding the instance to the user)
+        cloudInstanceToBeAdded.setUser(user);
+        user.getCloudInstances().add(cloudInstanceToBeAdded);
+        user.getCloudInstances().forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
+        return user.getCloudInstances();
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances/{cloudInstanceId}")
+    @Operation(operationId = "deleteUserCloudInstance", description = "Delete a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public void deleteUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to delete the cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        boolean deleted = user.getCloudInstances().removeIf(cloudInstance -> cloudInstance.getId() == cloudInstanceId);
+        if (!deleted) {
+            throw new CustomWebApplicationException("ID of cloud instance does not exist", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork()
+    @Path("/{userId}/cloudInstances/{cloudInstanceId}")
+    @Operation(operationId = "putUserCloudInstance", description = "Update a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    public void putUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
+            @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to update the cloud instance for", required = true) long userId,
+            @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId,
+            @Parameter(description = "Cloud instance to replace for a user", name = "Cloud Instance", required = true) CloudInstance cloudInstanceBody) {
+        final User user = userDAO.findById(userId);
+        checkUser(authUser, userId);
+        Optional<CloudInstance> optionalExistingCloudInstance = user.getCloudInstances().stream()
+                .filter(cloudInstance -> cloudInstance.getId() == cloudInstanceId).findFirst();
+        if (optionalExistingCloudInstance.isPresent()) {
+            CloudInstance cloudInstance = optionalExistingCloudInstance.get();
+            cloudInstance.setPartner(cloudInstanceBody.getPartner());
+            cloudInstance.setUrl(cloudInstanceBody.getUrl());
+            cloudInstance.setSupportsFileImports(cloudInstanceBody.isSupportsFileImports());
+            cloudInstance.setSupportsHttpImports(cloudInstanceBody.isSupportsHttpImports());
+            cloudInstance.setSupportedLanguages(cloudInstanceBody.getSupportedLanguages());
+        } else {
+            throw new CustomWebApplicationException("ID of cloud instance does not exist", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
     /**
      * Check if a workflow can be deleted.
      * For now this is simply if a workflow is a stub or not
@@ -923,7 +1162,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
         if (scTokens.size() > 0) {
             Token scToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken, client);
+            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken);
             return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
         } else {
             return new HashMap<>();

@@ -52,9 +52,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
 import org.json.JSONArray;
@@ -264,7 +262,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String defaultDockerPath = null;
 
             // Initialize data structures for Tool table
-            Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
+            Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
@@ -276,11 +274,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (!startsWith) {
                     LOG.error(CWLHandler.CWL_VERSION_ERROR + cwlVersion.toString());
                     throw new CustomWebApplicationException(CWLHandler.CWL_VERSION_ERROR
-                        + cwlVersion.toString(), HttpStatus.SC_BAD_REQUEST);
+                        + cwlVersion.toString(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
                 }
             } else {
                 LOG.error(CWLHandler.CWL_NO_VERSION_ERROR);
-                throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
             JSONObject cwlJson = new JSONObject(mapping);
@@ -396,7 +394,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                     if (secondaryFile == null) {
                         LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
-                        throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_BAD_REQUEST);
+                        throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
                     }
                 }
 
@@ -428,9 +426,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
 
                 if (secondaryFile != null) {
-                    nodeDockerInfo.put(workflowStepId, new MutableTriple<>(secondaryFile, stepDockerRequirement, dockerUrl));
+                    nodeDockerInfo.put(workflowStepId, new DockerInfo(secondaryFile, stepDockerRequirement, dockerUrl));
                 } else {
-                    nodeDockerInfo.put(workflowStepId, new MutableTriple<>(mainDescriptorPath, stepDockerRequirement, dockerUrl));
+                    nodeDockerInfo.put(workflowStepId, new DockerInfo(mainDescriptorPath, stepDockerRequirement, dockerUrl));
                 }
 
             }
@@ -462,7 +460,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         } catch (ClassCastException | YAMLException | JsonParseException ex) {
             final String exMsg = CWLHandler.CWL_PARSE_ERROR + ex.getMessage();
             LOG.error(exMsg, ex);
-            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
 

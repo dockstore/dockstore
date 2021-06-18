@@ -27,6 +27,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -51,8 +52,10 @@ import org.json.JSONObject;
 public class Validation implements Comparable<Validation> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "validation_id_seq")
+    @SequenceGenerator(name = "validation_id_seq", sequenceName = "validation_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", required = true, position = 0)
+    @Column(columnDefinition = "bigint default nextval('validation_id_seq')")
     private long id;
 
     @Enumerated(EnumType.STRING)

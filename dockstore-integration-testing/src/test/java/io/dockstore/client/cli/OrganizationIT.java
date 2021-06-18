@@ -6,6 +6,8 @@ import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -16,6 +18,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
@@ -24,6 +27,7 @@ import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Workflow;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,8 +49,9 @@ import static org.junit.Assert.fail;
 
 @Category(ConfidentialTest.class)
 public class OrganizationIT extends BaseIT {
-    private static final StarRequest STAR_REQUEST = SwaggerUtility.createStarRequest(true);
-    private static final StarRequest UNSTAR_REQUEST = SwaggerUtility.createStarRequest(false);
+    private static final StarRequest STAR_REQUEST = getStarRequest(true);
+    private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -68,6 +73,12 @@ public class OrganizationIT extends BaseIT {
         .asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
     private final List<String> badDisplayNames = Arrays
         .asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
+
+    private static StarRequest getStarRequest(boolean star) {
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(star);
+        return starRequest;
+    }
 
 
     @Before
@@ -761,6 +772,10 @@ public class OrganizationIT extends BaseIT {
         memberships = usersOtherUser.getUserMemberships();
         assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
 
+        // Should not appear in the organization's members list because they haven't approved the request yet
+        List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(orgId);
+        assertEquals("There should be 1 user, there are " + users.size(), 1, users.size());
+
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
 
@@ -778,7 +793,7 @@ public class OrganizationIT extends BaseIT {
             long.class);
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
-        List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(organization.getId());
+        users = organizationsApiUser2.getOrganizationMembers(organization.getId());
         assertEquals("There should be 2 users, there are " + users.size(), 2, users.size());
 
         // Should be able to update email of Organization
@@ -1128,6 +1143,29 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * Tests whether collectionLength is returning the right info
+     */
+    @Test
+    public void testCollectionsLength() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+
+        // there should be no collections inside
+        long numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        assertEquals(0, numberOfCollections);
+
+        Collection stubCollection1 = stubCollectionObject();
+        organizationsApi.createCollection(organization.getId(), stubCollection1);
+
+        numberOfCollections = organizationsApi.getCollectionsFromOrganization(organization.getId(), null).size();
+        assertEquals(1, numberOfCollections);
+    }
+
+    /**
      * This tests that you can create collections with unique characters in their display name
      */
     @Test
@@ -1229,6 +1267,34 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
+    @Test
+    public void testDeletingPendingOrgWithCollection() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsOpenApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOpenApiUser);
+
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        long collectionId = collection.getId();
+        testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = 2");
+
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
+        long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
+        assertEquals(1, collectionCount);
+
+        organizationsOpenApi.deleteRejectedOrPendingOrganization(organization.getId());
+
+        // Test collection is gone
+        collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
+        assertEquals(0, collectionCount);
+
+        // Test tool is still there
+        long tool = testingPostgres.runSelectStatement("select count(*) from tool where id = 2", long.class);
+        assertEquals(1, tool);
+    }
+
     /**
      * This tests that you can add a collection to an Organization and tests conditions for when it is visible
      */
@@ -1318,7 +1384,7 @@ public class OrganizationIT extends BaseIT {
         // Publish a tool
         long entryId = 2;
         ContainersApi containersApi = new ContainersApi(webClientUser2);
-        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
 
         // Able to retrieve the collection and organization an entry is part of, even if there aren't any
@@ -1369,7 +1435,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be 2 events of type ADD_TO_COLLECTION, there are " + count3, 2, count3);
 
         // Unpublish tool
-        PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+        PublishRequest unpublishRequest = CommonTestUtilities.createPublishRequest(false);
         containersApi.publish(entryId, unpublishRequest);
 
         // Collection should have one tool returned
@@ -1646,6 +1712,148 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to add a duplicate Organization alias.");
         }
+    }
+    
+    /**
+     * Test that we are getting the correct descriptor type for workflows
+     */
+    @Test
+    public void testGetWorkflowDescriptor() {
+        // Setup user who creates Organization and collection
+        final ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(client);
+
+        //set up admin user
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        WorkflowsApi workflowApi = new WorkflowsApi(client);
+
+        //manually register and then publish the workflow
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
+                "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
+        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+        long orgId = organization.getId();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(orgId, stubCollection);
+
+        long collectionId = collection.getId();
+
+        // Approve the org
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        // Add entry to collection
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), null);
+
+        Collection addedCollection = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
+        assertEquals(DescriptorLanguage.CWL.toString(), addedCollection.getEntries().get(0).getDescriptorTypes().get(0));
+    }
+
+    /**
+     * Tests that we are getting the number of workflows correctly
+     */
+    @Test
+    public void testWorkflowsLength() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClient);
+
+        //set up admin user
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        //manually register and then publish the first workflow
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
+                "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
+        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        Assert.assertEquals(2, workflow.getWorkflowVersions().size());
+
+        //manually register and then publish the second workflow
+        Workflow workflow2 = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
+                        "");
+        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+        workflowApi.refresh(workflowByPathGithub2.getId(), false);
+        workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+        long orgId = organization.getId();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(orgId, stubCollection);
+
+        long collectionId = collection.getId();
+
+        // Approve the org
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        // Add workflow to collection, should then have 3 workflows included regardless of versions
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow2.getId(), null);
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(0).getId());
+        organizationsApi.addEntryToCollection(orgId, collectionId, workflow.getId(), workflow.getWorkflowVersions().get(1).getId());
+
+        Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
+        long workflowsCount = addedCollection.getWorkflowsLength();
+        assertEquals(3, workflowsCount);
+
+        //testing the query is working properly by using GET {organizationId}/collections
+        List<Collection> collectionsFromOrganization = organizationsApi.getCollectionsFromOrganization(orgId, null);
+        assertEquals(3, (long)collectionsFromOrganization.stream().filter(col -> col.getId().equals(collectionId)).findFirst().get().getWorkflowsLength());
+    }
+
+    /**
+     * Tests that we are getting the number of tools correctly
+     */
+    @Test
+    public void testToolsLength() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+
+        long orgId = organization.getId();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(orgId, stubCollection);
+
+        long collectionId = collection.getId();
+
+        // Approve the org
+        organizationsApiAdmin.approveOrganization(organization.getId());
+
+        // Publish a tool
+        long entryId = 2;
+        ContainersApi containersApi = new ContainersApi(webClientUser2);
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        containersApi.publish(entryId, publishRequest);
+
+        // Add tool to collection
+        organizationsApi.addEntryToCollection(orgId, collectionId, entryId, null);
+
+        Collection addedCollection = organizationsApi.getCollectionById(orgId, collectionId);
+
+        long toolsCount = addedCollection.getToolsLength();
+
+        assertEquals(1, toolsCount);
     }
 
     /**

@@ -17,6 +17,7 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -43,13 +44,16 @@ import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
@@ -58,6 +62,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -76,11 +81,13 @@ import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHTagObject;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.HttpConnector;
 import org.kohsuke.github.RateLimitHandler;
 import org.kohsuke.github.extras.ImpatientHttpConnector;
+import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,16 +102,34 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
  */
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
+    public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
+    private String githubTokenUsername;
 
-    GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
-        this.gitUsername = gitUsername;
-        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(
-            new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build());
-        HttpConnector okHttp3Connector =  new ImpatientHttpConnector(obsoleteUrlFactory::open);
+    /**
+     *  @param githubTokenUsername the username for githubTokenContent
+     * @param githubTokenContent authorization token
+     */
+    public GitHubSourceCodeRepo(String githubTokenUsername, String githubTokenContent) {
+        this.githubTokenUsername = githubTokenUsername;
+        // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
+        builder.eventListener(new CacheHitListener(GitHubSourceCodeRepo.class.getSimpleName(), githubTokenUsername));
+        if (System.getenv("CIRCLE_SHA1") != null) {
+            // namespace cache by user when testing
+            builder.cache(DockstoreWebserviceApplication.getCache(gitUsername));
+        } else {
+            // use general cache
+            builder.cache(DockstoreWebserviceApplication.getCache(null));
+        }
+        OkHttpClient build = builder.build();
+        ObsoleteUrlFactory obsoleteUrlFactory = new ObsoleteUrlFactory(build);
+
+        HttpConnector okHttp3Connector = new ImpatientHttpConnector(obsoleteUrlFactory::open);
         try {
-            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, githubTokenUsername).withRateLimitHandler(new FailRateLimitHandler(githubTokenUsername))
+                    .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -290,7 +315,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
                 ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
-                throw new CustomWebApplicationException("Out of GitHub rate limit, please wait till " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + ", please wait til " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
         } catch (IOException e) {
@@ -811,7 +836,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
         if (startRateLimit != null && endRateLimit != null) {
-            int used = startRateLimit.remaining - endRateLimit.remaining;
+            int used = startRateLimit.getRemaining() - endRateLimit.getRemaining();
             if (used > 0) {
                 LOG.debug(id + ": used up " + used + " GitHub rate limited requests");
             } else {
@@ -834,7 +859,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public GHRateLimit getGhRateLimitQuietly() {
         GHRateLimit startRateLimit = null;
         try {
-            startRateLimit = github.rateLimit();
+            // github.rateLimit() was deprecated and returned a much lower limit, low balling our rate limit numbers
+            startRateLimit = github.getRateLimit();
         } catch (IOException e) {
             LOG.error("unable to retrieve rate limit, weird", e);
         }
@@ -862,7 +888,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         try {
-            tags = repo.getRefs("refs/tags/");
+            // this crazy looking structure is because getRefs can result in a cache miss (on repos without tags) whereas listTags seems to not have this problem
+            // yes this could probably be re-coded to use listTags directly
+            if (repo.listTags().iterator().hasNext()) {
+                tags = repo.getRefs("refs/tags/");
+            }
         } catch (GHFileNotFoundException ex) {
             LOG.debug("No tags found for  " + repo.getName());
             if (!getBranchesSucceeded) {
@@ -915,6 +945,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public SourceFile getSourceFile(String path, String id, String branch, DescriptorLanguage.FileType type) {
         throw new UnsupportedOperationException("not implemented/needed for github");
+    }
+
+    @Override
+    public List<SourceControlOrganization> getOrganizations() {
+        try {
+            return github.getMyOrganizations().entrySet().stream()
+                    .map(o -> new SourceControlOrganization(o.getValue().getId(), o.getKey())).collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.info(githubTokenUsername + ": Cannot retrieve their organizations", e);
+        }
+        return new ArrayList<>();
     }
 
     @Override
@@ -977,25 +1018,64 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
+     * @param tokenDAO Optional tokenDAO used if the user's GitHub token information needs to be updated as well.
      */
-    public void syncUserMetadataFromGitHub(User user) {
+    public void syncUserMetadataFromGitHub(User user, Optional<TokenDAO> tokenDAO) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
-            User.Profile profile = new User.Profile();
-            profile.name = myself.getName();
+            User.Profile profile = getProfile(user, myself);
             profile.email = getEmail(myself);
-            profile.avatarURL = myself.getAvatarUrl();
-            profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
-            profile.location = myself.getLocation();
-            profile.company = myself.getCompany();
-            profile.username = myself.getLogin();
-            Map<String, User.Profile> userProfile = user.getUserProfiles();
-            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
-            user.setAvatarUrl(myself.getAvatarUrl());
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            if (tokenDAO.isPresent()) {
+                Token usersGitHubToken = tokenDAO.get().findGithubByUserId(user.getId()).get(0);
+                usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+                usersGitHubToken.setUsername(profile.username);
+            }
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername(), ex);
         }
+    }
+
+    // DO NOT USE THIS FUNCTION ELSEWHERE
+    // This function has no use outside of gathering user's GitHub IDs the first time. This uses the GitHub token of the admin user calling the new, one-time-use endpoint.
+    // This will attempt to get the GitHub profile info (including id) of users we were unable to get by calling the github.getMyself() function above.
+    public void syncUserMetadataFromGitHubByUsername(User user, TokenDAO tokenDAO) {
+        // eGit user object
+        try {
+            if (user.getUserProfiles().get(TokenType.GITHUB_COM.toString()) == null) {
+                throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
+            }
+            GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
+            User.Profile profile = getProfile(user, ghUser);
+            profile.email = ghUser.getEmail();
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            Token usersGitHubToken = tokenDAO.findGithubByUserId(user.getId()).get(0);
+            usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+            usersGitHubToken.setUsername(profile.username);
+        } catch (IOException ex) {
+            String msg = "Unable to get GitHub user id for Dockstore user " + user.getUsername() + " " + user.getId();
+            LOG.info(msg, ex);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
+        LOG.info("GitHub user profile id is {} and GitHub username is {} for Dockstore user {}", ghUser.getId(), ghUser.getLogin(), user.getUsername());
+        User.Profile profile = new User.Profile();
+        profile.onlineProfileId = String.valueOf(ghUser.getId());
+        profile.username = ghUser.getLogin();
+        profile.name = ghUser.getName();
+        profile.avatarURL = ghUser.getAvatarUrl();
+        profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
+        profile.location = ghUser.getLocation();
+        profile.company = ghUser.getCompany();
+        Map<String, User.Profile> userProfile = user.getUserProfiles();
+        userProfile.put(TokenType.GITHUB_COM.toString(), profile);
+        user.setAvatarUrl(ghUser.getAvatarUrl());
+        return profile;
     }
 
     /**
@@ -1032,5 +1112,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Create version with sourcefiles and validate
         return setupWorkflowVersionsHelper(workflow, ref, Optional.of(workflow), existingDefaults, ghRepository, dockstoreYml, Optional.empty());
+    }
+
+    /**
+     * Not using org.kohsuke.github.RateLimitHandler.FAIL directly because
+     *
+     * 1. This logs username
+     * 2. We control the string in the error message
+     */
+    private static final class FailRateLimitHandler extends RateLimitHandler {
+
+        private final String username;
+
+        private FailRateLimitHandler(String username) {
+            this.username = username;
+        }
+
+        @Override
+        public void onError(IOException e, HttpURLConnection uc) {
+            LOG.error(OUT_OF_GIT_HUB_RATE_LIMIT + " for " + username);
+            throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT, HttpStatus.SC_BAD_REQUEST);
+        }
+
     }
 }

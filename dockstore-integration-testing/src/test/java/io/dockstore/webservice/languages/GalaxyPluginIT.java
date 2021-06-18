@@ -24,7 +24,6 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import io.dockstore.client.cli.BaseIT;
-import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
@@ -182,8 +181,8 @@ public class GalaxyPluginIT {
                         "", DescriptorLanguage.GXFORMAT2.getShortName(), "");
         workflowApi.refresh(wdlWorkflow.getId(), false);
         workflowApi.refresh(galaxyWorkflow.getId(), false);
-        workflowApi.publish(wdlWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
-        workflowApi.publish(galaxyWorkflow.getId(), SwaggerUtility.createPublishRequest(true));
+        workflowApi.publish(wdlWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        workflowApi.publish(galaxyWorkflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
         io.dockstore.openapi.client.ApiClient newWebClient = new io.dockstore.openapi.client.ApiClient();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
@@ -206,9 +205,10 @@ public class GalaxyPluginIT {
         final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/tags/dockstore/3851", installationId);
-        Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19 variation analysis on Illumina metagenomic data", "", false);
+        Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19 variation analysis on Illumina metagenomic data", "versions", false);
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
-        assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")).findFirst().isPresent());
+        assertTrue("Test file should have the expected path",
+                sourceFiles.stream().anyMatch(sourceFile -> sourceFile.getPath().endsWith("/workflow-test.yml")));
     }
 }
