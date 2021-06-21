@@ -134,6 +134,7 @@ jobs:
       TESTING_PROFILE: language-parsing-tests
     steps:
       - setup_remote_docker
+      - install-pip
       - run: 
           name: run sam-cli
           background: true
