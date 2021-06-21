@@ -58,6 +58,11 @@ workflows:
           requires:
             - build
           context: sonarcloud
+      - language-parsing-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
       - tool-integration-tests:
           <<: *common_filters
           requires:
