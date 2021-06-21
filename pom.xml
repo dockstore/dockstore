@@ -448,6 +448,7 @@
                     <quiet>true</quiet>
                     <skip>${skipSignatureCheck}</skip>
                     <keysMapLocation>${project.basedir}/keysmap.list</keysMapLocation>
+                    <pgpKeyServer>hkps://hkps.pool.sks-keyservers.net,hkps://keyserver.ubuntu.com,hkps://sks.pod02.fleetstreetops.com</pgpKeyServer>
                 </configuration>
             </plugin>
             <plugin>
