@@ -23,16 +23,18 @@ public final class LanguageParserHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(LanguageParserHelper.class);
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private LanguageParserHelper() {
 
     }
 
     /**
      * Send a sync request to lambda. A valid language parsing response is expected.
-     * @param languageParsingRequest    The request to send to lambda
-     * @throws InterruptedException An unexpected exception
-     * @throws IOException          An unexpected exception
+     *
+     * @param languageParsingRequest The request to send to lambda
      * @return  A valid language parsing response from the lambda
+     * @throws InterruptedException An unexpected exception
+     * @throws IOException An unexpected exception
      */
     public static LanguageParsingResponse sendToLambdaSync(LanguageParsingRequest languageParsingRequest) throws InterruptedException, IOException {
         HttpRequest request = convertLanguageParsingRequestToHttpRequest(languageParsingRequest);
