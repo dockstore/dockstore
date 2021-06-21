@@ -134,6 +134,19 @@ jobs:
       TESTING_PROFILE: language-parsing-tests
     steps:
       - setup_remote_docker
+      - run: 
+          name: run sam-cli
+          background: true
+          command: |
+            pip3 install aws-sam-cli
+            sudo apt install unzip
+            wget https://github.com/dockstore/lambda/releases/download/0.1.6-SNAPSHOT/wdl-parsing.zip
+            unzip wdl-parsing.zip
+            cd wdl-parsing
+            # docker pull amazon/aws-sam-cli-build-image-java11
+            # cannot seem to `sam build --use-container` using local jdk and mvn instead
+            sam build
+            sam local start-api
       - setup_test
       - setup_integration_test
       - save_test_results
