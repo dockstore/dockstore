@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.11.2</version>
+        <version>1.11.3-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -53,32 +53,32 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -535,7 +535,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.11.2</version>
+            <version>1.11.3-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
