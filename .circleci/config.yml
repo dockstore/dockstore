@@ -149,6 +149,9 @@ jobs:
             sam build
             sam local start-api
       - setup_test
+      - run:
+          name: Wait for lambda
+          command: dockerize -wait tcp://localhost:3000 -timeout 1m
       - setup_integration_test
       - save_test_results
   build:
