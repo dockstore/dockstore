@@ -12,8 +12,9 @@ if [ "${TESTING_PROFILE}" = "language-parsing-tests" ]; then
     wget https://github.com/dockstore/lambda/releases/download/0.1.6-SNAPSHOT/wdl-parsing.zip
     unzip wdl-parsing.zip
     cd wdl-parsing
-    docker pull amazon/aws-sam-cli-build-image-java11
-    sam build --use-container
+    # docker pull amazon/aws-sam-cli-build-image-java11
+    # cannot seem to `sam build --use-container` using local jdk and mvn instead
+    sam build
     sam local start-api &
     cd ..
     exit 0;
