@@ -6595,6 +6595,42 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation:
+    post:
+      description: Language parser calls this endpoint to update parsed information
+        for this version
+      operationId: postParsedInformation
+      parameters:
+      - description: Workflow to retrieve the version from.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Workflow version to retrieve the version from.
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LanguageParsingResponse'
+        description: Created user object
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
     get:
       description: Retrieve sourcefiles for an entry's version
@@ -7496,6 +7532,83 @@ components:
           - service
         version:
           type: string
+    LanguageParsingRequest:
+      type: object
+      description: Request sent to the external language parsing service
+      properties:
+        branch:
+          type: string
+          description: The Git branch/tag
+        descriptorLanguage:
+          type: string
+          description: The language of the workflow
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+        descriptorRelativePathInGit:
+          type: string
+          description: The relative path to the primary descriptor (relative to the
+            base in Git)
+        entryId:
+          type: integer
+          format: int64
+          description: Id of the Dockstore entry
+        sourceFiles:
+          type: array
+          description: List of SourceFiles that will be required for parsing hosted
+            entries from Dockstore
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        uri:
+          type: string
+          description: The Git URI
+        versionId:
+          type: integer
+          format: int64
+          description: Id of the Dockstore entry's workflowVersion
+      required:
+      - branch
+      - descriptorRelativePathInGit
+      - entryId
+      - uri
+      - versionId
+    LanguageParsingResponse:
+      type: object
+      description: Response from the external lambda parsing service
+      properties:
+        author:
+          type: string
+          description: Author found from parsing the version (may possibly be different
+            from what will be stored in Dockstore
+        clonedRepositoryAbsolutePath:
+          type: string
+        description:
+          type: string
+          description: Description found from parsing the version (may possibly be
+            different from what will be stored in Dockstore
+        email:
+          type: string
+          description: Email found from parsing the version (may possibly be different
+            from what will be stored in Dockstore
+        languageParsingRequest:
+          $ref: '#/components/schemas/LanguageParsingRequest'
+        parsedInformation:
+          $ref: '#/components/schemas/ParsedInformation'
+        secondaryFilePaths:
+          type: array
+          items:
+            type: string
+        sourceFiles:
+          type: array
+          description: List of SourceFiles returned after parsing a non-hosted entry
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        versionTypeValidation:
+          $ref: '#/components/schemas/VersionTypeValidation'
     LicenseInformation:
       type: object
       properties:
@@ -8589,6 +8702,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ParsedInformation'
+    VersionTypeValidation:
+      type: object
+      properties:
+        message:
+          type: object
+          additionalProperties:
+            type: string
+        valid:
+          type: boolean
     VersionVerifiedPlatform:
       type: object
       properties:
