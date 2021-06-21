@@ -128,6 +128,14 @@ jobs:
       - setup_test
       - setup_integration_test
       - save_test_results
+  language-parsing-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: language-parsing-tests
+    steps:
+      - setup_test
+      - setup_integration_test
+      - save_test_results
   build:
     docker: # run the steps with Docker
       - image: cimg/openjdk:11.0.10
