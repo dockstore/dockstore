@@ -121,7 +121,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
-    executor: integration_test_exec
+    executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
     steps:
@@ -133,7 +133,8 @@ jobs:
     environment:
       TESTING_PROFILE: language-parsing-tests
     steps:
-      - setup_remote_docker
+      - old_python
+      - setup_machine
       - install-pip
       - run: 
           name: run sam-cli
@@ -146,7 +147,7 @@ jobs:
             cd wdl-parsing
             # docker pull amazon/aws-sam-cli-build-image-java11
             # cannot seem to `sam build --use-container` using local jdk and mvn instead
-            sam build
+            sam build --use-container
             sam local start-api
       - setup_test
       - run:
