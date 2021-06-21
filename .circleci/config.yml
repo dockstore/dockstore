@@ -151,7 +151,7 @@ jobs:
       - setup_test
       - run:
           name: Wait for lambda
-          command: dockerize -wait tcp://localhost:3000 -timeout 1m
+          command: dockerize -wait tcp://localhost:3000 -timeout 5m
       - setup_integration_test
       - save_test_results
   build:
