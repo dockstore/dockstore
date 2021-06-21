@@ -133,6 +133,7 @@ jobs:
     environment:
       TESTING_PROFILE: language-parsing-tests
     steps:
+      - setup_remote_docker
       - setup_test
       - setup_integration_test
       - save_test_results
