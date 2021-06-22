@@ -1,9 +1,7 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.dockstore.common.LanguageParsingTest;
 import io.dockstore.webservice.core.languageParsing.LanguageParsingRequest;
 import io.dockstore.webservice.core.languageParsing.LanguageParsingResponse;
@@ -31,16 +29,18 @@ public class LanguageParserHelperTest {
     }
 
     /**
-     * Tests that an async request can be made without other exceptions thrown
+     * Tests that an async request can be made without other exceptions thrown.
      * TODO: Somehow test the async response works (lambda hitting web service endpoint)
-     * @throws InterruptedException
-     * @throws ExecutionException
-     * @throws JsonProcessingException
+     *
      */
     @Test
-    public void sendToLambdaAsyncTest() throws InterruptedException, ExecutionException, JsonProcessingException {
+    public void sendToLambdaAsyncTest() {
         LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
-        LanguageParserHelper.sendToLambdaAsync(languageParsingRequest);
+        try {
+            LanguageParserHelper.sendToLambdaAsync(languageParsingRequest);
+        } catch (Exception e) {
+            Assert.fail("Should not have any exceptions");
+        }
     }
 
     private LanguageParsingRequest getLanguageParsingRequest() {

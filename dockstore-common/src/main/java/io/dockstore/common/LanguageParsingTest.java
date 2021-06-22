@@ -16,7 +16,7 @@
 package io.dockstore.common;
 
 /**
- * Setting aside tests that requires the external language parsing lambda service
+ * Setting aside tests that requires the external language parsing lambda service.
  */
 public interface LanguageParsingTest {
 }

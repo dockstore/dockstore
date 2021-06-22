@@ -32,11 +32,12 @@ public final class LanguageParserHelper {
      * Send a sync request to lambda. A valid language parsing response is expected.
      *
      * @param languageParsingRequest The request to send to lambda
-     * @return  A valid language parsing response from the lambda
+     * @return A valid language parsing response from the lambda
      * @throws InterruptedException An unexpected exception
-     * @throws IOException An unexpected exception
+     * @throws IOException          An unexpected exception
      */
-    public static LanguageParsingResponse sendToLambdaSync(LanguageParsingRequest languageParsingRequest) throws InterruptedException, IOException {
+    public static LanguageParsingResponse sendToLambdaSync(LanguageParsingRequest languageParsingRequest)
+            throws InterruptedException, IOException {
         HttpRequest request = convertLanguageParsingRequestToHttpRequest(languageParsingRequest);
         HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() == HttpURLConnection.HTTP_OK) {
@@ -50,15 +51,18 @@ public final class LanguageParserHelper {
 
     /**
      * Send an async request to lambda. Fire and forget. Timeout longer than 1 second is expected (lambda is going to take a while to run), all other exceptions are not.
-     * @param languageParsingRequest    The request to send to lambda
-     * @throws ExecutionException       An unexpected exception
-     * @throws InterruptedException     An unexpected exception
-     * @throws JsonProcessingException  An unexpected exception
+     *
+     * @param languageParsingRequest The request to send to lambda
+     * @throws ExecutionException      An unexpected exception
+     * @throws InterruptedException    An unexpected exception
+     * @throws JsonProcessingException An unexpected exception
      */
-    public static void sendToLambdaAsync(LanguageParsingRequest languageParsingRequest) throws ExecutionException, InterruptedException, JsonProcessingException {
+    public static void sendToLambdaAsync(LanguageParsingRequest languageParsingRequest) throws
+            ExecutionException, InterruptedException, JsonProcessingException {
         HttpRequest request = convertLanguageParsingRequestToHttpRequest(languageParsingRequest);
         try {
-            HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).get(1, TimeUnit.SECONDS);
+            HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body)
+                    .get(1, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             LOGGER.debug("Sent to language parsing service.");
         }

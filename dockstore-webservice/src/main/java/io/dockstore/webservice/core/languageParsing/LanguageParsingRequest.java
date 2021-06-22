@@ -1,11 +1,11 @@
 package io.dockstore.webservice.core.languageParsing;
 
-import java.util.List;
-import java.util.Objects;
-
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.List;
+import java.util.Objects;
 
 @Schema(description = "Request sent to the external language parsing service")
 public class LanguageParsingRequest {
@@ -96,10 +96,10 @@ public class LanguageParsingRequest {
             return false;
         }
 
-        LanguageParsingRequest that = (LanguageParsingRequest)o;
+        LanguageParsingRequest that = (LanguageParsingRequest) o;
         return entryId == that.entryId && versionId == that.versionId && Objects.equals(uri, that.uri) && Objects
-            .equals(branch, that.branch) && Objects.equals(descriptorRelativePathInGit, that.descriptorRelativePathInGit) && Objects
-            .equals(sourceFiles, that.sourceFiles);
+                .equals(branch, that.branch) && Objects.equals(descriptorRelativePathInGit, that.descriptorRelativePathInGit) && Objects
+                .equals(sourceFiles, that.sourceFiles);
     }
 
     @Override
