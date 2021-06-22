@@ -1592,13 +1592,17 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
-    @Operation(description = "Language parser calls this endpoint to update parsed information for this version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @RolesAllowed({"curator", "admin"})
+    @Operation(description = "Language parser calls this endpoint to update parsed information for this version",
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "hidden", hidden = true)
     public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
-            @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
-            @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
-            @RequestBody(description = "Created user object", required = true, content = @Content(schema = @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
+        @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH)
+        @PathParam("workflowId") Long workflowId,
+        @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true,
+            in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+        @RequestBody(description = "Created user object", required = true, content = @Content(schema =
+        @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
         checkLanguageParsingRequest(languageParsingResponse, workflowId, workflowVersionId);
         // TODO: Actually do something useful with this endpoint
     }
