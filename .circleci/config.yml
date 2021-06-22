@@ -371,12 +371,6 @@ commands:
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
-      - run:
-          name: Install postgresql client
-          command: |
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo apt update
-            sudo apt install -y postgresql-client
       - restore_cache:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
