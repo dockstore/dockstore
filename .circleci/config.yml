@@ -152,7 +152,7 @@ jobs:
       - setup_test
       - run:
           name: Wait for lambda
-          command: dockerize -wait tcp://localhost:3000 -timeout 5m
+          command: wget --output-document /dev/null --waitretry=5 --tries=20 --retry-connrefused localhost:3000 || true
       - setup_integration_test
       - save_test_results
   build:
