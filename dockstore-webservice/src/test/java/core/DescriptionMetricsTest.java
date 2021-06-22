@@ -23,4 +23,19 @@ public class DescriptionMetricsTest {
         Assert.assertEquals("Incorrect description length", 31, descriptionMetrics.getDescriptionLength());
         Assert.assertEquals("Incorrect entropy", 7, descriptionMetrics.getCalculatedEntropy());
     }
+
+    @Test
+    public void testWordCountCalculation() {
+        final String testString1 = "one two three four, I declare S#P$E*C)I*A!L characters";
+        DescriptionMetrics descriptionMetrics = new DescriptionMetrics(testString1);
+        Assert.assertEquals("Incorrect word count", 8, descriptionMetrics.getCalculatedWordCount());
+
+        final String testString2 = "      leading spaces      ending spaces      ";
+        descriptionMetrics = new DescriptionMetrics(testString2);
+        Assert.assertEquals("Incorrect word count", 4, descriptionMetrics.getCalculatedWordCount());
+
+        final String testString3 = "strange_delimiters_should_not_be_counted_as_multiple_words";
+        descriptionMetrics = new DescriptionMetrics(testString3);
+        Assert.assertEquals("Incorrect word count", 1, descriptionMetrics.getCalculatedWordCount());
+    }
 }
