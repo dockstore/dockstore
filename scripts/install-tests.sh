@@ -6,7 +6,7 @@ set -o errexit
 set -o pipefail
 set -o nounset
 set -o xtrace
-if [ "${TESTING_PROFILE}" = "unit-tests" ] || [ "${TESTING_PROFILE}" == "automated-review" ]; then
+if [ "${TESTING_PROFILE}" = "unit-tests" ] || [ "${TESTING_PROFILE}" == "automated-review" ] || [ "${TESTING_PROFILE}" == "language-parsing-tests" ]; then
     exit 0;
 fi
 

@@ -129,15 +129,15 @@ jobs:
       - setup_integration_test
       - save_test_results
   language-parsing-tests:
-    executor: integration_test_exec
+    executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
     steps:
-      - setup_remote_docker
+      - old_python
+      - setup_machine
       - install-pip
       - run: 
-          name: run sam-cli
-          background: true
+          name: build sam-cli
           command: |
             pip3 install aws-sam-cli
             sudo apt install unzip
@@ -146,12 +146,17 @@ jobs:
             cd wdl-parsing
             # docker pull amazon/aws-sam-cli-build-image-java11
             # cannot seem to `sam build --use-container` using local jdk and mvn instead
-            sam build
+            sam build --use-container
+      - run:
+          name: run sam-cli
+          command: |
+            cd wdl-parsing
             sam local start-api
+          background: true
       - setup_test
       - run:
           name: Wait for lambda
-          command: dockerize -wait tcp://localhost:3000 -timeout 5m
+          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:3000 || true
       - setup_integration_test
       - save_test_results
   build:
@@ -212,12 +217,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
-      - run:
-          name: Install postgresql client
-          command: |
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo apt update
-            sudo apt install -y postgresql-client
+      - install-postgres
       - install-git-secrets
       - setup_postgres
       - run:
@@ -316,6 +316,14 @@ jobs:
           from: image-digest.txt
           to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
 commands:
+  install-postgres:
+    steps:
+      - run:
+          name: Install postgresql client
+          command: |
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo apt update
+            sudo apt install -y postgresql-client
   install-git-secrets:
     steps:
       - run:
@@ -376,12 +384,7 @@ commands:
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
-      - run:
-          name: Install postgresql client
-          command: |
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo apt update
-            sudo apt install -y postgresql-client
+      - install-postgres
       - restore_cache:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
