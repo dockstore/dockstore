@@ -121,7 +121,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
-    executor: machine_integration_test_exec
+    executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
     steps:
@@ -129,7 +129,7 @@ jobs:
       - setup_integration_test
       - save_test_results
   language-parsing-tests:
-    executor: integration_test_exec
+    executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
     steps:
