@@ -1610,10 +1610,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static void checkLanguageParsingRequest(LanguageParsingResponse languageParsingResponse, Long entryId, Long versionId) {
         LanguageParsingRequest languageParsingRequest = languageParsingResponse.getLanguageParsingRequest();
         if (entryId != languageParsingRequest.getEntryId()) {
-            throw new CustomWebApplicationException("Entry Id from the LambdaParsingResponse does not match the path parameter", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Entry Id from the LambdaParsingResponse does not match the path parameter",
+                HttpStatus.SC_BAD_REQUEST);
         }
         if (versionId != languageParsingRequest.getVersionId()) {
-            throw new CustomWebApplicationException("Version Id from the LambdaParsingResponse does not match the path parameter", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Version Id from the LambdaParsingResponse does not match the path parameter",
+                HttpStatus.SC_BAD_REQUEST);
         }
     }
 
