@@ -27,39 +27,10 @@ import io.swagger.annotations.ApiModel;
 
 public class OneStepWorkflow extends BioWorkflow {
 
-    //    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
-    //    @JsonIgnore
-    //    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
-    //    private Entry parentEntry;
-    //
-    //
     @Override
     public EntryType getEntryType() {
         return EntryType.ONESTEPWORKFLOW;
     }
-    //
-    //    @Override
-    //    public Entry getParentEntry() {
-    //        return parentEntry;
-    //    }
-    //
-    //    @Column(columnDefinition = "boolean default false")
-    //    private boolean isChecker = false;
-    //
-    //    @Override
-    //    public void setParentEntry(Entry parentEntry) {
-    //        this.parentEntry = parentEntry;
-    //    }
-    //
-    //    @Override
-    //    public boolean isIsChecker() {
-    //        return this.isChecker;
-    //    }
-    //
-    //    @Override
-    //    public void setIsChecker(boolean isChecker) {
-    //        this.isChecker = isChecker;
-    //    }
 
     public Event.Builder getEventBuilder() {
         return new Event.Builder().withOneStepWorkflow(this);
