@@ -167,7 +167,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
             fail("Dockstore yaml with no services and no workflows should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertEquals(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_SERVICE, e.getMessage());
+            assertEquals(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE, e.getMessage());
         }
     }
 
@@ -216,7 +216,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12(workflowsKey);
             Assert.fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue(ex.getMessage().contains("must have at least 1 workflow or service"));
+            assertTrue(ex.getMessage().contains("must have at least 1 workflow, tool, or service"));
         }
 
         final String nameKey = DOCKSTORE_GALAXY_YAML.replaceFirst("name", "Name");

@@ -23,4 +23,65 @@
             <column name="specifier" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="1624304845915-1">
+        <createTable tableName="onestepworkflow">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="onestepworkflow_pkey"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="conceptdoi" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="licensename" type="VARCHAR(255)"/>
+            <column name="orcidputcode" type="VARCHAR(255)"/>
+            <column name="topicid" type="BIGINT"/>
+            <column name="checkerid" type="BIGINT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="n/a" name="descriptortypesubclass" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forumurl" type="VARCHAR(256)"/>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+            <column name="actualdefaultversion" type="BIGINT"/>
+            <column defaultValueBoolean="false" name="ischecker" type="BOOLEAN"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="1624304845915-2">
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="onestepworkflow" constraintName="fk_bknal8ld5a1m5xuxbm95xw4j7" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="1624304845915-3">
+        <createIndex indexName="uk_79hv8hhck7ylkni66aegscrig" tableName="onestepworkflow" unique="true">
+            <column name="checkerid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="1624304845915-4">
+        <createIndex indexName="uk_bknal8ld5a1m5xuxbm95xw4j7" tableName="onestepworkflow" unique="true">
+            <column name="actualdefaultversion"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>
