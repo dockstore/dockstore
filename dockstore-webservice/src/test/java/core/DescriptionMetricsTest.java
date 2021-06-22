@@ -30,7 +30,7 @@ public class DescriptionMetricsTest {
         DescriptionMetrics descriptionMetrics = new DescriptionMetrics(testString1);
         Assert.assertEquals("Incorrect word count", 8, descriptionMetrics.getCalculatedWordCount());
 
-        final String testString2 = "      leading spaces      ending spaces      ";
+        final String testString2 = "      leading  spaces      ending             spaces      ";
         descriptionMetrics = new DescriptionMetrics(testString2);
         Assert.assertEquals("Incorrect word count", 4, descriptionMetrics.getCalculatedWordCount());
 
