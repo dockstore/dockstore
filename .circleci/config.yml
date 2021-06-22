@@ -149,7 +149,9 @@ jobs:
             sam build --use-container
       - run:
           name: run sam-cli
-          command: sam local start-api
+          command: |
+            cd wdl-parsing
+            sam local start-api
           background: true
       - setup_test
       - run:
