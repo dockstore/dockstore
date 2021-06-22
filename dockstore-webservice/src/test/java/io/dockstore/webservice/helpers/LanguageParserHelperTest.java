@@ -18,7 +18,7 @@ public class LanguageParserHelperTest {
     public void sendToLambdaSyncTest() throws IOException, InterruptedException {
         LanguageParsingRequest languageParsingRequest = getLanguageParsingRequest();
         LanguageParsingResponse languageParsingResponse = LanguageParserHelper.sendToLambdaSync(languageParsingRequest);
-        Assert.assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
+        assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
         assertTrue(languageParsingResponse.getVersionTypeValidation().isValid());
         assertTrue(languageParsingResponse.getClonedRepositoryAbsolutePath().contains("/tmp"));
         assertFalse(
