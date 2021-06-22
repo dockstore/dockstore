@@ -227,6 +227,7 @@ public class Event {
         private Organization organization;
         private Tool tool;
         private BioWorkflow bioWorkflow;
+        private OneStepWorkflow oneStepWorkflow;
         private Service service;
         private Collection collection;
         private User initiatorUser;
@@ -262,6 +263,11 @@ public class Event {
 
         public Builder withBioWorkflow(BioWorkflow workflow) {
             this.bioWorkflow = workflow;
+            return this;
+        }
+
+        public Builder withOneStepWorkflow(OneStepWorkflow workflow) {
+            this.oneStepWorkflow = workflow;
             return this;
         }
 

@@ -22,6 +22,7 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -518,6 +519,7 @@ public abstract class SourceCodeRepoInterface {
         return version;
     }
 
+    //
     /**
      * Resolves imports for a sourcefile, associates with version
      * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
@@ -624,6 +626,7 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
+    //
     /**
      *
      * @param repositoryId
@@ -682,7 +685,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry Entry containing version to validate
      * @param mainDescriptorPath Descriptor path to validate
      * @return Workflow version with validation information
-     */
+     */ //
     public WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         DescriptorLanguage.FileType identifiedType = entry.getFileType();
@@ -691,7 +694,12 @@ public abstract class SourceCodeRepoInterface {
 
         // Validate descriptor set
         if (mainDescriptor.isPresent()) {
-            VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            VersionTypeValidation validDescriptorSet;
+            if (entry.getEntryType() == EntryType.ONESTEPWORKFLOW) {
+                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateToolSet(sourceFiles, mainDescriptorPath);
+            } else {
+                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            }
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);
         } else {

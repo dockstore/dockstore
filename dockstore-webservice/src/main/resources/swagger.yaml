@@ -6862,6 +6862,7 @@ definitions:
         - "TOOL"
         - "WORKFLOW"
         - "SERVICE"
+        - "ONESTEPWORKFLOW"
       lastUpdateDate:
         type: "integer"
         format: "int64"

@@ -38,6 +38,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.core.OneStepWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
@@ -75,6 +76,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpStatus;
+import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
@@ -390,8 +392,37 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflowName Name of the workflow
      * @return Workflow
      */
-    public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+    public Workflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
         BioWorkflow workflow = new BioWorkflow();
+        return initializeWorkflow(repositoryId, subclass, workflowName, workflow);
+//        workflow.setOrganization(repositoryId.split("/")[0]);
+//        workflow.setRepository(repositoryId.split("/")[1]);
+//        workflow.setSourceControl(SourceControl.GITHUB);
+//        workflow.setGitUrl("git@github.com:" + repositoryId + ".git");
+//        workflow.setLastUpdated(new Date());
+//        workflow.setMode(WorkflowMode.DOCKSTORE_YML);
+//        workflow.setWorkflowName(workflowName);
+//        this.setLicenseInformation(workflow, repositoryId);
+//        DescriptorLanguage descriptorLanguage;
+//        try {
+//            descriptorLanguage = DescriptorLanguage.convertShortStringToEnum(subclass);
+//            workflow.setDescriptorType(descriptorLanguage);
+//        } catch (UnsupportedOperationException ex) {
+//            throw new CustomWebApplicationException("The given descriptor type is not supported: " + subclass, LAMBDA_FAILURE);
+//        }
+//        workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
+//        return workflow;
+    }
+
+    public Workflow initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+        OneStepWorkflow workflow = new OneStepWorkflow();
+        return initializeWorkflow(repositoryId, subclass, workflowName, workflow);
+
+    }
+
+    @NotNull
+    public Workflow initializeWorkflow(final String repositoryId, final String subclass, final String workflowName,
+            final Workflow workflow) {
         workflow.setOrganization(repositoryId.split("/")[0]);
         workflow.setRepository(repositoryId.split("/")[1]);
         workflow.setSourceControl(SourceControl.GITHUB);
@@ -725,7 +756,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
-            final Optional<YamlWorkflow> maybeWorkflow = dockstoreYaml12.getWorkflows().stream().filter(wf -> {
+            List<YamlWorkflow> workflows;
+            if (workflow instanceof OneStepWorkflow) {
+                workflows = dockstoreYaml12.getTools();
+            } else {
+                workflows = dockstoreYaml12.getWorkflows();
+            }
+
+            final Optional<YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
                 final String wfName = wf.getName();
                 final String dockstoreWorkflowPath =
                         "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");
