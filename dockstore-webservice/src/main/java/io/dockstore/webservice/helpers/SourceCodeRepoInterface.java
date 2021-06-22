@@ -521,7 +521,6 @@ public abstract class SourceCodeRepoInterface {
         return version;
     }
 
-    //
     /**
      * Resolves imports for a sourcefile, associates with version
      * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
@@ -628,7 +627,6 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    //
     /**
      *
      * @param repositoryId
@@ -687,7 +685,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry Entry containing version to validate
      * @param mainDescriptorPath Descriptor path to validate
      * @return Workflow version with validation information
-     */ //
+     */
     public WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         DescriptorLanguage.FileType identifiedType = entry.getFileType();
