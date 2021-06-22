@@ -1,4 +1,4 @@
-package io.dockstore.webservice.core.languageParsing;
+package io.dockstore.webservice.core.language_parsing;
 
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.ParsedInformation;
