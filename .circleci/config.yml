@@ -365,8 +365,8 @@ commands:
       - run:
           name: setup postgres
           command: |
-            docker exec -it -u postgres -e postgres1 psql -c "create user dockstore with password 'dockstore' createdb;"
-            docker exec -it -u postgres -e postgres1 psql -c "create database webservice_test with owner = dockstore;"
+            docker exec -it -u postgres postgres1 psql -c "create user dockstore with password 'dockstore' createdb;"
+            docker exec -it -u postgres postgres1 psql -c "create database webservice_test with owner = dockstore;"
   old_python: # Need Python 3.6 for old Dockstore 1.7 requirements.txt
     steps:
       - run:
