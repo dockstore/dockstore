@@ -1,14 +1,14 @@
 package io.dockstore.webservice.core.languageParsing;
 
-import java.util.List;
-
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 
 @Schema(description = "Response from the external lambda parsing service")
 public class LanguageParsingResponse {
+
     private String clonedRepositoryAbsolutePath;
     private VersionTypeValidation versionTypeValidation;
     private List<String> secondaryFilePaths;
