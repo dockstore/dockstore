@@ -235,7 +235,7 @@ jobs:
       - save_cache:
           key: dockstore-keylist-unit-test-{{ .Environment.CACHE_PGP_VERSION }}
           paths:
-            - keysmap.list
+            - ~/.m2/repository/pgpkeys-cache
       - run:
           name: Save test results
           command: |
