@@ -172,8 +172,6 @@ jobs:
     steps: # a collection of executable commands
       - checkout
       - restore_cache:
-          key: dockstore-keylist-unit-test-{{ .Environment.CACHE_PGP_VERSION }}
-      - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
       - run:
           name: Install postgresql client
@@ -232,10 +230,6 @@ jobs:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
           paths:
             - /tmp/dockstore-web-cache
-      - save_cache:
-          key: dockstore-keylist-unit-test-{{ .Environment.CACHE_PGP_VERSION }}
-          paths:
-            - ~/.m2/repository/pgpkeys-cache
       - run:
           name: Save test results
           command: |
