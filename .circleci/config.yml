@@ -90,6 +90,7 @@ jobs:
       - old_python
       - setup_machine
       - setup_test
+      - setup_postgres_docker
       - setup_integration_test
       - save_test_results
   cwltool-tests:
@@ -100,6 +101,7 @@ jobs:
       - old_python
       - setup_machine
       - setup_test
+      - setup_postgres_docker
       - setup_integration_test
       - save_test_results
   integration-tests:
@@ -110,6 +112,8 @@ jobs:
       - setup_remote_docker:
           version: 19.03.13
       - setup_test
+      - install-postgres
+      - setup_postgres
       - setup_integration_test
       - save_test_results
   tool-integration-tests:
@@ -118,6 +122,8 @@ jobs:
       TESTING_PROFILE: tool-integration-tests
     steps:
       - setup_test
+      - install-postgres
+      - setup_postgres
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
@@ -126,6 +132,8 @@ jobs:
       TESTING_PROFILE: workflow-integration-tests
     steps:
       - setup_test
+      - install-postgres
+      - setup_postgres
       - setup_integration_test
       - save_test_results
   language-parsing-tests:
@@ -154,6 +162,7 @@ jobs:
             sam local start-api
           background: true
       - setup_test
+      - setup_postgres_docker
       - run:
           name: Wait for lambda
           command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:3000 || true
@@ -351,6 +360,13 @@ commands:
           command: |
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+  setup_postgres_docker:
+    steps:
+      - run:
+          name: setup postgres
+          command: |
+            docker exec -it -u postgres -e postgres1 psql -c "create user dockstore with password 'dockstore' createdb;"
+            docker exec -it -u postgres -e postgres1 psql -c "create database webservice_test with owner = dockstore;"
   old_python: # Need Python 3.6 for old Dockstore 1.7 requirements.txt
     steps:
       - run:
@@ -384,7 +400,6 @@ commands:
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
-      - install-postgres
       - restore_cache:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
@@ -407,7 +422,6 @@ commands:
       - run:
           name: Wait for db
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
-      - setup_postgres
       - run:
           name: Wait for ES
           command: |
