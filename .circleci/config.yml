@@ -137,7 +137,7 @@ jobs:
       - setup_machine
       - install-pip
       - run: 
-          name: run sam-cli
+          name: build sam-cli
           command: |
             pip3 install aws-sam-cli
             sudo apt install unzip
