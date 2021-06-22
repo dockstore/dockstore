@@ -138,7 +138,6 @@ jobs:
       - install-pip
       - run: 
           name: run sam-cli
-          background: true
           command: |
             pip3 install aws-sam-cli
             sudo apt install unzip
@@ -148,11 +147,14 @@ jobs:
             # docker pull amazon/aws-sam-cli-build-image-java11
             # cannot seem to `sam build --use-container` using local jdk and mvn instead
             sam build --use-container
-            sam local start-api
+      - run:
+          name: run sam-cli
+          command: sam local start-api
+          background: true
       - setup_test
       - run:
           name: Wait for lambda
-          command: wget --output-document /dev/null --waitretry=5 --tries=20 --retry-connrefused localhost:3000 || true
+          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:3000 || true
       - setup_integration_test
       - save_test_results
   build:
