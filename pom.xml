@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.11.3-SNAPSHOT</version>
+    <version>1.11.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -129,7 +129,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.11.3-SNAPSHOT</version>
+                 <version>1.11.4-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
@@ -138,11 +138,6 @@
     <build>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.simplify4u.plugins</groupId>
-                    <artifactId>pgpverify-maven-plugin</artifactId>
-                    <version>1.11.0</version>
-                </plugin>
                 <!-- https://github.com/jacoco/jacoco/pull/760 -->
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -433,24 +428,6 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <plugin>
-                <groupId>org.simplify4u.plugins</groupId>
-                <artifactId>pgpverify-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>verify</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <quiet>true</quiet>
-                    <skip>${skipSignatureCheck}</skip>
-                    <keysMapLocation>${project.basedir}/keysmap.list</keysMapLocation>
-                    <pgpKeyServer>hkps://hkps.pool.sks-keyservers.net,hkps://keyserver.ubuntu.com,hkps://sks.pod02.fleetstreetops.com</pgpKeyServer>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
