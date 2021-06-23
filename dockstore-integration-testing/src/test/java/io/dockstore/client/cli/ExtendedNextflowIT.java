@@ -15,7 +15,7 @@
  */
 package io.dockstore.client.cli;
 
-import java.util.List;
+import static org.junit.Assert.assertNotSame;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -30,6 +30,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -40,8 +41,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import static org.junit.Assert.assertNotSame;
 
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class ExtendedNextflowIT extends BaseIT {

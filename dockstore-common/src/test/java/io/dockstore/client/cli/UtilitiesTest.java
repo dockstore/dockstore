@@ -1,13 +1,12 @@
 package io.dockstore.client.cli;
 
+import com.google.common.io.ByteStreams;
+import io.dockstore.common.Utilities;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.google.common.io.ByteStreams;
-import io.dockstore.common.Utilities;
 import org.junit.Assert;
 import org.junit.Test;
 

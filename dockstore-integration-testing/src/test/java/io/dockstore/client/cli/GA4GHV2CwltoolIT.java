@@ -15,6 +15,9 @@
  */
 package io.dockstore.client.cli;
 
+import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
+import static org.junit.Assert.assertTrue;
+
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.RequireCwltoolTest;
 import io.dockstore.common.TestUtility;
@@ -35,9 +38,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-
-import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author gluu

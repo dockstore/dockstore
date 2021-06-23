@@ -15,8 +15,12 @@
  */
 package io.swagger.api;
 
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.resources.ResourceConstants;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.api.factories.ToolClassesApiServiceFactory;
+import io.swagger.model.ToolClass;
 import java.util.Optional;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -24,12 +28,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.resources.ResourceConstants;
-import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.api.factories.ToolClassesApiServiceFactory;
-import io.swagger.model.ToolClass;
 import org.apache.http.HttpStatus;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/tool-classes")

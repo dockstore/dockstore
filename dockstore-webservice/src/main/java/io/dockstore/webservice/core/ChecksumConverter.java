@@ -3,10 +3,8 @@ package io.dockstore.webservice.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

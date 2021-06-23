@@ -16,16 +16,15 @@
 
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.jdbi.LabelDAO;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.jdbi.LabelDAO;
 import org.apache.http.HttpStatus;
 
 /**

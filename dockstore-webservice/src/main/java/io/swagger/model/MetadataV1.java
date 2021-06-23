@@ -15,12 +15,11 @@
  */
 package io.swagger.model;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
-
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 import org.apache.commons.beanutils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

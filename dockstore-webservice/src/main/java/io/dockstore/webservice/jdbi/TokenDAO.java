@@ -16,11 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 

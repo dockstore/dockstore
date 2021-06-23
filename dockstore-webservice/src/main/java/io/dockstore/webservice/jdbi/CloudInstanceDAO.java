@@ -1,9 +1,8 @@
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.CloudInstance;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.SessionFactory;
 
 public class CloudInstanceDAO extends AbstractDAO<CloudInstance> {

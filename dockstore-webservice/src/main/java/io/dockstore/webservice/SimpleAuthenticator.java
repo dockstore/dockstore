@@ -16,8 +16,6 @@
 
 package io.dockstore.webservice;
 
-import java.util.Optional;
-
 import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
@@ -26,6 +24,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
+import java.util.Optional;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

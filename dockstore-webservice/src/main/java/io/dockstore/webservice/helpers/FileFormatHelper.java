@@ -1,5 +1,12 @@
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.FileFormat;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.jdbi.FileFormatDAO;
+import io.dockstore.webservice.languages.CWLHandler;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -9,16 +16,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-
 import javax.xml.bind.DatatypeConverter;
-
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.FileFormat;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.jdbi.FileFormatDAO;
-import io.dockstore.webservice.languages.CWLHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

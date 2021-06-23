@@ -16,17 +16,16 @@
 
 package io.dockstore.client.cli;
 
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author dyuen

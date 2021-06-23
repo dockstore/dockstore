@@ -15,13 +15,11 @@
  */
 package io.dockstore.webservice.core;
 
-import java.util.Optional;
-
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
-
 import com.google.common.collect.Lists;
 import io.dockstore.common.SourceControl;
+import java.util.Optional;
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

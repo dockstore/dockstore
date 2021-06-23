@@ -1,11 +1,10 @@
 package io.dockstore.webservice.helpers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A no-op interface intended as a place-holder for where we will implement seven bridges functionality when they get around to exposing and

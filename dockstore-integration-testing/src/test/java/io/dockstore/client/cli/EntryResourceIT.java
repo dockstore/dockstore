@@ -1,8 +1,9 @@
 package io.dockstore.client.cli;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static io.dockstore.common.Hoverfly.BAD_PUT_CODE;
+import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
+import static io.dockstore.common.Hoverfly.PUT_CODE;
+import static org.junit.Assert.fail;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
@@ -18,6 +19,9 @@ import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.resources.EntryResource;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,11 +30,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import static io.dockstore.common.Hoverfly.BAD_PUT_CODE;
-import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
-import static io.dockstore.common.Hoverfly.PUT_CODE;
-import static org.junit.Assert.fail;
 
 public class EntryResourceIT extends BaseIT {
     @Rule

@@ -1,5 +1,8 @@
 package io.dockstore.webservice.helpers;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -8,9 +11,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class ZenodoHelperTest {
 

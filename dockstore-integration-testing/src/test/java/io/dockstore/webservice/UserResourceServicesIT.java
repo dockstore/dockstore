@@ -16,6 +16,10 @@
 
 package io.dockstore.webservice;
 
+import static io.dockstore.common.Hoverfly.SERVICES_SIMULATION_SOURCE;
+import static io.dockstore.common.Hoverfly.SUFFIX1;
+import static io.dockstore.common.Hoverfly.SUFFIX2;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
@@ -41,10 +45,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import static io.dockstore.common.Hoverfly.SERVICES_SIMULATION_SOURCE;
-import static io.dockstore.common.Hoverfly.SUFFIX1;
-import static io.dockstore.common.Hoverfly.SUFFIX2;
 
 /**
  * Tests services endpoints from UserResource

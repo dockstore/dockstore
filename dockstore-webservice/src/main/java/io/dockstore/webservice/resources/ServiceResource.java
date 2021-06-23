@@ -1,12 +1,11 @@
 package io.dockstore.webservice.resources;
 
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Service;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 

@@ -15,6 +15,21 @@
  */
 package io.dockstore.webservice.languages;
 
+import com.google.common.base.CharMatcher;
+import groovyjarjarantlr.RecognitionException;
+import groovyjarjarantlr.TokenStreamException;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.DockerParameter;
+import io.dockstore.common.NextflowUtilities;
+import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.DescriptionSource;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -31,22 +46,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.common.base.CharMatcher;
-import groovyjarjarantlr.RecognitionException;
-import groovyjarjarantlr.TokenStreamException;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DockerImageReference;
-import io.dockstore.common.DockerParameter;
-import io.dockstore.common.NextflowUtilities;
-import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Validation;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;

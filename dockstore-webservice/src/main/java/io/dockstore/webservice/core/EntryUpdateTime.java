@@ -1,11 +1,10 @@
 package io.dockstore.webservice.core;
 
-import java.sql.Timestamp;
-import java.util.Date;
-
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.sql.Timestamp;
+import java.util.Date;
 
 /**
  * Class used to display entries on the Dockstore homepage

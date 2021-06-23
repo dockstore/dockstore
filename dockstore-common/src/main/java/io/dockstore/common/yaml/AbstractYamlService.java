@@ -18,7 +18,6 @@ package io.dockstore.common.yaml;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import javax.validation.constraints.NotNull;
 
 /**

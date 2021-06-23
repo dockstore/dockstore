@@ -1,10 +1,9 @@
 package io.dockstore.webservice.resources;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
-
-import io.dockstore.webservice.CustomWebApplicationException;
 import org.junit.Assert;
 import org.junit.Test;
 
