@@ -268,8 +268,6 @@
         <!-- Dockstore override, removal -->
 <!--        <module name="VariableDeclarationUsageDistance"/>-->
         <module name="CustomImportOrder">
-            <!-- Dockstore override, addition -->
-            <property name="severity" value="warning"/>
             <property name="sortImportsInGroupAlphabetically" value="true"/>
             <property name="separateLineBetweenGroups" value="true"/>
             <property name="customImportOrderRules" value="STATIC###THIRD_PARTY_PACKAGE"/>
