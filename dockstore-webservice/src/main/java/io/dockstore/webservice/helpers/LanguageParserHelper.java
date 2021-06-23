@@ -2,8 +2,8 @@ package io.dockstore.webservice.helpers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dockstore.webservice.core.language_parsing.LanguageParsingRequest;
-import io.dockstore.webservice.core.language_parsing.LanguageParsingResponse;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;

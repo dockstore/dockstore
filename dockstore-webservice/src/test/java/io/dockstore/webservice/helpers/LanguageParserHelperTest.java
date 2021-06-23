@@ -4,8 +4,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.LanguageParsingTest;
-import io.dockstore.webservice.core.language_parsing.LanguageParsingRequest;
-import io.dockstore.webservice.core.language_parsing.LanguageParsingResponse;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;

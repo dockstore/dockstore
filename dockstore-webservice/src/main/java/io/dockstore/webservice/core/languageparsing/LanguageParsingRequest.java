@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package io.dockstore.webservice.core.language_parsing;
+package io.dockstore.webservice.core.languageparsing;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.SourceFile;

@@ -1,4 +1,4 @@
-package io.dockstore.webservice.core.language_parsing;
+package io.dockstore.webservice.core.languageparsing;
 
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.ParsedInformation;
@@ -24,6 +24,8 @@ public class LanguageParsingResponse {
     private ParsedInformation parsedInformation;
     @Schema(description = "List of SourceFiles returned after parsing a non-hosted entry")
     private List<SourceFile> sourceFiles;
+    @Schema(description = "ORCID ID found from parsing the version (may possibly be different from what will be stored in Dockstore")
+    private String orcidID;
 
     public List<String> getSecondaryFilePaths() {
         return secondaryFilePaths;
@@ -96,5 +98,13 @@ public class LanguageParsingResponse {
 
     public void setSourceFiles(List<SourceFile> sourceFiles) {
         this.sourceFiles = sourceFiles;
+    }
+
+    public String getOrcidID() {
+        return orcidID;
+    }
+
+    public void setOrcidID(String orcidID) {
+        this.orcidID = orcidID;
     }
 }
