@@ -182,8 +182,9 @@
             <property name="option" value="nl"/>
         </module>
         <module name="PackageName">
-            <!-- Dockstore override, removal -->
-<!--            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>-->
+            <!-- Dockstore override, addition -->
+            <property name="severity" value="warning"/>
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
             <message key="name.invalidPattern"
               value="Package name ''{0}'' must match pattern ''{1}''."/>
         </module>
