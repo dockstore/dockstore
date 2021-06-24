@@ -14,17 +14,17 @@ public class LanguageParsingResponse {
     private List<String> secondaryFilePaths;
     private LanguageParsingRequest languageParsingRequest;
 
-    @Schema(description = "Author found from parsing the version (may possibly be different from what will be stored in Dockstore")
+    @Schema(description = "Author found from parsing the version (may possibly be different from what will be stored in Dockstore)")
     private String author;
-    @Schema(description = "Email found from parsing the version (may possibly be different from what will be stored in Dockstore")
+    @Schema(description = "Email found from parsing the version (may possibly be different from what will be stored in Dockstore)")
     private String email;
-    @Schema(description = "Description found from parsing the version (may possibly be different from what will be stored in Dockstore")
+    @Schema(description = "Description found from parsing the version (may possibly be different from what will be stored in Dockstore)")
     private String description;
     @Schema(description = "Information from parsing the version, will be directly stored in Dockstore")
     private ParsedInformation parsedInformation;
     @Schema(description = "List of SourceFiles returned after parsing a non-hosted entry")
     private List<SourceFile> sourceFiles;
-    @Schema(description = "ORCID ID found from parsing the version (may possibly be different from what will be stored in Dockstore")
+    @Schema(description = "ORCID ID found from parsing the version (may possibly be different from what will be stored in Dockstore)")
     private String orcidID;
 
     public List<String> getSecondaryFilePaths() {

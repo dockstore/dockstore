@@ -1601,7 +1601,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @PathParam("workflowId") Long workflowId,
         @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true,
             in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
-        @RequestBody(description = "Created user object", required = true, content = @Content(schema =
+        @RequestBody(description = "Response from language parsing lambda", required = true, content = @Content(schema =
         @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
         checkLanguageParsingRequest(languageParsingResponse, workflowId, workflowVersionId);
         // TODO: Actually do something useful with this endpoint
