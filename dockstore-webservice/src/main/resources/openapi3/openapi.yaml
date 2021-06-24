@@ -5447,12 +5447,13 @@ paths:
         name: include
         schema:
           type: string
-      - description: Whether to get a service or workflow
+      - description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
+          \ bioworkflow, githubapptool"
         in: query
-        name: services
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          type: string
       responses:
         default:
           content:
@@ -7305,7 +7306,7 @@ components:
           - TOOL
           - WORKFLOW
           - SERVICE
-          - ONESTEPWORKFLOW
+          - GITHUBAPPTOOL
         lastUpdateDate:
           type: integer
           format: int64

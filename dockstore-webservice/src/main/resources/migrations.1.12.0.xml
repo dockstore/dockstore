@@ -24,10 +24,10 @@
         </addColumn>
     </changeSet>
 
-    <changeSet author="natalieperez (generated)" id="1624304845915-1">
-        <createTable tableName="onestepworkflow">
+    <changeSet author="natalieperez (generated)" id="1624485065798-1">
+        <createTable tableName="githubapptool">
             <column name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="onestepworkflow_pkey"/>
+                <constraints nullable="false" primaryKey="true" primaryKeyName="githubapptool_pkey"/>
             </column>
             <column name="author" type="VARCHAR(255)"/>
             <column name="conceptdoi" type="VARCHAR(255)"/>
@@ -71,16 +71,16 @@
             <column defaultValueBoolean="false" name="ischecker" type="BOOLEAN"/>
         </createTable>
     </changeSet>
-    <changeSet author="natalieperez (generated)" id="1624304845915-2">
-        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="onestepworkflow" constraintName="fk_bknal8ld5a1m5xuxbm95xw4j7" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+    <changeSet author="natalieperez (generated)" id="1624485065798-2">
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="githubapptool" constraintName="fk_7ahrf2bbepo2fttkjbpd4appa" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
     </changeSet>
-    <changeSet author="natalieperez (generated)" id="1624304845915-3">
-        <createIndex indexName="uk_79hv8hhck7ylkni66aegscrig" tableName="onestepworkflow" unique="true">
+    <changeSet author="natalieperez (generated)" id="1624485065798-3">
+        <createIndex indexName="uk_4x6nxg1h513uhx229am71pyi3" tableName="githubapptool" unique="true">
             <column name="checkerid"/>
         </createIndex>
     </changeSet>
-    <changeSet author="natalieperez (generated)" id="1624304845915-4">
-        <createIndex indexName="uk_bknal8ld5a1m5xuxbm95xw4j7" tableName="onestepworkflow" unique="true">
+    <changeSet author="natalieperez (generated)" id="1624485065798-4">
+        <createIndex indexName="uk_7ahrf2bbepo2fttkjbpd4appa" tableName="githubapptool" unique="true">
             <column name="actualdefaultversion"/>
         </createIndex>
     </changeSet>

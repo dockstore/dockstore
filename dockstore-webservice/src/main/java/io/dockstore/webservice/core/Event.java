@@ -227,7 +227,7 @@ public class Event {
         private Organization organization;
         private Tool tool;
         private BioWorkflow bioWorkflow;
-        private OneStepWorkflow oneStepWorkflow;
+        private GitHubAppTool gitHubAppTool;
         private Service service;
         private Collection collection;
         private User initiatorUser;
@@ -266,8 +266,8 @@ public class Event {
             return this;
         }
 
-        public Builder withOneStepWorkflow(OneStepWorkflow workflow) {
-            this.oneStepWorkflow = workflow;
+        public Builder withOneStepWorkflow(GitHubAppTool workflow) {
+            this.gitHubAppTool = workflow;
             return this;
         }
 

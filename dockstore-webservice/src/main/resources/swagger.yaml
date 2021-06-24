@@ -5016,12 +5016,12 @@ paths:
         description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
+        description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
+          \ bioworkflow, githubapptool"
         required: false
-        type: "boolean"
-        default: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -6862,7 +6862,7 @@ definitions:
         - "TOOL"
         - "WORKFLOW"
         - "SERVICE"
-        - "ONESTEPWORKFLOW"
+        - "GITHUBAPPTOOL"
       lastUpdateDate:
         type: "integer"
         format: "int64"

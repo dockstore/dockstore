@@ -19,8 +19,8 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.GitHubAppTool;
 import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.OneStepWorkflow;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -443,7 +443,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 final var defaultVersion = wf.getLatestTagAsDefault();
                 final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
-                Class workflowType = isOneStepWorkflow ? OneStepWorkflow.class : BioWorkflow.class;
+                Class workflowType = isOneStepWorkflow ? GitHubAppTool.class : BioWorkflow.class;
                 Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
@@ -536,7 +536,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);
             } else if (workflowType == Service.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
-            } else if (workflowType == OneStepWorkflow.class) {
+            } else if (workflowType == GitHubAppTool.class) {
                 //workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, subclass, workflowName);
                 workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, subclass, workflowName);
             } else {
