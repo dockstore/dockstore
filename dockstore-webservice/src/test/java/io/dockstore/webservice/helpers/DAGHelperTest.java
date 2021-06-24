@@ -15,10 +15,10 @@
 
 package io.dockstore.webservice.helpers;
 
+import static io.dropwizard.testing.FixtureHelpers.fixture;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import static io.dropwizard.testing.FixtureHelpers.fixture;
 
 /**
  * @author gluu

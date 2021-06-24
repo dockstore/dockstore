@@ -1,9 +1,8 @@
 package io.dockstore.webservice.core;
 
-import java.util.Date;
-
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Date;
 
 /**
  * Class used to display organizations on the Dockstore homepage

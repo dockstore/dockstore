@@ -1,5 +1,10 @@
 package io.dockstore.webservice.helpers;
 
+import static java.net.http.HttpRequest.BodyPublishers.ofString;
+
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Version;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.ProxySelector;
@@ -11,7 +16,6 @@ import java.net.http.HttpResponse;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Optional;
-
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -19,10 +23,6 @@ import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Version;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.orcid.jaxb.model.common.Relationship;
@@ -35,8 +35,6 @@ import org.orcid.jaxb.model.v3.release.record.ExternalID;
 import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
 import org.orcid.jaxb.model.v3.release.record.Work;
 import org.orcid.jaxb.model.v3.release.record.WorkTitle;
-
-import static java.net.http.HttpRequest.BodyPublishers.ofString;
 
 // Swagger-ui available here: https://api.orcid.org/v3.0/#!/Development_Member_API_v3.0/
 public final class ORCIDHelper {

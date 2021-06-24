@@ -1,18 +1,5 @@
 package io.dockstore.webservice.permissions.sam;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -33,6 +20,18 @@ import io.swagger.sam.client.model.AccessPolicyMembership;
 import io.swagger.sam.client.model.AccessPolicyResponseEntry;
 import io.swagger.sam.client.model.ErrorReport;
 import io.swagger.sam.client.model.ResourceAndAccessPolicy;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;

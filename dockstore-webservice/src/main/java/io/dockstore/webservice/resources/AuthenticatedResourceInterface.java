@@ -15,17 +15,15 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.container.ContainerRequestContext;
-
 import com.github.zafarkhaja.semver.Version;
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.User;
+import java.util.List;
+import java.util.Optional;
+import javax.ws.rs.container.ContainerRequestContext;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

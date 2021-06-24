@@ -1,10 +1,9 @@
 package io.dockstore.webservice.jdbi;
 
-import java.sql.Timestamp;
-import java.util.List;
-
 import io.dockstore.webservice.core.DeletedUsername;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.sql.Timestamp;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 

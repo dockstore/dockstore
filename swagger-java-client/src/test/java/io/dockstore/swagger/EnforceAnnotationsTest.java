@@ -1,8 +1,7 @@
 package io.dockstore.swagger;
 
-import java.lang.annotation.Annotation;
-
 import io.swagger.client.model.Workflow;
+import java.lang.annotation.Annotation;
 import org.junit.Assert;
 import org.junit.Test;
 

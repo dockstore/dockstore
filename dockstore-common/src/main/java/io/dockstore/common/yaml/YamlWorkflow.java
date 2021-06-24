@@ -15,12 +15,10 @@
  */
 package io.dockstore.common.yaml;
 
+import io.dockstore.common.DescriptorLanguage;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.validation.constraints.NotNull;
-
-import io.dockstore.common.DescriptorLanguage;
 
 /**
  * A workflow as described in a .dockstore.yml

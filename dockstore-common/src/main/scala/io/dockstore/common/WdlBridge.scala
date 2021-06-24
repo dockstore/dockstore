@@ -8,7 +8,7 @@ import common.validation.Checked._
 import common.validation.ErrorOr.ErrorOr
 import cromwell.core.path.DefaultPathBuilder
 import cromwell.languages.LanguageFactory
-import cromwell.languages.util.{ImportResolver, LanguageFactoryUtil}
+import cromwell.languages.util.ImportResolver
 import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, ImportResolver, ResolvedImportBundle}
 import languages.wdl.biscayne.WdlBiscayneLanguageFactory
 import languages.wdl.draft2.WdlDraft2LanguageFactory
@@ -28,10 +28,10 @@ import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph._
 import wom.types.{WomCompositeType, WomOptionalType, WomType}
+
 import java.nio.file.{Files, Paths}
 import java.util
 import java.util.Optional
-
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters._
 import scala.util.Try

@@ -1,18 +1,16 @@
 package io.dockstore.webservice.jdbi;
 
+import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.User;
+import io.dropwizard.hibernate.AbstractDAO;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import com.google.common.base.MoreObjects;
-import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.User;
-import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;

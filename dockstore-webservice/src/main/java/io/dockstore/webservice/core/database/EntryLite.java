@@ -1,14 +1,13 @@
 package io.dockstore.webservice.core.database;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
 import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 /**
  * This class describes lightweight entry objects that are used for making type-safe named queries

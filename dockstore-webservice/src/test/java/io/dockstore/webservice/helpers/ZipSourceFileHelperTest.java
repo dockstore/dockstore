@@ -1,16 +1,15 @@
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.zip.ZipFile;
+import static org.junit.Assert.fail;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dropwizard.testing.ResourceHelpers;
+import java.io.File;
+import java.io.IOException;
+import java.util.zip.ZipFile;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class ZipSourceFileHelperTest {
 

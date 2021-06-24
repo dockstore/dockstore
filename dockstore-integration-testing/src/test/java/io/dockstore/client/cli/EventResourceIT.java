@@ -1,9 +1,7 @@
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
+import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -20,6 +18,10 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,9 +31,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-
-import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
-import static org.junit.Assert.assertTrue;
 
 /**
  * This test was originally in BasicIT, but it sometimes fails on travis and fails consistently locally if it is run with another test

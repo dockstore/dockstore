@@ -16,7 +16,6 @@
 package io.dockstore.common;
 
 import java.io.File;
-
 import org.pf4j.DefaultPluginManager;
 
 /**

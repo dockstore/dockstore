@@ -15,10 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.util.SortedMap;
-import java.util.concurrent.TimeUnit;
-
 import com.codahale.metrics.Gauge;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -30,6 +26,9 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.auth.ApiKeyAuth;
+import java.io.File;
+import java.util.SortedMap;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;

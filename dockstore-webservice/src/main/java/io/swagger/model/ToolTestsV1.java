@@ -15,11 +15,10 @@
  */
 package io.swagger.model;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 
 /**
  * A tool document that describes how to test with one or more sample test JSON.

@@ -16,6 +16,10 @@
 
 package io.dockstore.webservice.permissions;
 
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Workflow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,11 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 
 /**

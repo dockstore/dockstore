@@ -15,6 +15,11 @@
  */
 package io.dockstore.webservice;
 
+import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
@@ -34,11 +39,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
-
-import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author dyuen

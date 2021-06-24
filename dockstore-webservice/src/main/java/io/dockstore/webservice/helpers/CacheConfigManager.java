@@ -1,8 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheStats;
@@ -11,6 +8,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;

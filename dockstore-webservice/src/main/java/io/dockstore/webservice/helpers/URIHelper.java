@@ -1,9 +1,8 @@
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import io.dockstore.webservice.CustomWebApplicationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;

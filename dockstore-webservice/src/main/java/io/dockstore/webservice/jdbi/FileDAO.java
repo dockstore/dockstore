@@ -16,10 +16,9 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.SourceFile;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.SessionFactory;
 
 /**

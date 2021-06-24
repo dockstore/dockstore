@@ -15,6 +15,11 @@
  */
 package io.dockstore.webservice.resources;
 
+import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,12 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.google.gson.Gson;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;

@@ -16,8 +16,8 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.util.List;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
@@ -31,6 +31,8 @@ import io.dockstore.openapi.client.model.ToolClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
+import java.io.File;
+import java.util.List;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -40,9 +42,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
-
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 
 /**
  * Tests CRUD style operations using OpenApi3

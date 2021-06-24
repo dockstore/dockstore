@@ -1,8 +1,5 @@
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
@@ -11,6 +8,8 @@ import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.model.CloudInstance;
 import io.dockstore.openapi.client.model.Language;
 import io.dockstore.openapi.client.model.User;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
