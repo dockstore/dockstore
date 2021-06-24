@@ -6620,7 +6620,7 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/LanguageParsingResponse'
-        description: Created user object
+        description: Response from language parsing lambda
         required: true
       responses:
         default:
@@ -7583,19 +7583,23 @@ components:
         author:
           type: string
           description: Author found from parsing the version (may possibly be different
-            from what will be stored in Dockstore
+            from what will be stored in Dockstore)
         clonedRepositoryAbsolutePath:
           type: string
         description:
           type: string
           description: Description found from parsing the version (may possibly be
-            different from what will be stored in Dockstore
+            different from what will be stored in Dockstore)
         email:
           type: string
           description: Email found from parsing the version (may possibly be different
-            from what will be stored in Dockstore
+            from what will be stored in Dockstore)
         languageParsingRequest:
           $ref: '#/components/schemas/LanguageParsingRequest'
+        orcidID:
+          type: string
+          description: ORCID ID found from parsing the version (may possibly be different
+            from what will be stored in Dockstore)
         parsedInformation:
           $ref: '#/components/schemas/ParsedInformation'
         secondaryFilePaths:
