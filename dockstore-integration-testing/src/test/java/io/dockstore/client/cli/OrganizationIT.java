@@ -1732,7 +1732,7 @@ public class OrganizationIT extends BaseIT {
         //manually register and then publish the workflow
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, BIOWORKFLOW);
         Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
@@ -1774,7 +1774,7 @@ public class OrganizationIT extends BaseIT {
         //manually register and then publish the first workflow
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, BIOWORKFLOW);
         Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         Assert.assertEquals(2, workflow.getWorkflowVersions().size());
@@ -1783,7 +1783,7 @@ public class OrganizationIT extends BaseIT {
         Workflow workflow2 = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                         "");
-        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, BIOWORKFLOW);
         workflowApi.refresh(workflowByPathGithub2.getId(), false);
         workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 

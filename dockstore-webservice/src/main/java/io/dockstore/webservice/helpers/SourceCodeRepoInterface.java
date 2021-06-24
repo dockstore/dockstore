@@ -695,7 +695,7 @@ public abstract class SourceCodeRepoInterface {
         // Validate descriptor set
         if (mainDescriptor.isPresent()) {
             VersionTypeValidation validDescriptorSet;
-            if (entry.getEntryType() == EntryType.ONESTEPWORKFLOW) {
+            if (entry.getEntryType() == EntryType.GITHUBAPPTOOL) {
                 validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateToolSet(sourceFiles, mainDescriptorPath);
             } else {
                 validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);

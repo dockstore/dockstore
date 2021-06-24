@@ -67,6 +67,7 @@ import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.GitHubAppTool;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.Service;
@@ -163,6 +164,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
+    private static final String SERVICE = "service";
+    private static final String BIOWORKFLOW = "bioworkflow";
+    private static final String GITHUBAPPTOOL = "githubapptool";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -798,8 +802,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
             @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-            @Parameter(name = "services", description = "Whether to get a service or workflow", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "false")) @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
-        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + GITHUBAPPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + GITHUBAPPTOOL) @QueryParam("subclass") String subclass) {
+        final Class<? extends Workflow> targetClass = getSubClass(subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
@@ -807,6 +811,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         initializeAdditionalFields(include, workflow);
         return workflow;
     }
+
+    private Class<? extends Workflow> getSubClass(String subclass) {
+        final Class<? extends Workflow> targetClass;
+        if (subclass.equals(SERVICE)) {
+            targetClass = Service.class;
+        } else if (subclass.equals(BIOWORKFLOW)) {
+            targetClass = BioWorkflow.class;
+        } else if (subclass.equals(GITHUBAPPTOOL)) {
+            targetClass = GitHubAppTool.class;
+        } else {
+            throw new CustomWebApplicationException(subclass + " is not a valid subclass.", HttpStatus.SC_BAD_REQUEST);
+        }
+        return targetClass;
+    }
+
     @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
         sessionFactory.getCurrentSession().detach(workflow);

@@ -198,7 +198,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
     }
@@ -239,7 +239,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // artificially create an invalid version
@@ -1414,7 +1414,7 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
-            workflowsApi.getWorkflowByPath("potato", "potato", false);
+            workflowsApi.getWorkflowByPath("potato", "potato", BIOWORKFLOW);
             Assert.fail("Should've not been able to get an entry that does not exist");
         } catch (ApiException e) {
             Assert.assertEquals("Entry not found", e.getMessage());

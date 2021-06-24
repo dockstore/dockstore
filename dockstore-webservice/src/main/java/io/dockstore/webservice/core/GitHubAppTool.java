@@ -21,15 +21,15 @@ import javax.persistence.Table;
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 
-@ApiModel(value = "OneStepWorkflow", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = BioWorkflow.class)
+@ApiModel(value = "GitHubAppTool", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = BioWorkflow.class)
 @Entity
-@Table(name = "onestepworkflow")
+@Table(name = "githubapptool")
 
-public class OneStepWorkflow extends BioWorkflow {
+public class GitHubAppTool extends BioWorkflow {
 
     @Override
     public EntryType getEntryType() {
-        return EntryType.ONESTEPWORKFLOW;
+        return EntryType.GITHUBAPPTOOL;
     }
 
     public Event.Builder getEventBuilder() {

@@ -100,16 +100,16 @@
               has a copy of liquibase.build.properties, so we
               explicitly exclude liquibase-core from the fail-safe
               plugin classpath below. -->
-        <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.liquibase</groupId>-->
+<!--            <artifactId>liquibase-core</artifactId>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>javax.xml.bind</groupId>-->
+<!--                    <artifactId>jaxb-api</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -246,7 +246,7 @@
                     'found 2 liquibase.build.properties' error,
                     because the webservice jar includes liquibase-core and so already
                     has a copy of liquibase.build.properties,                  -->
-                    <classpathDependencyExcludes>org.liquibase:liquibase-core</classpathDependencyExcludes>
+<!--                    <classpathDependencyExcludes>org.liquibase:liquibase-core</classpathDependencyExcludes>-->
                 </configuration>
             </plugin>
             <plugin>

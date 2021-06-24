@@ -170,7 +170,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // Smart refresh individual that is valid (should add versions that doesn't exist)
-        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, "", false);
+        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // All versions should be synced
@@ -232,7 +232,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // refresh individual that is valid
-        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
+        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertNotNull("Should have a license object even if it's null name", workflow.getLicenseInformation());
         Assert.assertNotNull("Should have no license name", workflow.getLicenseInformation().getLicenseName());
@@ -519,7 +519,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "", false);
+            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "", BIOWORKFLOW);
 
         // Update workflow path
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
