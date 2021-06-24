@@ -1,10 +1,9 @@
 package io.dockstore.webservice.api;
 
-import java.lang.reflect.InvocationTargetException;
-
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.helpers.ConfigHelper;
 import io.swagger.annotations.ApiModel;
+import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.beanutils.BeanUtils;
 
 @ApiModel(description = "Configuration information for UI clients of the Dockstore webservice.")
@@ -80,9 +79,10 @@ public final class Config extends DockstoreWebserviceConfiguration.UIConfig {
     }
 
     public String getGitCommitId() {
-        return gitCommitId; }
+        return gitCommitId;
+    }
 
     public String getGitBuildVersion() {
-        return gitBuildVersion; }
-
+        return gitBuildVersion;
+    }
 }

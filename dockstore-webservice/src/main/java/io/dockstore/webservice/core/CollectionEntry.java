@@ -1,13 +1,12 @@
 package io.dockstore.webservice.core;
 
+import io.dockstore.common.SourceControl;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import io.dockstore.common.SourceControl;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Used to retrieve specific entry fields from workflows/tools.  Also used in response for all endpoints that return a single collection.

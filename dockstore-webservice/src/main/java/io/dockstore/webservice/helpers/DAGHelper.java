@@ -15,11 +15,10 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.google.gson.Gson;
 import io.dockstore.webservice.core.dag.ElementsDefinition;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author gluu

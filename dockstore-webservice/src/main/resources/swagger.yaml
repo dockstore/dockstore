@@ -6214,6 +6214,25 @@ definitions:
     properties:
       content:
         type: "string"
+  Author:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      affiliation:
+        type: "string"
+        description: "Affiliation of the author"
+      email:
+        type: "string"
+        description: "Email of the author"
+      role:
+        type: "string"
+        description: "Role of the author"
+      name:
+        type: "string"
+        position: 1
+        description: "Name of the author"
+    description: "This describes a non-ORCID author of a version in Dockstore"
   BioWorkflow:
     allOf:
     - $ref: "#/definitions/Workflow"
@@ -6368,6 +6387,8 @@ definitions:
       documentationUrl:
         type: "string"
       featuredContentUrl:
+        type: "string"
+      featuredNewsUrl:
         type: "string"
       gitBuildVersion:
         type: "string"
@@ -7177,6 +7198,16 @@ definitions:
         format: "int64"
         position: 6
         description: "Timestamp at which the notification was last updated"
+  OrcidAuthor:
+    type: "object"
+    required:
+    - "orcid"
+    properties:
+      orcid:
+        type: "string"
+        position: 1
+        description: "ORCID id of the author"
+    description: "This describes an ORCID-author of a version in Dockstore"
   Organization:
     type: "object"
     required:
@@ -7508,11 +7539,23 @@ definitions:
     - "name"
     - "reference"
     properties:
+      authors:
+        type: "array"
+        description: "Non-ORCID Authors for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      orcidAuthors:
+        type: "array"
+        description: "ORCID Authors for versions."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       reference:
@@ -8167,11 +8210,23 @@ definitions:
     - "name"
     - "reference"
     properties:
+      authors:
+        type: "array"
+        description: "Non-ORCID Authors for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      orcidAuthors:
+        type: "array"
+        description: "ORCID Authors for versions."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:
@@ -8557,6 +8612,12 @@ definitions:
         description: "aliases can be used as an alternate unique id for workflow versions"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      authors:
+        type: "array"
+        description: "Non-ORCID Authors for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Author"
       id:
         type: "integer"
         format: "int64"
@@ -8564,6 +8625,12 @@ definitions:
         readOnly: true
       legacyVersion:
         type: "boolean"
+      orcidAuthors:
+        type: "array"
+        description: "ORCID Authors for versions."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrcidAuthor"
       versionMetadata:
         $ref: "#/definitions/VersionMetadata"
       workingDirectory:

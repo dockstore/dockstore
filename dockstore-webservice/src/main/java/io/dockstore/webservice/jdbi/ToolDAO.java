@@ -16,16 +16,15 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
+import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-
-import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 /**
  * @author xliu

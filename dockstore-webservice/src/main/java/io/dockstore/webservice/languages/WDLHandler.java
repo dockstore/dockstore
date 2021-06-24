@@ -15,6 +15,25 @@
  */
 package io.dockstore.webservice.languages;
 
+import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import com.github.zafarkhaja.semver.expr.LexerException;
+import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
+import com.google.common.base.Strings;
+import com.google.common.io.Files;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.DockerParameter;
+import io.dockstore.common.LanguageHandlerHelper;
+import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.common.WdlBridge;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.DescriptionSource;
+import io.dockstore.webservice.core.ParsedInformation;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,26 +54,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.github.zafarkhaja.semver.UnexpectedCharacterException;
-import com.github.zafarkhaja.semver.expr.LexerException;
-import com.github.zafarkhaja.semver.expr.UnexpectedTokenException;
-import com.google.common.base.Strings;
-import com.google.common.io.Files;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DockerImageReference;
-import io.dockstore.common.DockerParameter;
-import io.dockstore.common.LanguageHandlerHelper;
-import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.common.WdlBridge;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.ParsedInformation;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Validation;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
@@ -284,8 +283,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 if (tempMainDescriptor != null) {
                     validationMessageObject.put(primaryDescriptorFilePath,
-                            getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).
-                                    orElse(e.getMessage()));
+                            getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath())
+                                .orElse(e.getMessage()));
                 } else {
                     validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 }

@@ -1,5 +1,12 @@
 package io.dockstore.webservice.helpers;
 
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.yaml.DockstoreYaml10;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.SourceFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,14 +16,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Files;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.yaml.DockstoreYaml10;
-import io.dockstore.common.yaml.DockstoreYamlHelper;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.SourceFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
@@ -183,8 +182,8 @@ public final class ZipSourceFileHelper {
     /**
      * Given a FileType for a descriptor, return the FileType of the corresponding parameter file.
      * @param workFileType a filetype for a descriptor
-     * @throws CustomWebApplicationException if workFileType is not the file type of a descriptor
      * @return filetype of the parameter descriptor
+     * @throws CustomWebApplicationException if workFileType is not the file type of a descriptor
      */
     private static DescriptorLanguage.FileType paramFileType(DescriptorLanguage.FileType workFileType) {
         switch (workFileType) {

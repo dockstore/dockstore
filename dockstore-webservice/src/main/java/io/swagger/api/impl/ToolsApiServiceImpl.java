@@ -16,15 +16,13 @@
 
 package io.swagger.api.impl;
 
-import java.util.Optional;
-
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
+import java.util.Optional;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
 

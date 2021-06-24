@@ -16,12 +16,11 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by aduncan on 09/12/16.

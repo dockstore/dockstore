@@ -15,12 +15,10 @@
  */
 package io.dockstore.common.yaml;
 
+import io.dockstore.common.DescriptorLanguage;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.validation.constraints.NotNull;
-
-import io.dockstore.common.DescriptorLanguage;
 
 /**
  * A workflow as described in a .dockstore.yml
@@ -50,6 +48,8 @@ public class YamlWorkflow {
     private boolean latestTagAsDefault = false;
 
     private Filters filters = new Filters();
+
+    private List<YamlAuthor> authors = new ArrayList<>();
 
     private List<String> testParameterFiles = new ArrayList<>();
 
@@ -95,6 +95,14 @@ public class YamlWorkflow {
 
     public void setFilters(final Filters filters) {
         this.filters = filters;
+    }
+
+    public List<YamlAuthor> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(final List<YamlAuthor> authors) {
+        this.authors = authors;
     }
 
     public List<String> getTestParameterFiles() {

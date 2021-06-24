@@ -16,13 +16,12 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.util.Set;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import io.dockstore.webservice.core.User;
+import java.io.IOException;
+import java.util.Set;
 
 /**
  * Created by aduncan on 19/12/16.

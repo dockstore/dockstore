@@ -15,17 +15,16 @@
  */
 package io.dockstore.consumer;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.model.BasicMessage;
 import io.dockstore.consumer.handler.DOIHandler;
 import io.dockstore.consumer.handler.MessageHandler;
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;

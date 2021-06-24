@@ -1,12 +1,11 @@
 package io.dockstore.common;
 
+import com.github.zafarkhaja.semver.Version;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.github.zafarkhaja.semver.Version;
 
 /**
  * @author gluu
@@ -14,6 +13,7 @@ import com.github.zafarkhaja.semver.Version;
  */
 public final class PipHelper {
     public static final String DEV_SEM_VER = "development-build";
+
     private PipHelper() { }
 
     /**

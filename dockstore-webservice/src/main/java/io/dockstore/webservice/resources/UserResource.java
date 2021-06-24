@@ -16,35 +16,12 @@
 
 package io.dockstore.webservice.resources;
 
-import java.sql.Timestamp;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -114,19 +91,40 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.sql.Timestamp;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 /**
  * @author xliu
@@ -136,6 +134,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
+    protected static final Pattern GITHUB_ID_PATTERN = Pattern.compile(".*/u/(\\d+).*");
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
@@ -744,7 +743,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
-        List<Token> gitHubTokens = tokenDAO.findAllGitHubTokens();
         List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
         List<User> usersCouldNotBeUpdated = new ArrayList<>();
 
@@ -756,40 +754,57 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 updateGoogleAccessToken(currentUser.getId());
                 try {
                     currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
+                    LOG.info("Updated " + currentUser.getUsername());
                 } catch (Exception ex) {
                     LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
                     usersCouldNotBeUpdated.add(currentUser);
                 }
-
             }
         }
 
-        // Try to update Google metadata using user's token and getMyself(). If not, try by using username in block below.
-        LOG.info("Beginning update for " + gitHubTokens.size() + " GitHub users.");
-        for (Token t : gitHubTokens) {
-            User currentUser = userDAO.findById(t.getUserId());
-            if (currentUser != null) {
+        // Try to update GitHub metadata using user's token and getMyself().
+        List<User> gitHubUsers = userDAO.findAllGitHubUsers();
+        LOG.info("Beginning update for " + gitHubUsers.size() + " GitHub users.");
+        for (User u: gitHubUsers) {
+            List<Token> tokens = tokenDAO.findGithubByUserId(u.getId());
+            if (!tokens.isEmpty()) {
                 try {
-                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(currentUser, Optional.of(tokenDAO));
-                    LOG.info("Updated " + currentUser.getUsername());
+                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(u, Optional.of(tokenDAO));
+                    LOG.info("Updated " + u.getUsername());
                 } catch (Exception ex) {
-                    gitHubUsersNotUpdatedWithToken.add(currentUser);
+                    LOG.info("Could not retrieve GitHub ID for user: " + u.getUsername());
+                    gitHubUsersNotUpdatedWithToken.add(u);
                 }
+            } else {
+                LOG.info("No GitHub token for user: " + u.getUsername());
+                gitHubUsersNotUpdatedWithToken.add(u);
             }
         }
 
-        // Get the GitHub token of the admin making this call to avoid rate limiting
+        // For users we could not get their GitHub id using their token, get the GitHub id from the avatarurl we have stored.
         LOG.info("Beginning update for " + gitHubUsersNotUpdatedWithToken.size() + " GitHub users who could not be updated with token.");
-        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
         for (User u : gitHubUsersNotUpdatedWithToken) {
-            try {
-                gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
-                LOG.info("Updated " + u.getUsername());
-            } catch (Exception ex) {
-                usersCouldNotBeUpdated.add(u);
-                LOG.info(ex.getMessage(), ex);
+            if (!u.isBanned()) {
+                User.Profile userProfile = u.getUserProfiles().get(TokenType.GITHUB_COM.toString());
+                String avatarUrl = userProfile.avatarURL;
+
+                if (avatarUrl != null) {
+                    Matcher m = GITHUB_ID_PATTERN.matcher(avatarUrl);
+                    if (m.matches()) {
+                        String id = m.group(1);
+                        userProfile.onlineProfileId = id;
+                        List<Token> userTokens = tokenDAO.findGithubByUserId(u.getId());
+                        if (!userTokens.isEmpty()) {
+                            userTokens.get(0).setOnlineProfileId(id);
+                        }
+                        LOG.info("Updated " + u.getUsername() + " with GitHub id " + id);
+                    }
+
+                } else {
+                    usersCouldNotBeUpdated.add(u);
+                    LOG.info(u.getUsername() + "could not be updated.");
+                }
             }
         }
 

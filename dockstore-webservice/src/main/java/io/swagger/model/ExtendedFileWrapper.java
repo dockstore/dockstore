@@ -15,10 +15,9 @@
  */
 package io.swagger.model;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.dockstore.webservice.core.SourceFile;
+import java.util.Objects;
 
 /**
  * Used to store additional transient information about files to be returned from the GA4GH endpoints

@@ -15,8 +15,12 @@
  */
 package io.swagger.api;
 
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.resources.ResourceConstants;
+import io.swagger.api.factories.MetadataApiServiceFactory;
+import io.swagger.api.impl.ApiV1VersionConverter;
+import io.swagger.model.MetadataV1;
 import java.util.Optional;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -24,12 +28,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.resources.ResourceConstants;
-import io.swagger.api.factories.MetadataApiServiceFactory;
-import io.swagger.api.impl.ApiV1VersionConverter;
-import io.swagger.model.MetadataV1;
 import org.apache.http.HttpStatus;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/metadata")

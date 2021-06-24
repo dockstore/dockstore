@@ -15,24 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
@@ -60,6 +42,23 @@ import io.swagger.quay.client.Configuration;
 import io.swagger.quay.client.api.RepositoryApi;
 import io.swagger.quay.client.model.QuayRepo;
 import io.swagger.quay.client.model.QuayTag;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -81,9 +80,11 @@ public interface LanguageHandlerInterface {
     Pattern AMAZON_ECR_PATTERN = Pattern.compile("(.+)(\\.dkr\\.ecr\\.)(.+)(\\.amazonaws.com/)(.+)");
     Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
     // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
-    Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*):(.+)");
+    // <org>/<repository>@sha256:<digest> -> broadinstitute/gatk@sha256:98b2f223dce4282c144d249e7e1f47d400ae349404409d01e87df2efeebac439
+    Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*)(:|@sha256:)(.+)");
     // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
-    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+:(.+)");
+    // <repo>@256:<digest> -> ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c
+    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+(:|@sha256:)(.+)");
     Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):?(\\S++)?");
     Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@?(\\S++)?");
 
@@ -638,7 +639,8 @@ public interface LanguageHandlerInterface {
                         // For every version, DockerHub can provide multiple images, one for each os/architecture
                         images.stream().forEach(dockerHubImage -> {
                             final String manifestDigest = dockerHubImage.getDigest();
-                            if (manifestDigest.equals(specifierName)) {
+                            // Must perform null check for manifestDigest because there are Docker Hub images where the digest is null
+                            if (manifestDigest != null && manifestDigest.equals(specifierName)) {
                                 String tagName = r.getName(); // Tag that's associated with the image specified by digest
                                 Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
                                 List<Checksum> checksums = Collections.singletonList(checksum);
@@ -690,6 +692,11 @@ public interface LanguageHandlerInterface {
                 }
             }
         } while (response.isPresent() && !versionFound && dockerHubTag.getNext() != null);
+
+        if (!versionFound) {
+            LOG.error("Unable to find image with {}: {} from Docker Hub in repo {}", specifierType.name(), specifierName, repo);
+        }
+
         return dockerHubImages;
     }
 

@@ -15,9 +15,8 @@
 
 package io.dockstore.webservice.core.database;
 
-import java.util.Date;
-
 import io.dockstore.webservice.core.Tool;
+import java.util.Date;
 
 /**
  * This class is only used to get data from the database in a more type-safe way
@@ -26,6 +25,7 @@ import io.dockstore.webservice.core.Tool;
  */
 public class RSSToolPath {
     private final Tool tool = new Tool();
+
     public RSSToolPath(String registry, String namespace, String name, String entryName, Date lastUpdated, String description) {
         this.tool.setRegistry(registry);
         this.tool.setNamespace(namespace);

@@ -16,33 +16,8 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.time.Year;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
+import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.io.Resources;
@@ -88,6 +63,32 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.time.Year;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import okhttp3.Cache;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -97,9 +98,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.helpers.statelisteners.RSSListener.RSS_KEY;
-import static io.dockstore.webservice.helpers.statelisteners.SitemapListener.SITEMAP_KEY;
 
 /**
  * @author dyuen
@@ -345,8 +343,8 @@ public class MetadataResource {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
         Arrays.stream(DescriptorLanguage.values()).filter(lang ->
             // only include plugin languages that have installed plugins
-            !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang)).
-            forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
+            !lang.isPluginLanguage() || LanguageHandlerFactory.getPluginMap().containsKey(lang))
+            .forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
     }
 

@@ -18,12 +18,10 @@
 
 package io.dockstore.webservice.core.tooltester;
 
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
-
 import javax.ws.rs.core.MediaType;
-
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.junit.Assert;
 import org.junit.Test;
 

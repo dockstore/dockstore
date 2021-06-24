@@ -16,7 +16,15 @@
 
 package io.dockstore.common;
 
-import javax.ws.rs.core.MediaType;
+import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
+import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
+import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.badRequest;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.notFound;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
+import static io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers.contains;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.services.oauth2.model.Tokeninfo;
@@ -28,17 +36,8 @@ import io.dockstore.webservice.core.TokenType;
 import io.specto.hoverfly.junit.core.SimulationSource;
 import io.specto.hoverfly.junit.core.model.RequestFieldMatcher;
 import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
+import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
-
-import static io.dropwizard.testing.FixtureHelpers.fixture;
-import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
-import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
-import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.badRequest;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.notFound;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
-import static io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers.contains;
 
 /**
  * This class contains the Hoverfly simulation for GitHub and Google.
@@ -203,6 +202,7 @@ public final class Hoverfly {
             .get("/user/orgs").willReturn(success(GITHUB_ORGANIZATIONS, MediaType.APPLICATION_JSON))
 
             .get("/user/emails").willReturn(success(GITHUB_EMAIL, MediaType.APPLICATION_JSON)));
+
     private Hoverfly() {
         // utility class
     }

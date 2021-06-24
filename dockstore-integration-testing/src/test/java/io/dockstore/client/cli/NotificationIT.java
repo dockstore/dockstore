@@ -1,23 +1,21 @@
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.List;
-
-import javax.ws.rs.core.Response;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import io.dockstore.common.ConfidentialTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.CurationApi;
 import io.swagger.client.model.Notification;
+import java.io.IOException;
+import java.util.List;
+import javax.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 @Category(ConfidentialTest.class)
 public class NotificationIT extends BaseIT {

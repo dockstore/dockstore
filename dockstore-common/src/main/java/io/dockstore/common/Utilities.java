@@ -16,6 +16,8 @@
 
 package io.dockstore.common;
 
+import com.google.common.base.Optional;
+import com.google.common.io.ByteStreams;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -25,9 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.base.Optional;
-import com.google.common.io.ByteStreams;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.builder.ConfigurationBuilder;
 import org.apache.commons.configuration2.builder.ReloadingFileBasedConfigurationBuilder;

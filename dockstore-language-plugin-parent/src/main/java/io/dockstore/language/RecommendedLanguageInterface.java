@@ -15,9 +15,8 @@
  */
 package io.dockstore.language;
 
-import java.util.Map;
-
 import io.dockstore.common.VersionTypeValidation;
+import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**

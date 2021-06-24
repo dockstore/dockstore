@@ -15,21 +15,6 @@
  */
 package io.dockstore.common.yaml;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-
-import io.dropwizard.testing.FixtureHelpers;
-import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -37,6 +22,20 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import io.dropwizard.testing.FixtureHelpers;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class DockstoreYamlTest {
     private static final String DOCKSTORE10_YAML = FixtureHelpers.fixture("fixtures/dockstore10.yml");
@@ -105,6 +104,10 @@ public class DockstoreYamlTest {
         final List<String> tags = filters.getTags();
         assertEquals(1, tags.size());
         assertEquals("gwas*", tags.get(0));
+        List<YamlAuthor> authors = workflow.getAuthors();
+        assertEquals(2, authors.size());
+        assertEquals("0000-0002-6130-1021", authors.get(0).getOrcid());
+        assertEquals("UCSC", authors.get(1).getAffiliation());
 
         workflow = workflows.get(1);
         assertFalse(workflow.getPublish());
@@ -114,6 +117,9 @@ public class DockstoreYamlTest {
         final Service12 service = dockstoreYaml.getService();
         assertNotNull(service);
         assertTrue(service.getPublish());
+        authors = service.getAuthors();
+        assertEquals(1, authors.size());
+        assertEquals("Institute", authors.get(0).getRole());
     }
 
     @Test

@@ -16,9 +16,11 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
+import static io.dockstore.client.cli.GeneralWorkflowRegressionIT.KNOWN_BREAKAGE_MOVING_TO_1_6_0;
+import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
+import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
@@ -29,6 +31,9 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.model.DockstoreTool;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -41,12 +46,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import static io.dockstore.client.cli.GeneralWorkflowRegressionIT.KNOWN_BREAKAGE_MOVING_TO_1_6_0;
-import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
-import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Extra confidential integration tests with old dockstore client, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
@@ -280,7 +279,7 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests that tool2JSON works for entries on Dockstore
      */
     @Test
-    public void testTool2JSONWDLOldClient() {
+    public void testTool2JsonWdlOldClient() {
         runOldDockstoreClient(dockstore,
             new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });

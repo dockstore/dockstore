@@ -1,11 +1,10 @@
 package io.dockstore.webservice.languages;
 
-import java.util.Map;
-import java.util.regex.Matcher;
-
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.DockerParameter;
 import io.dropwizard.testing.FixtureHelpers;
+import java.util.Map;
+import java.util.regex.Matcher;
 import org.junit.Assert;
 import org.junit.Test;
 

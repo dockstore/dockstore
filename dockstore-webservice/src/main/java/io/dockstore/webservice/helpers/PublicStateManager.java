@@ -15,16 +15,15 @@
  */
 package io.dockstore.webservice.helpers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.helpers.statelisteners.RSSListener;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author dyuen

@@ -16,7 +16,9 @@
 
 package io.dockstore.client.cli;
 
-import javax.ws.rs.core.Response;
+import static io.dockstore.common.CommonTestUtilities.PUBLIC_CONFIG_PATH;
+import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
@@ -24,6 +26,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.DropwizardTestSupport;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
@@ -35,10 +38,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import static io.dockstore.common.CommonTestUtilities.PUBLIC_CONFIG_PATH;
-import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Testing openapi transition

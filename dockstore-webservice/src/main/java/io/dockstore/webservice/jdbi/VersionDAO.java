@@ -16,11 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 

@@ -16,6 +16,14 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
@@ -25,7 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -48,15 +55,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SequenceGenerator;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Strings;
-import com.google.gson.Gson;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
@@ -189,6 +187,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinColumn(name = "versionid", referencedColumnName = "id", nullable = false)
     @ApiModelProperty(value = "Non-ORCID Authors for each version.")
     private Set<Author> authors = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(name = "version_orcidauthor", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "orcidauthorid", referencedColumnName = "id", columnDefinition = "bigint"))
+    @ApiModelProperty(value = "ORCID Authors for versions.")
+    private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id", columnDefinition = "bigint"))
@@ -430,6 +433,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
     }
 
+    public Set<Author> getAuthors() {
+        return authors;
+    }
+
+    public Set<OrcidAuthor> getOrcidAuthors() {
+        return orcidAuthors;
+    }
+
     public void setDoiStatus(DOIStatus doiStatus) {
         this.getVersionMetadata().doiStatus = doiStatus;
     }
@@ -455,6 +466,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
                 author.get().setEmail(newEmail);
             }
         }
+    }
+
+    public void setAuthors(final Set<Author> authors) {
+        this.authors = authors;
+    }
+
+    public void setOrcidAuthors(final Set<OrcidAuthor> orcidAuthors) {
+        this.orcidAuthors = orcidAuthors;
     }
 
     public ReferenceType getReferenceType() {
@@ -551,9 +570,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.parent = parent;
     }
 
-    public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
+    public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED
+    }
 
-    public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
+    public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET
+    }
 
 
 }

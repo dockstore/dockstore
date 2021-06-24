@@ -15,11 +15,10 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.util.List;
-
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import java.util.List;
 
 /**
  * Defines the interface for things like elastic search, caches that might want to be informed

@@ -15,19 +15,9 @@
 
 package io.dockstore.webservice.resources;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
+import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.Entry;
@@ -47,11 +37,19 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.hibernate.Hibernate;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
-import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 
 /**
  * Avoid adding Swagger annotations to this, only use OpenAPI 3.0 annotations when possible.
@@ -70,6 +68,7 @@ public class EventResource {
     private static final String DESCRIPTION = "Optional authentication.";
     private final EventDAO eventDAO;
     private final UserDAO userDAO;
+
     public EventResource(EventDAO eventDAO, UserDAO userDAO) {
         this.eventDAO = eventDAO;
         this.userDAO = userDAO;

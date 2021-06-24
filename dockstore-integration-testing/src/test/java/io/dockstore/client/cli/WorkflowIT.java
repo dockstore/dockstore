@@ -16,28 +16,15 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import javax.ws.rs.core.GenericType;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -82,6 +69,27 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import javax.ws.rs.core.GenericType;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -99,16 +107,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -493,7 +491,8 @@ public class WorkflowIT extends BaseIT {
         assertNull(branchToolJson);
 
         // Test freezing versions (uses a different workflow that has versioned images)
-        WorkflowVersion frozenVersion = snapshotWorkflowVersion(workflowApi, "dockstore-testing/hello_world", DescriptorType.CWL.toString(), "/hello_world.cwl", "1.0.1");
+        workflow = manualRegisterAndPublish(workflowApi, "dockstore-testing/hello_world", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
+        WorkflowVersion frozenVersion = snapshotWorkflowVersion(workflowApi, workflow, "1.0.1");
         String frozenDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         String frozenToolTableJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         assertNotNull(frozenDagJson);
@@ -1075,7 +1074,8 @@ public class WorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
 
         //Check image info is grabbed
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", DescriptorType.CWL.toString(), "/hello_world.cwl", "1.0.1");
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "1.0.1");
         assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
@@ -1083,7 +1083,8 @@ public class WorkflowIT extends BaseIT {
         verifyTRSImageConversion(versions, "1.0.1", 1);
 
         // Test that a workflow version that contains duplicate images will not store multiples
-        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", DescriptorType.CWL.toString(), "/main.cwl", "1.0");
+        workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/zhanghj-8555114", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/main.cwl", true);
+        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, workflow, "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
@@ -1098,36 +1099,30 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
-        WorkflowVersion noTagImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("noTagImage")).findFirst().get();
-        WorkflowVersion latestTagImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("latestTagImage")).findFirst().get();
-        WorkflowVersion parameterImageVersion = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("parameterImage")).findFirst().get();
         String errorMessage = "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.";
 
         // Test that the snapshot fails for a workflow version containing an image with no tag
         try {
-            noTagImageVersion.setFrozen(true);
-            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(noTagImageVersion));
+            snapshotWorkflowVersion(workflowsApi, workflow, "noTagImage");
             Assert.fail("Should not be able to snapshot a workflow version containing an image with no tag.");
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, noTagImageVersion.getName())));
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, "noTagImage")));
         }
 
         // Test that the snapshot fails for a workflow version containing an image with the 'latest' tag
         try {
-            latestTagImageVersion.setFrozen(true);
-            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(latestTagImageVersion));
+            snapshotWorkflowVersion(workflowsApi, workflow, "latestTagImage");
             Assert.fail("Should not be able to snapshot a workflow version containing an image with the 'latest' tag.");
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, latestTagImageVersion.getName())));
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, "latestTagImage")));
         }
 
         // Test that the snapshot fails for a workflow version containing an image specified using a parameter
         try {
-            parameterImageVersion.setFrozen(true);
-            workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(parameterImageVersion));
+            snapshotWorkflowVersion(workflowsApi, workflow, "parameterImage");
             Assert.fail("Should not be able to snapshot a workflow version containing an image specified using a parameter.");
         } catch (ApiException ex) {
-            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, parameterImageVersion.getName())));
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, "parameterImage")));
         }
     }
 
@@ -1230,8 +1225,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion snapshotVersion = workflow2.getWorkflowVersions().stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(snapshotVersion.getId());
         assertNotNull(sourceFiles);
-        snapshotVersion.setFrozen(true);
-        workflowsApi.updateWorkflowVersion(workflow2.getId(), Collections.singletonList(snapshotVersion));
+        snapshotWorkflowVersion(workflowsApi, workflow2, "1.0.1");
         verifySourcefileChecksumsSaved(sourceFiles);
 
         // Make sure refresh does not error.
@@ -1290,8 +1284,65 @@ public class WorkflowIT extends BaseIT {
         assertTrue("Snapshotted version should be in the list", snapshotInList);
     }
 
-    private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorType, String descriptorPath, String versionName) {
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, workflowPath, "", descriptorType, SourceControl.GITHUB, descriptorPath, true);
+
+
+    /**
+     * Test that the image_name is set correctly after TRS image conversion.
+     * This is a separate test from verifyTRSImageConversion because it's difficult to map the snapshot version's images to the
+     * TRS version's images if there's more than 1 Docker reference in the workflow.
+     * This test works with workflows containing 1 Docker reference (may not necessarily have only 1 image because DockerHub can provide
+     * multiple images for a single version, one for each os/architecture).
+     */
+    @Test
+    public void testTRSImageName() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+        WorkflowVersion snapshotVersion;
+        ToolVersion trsVersion;
+
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "",
+                DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
+
+        // Workflow with Quay image specified using a tag
+        String quayTagVersionName = "1.0";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, quayTagVersionName);
+        assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", quayTagVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
+        trsVersion.getImages().stream().forEach(image -> assertEquals("quay.io/ga4gh-dream/dockstore-tool-helloworld:1.0.2", image.getImageName()));
+
+        // Workflow with Quay image specified using a digest
+        String quayDigestVersionName = "quayDigestImage";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, quayDigestVersionName);
+        assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", quayDigestVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
+        trsVersion.getImages().stream().forEach(image -> assertEquals(
+                "quay.io/ga4gh-dream/dockstore-tool-helloworld@sha256:3a854fd1ebd970011fa57c8c099347314eda36cc746fd831f4deff9a1d433718",
+                image.getImageName()));
+
+        // Workflow with Docker Hub image specified using a tag (6 images actually retrieved, one per architecture type)
+        String dockerHubTagVersionName = "dockerHubTagImage";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, dockerHubTagVersionName);
+        assertEquals("Should only be six images in this workflow", 6, snapshotVersion.getImages().size()); // 1 image per architecture type
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", dockerHubTagVersionName);
+        assertEquals("Should be six images in this TRS version", 6, trsVersion.getImages().size());
+        trsVersion.getImages().stream().forEach(image -> assertEquals("library/ubuntu:16.04", image.getImageName()));
+
+        // Workflow with Docker Hub image specified using a digest
+        String dockerHubDigestVersionName = "dockerHubDigestImage";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, dockerHubDigestVersionName);
+        assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", dockerHubDigestVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
+        // library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c refers to ubuntu version 16.04, amd64 os/arch
+        trsVersion.getImages().stream().forEach(image ->
+            assertEquals("library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c", image.getImageName()));
+    }
+
+    private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, Workflow workflow, String versionName) {
         WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
         version.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
@@ -1317,7 +1368,8 @@ public class WorkflowIT extends BaseIT {
 
         // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
         // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", DescriptorType.WDL.toString(), "/JointGenotypingWf.wdl", "1.1.2");
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/JointGenotypingWf.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "1.1.2");
         assertEquals("Should 10 images in this workflow", 10, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 

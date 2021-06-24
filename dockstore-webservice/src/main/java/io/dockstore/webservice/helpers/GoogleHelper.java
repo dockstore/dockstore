@@ -1,10 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Map;
-import java.util.Optional;
-
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
@@ -20,6 +15,10 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.resources.TokenResource;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
