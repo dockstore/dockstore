@@ -89,6 +89,7 @@ public class WebhookIT extends BaseIT {
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
     private final String installationId = "1179416";
+    private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
     private FileDAO fileDAO;
 
     @Before
@@ -738,5 +739,21 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, authors.size());
         final List<OrcidAuthor> orcidAuthors = version.getOrcidAuthors();
         assertEquals(2, orcidAuthors.size());
+    }
+
+    @Test
+    public void testTools() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+        final Workflow githubAppTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", GITHUBAPPTOOL);
+        final Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", BIOWORKFLOW);
+        long workflowCount = testingPostgres.runSelectStatement("select count(*) from githubapptool", long.class);
+
+        workflow.getWorkflowVersions();
+        githubAppTool.getWorkflowVersions();
+
     }
 }
