@@ -24,10 +24,10 @@
         </addColumn>
     </changeSet>
 
-    <changeSet author="natalieperez (generated)" id="1624485065798-1">
-        <createTable tableName="githubapptool">
+    <changeSet author="natalieperez (generated)" id="addAppTool">
+        <createTable tableName="apptool">
             <column name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="githubapptool_pkey"/>
+                <constraints nullable="false" primaryKey="true" primaryKeyName="apptool_pkey"/>
             </column>
             <column name="author" type="VARCHAR(255)"/>
             <column name="conceptdoi" type="VARCHAR(255)"/>
@@ -68,20 +68,14 @@
             </column>
             <column name="workflowname" type="TEXT"/>
             <column name="actualdefaultversion" type="BIGINT"/>
-            <column defaultValueBoolean="false" name="ischecker" type="BOOLEAN"/>
         </createTable>
-    </changeSet>
-    <changeSet author="natalieperez (generated)" id="1624485065798-2">
-        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="githubapptool" constraintName="fk_7ahrf2bbepo2fttkjbpd4appa" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
-    </changeSet>
-    <changeSet author="natalieperez (generated)" id="1624485065798-3">
-        <createIndex indexName="uk_4x6nxg1h513uhx229am71pyi3" tableName="githubapptool" unique="true">
-            <column name="checkerid"/>
-        </createIndex>
-    </changeSet>
-    <changeSet author="natalieperez (generated)" id="1624485065798-4">
-        <createIndex indexName="uk_7ahrf2bbepo2fttkjbpd4appa" tableName="githubapptool" unique="true">
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="apptool" constraintName="fk_defaultversion_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <createIndex indexName="uk_actualdefault_versionapptool" tableName="apptool" unique="true">
             <column name="actualdefaultversion"/>
         </createIndex>
+        <createIndex indexName="uk_checkerid_apptool" tableName="apptool" unique="true">
+            <column name="checkerid"/>
+        </createIndex>
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="apptool" constraintName="fk_checkerid_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
     </changeSet>
 </databaseChangeLog>

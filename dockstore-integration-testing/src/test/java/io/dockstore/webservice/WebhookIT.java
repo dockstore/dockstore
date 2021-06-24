@@ -748,12 +748,41 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
-        final Workflow githubAppTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", GITHUBAPPTOOL);
-        final Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", BIOWORKFLOW);
-        long workflowCount = testingPostgres.runSelectStatement("select count(*) from githubapptool", long.class);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", APPTOOL);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", BIOWORKFLOW);
 
-        workflow.getWorkflowVersions();
-        githubAppTool.getWorkflowVersions();
+        assertNotNull(workflow);
+        assertNotNull(appTool);
 
+        assertEquals(1, appTool.getWorkflowVersions().size());
+        assertEquals(1, workflow.getWorkflowVersions().size());
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", APPTOOL);
+        workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", BIOWORKFLOW);
+        assertEquals(2, appTool.getWorkflowVersions().size());
+        assertEquals(2, workflow.getWorkflowVersions().size());
+
+        WorkflowVersion invalidVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
+        invalidVersion.getValidations();
+        Validation workflowValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
+        assertFalse(workflowValidation.isValid());
+        assertTrue(workflowValidation.getMessage().contains("Did you mean to register a tool"));
+        appTool.getWorkflowVersions().stream().forEach(workflowVersion -> {
+            if (!workflowVersion.isValid()) {
+                fail("Tool should be valid for both versions");
+            }
+        });
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidTool", installationId);
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", APPTOOL);
+        workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", BIOWORKFLOW);
+        assertEquals(3, appTool.getWorkflowVersions().size());
+        assertEquals(3, workflow.getWorkflowVersions().size());
+
+        invalidVersion = appTool.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
+        Validation toolValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
+        assertFalse(toolValidation.isValid());
+        assertTrue(toolValidation.getMessage().contains("Did you mean to register a workflow"));
     }
 }

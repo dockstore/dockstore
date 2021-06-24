@@ -63,7 +63,7 @@ public class BaseIT {
 
     public static final String SERVICE = "service";
     public static final String BIOWORKFLOW = "bioworkflow";
-    public static final String GITHUBAPPTOOL = "githubapptool";
+    public static final String APPTOOL = "apptool";
 
 
     @Rule

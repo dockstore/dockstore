@@ -5019,7 +5019,7 @@ paths:
       - name: "subclass"
         in: "query"
         description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
-          \ bioworkflow, githubapptool"
+          \ bioworkflow, apptool"
         required: false
         type: "string"
       responses:
@@ -6214,6 +6214,13 @@ definitions:
     properties:
       content:
         type: "string"
+  AppTool:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one service in the dockstore as a special degenerate\
+        \ case of a workflow"
   Author:
     type: "object"
     required:
@@ -6862,7 +6869,7 @@ definitions:
         - "TOOL"
         - "WORKFLOW"
         - "SERVICE"
-        - "GITHUBAPPTOOL"
+        - "APPTOOL"
       lastUpdateDate:
         type: "integer"
         format: "int64"
