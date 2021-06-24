@@ -47,9 +47,9 @@ import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.GitHubAppTool;
 import io.dockstore.webservice.core.LicenseInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlOrganization;
@@ -460,7 +460,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     public Workflow initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
-        GitHubAppTool workflow = new GitHubAppTool();
+        AppTool workflow = new AppTool();
         return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
     }
 
@@ -739,7 +739,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
             List<YamlWorkflow> workflows;
-            if (workflow instanceof GitHubAppTool) {
+            if (workflow instanceof AppTool) {
                 workflows = dockstoreYaml12.getTools();
             } else {
                 workflows = dockstoreYaml12.getWorkflows();

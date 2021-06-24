@@ -21,18 +21,38 @@ import javax.persistence.Table;
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 
-@ApiModel(value = "GitHubAppTool", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = BioWorkflow.class)
+@ApiModel(value = "AppTool", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
-@Table(name = "githubapptool")
+@Table(name = "apptool")
 
-public class GitHubAppTool extends BioWorkflow {
+public class AppTool extends Workflow {
 
     @Override
     public EntryType getEntryType() {
-        return EntryType.GITHUBAPPTOOL;
+        return EntryType.APPTOOL;
+    }
+
+    @Override
+    public Entry getParentEntry() {
+        return null;
+    }
+
+    @Override
+    public void setParentEntry(Entry parentEntry) {
+        throw new UnsupportedOperationException("AppTool cannot be a checker workflow");
+    }
+
+    @Override
+    public boolean isIsChecker() {
+        return false;
+    }
+
+    @Override
+    public void setIsChecker(boolean isChecker) {
+        throw new UnsupportedOperationException("AppTool cannot be a checker workflow");
     }
 
     public Event.Builder getEventBuilder() {
-        return new Event.Builder().withOneStepWorkflow(this);
+        return new Event.Builder().withAppTool(this);
     }
 }

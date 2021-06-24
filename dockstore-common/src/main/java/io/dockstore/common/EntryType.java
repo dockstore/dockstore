@@ -9,5 +9,5 @@ public enum EntryType {
     TOOL,
     WORKFLOW,
     SERVICE,
-    GITHUBAPPTOOL
+    APPTOOL
 }

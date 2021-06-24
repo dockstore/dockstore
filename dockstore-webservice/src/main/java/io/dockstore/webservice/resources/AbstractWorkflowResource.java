@@ -25,10 +25,10 @@ import io.dockstore.common.yaml.YamlAuthor;
 import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
-import io.dockstore.webservice.core.GitHubAppTool;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
@@ -444,7 +444,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 final var defaultVersion = wf.getLatestTagAsDefault();
                 final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
-                Class workflowType = isOneStepWorkflow ? GitHubAppTool.class : BioWorkflow.class;
+                Class workflowType = isOneStepWorkflow ? AppTool.class : BioWorkflow.class;
                 Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
@@ -537,7 +537,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);
             } else if (workflowType == Service.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
-            } else if (workflowType == GitHubAppTool.class) {
+            } else if (workflowType == AppTool.class) {
                 //workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, subclass, workflowName);
                 workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, subclass, workflowName);
             } else {

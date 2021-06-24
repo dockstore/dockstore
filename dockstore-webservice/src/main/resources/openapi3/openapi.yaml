@@ -5448,7 +5448,7 @@ paths:
         schema:
           type: string
       - description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
-          \ bioworkflow, githubapptool"
+          \ bioworkflow, apptool"
         in: query
         name: subclass
         required: true
@@ -6686,6 +6686,10 @@ components:
       properties:
         content:
           type: string
+    AppTool:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
     Author:
       type: object
       properties:
@@ -7270,7 +7274,7 @@ components:
           - TOOL
           - WORKFLOW
           - SERVICE
-          - GITHUBAPPTOOL
+          - APPTOOL
         lastUpdateDate:
           type: integer
           format: int64
