@@ -51,6 +51,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -89,6 +91,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -1579,6 +1582,38 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
             workflow.setDescriptorType(descriptorLanguage);
             return workflow;
+        }
+    }
+
+    @POST
+    @Path("/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin"})
+    @Operation(description = "Language parser calls this endpoint to update parsed information for this version",
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "hidden", hidden = true)
+    public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH)
+        @PathParam("workflowId") Long workflowId,
+        @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true,
+            in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+        @RequestBody(description = "Response from language parsing lambda", required = true, content = @Content(schema =
+        @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
+        checkLanguageParsingRequest(languageParsingResponse, workflowId, workflowVersionId);
+        // TODO: Actually do something useful with this endpoint
+    }
+
+    private static void checkLanguageParsingRequest(LanguageParsingResponse languageParsingResponse, Long entryId, Long versionId) {
+        LanguageParsingRequest languageParsingRequest = languageParsingResponse.getLanguageParsingRequest();
+        if (entryId != languageParsingRequest.getEntryId()) {
+            throw new CustomWebApplicationException("Entry Id from the LambdaParsingResponse does not match the path parameter",
+                HttpStatus.SC_BAD_REQUEST);
+        }
+        if (versionId != languageParsingRequest.getVersionId()) {
+            throw new CustomWebApplicationException("Version Id from the LambdaParsingResponse does not match the path parameter",
+                HttpStatus.SC_BAD_REQUEST);
         }
     }
 
