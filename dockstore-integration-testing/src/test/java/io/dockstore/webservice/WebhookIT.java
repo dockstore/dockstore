@@ -346,7 +346,7 @@ public class WebhookIT extends BaseIT {
     }
 
     private io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", BIOWORKFLOW,"versions");
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", BIOWORKFLOW, "versions");
     }
 
     /**
