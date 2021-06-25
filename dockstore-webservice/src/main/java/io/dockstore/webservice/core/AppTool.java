@@ -24,7 +24,6 @@ import io.swagger.annotations.ApiModel;
 @ApiModel(value = "AppTool", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
 @Table(name = "apptool")
-
 public class AppTool extends Workflow {
 
     @Override

@@ -77,7 +77,5 @@
             <column name="checkerid"/>
         </createIndex>
         <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="apptool" constraintName="fk_checkerid_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
-        <addUniqueConstraint columnNames="validationid" constraintName="uk_versionvalidation_apptool" tableName="version_validation"/>
-        <dropUniqueConstraint constraintName="unique_org_aliases" tableName="organization_alias"/>
     </changeSet>
 </databaseChangeLog>

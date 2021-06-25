@@ -22,8 +22,10 @@ COMMENT ON COLUMN workflowversion.dbupdatedate IS 'Remote: When workflow was ref
 -- postgres partial indexes seem unsupported https://stackoverflow.com/questions/12025844/how-to-annotate-unique-constraint-with-where-clause-in-jpa
 CREATE UNIQUE INDEX full_workflow_name ON workflow USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX full_tool_name ON tool USING btree (registry, namespace, name, toolname) WHERE toolname IS NOT NULL;
+CREATE UNIQUE INDEX full_apptool_name ON apptool USING btree (sourcecontrol, organization, repository, workflowname) WHERE toolname IS NOT NULL;
 CREATE UNIQUE INDEX partial_workflow_name ON workflow USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
 CREATE UNIQUE INDEX partial_tool_name ON tool USING btree (registry, namespace, name) WHERE toolname IS NULL;
+CREATE UNIQUE INDEX partial_apptool_name ON apptool USING btree (sourcecontrol, organization, repository) WHERE toolname IS NULL;
 CREATE UNIQUE INDEX full_service_name ON service USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX partial_service_name ON service USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
 CREATE UNIQUE INDEX partial_cloud_instance ON cloud_instance USING btree (url) WHERE user_id IS NULL;
