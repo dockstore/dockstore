@@ -70,12 +70,10 @@
             <column name="actualdefaultversion" type="BIGINT"/>
         </createTable>
         <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="apptool" constraintName="fk_defaultversion_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
-        <createIndex indexName="uk_actualdefault_versionapptool" tableName="apptool" unique="true">
-            <column name="actualdefaultversion"/>
-        </createIndex>
-        <createIndex indexName="uk_checkerid_apptool" tableName="apptool" unique="true">
-            <column name="checkerid"/>
-        </createIndex>
+        <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_apptool" tableName="apptool"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_checkerid_apptool" tableName="apptool"/>
         <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="apptool" constraintName="fk_checkerid_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+        <dropIndex tableName="cloud_instance" indexName="unique_user_instances"/>
+        <addUniqueConstraint columnNames="url, user_id, partner" constraintName="unique_user_instances" tableName="cloud_instance"/>
     </changeSet>
 </databaseChangeLog>
