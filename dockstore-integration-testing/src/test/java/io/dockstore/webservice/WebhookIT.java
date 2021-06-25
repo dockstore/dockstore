@@ -338,7 +338,7 @@ public class WebhookIT extends BaseIT {
     }
     
     private io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", BIOWORKFLOW);
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "versions");
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
@@ -346,7 +346,7 @@ public class WebhookIT extends BaseIT {
     }
 
     private io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", BIOWORKFLOW);
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", BIOWORKFLOW,"versions");
     }
 
     /**
