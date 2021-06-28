@@ -93,9 +93,39 @@ public class EntryResourceIT extends BaseIT {
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
             Assert.assertEquals(EntryResource.VERSION_NOT_BELONG_TO_ENTRY_ERROR_MESSAGE, e.getMessage());
         }
+        try {
+            testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+                + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', '/authenticate')");
+            entriesApi.exportToORCID(workflowId, null);
+            Assert.fail("Cannot insert the actual scope, must be enum");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            testingPostgres.runUpdateStatement("delete from token where id=9001");
+        }
+
+        try {
+            testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+                + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', '/activities/update')");
+            entriesApi.exportToORCID(workflowId, null);
+            Assert.fail("Cannot insert the actual scope, must be enum");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            testingPostgres.runUpdateStatement("delete from token where id=9001");
+        }
+
         // Give the user a fake ORCID token
-        testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username) values (9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato')");
+        testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+            + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', 'AUTHENTICATE')");
         testingPostgres.runUpdateStatement("update enduser set orcid='0000-0001-8365-0487' where id='1'");
+
+        try {
+            entriesApi.exportToORCID(workflowId, null);
+            fail("Should not have been able to export without a token in the correct scope");
+        } catch (ApiException e) {
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
+        }
+
+        testingPostgres.runUpdateStatement("update token set scope='ACTIVITIES_UPDATE' where id=9001");
 
         // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
         try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
