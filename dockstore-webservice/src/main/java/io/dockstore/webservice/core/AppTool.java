@@ -17,7 +17,6 @@ package io.dockstore.webservice.core;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
-
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
 

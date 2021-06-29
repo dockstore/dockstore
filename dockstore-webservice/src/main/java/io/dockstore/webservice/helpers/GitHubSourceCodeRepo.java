@@ -401,6 +401,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
     }
 
+    /**
+     * Initialize bioworkflow/apptool object for GitHub repository
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @param subclass Subclass of the workflow
+     * @param workflowName Name of the workflow
+     * @param workflow Workflow to update
+     * @return Workflow
+     */
     public Workflow setWorkflowInfo(final String repositoryId, final String subclass, final String workflowName,
             final Workflow workflow) {
         workflow.setOrganization(repositoryId.split("/")[0]);
