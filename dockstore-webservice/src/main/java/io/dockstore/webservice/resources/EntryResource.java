@@ -25,6 +25,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.CollectionOrganization;
+import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -213,6 +214,32 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             }
             checkUser(user.get(), entry);
         }
+    }
+
+    @GET
+    @UnitOfWork
+    @Path("/{entryId}/versions/{versionId}/descriptionMetrics")
+    @ApiOperation(value = "Retrieve metrics on the description of an entry")
+    @Operation(operationId = "getDescriptionMetrics", description = "Retrieve metrics on the description of an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    public DescriptionMetrics calculateDescriptionMetrics(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
+        @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
+        checkEntry(entry);
+
+        checkEntryPermissions(user, entry);
+
+        Version version = versionDAO.findVersionInEntry(entryId, versionId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        String description = version.getVersionMetadata().getDescription();
+        if (description == null) {
+            throw new CustomWebApplicationException("Version " + versionId + " does not have a description", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        return new DescriptionMetrics(description);
     }
 
     @POST

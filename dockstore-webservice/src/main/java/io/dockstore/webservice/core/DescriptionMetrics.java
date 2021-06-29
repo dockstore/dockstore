@@ -9,11 +9,15 @@ public class DescriptionMetrics {
     private final long wordCount;
 
     public DescriptionMetrics(String descriptionContent) {
-        assert descriptionContent != null;
-
-        this.descriptionLength = descriptionContent.length();
-        this.entropy = this.calculateEntropy(descriptionContent);
-        this.wordCount = this.calculateWordCount(descriptionContent);
+        if (descriptionContent == null) {
+            this.descriptionLength = 0;
+            this.entropy = 0;
+            this.wordCount = 0;
+        } else {
+            this.descriptionLength = descriptionContent.length();
+            this.entropy = this.calculateEntropy(descriptionContent);
+            this.wordCount = this.calculateWordCount(descriptionContent);
+        }
     }
 
     public long calculateEntropy(String descriptionContent) {
@@ -29,7 +33,7 @@ public class DescriptionMetrics {
             return 0;
         }
 
-        // split into a String[] by spaces and return the length.. Make sure to split by any length of spaces.
+        // split into a String[] by spaces and return the length. Split by any sequences of spaces with length >= 1.
         return trimmed.split("\\s+").length;
     }
 
@@ -44,5 +48,4 @@ public class DescriptionMetrics {
     public long getCalculatedWordCount() {
         return this.wordCount;
     }
-
 }

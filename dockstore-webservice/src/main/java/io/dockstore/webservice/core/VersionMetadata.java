@@ -141,4 +141,9 @@ public class VersionMetadata {
     public void setOrcidPutCode(String orcidPutCode) {
         this.orcidPutCode = orcidPutCode;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
 }
