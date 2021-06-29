@@ -350,68 +350,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
-    @Override
-    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
-        GHRateLimit startRateLimit = getGhRateLimitQuietly();
-
-        // Get repository from GitHub
-        GHRepository repository = getRepository(repositoryId);
-
-        // when getting a full workflow, look for versions and check each version for valid workflows
-        List<Triple<String, Date, String>> references = new ArrayList<>();
-
-        GHRef[] refs = {};
-        try {
-            refs = getBranchesAndTags(repository);
-            for (GHRef ref : refs) {
-                Triple<String, Date, String> referenceTriple = getRef(ref, repository);
-                if (referenceTriple != null) {
-                    if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
-                        references.add(referenceTriple);
-                    }
-                }
-            }
-        } catch (GHFileNotFoundException e) {
-            // seems to legitimately do this when the repo has no tags or releases
-            LOG.debug("repo had no releases or tags: " + repositoryId, e);
-        } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
-            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
-        }
-
-        // For each branch (reference) found, create a workflow version and find the associated descriptor files
-        for (Triple<String, Date, String> ref : references) {
-            if (ref != null) {
-                final String branchName = ref.getLeft();
-                final Date lastModified = ref.getMiddle();
-                final String commitId = ref.getRight();
-                if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
-                    WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
-                            repository, null, versionName);
-                    if (version != null) {
-                        workflow.addWorkflowVersion(version);
-                    }
-                } else {
-                    // Version didn't change, but we don't want to delete
-                    // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
-                    LOG.info(gitUsername + ": Skipping GitHub reference: " + ref.toString());
-                    WorkflowVersion version = new WorkflowVersion();
-                    version.setName(branchName);
-                    version.setReference(branchName);
-                    version.setLastModified(lastModified);
-                    version.setCommitID(SKIP_COMMIT_ID);
-                    workflow.addWorkflowVersion(version);
-                }
-            }
-        }
-
-        GHRateLimit endRateLimit = getGhRateLimitQuietly();
-        reportOnRateLimit("setupWorkflowVersions", startRateLimit, endRateLimit);
-
-        return workflow;
-    }
-
     /**
      * Initialize service object for GitHub repository
      * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
@@ -481,6 +419,68 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             throw new CustomWebApplicationException("The given descriptor type is not supported: " + subclass, LAMBDA_FAILURE);
         }
         workflow.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
+        return workflow;
+    }
+
+    @Override
+    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
+        GHRateLimit startRateLimit = getGhRateLimitQuietly();
+
+        // Get repository from GitHub
+        GHRepository repository = getRepository(repositoryId);
+
+        // when getting a full workflow, look for versions and check each version for valid workflows
+        List<Triple<String, Date, String>> references = new ArrayList<>();
+
+        GHRef[] refs = {};
+        try {
+            refs = getBranchesAndTags(repository);
+            for (GHRef ref : refs) {
+                Triple<String, Date, String> referenceTriple = getRef(ref, repository);
+                if (referenceTriple != null) {
+                    if (versionName.isEmpty() || Objects.equals(versionName.get(), referenceTriple.getLeft())) {
+                        references.add(referenceTriple);
+                    }
+                }
+            }
+        } catch (GHFileNotFoundException e) {
+            // seems to legitimately do this when the repo has no tags or releases
+            LOG.debug("repo had no releases or tags: " + repositoryId, e);
+        } catch (IOException e) {
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}", e);
+            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
+        }
+
+        // For each branch (reference) found, create a workflow version and find the associated descriptor files
+        for (Triple<String, Date, String> ref : references) {
+            if (ref != null) {
+                final String branchName = ref.getLeft();
+                final Date lastModified = ref.getMiddle();
+                final String commitId = ref.getRight();
+                if (toRefreshVersion(commitId, existingDefaults.get(branchName), hardRefresh)) {
+                    WorkflowVersion version = setupWorkflowVersionsHelper(workflow, ref, existingWorkflow, existingDefaults,
+                            repository, null, versionName);
+                    if (version != null) {
+                        workflow.addWorkflowVersion(version);
+                    }
+                } else {
+                    // Version didn't change, but we don't want to delete
+                    // Add a stub version with commit ID set to an ignore value so that the version isn't deleted
+                    LOG.info(gitUsername + ": Skipping GitHub reference: " + ref.toString());
+                    WorkflowVersion version = new WorkflowVersion();
+                    version.setName(branchName);
+                    version.setReference(branchName);
+                    version.setLastModified(lastModified);
+                    version.setCommitID(SKIP_COMMIT_ID);
+                    workflow.addWorkflowVersion(version);
+                }
+            }
+        }
+
+        GHRateLimit endRateLimit = getGhRateLimitQuietly();
+        reportOnRateLimit("setupWorkflowVersions", startRateLimit, endRateLimit);
+
         return workflow;
     }
 
