@@ -14,11 +14,11 @@
  *    limitations under the License.
  */
 package io.dockstore.webservice.core;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 
 import io.dockstore.common.EntryType;
 import io.swagger.annotations.ApiModel;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @ApiModel(value = "AppTool", description = "This describes one app tool in dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
