@@ -93,13 +93,7 @@
         <!--  Include liquibase-core as a dependency so Intellij knows to
               include it as a library, so integration tests will run in Intellij,
               without having to manually add liquibase-core as a library.
-              However adding liquibase-core as a dependency here will cause
-              the liquibase-core jar to appear on the classpath
-              which will cause the 'found 2 liquibase.build.properties' error,
-              because the webservice jar includes liquibase-core and so already
-              has a copy of liquibase.build.properties, so we
-              explicitly exclude liquibase-core from the fail-safe
-              plugin classpath below. -->
+        -->
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
@@ -239,14 +233,6 @@
                     <skipTests>${skipITs}</skipTests>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
-                    <!-- Explicitly exclude liquibase-core from the classpath
-                    because we added liquibase-core as a dependency above
-                    which will cause the liquibase-core jar to appear on
-                    the classpath which will cause the
-                    'found 2 liquibase.build.properties' error,
-                    because the webservice jar includes liquibase-core and so already
-                    has a copy of liquibase.build.properties,                  -->
-                    <classpathDependencyExcludes>org.liquibase:liquibase-core</classpathDependencyExcludes>
                 </configuration>
             </plugin>
             <plugin>
