@@ -1,5 +1,6 @@
 package io.dockstore.client.cli;
 
+import io.dockstore.webservice.core.TokenScope;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +116,7 @@ public class EntryResourceIT extends BaseIT {
 
         // Give the user a fake ORCID token
         testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
-            + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', 'AUTHENTICATE')");
+            + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', '" + TokenScope.AUTHENTICATE.name() + "')");
         testingPostgres.runUpdateStatement("update enduser set orcid='0000-0001-8365-0487' where id='1'");
 
         try {
@@ -125,7 +126,7 @@ public class EntryResourceIT extends BaseIT {
             Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, e.getCode());
         }
 
-        testingPostgres.runUpdateStatement("update token set scope='ACTIVITIES_UPDATE' where id=9001");
+        testingPostgres.runUpdateStatement("update token set scope='" + TokenScope.ACTIVITIES_UPDATE.name() + "' where id=9001");
 
         // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
         try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
