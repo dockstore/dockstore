@@ -302,4 +302,11 @@
         </createTable>
         <addForeignKeyConstraint baseColumnNames="orcidauthorid" baseTableName="version_orcidauthor" constraintName="fk_version_orcidauthor" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="orcidauthor"/>
     </changeSet>
+
+    <changeSet author="gluu (generated)" id="authenticateScopeFix">
+        <update tableName="token">
+            <column name="scope" value="AUTHENTICATE"/>
+            <where>tokensource = 'orcid.org'</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>
