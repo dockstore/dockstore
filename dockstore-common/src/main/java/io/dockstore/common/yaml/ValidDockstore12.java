@@ -27,9 +27,9 @@ import javax.validation.Payload;
 @Constraint(validatedBy = Dockstore12Validator.class)
 public @interface ValidDockstore12 {
 
-    String AT_LEAST_1_WORKFLOW_OR_SERVICE = ".dockstore.yml must have at least 1 workflow or service";
+    String AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE = ".dockstore.yml must have at least 1 workflow, tool, or service";
 
-    String message () default AT_LEAST_1_WORKFLOW_OR_SERVICE;
+    String message () default AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE;
     Class<?>[] groups () default {};
     Class<? extends Payload>[] payload () default {};
 }
