@@ -16,13 +16,42 @@
 
 package io.dockstore.webservice.resources;
 
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.common.DescriptorLanguage.WDL;
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
-import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
@@ -97,41 +126,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -140,6 +134,14 @@ import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -803,7 +805,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
             @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL) @QueryParam("subclass") String subclass) {
+            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the following: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL) @QueryParam("subclass") String subclass) {
         final Class<? extends Workflow> targetClass = getSubClass(subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);

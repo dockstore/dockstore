@@ -1,5 +1,12 @@
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.core.WorkflowMode.FULL;
+import static io.dockstore.webservice.core.WorkflowMode.STUB;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -65,13 +72,6 @@ import org.hibernate.SessionFactory;
 import org.kohsuke.github.GHRateLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
-import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.core.WorkflowMode.FULL;
-import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 /**
  * Base class for ServiceResource and WorkflowResource.

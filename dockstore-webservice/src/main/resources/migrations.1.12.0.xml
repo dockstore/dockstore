@@ -73,6 +73,8 @@
         <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_apptool" tableName="apptool"/>
         <addUniqueConstraint columnNames="checkerid" constraintName="uk_checkerid_apptool" tableName="apptool"/>
         <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="apptool" constraintName="fk_checkerid_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="upgradeLiquibase">
         <dropIndex tableName="cloud_instance" indexName="unique_user_instances"/>
         <addUniqueConstraint columnNames="url, user_id, partner" constraintName="unique_user_instances" tableName="cloud_instance"/>
     </changeSet>
