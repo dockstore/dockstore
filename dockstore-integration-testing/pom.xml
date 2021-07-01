@@ -90,21 +90,6 @@
             </exclusions>
         </dependency>
 
-        <!--  Include liquibase-core as a dependency so Intellij knows to
-              include it as a library, so integration tests will run in Intellij,
-              without having to manually add liquibase-core as a library.
-        -->
-        <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
