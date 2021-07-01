@@ -13,6 +13,8 @@ import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DescriptionMetrics;
+import io.dockstore.openapi.client.model.Entry;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -124,6 +126,44 @@ public class EntryResourceIT extends BaseIT {
                 Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
                 Assert.assertTrue(e.getMessage().contains("Could not export to ORCID. There exists another ORCID work with the same DOI URL."));
             }
+        }
+    }
+
+    @Test
+    public void testDescriptionMetrics() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(client);
+        UsersApi usersApi = new UsersApi(client);
+        User user = usersApi.getUser();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        Entry entry = new Entry();
+        entry.setDescription("My entry description");
+        entry.setAuthor("DockstoreUser");
+        entry.setEmail("fakeEmail");
+
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+            DescriptorLanguage.WDL.getShortName(), "");
+
+        List<Workflow> workflows = usersApi.userWorkflows(user.getId());
+        Long workflowId = workflows.get(0).getId();
+        workflowsApi.refresh1(workflowId, false);
+
+        Assert.assertTrue(workflows.size() > 0);
+
+        Workflow workflow = workflowsApi.getWorkflow(workflowId, null);
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        workflowVersions.get(0).setDescription("My description!");
+        workflowsApi.updateWorkflowVersion(workflowId, workflowVersions);
+        Long workflowVersionId = workflowVersions.get(0).getId();
+
+        try {
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertTrue(descriptionMetrics.getCalculatedEntropy() > 0
+                && descriptionMetrics.getCalculatedWordCount() > 0
+                && descriptionMetrics.getDescriptionLength() > 0);
+        } catch (Exception e) {
+            Assert.fail("Description metrics should have calculated nonzero values for the description");
         }
     }
 }
