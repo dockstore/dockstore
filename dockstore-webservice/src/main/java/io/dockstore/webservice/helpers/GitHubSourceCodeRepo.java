@@ -35,6 +35,7 @@ import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
@@ -390,8 +391,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflowName Name of the workflow
      * @return Workflow
      */
-    public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+    public Workflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
         BioWorkflow workflow = new BioWorkflow();
+        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    }
+
+    public Workflow initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+        AppTool workflow = new AppTool();
+        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    }
+
+    /**
+     * Initialize bioworkflow/apptool object for GitHub repository
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @param subclass Subclass of the workflow
+     * @param workflowName Name of the workflow
+     * @param workflow Workflow to update
+     * @return Workflow
+     */
+    public Workflow setWorkflowInfo(final String repositoryId, final String subclass, final String workflowName,
+            final Workflow workflow) {
         workflow.setOrganization(repositoryId.split("/")[0]);
         workflow.setRepository(repositoryId.split("/")[1]);
         workflow.setSourceControl(SourceControl.GITHUB);
@@ -413,7 +432,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -472,6 +491,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         return workflow;
     }
+
 
     /**
      * Retrieves a repository from github
@@ -725,7 +745,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
-            final Optional<YamlWorkflow> maybeWorkflow = dockstoreYaml12.getWorkflows().stream().filter(wf -> {
+            List<YamlWorkflow> workflows;
+            if (workflow instanceof AppTool) {
+                workflows = dockstoreYaml12.getTools();
+            } else {
+                workflows = dockstoreYaml12.getWorkflows();
+            }
+
+            final Optional<YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
                 final String wfName = wf.getName();
                 final String dockstoreWorkflowPath =
                         "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");

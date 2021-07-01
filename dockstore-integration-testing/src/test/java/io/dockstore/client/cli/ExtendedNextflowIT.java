@@ -88,13 +88,13 @@ public class ExtendedNextflowIT extends BaseIT {
         assertNotSame("", workflow.getWorkflowName());
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null, false);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null, BIOWORKFLOW);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null, false);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, null, BIOWORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         // Tests that nf-core nextflow.config files can be parsed
@@ -122,14 +122,14 @@ public class ExtendedNextflowIT extends BaseIT {
         workflowApi.refresh(workflow.getId(), false);
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", false);
+        Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", BIOWORKFLOW);
         // need to set paths properly
         workflowByPathBitbucket.setWorkflowPath("/nextflow.config");
         workflowByPathBitbucket.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathBitbucket.getId(), workflowByPathBitbucket);
-        workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", false);
+        workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", BIOWORKFLOW);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId(), false);
-        Workflow byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", false);
+        Workflow byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", BIOWORKFLOW);
         // There are 3 versions: master, v1.0, and v2.0
         // master and v2.0 has a nextflow.config file that has description and author, v1.0 does not
         // v1.0 will pull description from README instead but the others will use nextflow.config
@@ -140,7 +140,7 @@ public class ExtendedNextflowIT extends BaseIT {
         testingPostgres.runUpdateStatement("update version_metadata set author='bad_potato'");
         testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
         final Workflow refreshedBitbucketWorkflow = workflowApi.refresh(workflowByPathBitbucket.getId(), true);
-        byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", false);
+        byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", BIOWORKFLOW);
         // This tests if it can fix outdated metadata
         testWorkflowVersionMetadata(refreshedBitbucketWorkflow);
         testWorkflowVersionMetadata(byPathWorkflow);
@@ -191,13 +191,13 @@ public class ExtendedNextflowIT extends BaseIT {
         workflowApi.refresh(workflow.getId(), false);
 
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, false);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, BIOWORKFLOW);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, false);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW, null, BIOWORKFLOW);
         final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         Assert.assertTrue("Should have gotten the description from README", bitbucketWorkflow.getDescription().contains("A Nextflow implementation of Kallisto & Sleuth RNA-Seq Tools"));
         List<SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v1.0")).findFirst().get().getId());

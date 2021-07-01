@@ -22,6 +22,7 @@ import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -691,7 +692,12 @@ public abstract class SourceCodeRepoInterface {
 
         // Validate descriptor set
         if (mainDescriptor.isPresent()) {
-            VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            VersionTypeValidation validDescriptorSet;
+            if (entry.getEntryType() == EntryType.APPTOOL) {
+                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateToolSet(sourceFiles, mainDescriptorPath);
+            } else {
+                validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            }
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);
         } else {

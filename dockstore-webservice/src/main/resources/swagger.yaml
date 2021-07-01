@@ -5046,12 +5046,12 @@ paths:
         description: "Comma-delimited list of fields to include: validations, aliases"
         required: false
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
+        description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
+          \ bioworkflow, apptool"
         required: false
-        type: "boolean"
-        default: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -6244,6 +6244,13 @@ definitions:
     properties:
       content:
         type: "string"
+  AppTool:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one service in the dockstore as a special degenerate\
+        \ case of a workflow"
   Author:
     type: "object"
     required:
@@ -6904,6 +6911,7 @@ definitions:
         - "TOOL"
         - "WORKFLOW"
         - "SERVICE"
+        - "APPTOOL"
       lastUpdateDate:
         type: "integer"
         format: "int64"
