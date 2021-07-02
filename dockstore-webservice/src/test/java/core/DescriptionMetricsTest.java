@@ -37,5 +37,17 @@ public class DescriptionMetricsTest {
         final String testString3 = "strange_delimiters_should_not_be_counted_as_multiple_words";
         descriptionMetrics = new DescriptionMetrics(testString3);
         Assert.assertEquals("Incorrect word count", 1, descriptionMetrics.getCalculatedWordCount());
+
+        final String testString4 = "       ";
+        descriptionMetrics = new DescriptionMetrics(testString4);
+        Assert.assertEquals("A description of only spaces has no words", 0, descriptionMetrics.getCalculatedWordCount());
+    }
+
+    @Test
+    public void testNullDescription() {
+        DescriptionMetrics descriptionMetrics = new DescriptionMetrics(null);
+        Assert.assertEquals("A description of only spaces has no words", 0, descriptionMetrics.getCalculatedWordCount());
+        Assert.assertEquals("A description of only spaces has no length", 0, descriptionMetrics.getDescriptionLength());
+        Assert.assertEquals("A description of only spaces has no entropy", 0, descriptionMetrics.getCalculatedEntropy());
     }
 }
