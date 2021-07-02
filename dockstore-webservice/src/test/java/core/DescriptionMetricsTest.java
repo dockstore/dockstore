@@ -46,8 +46,8 @@ public class DescriptionMetricsTest {
     @Test
     public void testNullDescription() {
         DescriptionMetrics descriptionMetrics = new DescriptionMetrics(null);
-        Assert.assertEquals("A description of only spaces has no words", 0, descriptionMetrics.getCalculatedWordCount());
-        Assert.assertEquals("A description of only spaces has no length", 0, descriptionMetrics.getDescriptionLength());
-        Assert.assertEquals("A description of only spaces has no entropy", 0, descriptionMetrics.getCalculatedEntropy());
+        Assert.assertEquals("A null description has no words", 0, descriptionMetrics.getCalculatedWordCount());
+        Assert.assertEquals("A null description has no length", 0, descriptionMetrics.getDescriptionLength());
+        Assert.assertEquals("A null description has no entropy", 0, descriptionMetrics.getCalculatedEntropy());
     }
 }
