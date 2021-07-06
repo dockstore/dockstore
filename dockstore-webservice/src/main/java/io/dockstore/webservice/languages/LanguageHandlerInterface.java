@@ -78,10 +78,10 @@ public interface LanguageHandlerInterface {
     Gson GSON = new Gson();
     ApiClient API_CLIENT = Configuration.getDefaultApiClient();
     // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
-    // public.ecr.aws/<registry_alias>/<repository_name>@sha256
-    Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)(.+)/(.+)(:|@sha256)(.+)");
+    // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
+    Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)(.+)/(.+)(:|@sha256:)(.+)");
     // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>:<image_tag> -> 012345678912.dkr.ecr.us-east-1.amazonaws.com/test-repo:1
-    // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>@sha256<image_digest>
+    // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>@sha256:<image_digest>
     Pattern AMAZON_ECR_PRIVATE_IMAGE = Pattern.compile("(.+)(\\.dkr\\.ecr\\.)(.+)(\\.amazonaws.com/)(.+)(:|@sha256:)(.+)");
     Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
     // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
