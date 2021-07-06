@@ -5018,7 +5018,7 @@ paths:
         type: "string"
       - name: "subclass"
         in: "query"
-        description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
+        description: "Which Workflow subclass to retrieve. One of the following: service,\
           \ bioworkflow, apptool"
         required: false
         type: "string"
@@ -6219,7 +6219,7 @@ definitions:
     - $ref: "#/definitions/Workflow"
     - type: "object"
       properties: {}
-      description: "This describes one service in the dockstore as a special degenerate\
+      description: "This describes one app tool in dockstore as a special degenerate\
         \ case of a workflow"
   Author:
     type: "object"
