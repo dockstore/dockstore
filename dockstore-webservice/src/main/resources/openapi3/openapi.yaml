@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.11.4-SNAPSHOT
+  version: 1.11.5-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api

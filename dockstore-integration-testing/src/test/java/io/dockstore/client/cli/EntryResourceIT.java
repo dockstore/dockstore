@@ -1,6 +1,5 @@
 package io.dockstore.client.cli;
 
-import io.dockstore.webservice.core.TokenScope;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +15,7 @@ import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
+import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.resources.EntryResource;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
