@@ -159,7 +159,6 @@ public class EntryResourceIT extends BaseIT {
             Assert.fail("Description metrics should have calculated nonzero values for the description");
         }
 
-
         // Update the version description to something specific
         final String newDescription = "'Test 1'";
         final String updateStatement = String.format("UPDATE version_metadata SET description=%s WHERE id=%d", newDescription, workflowVersionId);
