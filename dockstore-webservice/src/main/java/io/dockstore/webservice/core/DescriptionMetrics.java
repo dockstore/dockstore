@@ -9,7 +9,7 @@ public class DescriptionMetrics {
     private final long wordCount;
 
     /**
-     * Calculates various description metrics based on the input description's content
+     * Calculates various description metrics based on the input description's content.
      * @param descriptionContent String content of a description
      */
     public DescriptionMetrics(String descriptionContent) {
@@ -26,7 +26,7 @@ public class DescriptionMetrics {
 
     /**
      * Calculates the entropy of the input description. Entropy, in this case, is represented as the
-     * number of distinct characters within the description
+     * number of distinct characters within the description.
      * @param descriptionContent String content of a description
      */
     public long calculateEntropy(String descriptionContent) {
