@@ -2095,12 +2095,12 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DescriptionMetrics'
-          description: default response
+          description: Successfully calculated description metrics
       security:
       - bearer: []
       tags:
