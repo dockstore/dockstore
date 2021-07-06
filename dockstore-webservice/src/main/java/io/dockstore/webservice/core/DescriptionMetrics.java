@@ -8,6 +8,10 @@ public class DescriptionMetrics {
 
     private final long wordCount;
 
+    /**
+     * Calculates various description metrics based on the input description's content
+     * @param descriptionContent String content of a description
+     */
     public DescriptionMetrics(String descriptionContent) {
         if (descriptionContent == null) {
             this.descriptionLength = 0;
@@ -20,11 +24,20 @@ public class DescriptionMetrics {
         }
     }
 
+    /**
+     * Calculates the entropy of the input description. Entropy, in this case, is represented as the
+     * number of distinct characters within the description
+     * @param descriptionContent String content of a description
+     */
     public long calculateEntropy(String descriptionContent) {
-        // Represent entropy as the number of distinct characters in a string
         return descriptionContent.chars().distinct().count();
     }
 
+    /**
+     * Calculates word count of the input description. The delimiter between words is any number of spaces >= 1.
+     * Leading and trailing spaces are trimmed.
+     * @param descriptionContent String content of a description
+     */
     public long calculateWordCount(String descriptionContent) {
 
         // trim leading and trailing spaces

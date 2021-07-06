@@ -156,12 +156,13 @@ public class EntryResourceIT extends BaseIT {
                 && descriptionMetrics.getCalculatedWordCount() > 0
                 && descriptionMetrics.getDescriptionLength() > 0);
         } catch (Exception e) {
-            Assert.fail("Description metrics should have calculated nonzero values for the description");
+            fail("Description metrics should have calculated nonzero values for the description");
         }
 
         // Update the version description to something specific
         final String newDescription = "'Test 1'";
-        final String updateStatement = String.format("UPDATE version_metadata SET description=%s WHERE id=%d", newDescription, workflowVersionId);
+        final String updateStatement = String.format("UPDATE version_metadata SET description=%s WHERE id=%d",
+            newDescription, workflowVersionId);
         testingPostgres.runUpdateStatement(updateStatement);
         try {
             DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
@@ -169,7 +170,7 @@ public class EntryResourceIT extends BaseIT {
                 && descriptionMetrics.getCalculatedWordCount() == 2
                 && descriptionMetrics.getDescriptionLength() == 6);
         } catch (ApiException e) {
-            Assert.fail("Description metrics should have calculated nonzero values for the description");
+            fail("Description metrics should have calculated nonzero values for the description");
         }
 
         // Update the version description to be null
@@ -177,7 +178,7 @@ public class EntryResourceIT extends BaseIT {
         testingPostgres.runUpdateStatement(updateToNull);
         try {
             entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
-            Assert.fail("The version does not have a description, so an error should be thrown.");
+            fail("The version does not have a description, so an error should be thrown.");
         } catch (ApiException e) {
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
