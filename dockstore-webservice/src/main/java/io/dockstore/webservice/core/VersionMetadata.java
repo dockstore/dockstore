@@ -68,6 +68,7 @@ public class VersionMetadata {
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
+    @Schema(description = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     protected  String description;
 
     @Column(name = "description_source")

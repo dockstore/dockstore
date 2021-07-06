@@ -8747,6 +8747,8 @@ components:
       properties:
         description:
           type: string
+          description: "This is a human-readable description of this container and\
+            \ what it is trying to accomplish, required GA4GH"
         id:
           type: integer
           format: int64
