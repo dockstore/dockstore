@@ -232,13 +232,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         Version version = versionDAO.findVersionInEntry(entryId, versionId);
         if (version == null) {
-            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_NOT_FOUND);
         }
 
-        String description = version.getVersionMetadata().getDescription();
-        if (description == null) {
-            throw new CustomWebApplicationException("Version " + versionId + " does not have a description", HttpStatus.SC_BAD_REQUEST);
-        }
+        final String description = version.getVersionMetadata().getDescription();
 
         return new DescriptionMetrics(description);
     }

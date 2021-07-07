@@ -156,7 +156,7 @@ public class EntryResourceIT extends BaseIT {
                 && descriptionMetrics.getCalculatedWordCount() > 0
                 && descriptionMetrics.getDescriptionLength() > 0);
         } catch (Exception e) {
-            fail("Description metrics should have calculated nonzero values for the description");
+            fail("Description metrics should have calculated nonzero values for the description.");
         }
 
         // Update the version description to something specific
@@ -170,17 +170,19 @@ public class EntryResourceIT extends BaseIT {
                 && descriptionMetrics.getCalculatedWordCount() == 2
                 && descriptionMetrics.getDescriptionLength() == 6);
         } catch (ApiException e) {
-            fail("Description metrics should have calculated nonzero values for the description");
+            fail("Description metrics should have calculated nonzero values for the description.");
         }
 
         // Update the version description to be null
         final String updateToNull = String.format("UPDATE version_metadata SET description=NULL WHERE id=%d", workflowVersionId);
         testingPostgres.runUpdateStatement(updateToNull);
         try {
-            entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
-            fail("The version does not have a description, so an error should be thrown.");
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertTrue(descriptionMetrics.getCalculatedEntropy() == 0
+                && descriptionMetrics.getCalculatedWordCount() == 0
+                && descriptionMetrics.getDescriptionLength() == 0);
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+            fail("The version does not have a description, so metrics should be set to 0.");
         }
     }
 }
