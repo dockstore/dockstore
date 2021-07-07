@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.dockstore</groupId>
   <artifactId>swagger-java-quay-client</artifactId>
-  <version>1.11.5-SNAPSHOT</version>
+  <version>1.11.6-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache Software License, Version 2.0</name>
