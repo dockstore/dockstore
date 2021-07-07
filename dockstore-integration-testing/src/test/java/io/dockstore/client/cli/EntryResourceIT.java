@@ -166,9 +166,9 @@ public class EntryResourceIT extends BaseIT {
         testingPostgres.runUpdateStatement(updateStatement);
         try {
             DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
-            Assert.assertTrue(descriptionMetrics.getCalculatedEntropy() == 6
-                && descriptionMetrics.getCalculatedWordCount() == 2
-                && descriptionMetrics.getDescriptionLength() == 6);
+            Assert.assertEquals("Incorrect entropy", 5, (long) descriptionMetrics.getCalculatedEntropy());
+            Assert.assertEquals("Incorrect word count", 2, (long) descriptionMetrics.getCalculatedWordCount());
+            Assert.assertEquals("Incorrect description length", 6, (long) descriptionMetrics.getDescriptionLength());
         } catch (ApiException e) {
             fail("Description metrics should have calculated nonzero values for the description.");
         }
@@ -178,9 +178,9 @@ public class EntryResourceIT extends BaseIT {
         testingPostgres.runUpdateStatement(updateToNull);
         try {
             DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
-            Assert.assertTrue(descriptionMetrics.getCalculatedEntropy() == 0
-                && descriptionMetrics.getCalculatedWordCount() == 0
-                && descriptionMetrics.getDescriptionLength() == 0);
+            Assert.assertEquals("Incorrect entropy", 0, (long) descriptionMetrics.getCalculatedEntropy());
+            Assert.assertEquals("Incorrect word count", 0, (long) descriptionMetrics.getCalculatedWordCount());
+            Assert.assertEquals("Incorrect description length", 0, (long) descriptionMetrics.getDescriptionLength());
         } catch (ApiException e) {
             fail("The version does not have a description, so metrics should be set to 0.");
         }
