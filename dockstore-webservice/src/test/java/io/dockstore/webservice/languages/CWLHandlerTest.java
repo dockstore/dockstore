@@ -11,6 +11,7 @@ import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
@@ -115,24 +116,77 @@ public class CWLHandlerTest {
 
         // Cases that don't rely on toolDAO
         Assert.assertNull(handler.getURLFromEntry("", toolDAO, null));
-        Assert.assertEquals("https://images.sbgenomics.com/foo/bar", handler.getURLFromEntry("images.sbgenomics.com/foo/bar", toolDAO, null));
-        Assert.assertEquals("https://images.sbgenomics.com/foo/bar", handler.getURLFromEntry("images.sbgenomics.com/foo/bar:1", toolDAO, null));
-        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo", toolDAO, null));
-        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo:1", toolDAO, null));
+        Assert.assertEquals("https://images.sbgenomics.com/foo/bar",
+                handler.getURLFromEntry("images.sbgenomics.com/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://images.sbgenomics.com/foo/bar",
+                handler.getURLFromEntry("images.sbgenomics.com/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+
+        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://hub.docker.com/_/foo", handler.getURLFromEntry("foo:1", toolDAO, DockerSpecifier.TAG));
+
+        Assert.assertEquals("https://gallery.ecr.aws/foo/bar/test", // Public ECR repo name with a "/" -> "bar/test"
+                handler.getURLFromEntry("public.ecr.aws/foo/bar/test", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://gallery.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://gallery.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
+        Assert.assertEquals("https://012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar", // Private ECR repo name with a "/" -> "foo/bar"
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo@sha256:123456789abc", toolDAO,
+                        DockerSpecifier.DIGEST));
 
         // When toolDAO.findAllByPath() returns null/empty
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
-        Assert.assertEquals("https://quay.io/repository/foo/bar", handler.getURLFromEntry("quay.io/foo/bar", toolDAO, null));
-        Assert.assertEquals("https://quay.io/repository/foo/bar", handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO, null));
-        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar", toolDAO, null));
-        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar:1", toolDAO, null));
+        Assert.assertEquals("https://quay.io/repository/foo/bar",
+                handler.getURLFromEntry("quay.io/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://quay.io/repository/foo/bar",
+                handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+
+        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://hub.docker.com/r/foo/bar", handler.getURLFromEntry("foo/bar:1", toolDAO, DockerSpecifier.TAG));
+
+        Assert.assertEquals("https://gallery.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://gallery.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://gallery.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
+        Assert.assertEquals("https://012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo@sha256:123456789abc", toolDAO,
+                        DockerSpecifier.DIGEST));
 
         // When toolDAO.findAllByPath() returns non-empty List<Tool>
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(Tool.class)));
-        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar", handler.getURLFromEntry("quay.io/foo/bar", toolDAO, null));
-        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar", handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO, null));
-        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar", handler.getURLFromEntry("foo/bar", toolDAO, null));
-        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar", handler.getURLFromEntry("foo/bar:1", toolDAO, null));
+        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar",
+                handler.getURLFromEntry("quay.io/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/quay.io/foo/bar",
+                handler.getURLFromEntry("quay.io/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+
+        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar",
+                handler.getURLFromEntry("foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/registry.hub.docker.com/foo/bar",
+                handler.getURLFromEntry("foo/bar:1", toolDAO, DockerSpecifier.TAG));
+
+        Assert.assertEquals("https://www.dockstore.org/containers/public.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/public.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/public.ecr.aws/foo/bar",
+                handler.getURLFromEntry("public.ecr.aws/foo/bar@sha256:123456789", toolDAO, DockerSpecifier.DIGEST));
+        Assert.assertEquals("https://www.dockstore.org/containers/012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
+                handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo@sha256:123456789", toolDAO,
+                        DockerSpecifier.DIGEST));
     }
 
     @Test

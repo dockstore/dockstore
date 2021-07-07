@@ -79,10 +79,10 @@ public interface LanguageHandlerInterface {
     ApiClient API_CLIENT = Configuration.getDefaultApiClient();
     // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
     // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
-    Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)(.+)/(.+)(:|@sha256:)(.+)");
+    Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
     // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>:<image_tag> -> 012345678912.dkr.ecr.us-east-1.amazonaws.com/test-repo:1
     // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>@sha256:<image_digest>
-    Pattern AMAZON_ECR_PRIVATE_IMAGE = Pattern.compile("(.+)(\\.dkr\\.ecr\\.)(.+)(\\.amazonaws.com/)(.+)(:|@sha256:)(.+)");
+    Pattern AMAZON_ECR_PRIVATE_IMAGE = Pattern.compile("([0-9]++)(\\.dkr\\.ecr\\.)([a-z0-9-]++)(\\.amazonaws.com/)([a-z0-9._/-]++)(:|@sha256:)(.++)");
     Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
     // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
     // <org>/<repository>@sha256:<digest> -> broadinstitute/gatk@sha256:98b2f223dce4282c144d249e7e1f47d400ae349404409d01e87df2efeebac439
@@ -90,8 +90,8 @@ public interface LanguageHandlerInterface {
     // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
     // <repo>@256:<digest> -> ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c
     Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+(:|@sha256:)(.+)");
-    Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):?(\\S++)?");
-    Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@?(\\S++)?");
+    Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):(\\S++)");
+    Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@(\\S++)");
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -362,21 +362,21 @@ public interface LanguageHandlerInterface {
         Map<String, DockerSpecifier> invalidSnapshotImages = dockerStrings.entrySet().stream()
                 .filter(image -> image.getValue() == DockerSpecifier.PARAMETER || image.getValue() == DockerSpecifier.LATEST
                         || image.getValue() == DockerSpecifier.NO_TAG)
-                .collect(Collectors.toMap(image -> image.getKey(), image -> image.getValue()));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         // Create error message
         if (invalidSnapshotImages.size() > 0) {
             List<String> parameterImages = invalidSnapshotImages.entrySet().stream()
                     .filter(image -> image.getValue() == DockerSpecifier.PARAMETER)
-                    .map(image -> image.getKey())
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             List<String> latestImages = invalidSnapshotImages.entrySet().stream()
                     .filter(image -> image.getValue() == DockerSpecifier.LATEST)
-                    .map(image -> image.getKey())
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             List<String> noTagImages = invalidSnapshotImages.entrySet().stream()
                     .filter(image -> image.getValue() == DockerSpecifier.NO_TAG)
-                    .map(image -> image.getKey())
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             StringBuilder errorMessage = new StringBuilder(String.format(
                     "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.",
