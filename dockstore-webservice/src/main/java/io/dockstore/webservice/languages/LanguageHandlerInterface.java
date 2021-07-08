@@ -77,7 +77,12 @@ public interface LanguageHandlerInterface {
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
     ApiClient API_CLIENT = Configuration.getDefaultApiClient();
-    Pattern AMAZON_ECR_PATTERN = Pattern.compile("(.+)(\\.dkr\\.ecr\\.)(.+)(\\.amazonaws.com/)(.+)");
+    // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
+    // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
+    Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
+    // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>:<image_tag> -> 012345678912.dkr.ecr.us-east-1.amazonaws.com/test-repo:1
+    // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>@sha256:<image_digest>
+    Pattern AMAZON_ECR_PRIVATE_IMAGE = Pattern.compile("([0-9]++)(\\.dkr\\.ecr\\.)([a-z0-9-]++)(\\.amazonaws.com/)([a-z0-9._/-]++)(:|@sha256:)(.++)");
     Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
     // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
     // <org>/<repository>@sha256:<digest> -> broadinstitute/gatk@sha256:98b2f223dce4282c144d249e7e1f47d400ae349404409d01e87df2efeebac439
@@ -85,8 +90,8 @@ public interface LanguageHandlerInterface {
     // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
     // <repo>@256:<digest> -> ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c
     Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+(:|@sha256:)(.+)");
-    Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):?(\\S++)?");
-    Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@?(\\S++)?");
+    Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):(\\S++)");
+    Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@(\\S++)");
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -357,21 +362,21 @@ public interface LanguageHandlerInterface {
         Map<String, DockerSpecifier> invalidSnapshotImages = dockerStrings.entrySet().stream()
                 .filter(image -> image.getValue() == DockerSpecifier.PARAMETER || image.getValue() == DockerSpecifier.LATEST
                         || image.getValue() == DockerSpecifier.NO_TAG)
-                .collect(Collectors.toMap(image -> image.getKey(), image -> image.getValue()));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         // Create error message
         if (invalidSnapshotImages.size() > 0) {
             List<String> parameterImages = invalidSnapshotImages.entrySet().stream()
                     .filter(image -> image.getValue() == DockerSpecifier.PARAMETER)
-                    .map(image -> image.getKey())
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             List<String> latestImages = invalidSnapshotImages.entrySet().stream()
                     .filter(image -> image.getValue() == DockerSpecifier.LATEST)
-                    .map(image -> image.getKey())
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             List<String> noTagImages = invalidSnapshotImages.entrySet().stream()
                     .filter(image -> image.getValue() == DockerSpecifier.NO_TAG)
-                    .map(image -> image.getKey())
+                    .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
             StringBuilder errorMessage = new StringBuilder(String.format(
                     "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.",
@@ -414,6 +419,7 @@ public interface LanguageHandlerInterface {
         String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
         String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
         String dockstorePath = "https://www.dockstore.org/containers/"; // Update to tools once UI is updated to use /tools instead of /containers
+        String amazonECRPublicPath = "https://gallery.ecr.aws/"; // Amazon ECR Public Gallery
 
         String dockerImage = dockerEntry;
         String url;
@@ -447,8 +453,23 @@ public interface LanguageHandlerInterface {
                 // when we found a published tool, link to the tool on Dockstore
                 url = dockstorePath + dockerImage;
             }
+        } else if (registry.isPresent() && registry.get().equals(Registry.AMAZON_ECR)) {
+            List<Tool> publishedByPath = toolDAO.findAllByPath(dockerImage, true);
+            if (publishedByPath == null || publishedByPath.isEmpty()) {
+                // Regex for Amazon ECR image requires a tag or digest; add a fake "0" tag
+                if (AMAZON_ECR_PUBLIC_IMAGE.matcher(dockerEntry + ":0").matches()) {
+                    // When we cannot find a published tool on Dockstore, link to Amazon ECR Public Gallery if it's a public image
+                    url = dockerImage.replaceFirst("public\\.ecr\\.aws/", amazonECRPublicPath);
+                } else {
+                    // Return the entry as the url if it's a private Amazon ECR image
+                    url = "https://" + dockerImage;
+                }
+            } else {
+                // When we find a published tool, link to the tool on Dockstore
+                url = dockstorePath + dockerImage;
+            }
         } else if (registry.isEmpty() || !registry.get().equals(Registry.DOCKER_HUB)) {
-            // if the registry is neither Quay nor Docker Hub, return the entry as the url
+            // if the registry is neither Quay, Docker Hub nor Amazon ECR, return the entry as the url
             url = "https://" + dockerImage;
         } else {  // DOCKER_HUB
             String[] parts = dockerImage.split("/");
@@ -506,7 +527,7 @@ public interface LanguageHandlerInterface {
             return Optional.of(Registry.GITLAB);
         } else if (GOOGLE_PATTERN.matcher(image).matches()) {
             return Optional.empty();
-        } else if (AMAZON_ECR_PATTERN.matcher(image).matches()) {
+        } else if (AMAZON_ECR_PUBLIC_IMAGE.matcher(image).matches() || AMAZON_ECR_PRIVATE_IMAGE.matcher(image).matches()) {
             return Optional.of(Registry.AMAZON_ECR);
         } else if ((DOCKER_HUB.matcher(image).matches() || OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches())) {
             return Optional.of(Registry.DOCKER_HUB);
