@@ -436,6 +436,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
                 // filter published workflows using criteria builder
                 all.addAll(workflowDAO.filterTrsToolsGet(BioWorkflow.class, descriptorLanguage, registry, organization, name, toolname, description, author, checker));
+                all.addAll(workflowDAO.filterTrsToolsGet(Service.class, descriptorLanguage, registry, organization, name, toolname, description, author, checker));
             }
         }
         return all;

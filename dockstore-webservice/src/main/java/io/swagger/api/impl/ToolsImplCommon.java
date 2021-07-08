@@ -174,7 +174,6 @@ public final class ToolsImplCommon {
                 processImageDataForToolVersion(castedContainer, (Tag)version, toolVersion);
             }
 
-            // TODO: Parse image in descriptor from AppTool
             toolVersion.setIsProduction(version.isFrozen());
             if (toolVersion.isIsProduction()) {
                 List<ImageData> trsImages = processImageDataForWorkflowVersions(version);
