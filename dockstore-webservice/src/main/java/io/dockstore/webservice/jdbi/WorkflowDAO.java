@@ -177,13 +177,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public List<Workflow> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
+    public List<Workflow> filterTrsToolsGet(Class workflowType, DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
             String description, String author, Boolean checker) {
 
         final SourceControlConverter converter = new SourceControlConverter();
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
-        final Root<Workflow> entryRoot = q.from(Workflow.class);
+        final CriteriaQuery<Workflow> q = cb.createQuery(workflowType);
+        final Root<Workflow> entryRoot = q.from(workflowType);
 
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
