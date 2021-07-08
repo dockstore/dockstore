@@ -793,7 +793,7 @@ public class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set ispublished = 't' where id = " + workflow.getId());
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
-        final List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null,null, null, null, null, null, null, null, null);
+        final List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertEquals(2, tools.size());
 
         final Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools");
