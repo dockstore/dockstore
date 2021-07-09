@@ -53,8 +53,10 @@
         <sonar.organization>dockstore</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
-        <!-- this is not an aggregated path -->      
-	<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/jacoco.xml,${project.basedir}/target/jacoco-it.xml,${project.basedir}/../reports/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <!-- this is not an aggregated path -->
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.basedir}/target/jacoco.xml,${project.basedir}/target/jacoco-it.xml,${project.basedir}/../reports/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
         <!-- end sonarcloud properties -->
     </properties>
 
@@ -129,7 +131,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.11.0</version>
+                 <version>1.12.0-alpha.1-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
