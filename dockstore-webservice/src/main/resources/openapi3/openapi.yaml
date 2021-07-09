@@ -2075,6 +2075,36 @@ paths:
       - bearer: []
       tags:
       - entries
+  /entries/{entryId}/versions/{versionId}/descriptionMetrics:
+    get:
+      description: Retrieve metrics on the description of an entry
+      operationId: getDescriptionMetrics
+      parameters:
+      - description: Entry to retrieve the version from
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Version to retrieve the sourcefile types from
+        in: path
+        name: versionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescriptionMetrics'
+          description: Successfully calculated description metrics
+      security:
+      - bearer: []
+      tags:
+      - entries
   /entries/{entryId}/versions/{versionId}/fileTypes:
     get:
       description: Retrieve the unique file types of a version's sourcefile
@@ -6976,6 +7006,18 @@ components:
           type: string
         zenodoScope:
           type: string
+    DescriptionMetrics:
+      type: object
+      properties:
+        calculatedEntropy:
+          type: integer
+          format: int64
+        calculatedWordCount:
+          type: integer
+          format: int64
+        descriptionLength:
+          type: integer
+          format: int64
     DescriptorLanguageBean:
       type: object
       properties:
@@ -8703,6 +8745,10 @@ components:
     VersionMetadata:
       type: object
       properties:
+        description:
+          type: string
+          description: "This is a human-readable description of this container and\
+            \ what it is trying to accomplish, required GA4GH"
         id:
           type: integer
           format: int64
