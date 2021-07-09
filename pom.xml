@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.12.0-alpha.0</version>
+    <version>1.12.0-alpha.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -67,7 +67,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.12.0-alpha.0</tag>
+        <tag>1.11.0</tag>
     </scm>
 
     <repositories>
