@@ -48,6 +48,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
@@ -236,6 +237,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
         String putCode;
         Optional<Version> optionalVersion = Optional.empty();
+
         if (versionId != null) {
             Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
             if (version == null) {
@@ -250,13 +252,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 throw new CustomWebApplicationException(ENTRY_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
         }
+        if (orcidByUserId.isEmpty()) {
+            throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (!orcidByUserId.get(0).getScope().equals(TokenScope.ACTIVITIES_UPDATE)) {
+            throw new CustomWebApplicationException("Please relink your ORCID ID in the accounts page.", HttpStatus.SC_UNAUTHORIZED);
+        }
         if (baseApiURL == null) {
             LOG.error("ORCID auth URL is likely incorrect");
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        if (orcidByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_BAD_REQUEST);
-        }
+
         if (optionalVersion.isPresent()) {
             putCode = optionalVersion.get().getVersionMetadata().getOrcidPutCode();
         } else {

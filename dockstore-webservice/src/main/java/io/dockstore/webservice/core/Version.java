@@ -188,11 +188,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinColumn(name = "versionid", referencedColumnName = "id", nullable = false)
     @ApiModelProperty(value = "Non-ORCID Authors for each version.")
+    @BatchSize(size = 25)
     private Set<Author> authors = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "version_orcidauthor", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "orcidauthorid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "ORCID Authors for versions.")
+    @BatchSize(size = 25)
     private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)

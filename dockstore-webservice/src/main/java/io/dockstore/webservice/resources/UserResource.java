@@ -746,6 +746,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
         List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
+        List<User> gitHubUsersNotUpdatedByAvatarUrl = new ArrayList<>();
         List<User> usersCouldNotBeUpdated = new ArrayList<>();
 
         // Try to update Google metadata using user's token. This is the only option for Google.
@@ -756,7 +757,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 updateGoogleAccessToken(currentUser.getId());
                 try {
                     currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
-                    LOG.info("Updated " + currentUser.getUsername());
+                    LOG.info("Updated Google id for " + currentUser.getUsername());
                 } catch (Exception ex) {
                     LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
                     usersCouldNotBeUpdated.add(currentUser);
@@ -773,9 +774,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                 try {
                     GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
                     gitHubSourceCodeRepo.syncUserMetadataFromGitHub(u, Optional.of(tokenDAO));
-                    LOG.info("Updated " + u.getUsername());
+                    LOG.info("Updated GitHub id for " + u.getUsername());
                 } catch (Exception ex) {
-                    LOG.info("Could not retrieve GitHub ID for user: " + u.getUsername());
+                    LOG.info("Could not retrieve GitHub ID using token for user: " + u.getUsername());
                     gitHubUsersNotUpdatedWithToken.add(u);
                 }
             } else {
@@ -800,13 +801,27 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                         if (!userTokens.isEmpty()) {
                             userTokens.get(0).setOnlineProfileId(id);
                         }
-                        LOG.info("Updated " + u.getUsername() + " with GitHub id " + id);
+                        LOG.info("Updated Github id for " + u.getUsername() + " with GitHub id " + id);
                     }
 
                 } else {
-                    usersCouldNotBeUpdated.add(u);
+                    gitHubUsersNotUpdatedByAvatarUrl.add(u);
                     LOG.info(u.getUsername() + "could not be updated.");
                 }
+            }
+        }
+
+        // Get the GitHub token of the admin making this call to avoid rate limiting
+        LOG.info("Beginning update for " + gitHubUsersNotUpdatedByAvatarUrl.size() + " GitHub users who could not be updated with token or by avatarurl stored in db.");
+        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+        for (User u : gitHubUsersNotUpdatedByAvatarUrl) {
+            try {
+                gitHubSourceCodeRepo.syncUserMetadataFromGitHubByUsername(u, tokenDAO);
+                LOG.info("Updated GitHub id for " + u.getUsername());
+            } catch (Exception ex) {
+                usersCouldNotBeUpdated.add(u);
+                LOG.info(ex.getMessage(), ex);
             }
         }
 
