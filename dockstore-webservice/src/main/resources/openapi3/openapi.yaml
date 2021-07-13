@@ -7099,6 +7099,7 @@ components:
           - GITLAB
           - AMAZON_ECR
           - SEVEN_BRIDGES
+          - GITHUB_CONTAINER_REGISTRY
         registry_string:
           type: string
         starredUsers:
@@ -7432,6 +7433,7 @@ components:
           - GITLAB
           - AMAZON_ECR
           - SEVEN_BRIDGES
+          - GITHUB_CONTAINER_REGISTRY
         imageUpdateDate:
           type: string
         os:

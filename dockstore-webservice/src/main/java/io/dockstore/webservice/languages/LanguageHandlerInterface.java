@@ -89,7 +89,10 @@ public interface LanguageHandlerInterface {
     Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*)(:|@sha256:)(.+)");
     // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
     // <repo>@256:<digest> -> ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c
-    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+(:|@sha256:)(.+)");
+    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+(:|@sha256:)(.++)");
+    // ghcr.io/<owner>/<image_name>:<image_tag> -> ghcr.io/icgc-argo/workflow-gateway
+    // ghcr.io/<owner>/<image_name>@sha256:<image_digest>
+    Pattern GITHUB_CONTAINER_REGISTRY_IMAGE = Pattern.compile("(ghcr\\.io)/([a-zA-Z0-9-]++)/([a-z0-9._-]++)(:|@sha256:)(.++)");
     Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):(\\S++)");
     Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@(\\S++)");
 
@@ -405,9 +408,9 @@ public interface LanguageHandlerInterface {
     }
 
     /**
-     * Given a docker entry (quay or dockerhub), return a URL to the given entry
+     * Given a docker entry (quay, dockerhub, amazon ecr, or github container registry), return a URL to the given entry
      *
-     * @param dockerEntry has the docker name
+     * @param dockerEntry     has the docker name
      * @param toolDAO
      * @param dockerSpecifier has the type of specifier used to refer to the docker image
      * @return URL
@@ -468,8 +471,17 @@ public interface LanguageHandlerInterface {
                 // When we find a published tool, link to the tool on Dockstore
                 url = dockstorePath + dockerImage;
             }
+        } else if (registry.isPresent() && registry.get().equals(Registry.GITHUB_CONTAINER_REGISTRY)) {
+            List<Tool> publishedByPath = toolDAO.findAllByPath(dockerImage, true);
+            if (publishedByPath == null || publishedByPath.isEmpty()) {
+                // when we cannot find a published tool on Dockstore, link to GitHub Container Registry
+                url = "https://" + dockerImage; // The docker image path redirects to the GitHub Package page for the image
+            } else {
+                // When we find a published tool, link to the tool on Dockstore
+                url = dockstorePath + dockerImage;
+            }
         } else if (registry.isEmpty() || !registry.get().equals(Registry.DOCKER_HUB)) {
-            // if the registry is neither Quay, Docker Hub nor Amazon ECR, return the entry as the url
+            // if the registry is neither Quay, Docker Hub, Amazon ECR nor GitHub Container Registry, return the entry as the url
             url = "https://" + dockerImage;
         } else {  // DOCKER_HUB
             String[] parts = dockerImage.split("/");
@@ -531,6 +543,8 @@ public interface LanguageHandlerInterface {
             return Optional.of(Registry.AMAZON_ECR);
         } else if ((DOCKER_HUB.matcher(image).matches() || OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches())) {
             return Optional.of(Registry.DOCKER_HUB);
+        } else if (GITHUB_CONTAINER_REGISTRY_IMAGE.matcher(image).matches()) {
+            return Optional.of(Registry.GITHUB_CONTAINER_REGISTRY);
         } else {
             return Optional.empty();
         }
