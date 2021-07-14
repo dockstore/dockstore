@@ -134,18 +134,18 @@ public class ServiceIT extends BaseIT {
         session.close();
     }
 
-        @Test
-        public void testTRSOutputOfService() {
-            new CreateContent().invoke();
-            final ApiClient webClient = getWebClient(true, false);
-            Ga4GhApi client = new Ga4GhApi(webClient);
-            final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
-            assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
-            // TODO: change boolean once services are exposed
-            if (servicesExposedInTRS) {
-                assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("service")).count() >= 2);
-            }
+    @Test
+    public void testTRSOutputOfService() {
+        new CreateContent().invoke();
+        final ApiClient webClient = getWebClient(true, false);
+        Ga4GhApi client = new Ga4GhApi(webClient);
+        final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
+        assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
+        // TODO: change boolean once services are exposed
+        if (servicesExposedInTRS) {
+            assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("service")).count() >= 2);
         }
+    }
 
     @Test
     public void testProprietaryAPI() {
