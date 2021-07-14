@@ -1324,7 +1324,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                             // Store tool table json
                             toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), mainDescriptor.getContent(),
                                     extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-                            existingTag.setToolTableJson(toolsJSONTable.get());
+                            toolsJSONTable.ifPresent(existingTag::setToolTableJson);
                         }
                     }
 
@@ -1384,6 +1384,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("could not find workflow version", HttpStatus.SC_NOT_FOUND);
+        }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
         // json in db cleared after a refresh
@@ -1860,6 +1863,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("could not find workflow version", HttpStatus.SC_NOT_FOUND);
+        }
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
         java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
         if (sourceFiles == null || sourceFiles.size() == 0) {
