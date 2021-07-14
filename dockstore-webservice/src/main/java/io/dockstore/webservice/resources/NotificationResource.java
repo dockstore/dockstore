@@ -72,7 +72,7 @@ public class NotificationResource {
     @POST
     @Path("/notifications")
     @UnitOfWork
-    @Consumes("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
     @RolesAllowed({"curator", "admin"})
     @Operation(operationId = "createNotification", description = "Create a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Create a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
@@ -99,6 +99,7 @@ public class NotificationResource {
     @Path("/notifications/{id}")
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateNotification", description = "Update a notification", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update a notification", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)},
             notes = "Curator/admin only", response = Notification.class)
