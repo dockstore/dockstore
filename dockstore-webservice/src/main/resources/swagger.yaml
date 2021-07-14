@@ -2506,6 +2506,8 @@ paths:
       summary: "Update a notification"
       description: "Curator/admin only"
       operationId: "updateNotification"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
