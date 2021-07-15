@@ -1385,7 +1385,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         if (workflowVersion == null) {
-            throw new CustomWebApplicationException("could not find workflow version", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException("Could not find workflow version", HttpStatus.SC_NOT_FOUND);
         }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
@@ -1864,7 +1864,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         if (workflowVersion == null) {
-            throw new CustomWebApplicationException("could not find workflow version", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException("Could not find workflow version", HttpStatus.SC_NOT_FOUND);
         }
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
         java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
