@@ -738,6 +738,37 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     /**
+     * This tests the case where the version is:
+     *  invalid
+     *  has files
+     *  processable (not too invalid which depends on the CWL handler)
+     * can be snapshotted
+     *
+     * Specifically, this is a particular CWL CommandLineTool registered as a Workflow
+     */
+    @Test
+    public void testFreezingInvalidWorkflow() {
+        String versionToSnapshot = "1.0.1";
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/md5sum-checker", "",
+            DescriptorLanguage.CWL.toString(),
+            SourceControl.GITHUB, "/md5sum/md5sum-tool.cwl", false);
+        Workflow workflowBeforeFreezing = workflowsApi.refresh(workflow.getId(), false);
+        WorkflowVersion version =
+            workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
+        version.setFrozen(true);
+        version.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
+        version.setDoiURL("foo");
+        Assert.assertFalse("Double check that this version is in fact invalid", version.isValid());
+        List<WorkflowVersion> workflowVersions = workflowsApi
+            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(version));
+        version = workflowVersions.stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
+        assertEquals("foo", version.getDoiURL());
+        assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, version.getDoiStatus());
+    }
+
+    /**
      * This tests that a workflow's default version can be automatically set during refresh
      */
     @Test
