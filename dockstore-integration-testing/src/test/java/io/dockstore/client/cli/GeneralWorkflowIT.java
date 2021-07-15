@@ -760,7 +760,7 @@ public class GeneralWorkflowIT extends BaseIT {
         version.setFrozen(true);
         version.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
         version.setDoiURL("foo");
-        Assert.assertFalse("Double check that this version is in fact invalid", version.isValid());
+        assertFalse("Double check that this version is in fact invalid", version.isValid());
         List<WorkflowVersion> workflowVersions = workflowsApi
             .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(version));
         version = workflowVersions.stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
