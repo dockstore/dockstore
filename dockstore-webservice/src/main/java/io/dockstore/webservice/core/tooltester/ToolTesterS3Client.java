@@ -18,14 +18,7 @@
 
 package io.dockstore.webservice.core.tooltester;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
  * @author gluu
@@ -44,12 +45,12 @@ public class ToolTesterS3Client {
     private static final int MAX_TOOL_ID_STRING_SEGMENTS = 5;
     private static final int TOOL_ID_REPOSITORY_INDEX = 3;
     private static final int TOOL_ID_TOOLNAME_INDEX = 4;
-    private String bucketName;
-    private AmazonS3 s3;
+    private final S3Client s3;
+    private final String bucketName;
 
     public ToolTesterS3Client(String bucketName) {
         this.bucketName = bucketName;
-        this.s3 = AmazonS3ClientBuilder.standard().build();
+        this.s3 = S3Client.builder().build();
     }
 
     /**
@@ -115,40 +116,21 @@ public class ToolTesterS3Client {
     public String getToolTesterLog(String toolId, String versionName, String testFilePath, String runner, String filename)
             throws IOException {
         String key = generateKey(toolId, versionName, testFilePath, runner, filename);
-        S3Object s3Object = s3.getObject(bucketName, key);
-        InputStream objectContent = s3Object.getObjectContent();
-        return IOUtils.toString(objectContent, StandardCharsets.UTF_8);
+        GetObjectRequest request = GetObjectRequest.builder().bucket(bucketName).key(key).build();
+        ResponseInputStream<GetObjectResponse> object = s3.getObject(request);
+        return IOUtils.toString(object, StandardCharsets.UTF_8);
 
     }
 
     public List<ToolTesterLog> getToolTesterLogs(String toolId, String toolVersionName) throws UnsupportedEncodingException {
         String key = convertToolIdToPartialKey(toolId) + "/" + URLEncoder.encode(toolVersionName, StandardCharsets.UTF_8.name());
-        ObjectListing listing = s3.listObjects(bucketName, key);
-        List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-        while (listing.isTruncated()) {
-            listing = s3.listNextBatchOfObjects(listing);
-            summaries.addAll(listing.getObjectSummaries());
-        }
-        return convertObjectListingToTooltesterLogs(listing);
-    }
-
-    private List<ToolTesterLog> convertObjectListingToTooltesterLogs(ObjectListing firstListing) {
-        ObjectListing listing = firstListing;
-        List<S3ObjectSummary> summaries = listing.getObjectSummaries();
-        while (listing.isTruncated()) {
-            listing = s3.listNextBatchOfObjects(listing);
-            summaries.addAll(listing.getObjectSummaries());
-        }
-        return summaries.stream().map(summary -> {
-            ObjectMetadata objectMetadata = s3.getObjectMetadata(bucketName, summary.getKey());
-            Map<String, String> userMetadata = objectMetadata.getUserMetadata();
-            String filename = getFilenameFromSummary(summary);
-            return convertUserMetadataToToolTesterLog(userMetadata, filename);
+        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).prefix(key).build();
+        ListObjectsV2Response listObjectsV2Response = s3.listObjectsV2(request);
+        List<S3Object> contents = listObjectsV2Response.contents();
+        return contents.stream().map(s3Object -> {
+            HeadObjectRequest build = HeadObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build();
+            Map<String, String> metadata = s3.headObject(build).metadata();
+            return convertUserMetadataToToolTesterLog(metadata, s3Object.key());
         }).collect(Collectors.toList());
-    }
-
-    private String getFilenameFromSummary(S3ObjectSummary summary) {
-        String key = summary.getKey();
-        return summary.getKey().substring(key.lastIndexOf("/") + 1);
     }
 }
