@@ -18,11 +18,13 @@
 
 package io.dockstore.webservice.core.tooltester;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.google.common.collect.Maps;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.MediaType;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -53,14 +55,12 @@ public class ToolTesterS3ClientTest {
      */
     @Test
     public void convertUserMetadataToToolTesterLog() {
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentType(MediaType.TEXT_PLAIN);
-        metadata.addUserMetadata("tool_id", "quay.io/pancancer/pcawg-bwa-mem-workflow");
-        metadata.addUserMetadata("version_name", "2.7.0");
-        metadata.addUserMetadata("test_file_path", "test1.json");
-        metadata.addUserMetadata("runner", "cwltool");
-        metadata.setContentLength(5);
-        Map<String, String> userMetadata = metadata.getUserMetadata();
+        // weird, looks like they got rid of ObjectMetadata https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/s3/model/HeadObjectResponse.html#metadata--
+        Map<String, String> userMetadata = Maps.newHashMap();
+        userMetadata.put("tool_id", "quay.io/pancancer/pcawg-bwa-mem-workflow");
+        userMetadata.put("version_name", "2.7.0");
+        userMetadata.put("test_file_path", "test1.json");
+        userMetadata.put("runner", "cwltool");
         ToolTesterLog toolTesterLog = ToolTesterS3Client.convertUserMetadataToToolTesterLog(userMetadata, "10101011.log");
         Assert.assertEquals("quay.io/pancancer/pcawg-bwa-mem-workflow", toolTesterLog.getToolId());
         Assert.assertEquals("2.7.0", toolTesterLog.getToolVersionName());
@@ -69,4 +69,14 @@ public class ToolTesterS3ClientTest {
         Assert.assertEquals("10101011.log", toolTesterLog.getFilename());
     }
 
+    @Test
+    @Ignore("this works to check if tooltester retrieval works, but you need the right creds")
+    public void testLocal() throws IOException {
+        ToolTesterS3Client client = new ToolTesterS3Client("dockstore.tooltester.backup");
+        List<ToolTesterLog> toolTesterLogs = client.getToolTesterLogs("quay.io/briandoconnor/dockstore-tool-md5sum", "1.0.4");
+        String cwltool = client
+                .getToolTesterLog("quay.io/briandoconnor/dockstore-tool-md5sum", "1.0.4", "test.json", "cwltool", "1554477725708.log");
+        Assert.assertTrue((toolTesterLogs.size() > 10));
+        Assert.assertNotNull(cwltool);
+    }
 }

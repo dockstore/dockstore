@@ -18,7 +18,6 @@
 
 package io.dockstore.webservice.resources;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -40,6 +39,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 /**
  * @author gluu
@@ -76,7 +76,7 @@ public class ToolTesterResource {
         ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(this.bucketName);
         try {
             return toolTesterS3Client.getToolTesterLog(toolId, toolVersionName, testFilename, runner, filename);
-        } catch (AmazonS3Exception e) {
+        } catch (AwsServiceException e) {
             LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
@@ -100,7 +100,7 @@ public class ToolTesterResource {
         try {
             ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(this.bucketName);
             return toolTesterS3Client.getToolTesterLogs(toolId, toolVersionName);
-        } catch (AmazonS3Exception e) {
+        } catch (AwsServiceException e) {
             LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
