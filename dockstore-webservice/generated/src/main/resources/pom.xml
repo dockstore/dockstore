@@ -734,6 +734,10 @@
           <groupId>joda-time</groupId>
         </exclusion>
         <exclusion>
+          <artifactId>log4j-api</artifactId>
+          <groupId>org.apache.logging.log4j</groupId>
+        </exclusion>
+        <exclusion>
           <artifactId>log4j-core</artifactId>
           <groupId>org.apache.logging.log4j</groupId>
         </exclusion>

@@ -1,5 +1,5 @@
 
-Lists of 357 third-party dependencies.
+Lists of 356 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.12:2.5.31 - https://akka.io/)
@@ -33,7 +33,6 @@ Lists of 357 third-party dependencies.
      (Apache License, Version 2.0) Apache HttpComponents Core HTTP/1.1 (org.apache.httpcomponents.core5:httpcore5:5.0 - http://hc.apache.org/httpcomponents-core-ga)
      (Apache License, Version 2.0) Apache HttpCore (org.apache.httpcomponents:httpcore:4.4.14 - http://hc.apache.org/httpcomponents-core-ga)
      (Apache License, Version 2.0) Apache HttpCore NIO (org.apache.httpcomponents:httpcore-nio:4.4.14 - http://hc.apache.org/httpcomponents-core-ga)
-     (Apache License, Version 2.0) Apache Log4j API (org.apache.logging.log4j:log4j-api:2.11.1 - https://logging.apache.org/log4j/2.x/log4j-api/)
      (MIT) argparse4j (net.sourceforge.argparse4j:argparse4j:0.8.1 - http://argparse4j.github.io)
      (Apache License, Version 2.0) AssertJ fluent assertions (org.assertj:assertj-core:3.14.0 - http://assertj.org/assertj-core)
      (Apache 2.0) async-http-client-backend (com.softwaremill.sttp:async-http-client-backend_2.12:1.5.19 - http://softwaremill.com/open-source)
