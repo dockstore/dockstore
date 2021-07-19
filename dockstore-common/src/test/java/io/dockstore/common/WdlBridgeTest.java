@@ -1,17 +1,16 @@
 package io.dockstore.common;
 
+import static org.junit.Assert.assertEquals;
+
+import io.dropwizard.testing.FixtureHelpers;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
-
-import io.dropwizard.testing.FixtureHelpers;
 import org.junit.Assert;
 import org.junit.Test;
 import wdl.draft3.parser.WdlParser;
 import wom.callable.ExecutableCallable;
 import wom.executable.WomBundle;
-
-import static org.junit.Assert.assertEquals;
 
 public class WdlBridgeTest {
 

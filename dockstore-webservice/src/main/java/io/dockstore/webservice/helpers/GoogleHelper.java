@@ -1,10 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Map;
-import java.util.Optional;
-
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
@@ -20,6 +15,10 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.resources.TokenResource;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,10 +48,12 @@ public final class GoogleHelper {
      * @param token The Google access token
      * @param user  The pre-updated user
      */
-    public static boolean updateGoogleUserData(String token, User user) {
-        return userinfoplusFromToken(token)
+    public static boolean updateGoogleUserData(Token token, User user) {
+        return userinfoplusFromToken(token.getToken())
                 .map(userinfoPlus -> {
                     updateUserFromGoogleUserinfoplus(userinfoPlus, user);
+                    token.setUsername(userinfoPlus.getEmail());
+                    token.setOnlineProfileId(userinfoPlus.getId());
                     return true;
                 })
                 .orElse(false);
@@ -69,6 +70,7 @@ public final class GoogleHelper {
         profile.email = userinfo.getEmail();
         profile.name = userinfo.getName();
         profile.username = userinfo.getEmail();
+        profile.onlineProfileId = userinfo.getId();
         user.setAvatarUrl(userinfo.getPicture());
         Map<String, User.Profile> userProfile = user.getUserProfiles();
         userProfile.put(TokenType.GOOGLE_COM.toString(), profile);

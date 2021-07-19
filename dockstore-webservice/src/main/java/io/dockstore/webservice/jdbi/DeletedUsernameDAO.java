@@ -1,10 +1,9 @@
 package io.dockstore.webservice.jdbi;
 
-import java.sql.Timestamp;
-import java.util.List;
-
 import io.dockstore.webservice.core.DeletedUsername;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.sql.Timestamp;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
@@ -28,10 +27,10 @@ public class DeletedUsernameDAO extends AbstractDAO<DeletedUsername> {
     }
 
     public List<DeletedUsername> findByUsername(String username) {
-        return list((this.currentSession().getNamedQuery("io.dockstore.webservice.core.DeletedUsername.findByUsername").setParameter("username", username)));
+        return list((namedTypedQuery("io.dockstore.webservice.core.DeletedUsername.findByUsername").setParameter("username", username)));
     }
 
     public DeletedUsername findNonReusableUsername(String username, Timestamp timestamp) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.DeletedUsername.findNonReusableUsername").setParameter("username", username).setParameter("timestamp", timestamp));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.DeletedUsername.findNonReusableUsername").setParameter("username", username).setParameter("timestamp", timestamp));
     }
 }

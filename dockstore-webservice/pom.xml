@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.11.0-alpha.2-SNAPSHOT</version>
+        <version>1.12.0-alpha.1-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -53,32 +53,32 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -535,7 +535,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.11.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-alpha.1-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -1191,7 +1191,7 @@
                 -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>3.10.2</version>
+                <version>4.4.0</version>
                 <configuration>
                     <driver>org.postgresql.Driver</driver>
                     <referenceDriver>org.postgresql.Driver</referenceDriver>
@@ -1201,10 +1201,6 @@
                     <referencePassword>dockstore</referencePassword>
                     <url>jdbc:postgresql://localhost:5432/webservice_test</url>
                     <referenceUrl>jdbc:postgresql://localhost:5432/webservice_test_proposed</referenceUrl>
-                    <diffExcludeObjects>
-                        <!-- See https://ucsc-cgl.atlassian.net/browse/SEAB-2676  and https://github.com/dockstore/dockstore/pull/4167 for details  -->
-                        notification,cloudinstance_supportedlanguages
-                    </diffExcludeObjects>
                     <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
                     <logging>info</logging>
                     <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
@@ -1430,7 +1426,7 @@
                 <!-- This is to validate the openapi.yaml. The generated code is ignored -->
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>4.2.3</version>
+                <version>5.1.0</version>
                 <executions>
                     <execution>
                         <phase>process-classes</phase>

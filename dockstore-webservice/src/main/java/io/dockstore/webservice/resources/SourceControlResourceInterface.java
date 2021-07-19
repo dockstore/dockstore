@@ -15,6 +15,11 @@
  */
 package io.dockstore.webservice.resources;
 
+import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,12 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.google.gson.Gson;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -45,18 +44,20 @@ public interface SourceControlResourceInterface {
     /**
      * Refreshes user's Bitbucket token.
      *
-     * @param token
+     * @param bitbucketToken
      * @param client
      * @param tokenDAO
      * @param bitbucketClientID
      * @param bitbucketClientSecret
      */
-    default void refreshBitbucketToken(Token token, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
+    default void refreshBitbucketToken(Token bitbucketToken, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
         String bitbucketClientSecret) {
 
+        LOG.info("Refreshing the Bitbucket Token");
         String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
-        String payload = "grant_type=refresh_token&refresh_token=" + token.getRefreshToken();
-        refreshToken(refreshUrl, token, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
+        String payload = "client_id=" + bitbucketClientID + "&client_secret=" + bitbucketClientSecret
+                + "&grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
+        refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, payload);
     }
 
     /**
@@ -66,17 +67,13 @@ public interface SourceControlResourceInterface {
      * @param token
      * @param client
      * @param tokenDAO
-     * @param clientID
-     * @param clientSecret
      * @param payload e.g. "grant_type=refresh_token&refresh_token=" + token.getRefreshToken()
      * @return the updated token
      */
-    default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String clientID,
-            String clientSecret, String payload) {
+    default Token refreshToken(String refreshUrl, Token token, HttpClient client, TokenDAO tokenDAO, String payload) {
 
         try {
-            Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, clientID, clientSecret,
-                    payload);
+            Optional<String> asString = ResourceUtilities.refreshPost(refreshUrl, null, client, payload);
 
             if (asString.isPresent()) {
                 String accessToken;
@@ -128,9 +125,7 @@ public interface SourceControlResourceInterface {
 
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
-            String refreshUrl = BITBUCKET_URL + "site/oauth2/access_token";
-            String payload = "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken();
-            refreshToken(refreshUrl, bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret, payload);
+            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
         return tokenDAO.findByUserId(user.getId());

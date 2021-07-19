@@ -1,11 +1,21 @@
 package io.dockstore.webservice.helpers;
 
+import static java.net.http.HttpRequest.BodyPublishers.ofString;
+
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Version;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Optional;
-
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -13,17 +23,8 @@ import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Version;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.HttpStatus;
 import org.orcid.jaxb.model.common.Relationship;
 import org.orcid.jaxb.model.common.WorkType;
 import org.orcid.jaxb.model.v3.release.common.CreatedDate;
@@ -35,12 +36,8 @@ import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
 import org.orcid.jaxb.model.v3.release.record.Work;
 import org.orcid.jaxb.model.v3.release.record.WorkTitle;
 
+// Swagger-ui available here: https://api.orcid.org/v3.0/#!/Development_Member_API_v3.0/
 public final class ORCIDHelper {
-    // TODO: Change to non-sandbox for Dockstore use while using sandbox for test
-    // Swagger-ui available here: https://api.orcid.org/v3.0/#!/Development_Member_API_v3.0/
-    private static final String ORCID_SANDBOX_BASE_URL = "https://api.sandbox.orcid.org/v3.0/";
-    private static final String ORCID_BASE_URL = "https://api.orcid.org/v3.0/";
-
     private ORCIDHelper() {
     }
 
@@ -105,43 +102,44 @@ public final class ORCIDHelper {
         return transformWork(work);
     }
 
-    public static HttpResponse postSandboxWorkString(String id, String workString, String token) throws IOException {
-        return postWorkString(ORCID_SANDBOX_BASE_URL, id, workString, token);
-    }
-
-    public static HttpResponse postProdWorkString(String id, String workString, String token) throws IOException {
-        return postWorkString(ORCID_BASE_URL, id, workString, token);
-    }
-
-    /**
-     * This creates a new ORCID work
-     */
-    public static CloseableHttpResponse postWorkString(String baseURL, String id, String workString, String token) throws IOException {
-        HttpPost postRequest = new HttpPost(baseURL + id + "/work");
-        postRequest.addHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml");
-        postRequest.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        StringEntity workEntity = new StringEntity(workString);
-        postRequest.setEntity(workEntity);
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        try {
-            return httpClient.execute(postRequest);
-        } finally {
-            httpClient.close();
-        }
+    public static HttpResponse<String> postWorkString(String baseURL, String id, String workString, String token)
+            throws IOException, URISyntaxException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work")).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).POST(ofString(workString)).build();
+        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+                HttpResponse.BodyHandlers.ofString());
     }
 
     /**
      * This updates an existing ORCID work
+     * @return
      */
-    public static CloseableHttpResponse putWorkString(String baseURL, String id, String workString, String token, String putCode) throws IOException {
-        HttpPut postRequest = new HttpPut(baseURL + id + "/work/" + putCode);
-        postRequest.addHeader(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml");
-        postRequest.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        StringEntity workEntity = new StringEntity(workString);
-        postRequest.setEntity(workEntity);
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build();) {
-            return httpClient.execute(postRequest);
+    public static HttpResponse<String> putWorkString(String baseURL, String id, String workString, String token, String putCode)
+            throws IOException, URISyntaxException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).PUT(ofString(workString)).build();
+        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+                HttpResponse.BodyHandlers.ofString());
+    }
+
+
+    /**
+     * Get the ORCID put code from the response
+     *
+     * @param httpResponse
+     * @return
+     */
+    public static String getPutCodeFromLocation(HttpResponse<String> httpResponse) {
+        Optional<String> location = httpResponse.headers().firstValue("Location");
+        if (location.isEmpty()) {
+            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+        URI uri;
+        try {
+            uri = new URI(location.get());
+        } catch (URISyntaxException e) {
+            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        String path = uri.getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     private static String transformWork(Work work) throws JAXBException {

@@ -16,37 +16,15 @@
 
 package io.dockstore.webservice.resources;
 
-import java.sql.Timestamp;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
+import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
@@ -70,6 +48,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.TokenViews;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -78,6 +57,7 @@ import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -111,19 +91,40 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.sql.Timestamp;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT_TEXT;
-import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFFSET_TEXT;
 
 /**
  * @author xliu
@@ -133,6 +134,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
+    protected static final Pattern GITHUB_ID_PATTERN = Pattern.compile(".*/u/(\\d+).*");
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
@@ -301,9 +303,17 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "selfDestruct", description = "Delete user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean selfDestruct(
-            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
-        checkUser(authUser, authUser.getId());
-        User user = userDAO.findById(authUser.getId());
+            @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
+            @ApiParam(value = "Optional user id if deleting another user. Only admins can delete another user.") @Parameter(description = "Optional user id if deleting another user. Only admins can delete another user.", name = "userId", in = ParameterIn.QUERY) @QueryParam("userId") Long userId) {
+        User user;
+        if (userId != null) {
+            checkAdmin(authUser);
+            user = userDAO.findById(userId);
+        } else {
+            checkUser(authUser, authUser.getId());
+            user = userDAO.findById(authUser.getId());
+        }
+
         if (!new ExtendedUserData(user, this.authorizer, userDAO).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
@@ -400,8 +410,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/{userId}/tokens")
-    @Operation(operationId = "getUserTokens", description = "Get tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
+    @JsonView(TokenViews.User.class)
+    @Operation(operationId = "getUserTokens", description = "Get information about tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get information about tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(user, userId);
@@ -573,13 +584,13 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private List<Workflow> getStrippedServices(User user) {
         final List<Workflow> services = getServices(user);
         services.forEach(service -> Hibernate.initialize(service.getWorkflowVersions()));
-        EntryVersionHelper.stripContent(services, this.userDAO);
+        EntryVersionHelper.stripContentFromEntries(services, this.userDAO);
         return services;
     }
 
     private List<Workflow> getStrippedWorkflowsAndServices(User user) {
         final List<Workflow> workflows = workflowDAO.findMyEntries(user.getId());
-        EntryVersionHelper.stripContent(workflows, this.userDAO);
+        EntryVersionHelper.stripContentFromEntries(workflows, this.userDAO);
         return workflows;
 
     }
@@ -599,7 +610,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         checkUser(user, userId);
         final User byId = this.userDAO.findById(userId);
         List<Tool> tools = getTools(byId);
-        EntryVersionHelper.stripContent(tools, this.userDAO);
+        EntryVersionHelper.stripContentFromEntries(tools, this.userDAO);
         return tools;
     }
     @GET
@@ -716,6 +727,88 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         return userDAO.findAll();
+    }
+
+    // TODO: Do equivalent of below, but for Google users.
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserMetadataToGetIds")
+    @Deprecated
+    @Operation(operationId = "updateUserMetadataToGetIds", description = "Attempt to update the metadata of all GitHub and Google users and then returns a list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list Dockstore users we were unable to get GitHub/Google IDs for.", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = User.class))))
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
+        List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
+        List<User> usersCouldNotBeUpdated = new ArrayList<>();
+
+        // Try to update Google metadata using user's token. This is the only option for Google.
+        LOG.info("Beginning update for " + googleTokens.size() + " Google users.");
+        for (Token t : googleTokens) {
+            User currentUser = userDAO.findById(t.getUserId());
+            if (currentUser != null) {
+                updateGoogleAccessToken(currentUser.getId());
+                try {
+                    currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
+                    LOG.info("Updated " + currentUser.getUsername());
+                } catch (Exception ex) {
+                    LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
+                    usersCouldNotBeUpdated.add(currentUser);
+                }
+            }
+        }
+
+        // Try to update GitHub metadata using user's token and getMyself().
+        List<User> gitHubUsers = userDAO.findAllGitHubUsers();
+        LOG.info("Beginning update for " + gitHubUsers.size() + " GitHub users.");
+        for (User u: gitHubUsers) {
+            List<Token> tokens = tokenDAO.findGithubByUserId(u.getId());
+            if (!tokens.isEmpty()) {
+                try {
+                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(u, Optional.of(tokenDAO));
+                    LOG.info("Updated " + u.getUsername());
+                } catch (Exception ex) {
+                    LOG.info("Could not retrieve GitHub ID for user: " + u.getUsername());
+                    gitHubUsersNotUpdatedWithToken.add(u);
+                }
+            } else {
+                LOG.info("No GitHub token for user: " + u.getUsername());
+                gitHubUsersNotUpdatedWithToken.add(u);
+            }
+        }
+
+        // For users we could not get their GitHub id using their token, get the GitHub id from the avatarurl we have stored.
+        LOG.info("Beginning update for " + gitHubUsersNotUpdatedWithToken.size() + " GitHub users who could not be updated with token.");
+        for (User u : gitHubUsersNotUpdatedWithToken) {
+            if (!u.isBanned()) {
+                User.Profile userProfile = u.getUserProfiles().get(TokenType.GITHUB_COM.toString());
+                String avatarUrl = userProfile.avatarURL;
+
+                if (avatarUrl != null) {
+                    Matcher m = GITHUB_ID_PATTERN.matcher(avatarUrl);
+                    if (m.matches()) {
+                        String id = m.group(1);
+                        userProfile.onlineProfileId = id;
+                        List<Token> userTokens = tokenDAO.findGithubByUserId(u.getId());
+                        if (!userTokens.isEmpty()) {
+                            userTokens.get(0).setOnlineProfileId(id);
+                        }
+                        LOG.info("Updated " + u.getUsername() + " with GitHub id " + id);
+                    }
+
+                } else {
+                    usersCouldNotBeUpdated.add(u);
+                    LOG.info(u.getUsername() + "could not be updated.");
+                }
+            }
+        }
+
+        return usersCouldNotBeUpdated;
     }
 
     /**
@@ -953,7 +1046,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
         final User user = userDAO.findById(userId);
         checkUser(authUser, userId);
-        return user.getCloudInstances();
+        Set<CloudInstance> cloudInstances = user.getCloudInstances();
+        cloudInstances.forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
+        return cloudInstances;
     }
 
     @POST
@@ -977,10 +1072,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         cloudInstanceToBeAdded.setSupportsFileImports(cloudInstanceBody.isSupportsFileImports());
         cloudInstanceToBeAdded.setSupportsHttpImports(cloudInstanceBody.isSupportsHttpImports());
         cloudInstanceToBeAdded.setSupportedLanguages(cloudInstanceBody.getSupportedLanguages());
+        cloudInstanceToBeAdded.setDisplayName(cloudInstanceBody.getDisplayName());
         // TODO: Figure how to make this not required (already adding the instance to the user)
         cloudInstanceToBeAdded.setUser(user);
-
         user.getCloudInstances().add(cloudInstanceToBeAdded);
+        user.getCloudInstances().forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
         return user.getCloudInstances();
     }
 

@@ -15,9 +15,11 @@
  */
 package io.dockstore.webservice.core;
 
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -29,8 +31,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-
-import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Data about versions of a workflow/tool in Dockstore rather than about the original workflow.
@@ -66,6 +68,7 @@ public class VersionMetadata {
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
+    @Schema(description = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     protected  String description;
 
     @Column(name = "description_source")
@@ -97,6 +100,19 @@ public class VersionMetadata {
     @Column(name = "id")
     private long id;
 
+    @Column(updatable = false)
+    @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbUpdateDate;
+
+
     public long getId() {
         return id;
     }
@@ -126,4 +142,9 @@ public class VersionMetadata {
     public void setOrcidPutCode(String orcidPutCode) {
         this.orcidPutCode = orcidPutCode;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
 }

@@ -15,15 +15,13 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.core.Response;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import java.util.List;
+import java.util.Optional;
+import javax.ws.rs.core.Response;
 
 /**
  * Future home of code for managing cached TRS entries

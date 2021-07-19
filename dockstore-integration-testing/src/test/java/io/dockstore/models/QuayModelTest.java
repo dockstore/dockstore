@@ -1,6 +1,6 @@
 package io.dockstore.models;
 
-import java.util.List;
+import static io.dropwizard.testing.FixtureHelpers.fixture;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,10 +11,9 @@ import io.swagger.quay.client.api.BuildApi;
 import io.swagger.quay.client.model.InlineResponse2001;
 import io.swagger.quay.client.model.PullRobot;
 import io.swagger.quay.client.model.QuayBuild;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static io.dropwizard.testing.FixtureHelpers.fixture;
 
 public class QuayModelTest {
 

@@ -15,9 +15,9 @@
  */
 package io.dockstore.common.yaml;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import javax.validation.constraints.NotNull;
 
 /**
@@ -29,9 +29,13 @@ public abstract class AbstractYamlService {
      */
     private String name;
     /**
-     * The service's author
+     * (TO BE DEPRECATED) The service's author
      */
     private String author;
+    /**
+     * The service's authors
+     */
+    private List<YamlAuthor> authors = new ArrayList<>();
     /**
      * The service's description
      */
@@ -62,12 +66,22 @@ public abstract class AbstractYamlService {
      */
     private Map<String, DataSet> data;
 
+    private boolean latestTagAsDefault = false;
+
     public String getAuthor() {
         return author;
     }
 
     public void setAuthor(final String author) {
         this.author = author;
+    }
+
+    public List<YamlAuthor> getAuthors() {
+        return authors;
+    }
+
+    public void setAuthors(final List<YamlAuthor> authors) {
+        this.authors = authors;
     }
 
     public String getName() {
@@ -134,6 +148,14 @@ public abstract class AbstractYamlService {
         this.data = data;
     }
 
+    public boolean getLatestTagAsDefault() {
+        return latestTagAsDefault;
+    }
+
+    public void setLatestTagAsDefault(boolean latestTagAsDefault) {
+        this.latestTagAsDefault = latestTagAsDefault;
+    }
+
     /**
      * Scripts is essentially a map, but with a known set of keys. The values are scripts that should be run at different stages
      * in the lifecycle of a service
@@ -160,16 +182,16 @@ public abstract class AbstractYamlService {
          */
         private String prestart;
 
-        @NotNull
         /**
          * The script to run to start up the service
          */
+        @NotNull
         private String start;
 
-        @NotNull
         /**
          * The script to run to start the service
          */
+        @NotNull
         private String stop;
 
         public String getPort() {

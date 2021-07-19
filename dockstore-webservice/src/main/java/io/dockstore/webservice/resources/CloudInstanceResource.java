@@ -1,16 +1,6 @@
 package io.dockstore.webservice.resources;
 
-import java.util.List;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.CloudInstance;
@@ -27,10 +17,19 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 @Path("/cloudInstances")
 @Produces(MediaType.APPLICATION_JSON)
@@ -50,7 +49,9 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
     public List<CloudInstance> getCloudInstances() {
-        return this.cloudInstanceDAO.findAllWithoutUser();
+        List<CloudInstance> allWithoutUser = this.cloudInstanceDAO.findAllWithoutUser();
+        allWithoutUser.forEach(e -> Hibernate.initialize(e.getSupportedLanguages()));
+        return allWithoutUser;
     }
 
     @DELETE
@@ -84,6 +85,7 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
         cloudInstanceToBeAdded.setSupportsFileImports(cloudInstance.isSupportsFileImports());
         cloudInstanceToBeAdded.setSupportsHttpImports(cloudInstance.isSupportsHttpImports());
         cloudInstanceToBeAdded.setSupportedLanguages(cloudInstance.getSupportedLanguages());
+        cloudInstanceToBeAdded.setDisplayName(cloudInstance.getDisplayName());
         cloudInstanceToBeAdded.setUser(null);
         this.cloudInstanceDAO.create(cloudInstanceToBeAdded);
     }

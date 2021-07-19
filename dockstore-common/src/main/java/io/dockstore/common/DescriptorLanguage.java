@@ -16,12 +16,11 @@
 
 package io.dockstore.common;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -118,6 +117,7 @@ public enum DescriptorLanguage {
         this.pluginLanguage = pluginLanguage;
         this.defaultPrimaryDescriptorExtensions = defaultPrimaryDescriptorExtensions;
     }
+
     @Override
     public String toString() {
         return shortName;
@@ -142,7 +142,7 @@ public enum DescriptorLanguage {
         return fileType;
     }
 
-    public static Optional<FileType> getFileType(String descriptorType) {
+    public static Optional<FileType> getOptionalFileType(String descriptorType) {
         // Tricky case for GALAXY because it doesn't match the rules of the other languages
         if (StringUtils.containsIgnoreCase(descriptorType, "galaxy")) {
             return Optional.of(GXFORMAT2.fileType);

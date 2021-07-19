@@ -1,8 +1,12 @@
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -28,6 +32,9 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,14 +45,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @Category(ConfidentialTest.class)
 public class OrganizationIT extends BaseIT {
@@ -772,6 +771,10 @@ public class OrganizationIT extends BaseIT {
         memberships = usersOtherUser.getUserMemberships();
         assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
 
+        // Should not appear in the organization's members list because they haven't approved the request yet
+        List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(orgId);
+        assertEquals("There should be 1 user, there are " + users.size(), 1, users.size());
+
         // Approve request
         organizationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
 
@@ -789,7 +792,7 @@ public class OrganizationIT extends BaseIT {
             long.class);
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
-        List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(organization.getId());
+        users = organizationsApiUser2.getOrganizationMembers(organization.getId());
         assertEquals("There should be 2 users, there are " + users.size(), 2, users.size());
 
         // Should be able to update email of Organization
@@ -1728,7 +1731,7 @@ public class OrganizationIT extends BaseIT {
         //manually register and then publish the workflow
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, BIOWORKFLOW);
         Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
 
@@ -1770,7 +1773,7 @@ public class OrganizationIT extends BaseIT {
         //manually register and then publish the first workflow
         workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
                 "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", null, BIOWORKFLOW);
         Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
         workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         Assert.assertEquals(2, workflow.getWorkflowVersions().size());
@@ -1779,7 +1782,7 @@ public class OrganizationIT extends BaseIT {
         Workflow workflow2 = workflowApi
                 .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
                         "");
-        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, BIOWORKFLOW);
         workflowApi.refresh(workflowByPathGithub2.getId(), false);
         workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
 

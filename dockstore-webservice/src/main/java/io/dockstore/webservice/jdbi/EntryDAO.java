@@ -16,22 +16,6 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.lang.reflect.ParameterizedType;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.webservice.core.CollectionEntry;
@@ -42,6 +26,20 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.database.EntryLite;
+import java.lang.reflect.ParameterizedType;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -140,7 +138,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryById").setParameter("id", id));
     }
 
-    public Entry<? extends Entry, ? extends Version> getGenericEntryByAlias(String alias) {
+    public Entry<? extends Entry, ? extends Version>  getGenericEntryByAlias(String alias) {
         return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
     }
 

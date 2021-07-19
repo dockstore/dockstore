@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.11.0-alpha.2-SNAPSHOT</version>
+    <version>1.12.0-alpha.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -40,9 +40,9 @@
         <swagger-annotations-version>1.6.0</swagger-annotations-version>
         <openapi-annotations-version>2.1.7</openapi-annotations-version>
         <!-- Used for liquibase maven plugin. Somehow use version from bom-internal instead -->
-        <postgresql.version>42.2.19</postgresql.version>
+        <postgresql.version>42.2.21</postgresql.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
-        <maven-surefire.version>2.21.0</maven-surefire.version>
+        <maven-surefire.version>3.0.0-M5</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
 
         <skipTests>false</skipTests>
@@ -52,7 +52,11 @@
         <sonar.projectKey>dockstore_dockstore</sonar.projectKey>
         <sonar.organization>dockstore</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.moduleKey>${artifactId}</sonar.moduleKey>
+        <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
+        <!-- this is not an aggregated path -->
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.basedir}/target/jacoco.xml,${project.basedir}/target/jacoco-it.xml,${project.basedir}/../reports/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
         <!-- end sonarcloud properties -->
     </properties>
 
@@ -65,43 +69,14 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.8.2</tag>
+        <tag>1.11.0</tag>
     </scm>
 
     <repositories>
         <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jcenter</id>
-            <name>bintray</name>
-            <url>https://jcenter.bintray.com</url>
-        </repository>
-        <repository>
             <id>artifacts.oicr.on.ca</id>
             <name>artifacts.oicr.on.ca</name>
             <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
-        </repository>
-        <repository>
-            <id>seqware.sourceforge.net</id>
-            <name>SeqWare Maven Repository</name>
-            <url>https://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>seqwaremaven.oicr.on.ca</id>
-            <name>seqwaremaven.oicr.on.ca-releases</name>
-            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
-        </repository>
-        <repository>
-            <id>apache-releases</id>
-            <name>Apache Releases repository</name>
-            <url>https://repository.apache.org/content/repositories/releases/</url>
         </repository>
         <!-- broad -->
         <repository>
@@ -115,22 +90,12 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <repository>
-            <id>sagebionetworks</id>
-            <name>sagebionetworks-releases</name>
-            <url>https://sagebionetworks.artifactoryonline.com/sagebionetworks/libs-releases-local</url>
-        </repository>
-        <repository>
-            <id>mockito</id>
-            <name>mockito</name>
-            <url>https://dl.bintray.com/mockito/maven/</url>
-        </repository>
     </repositories>
 
     <licenses>
         <license>
             <name>Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
 
@@ -166,7 +131,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.11.0-alpha.2-SNAPSHOT</version>
+                 <version>1.12.0-alpha.1-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
@@ -506,12 +471,7 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps>
-                                    <excludes>
-                                        <!-- 3.10.3 forces us into identity columns, see https://github.com/liquibase/liquibase/pull/874#issuecomment-605033798 and https://github.com/liquibase/liquibase/pull/1010#issuecomment-734815278  -->
-                                        <exclude>org.liquibase:liquibase-core</exclude>
-                                    </excludes>
-                                </requireUpperBoundDeps>
+                                <requireUpperBoundDeps />
                                 <requireMavenVersion>
                                     <version>3.5.4</version>
                                 </requireMavenVersion>
@@ -646,11 +606,7 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.3.2</version>
-                <configuration>
-                    <groups>java.,javax.,*</groups>
-                    <staticAfter>true</staticAfter>
-                </configuration>
+                <version>1.6.2</version>
                 <executions>
                     <execution>
                         <id>sort-imports</id>
@@ -796,11 +752,20 @@
             </properties>
         </profile>
         <profile>
+            <id>language-parsing-tests</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.LanguageParsingTest</groups>
+            </properties>
+        </profile>
+        <profile>
             <id>unit-tests</id>
             <!-- run all non-integration tests -->
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
+                <excludeGroups>io.dockstore.common.LanguageParsingTest</excludeGroups>
             </properties>
             <build>
                 <plugins>

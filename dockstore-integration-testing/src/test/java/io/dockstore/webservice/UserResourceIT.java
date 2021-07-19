@@ -15,8 +15,13 @@
  */
 package io.dockstore.webservice;
 
-import java.util.List;
-import java.util.Objects;
+import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.WorkflowIT;
@@ -42,6 +47,8 @@ import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import java.util.List;
+import java.util.Objects;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -53,14 +60,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests operations from the UserResource
@@ -251,14 +250,14 @@ public class UserResourceIT extends BaseIT {
         workflowsApi.handleGitHubRelease(serviceRepo, USER_2_USERNAME, "refs/tags/1.0", installationId);
 
         final Workflow workflowByPath = workflowsApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId(), false);
 
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
-        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
-        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
+        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
+        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, SERVICE);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -267,7 +266,7 @@ public class UserResourceIT extends BaseIT {
 
         boolean expectedFailToDelete = false;
         try {
-            userApi.selfDestruct();
+            userApi.selfDestruct(null);
         } catch (ApiException e) {
             expectedFailToDelete = true;
         }
@@ -275,13 +274,13 @@ public class UserResourceIT extends BaseIT {
         // then unpublish them
         workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(false));
         assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
-        assertTrue(userApi.selfDestruct());
+        assertTrue(userApi.selfDestruct(null));
         //TODO need to test that profiles are cascaded to and cleared
 
         // Verify that self-destruct also deleted the workflow
         boolean expectedAdminAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
 
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
@@ -292,7 +291,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the service
         boolean expectedAdminServiceAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
+            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, SERVICE);
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             expectedAdminServiceAccessToFail = true;
@@ -318,6 +317,30 @@ public class UserResourceIT extends BaseIT {
     }
 
     @Test
+    public void testAdminLevelSelfDestruct() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        UsersApi adminUserApi = new UsersApi(adminWebClient);
+
+        long userCount = testingPostgres.runSelectStatement("select count(*) from enduser", long.class);
+        assertEquals(4, userCount);
+
+        testingPostgres.runUpdateStatement("UPDATE enduser set isadmin = false WHERE username='DockstoreTestUser2'");
+        try {
+            userApi.selfDestruct(3L);
+            fail("Should not be able to delete another user if you're not an admin");
+        } catch (ApiException ex) {
+            assertEquals("Forbidden: you need to be an admin to perform this operation.", ex.getMessage());
+        }
+
+        boolean deletedOtherUser = adminUserApi.selfDestruct(2L);
+        assertTrue(deletedOtherUser);
+        userCount = testingPostgres.runSelectStatement("select count(*) from enduser", long.class);
+        assertEquals(3, userCount);
+    }
+
+    @Test
     public void testDeletedUsernameReuse() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);
@@ -332,7 +355,7 @@ public class UserResourceIT extends BaseIT {
         String altUsername = "notTheNameOfTheSite";
         assertFalse(userApi.checkUserExists(altUsername));
         userApi.changeUsername(altUsername);
-        userApi.selfDestruct();
+        userApi.selfDestruct(null);
         count = testingPostgres.runSelectStatement("select count(*) from deletedusername", long.class);
         assertEquals(1, count);
 
@@ -472,7 +495,7 @@ public class UserResourceIT extends BaseIT {
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
 
         // Update an entry
-        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
+        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, BIOWORKFLOW);
         Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
@@ -650,6 +673,30 @@ public class UserResourceIT extends BaseIT {
         adminApi.updateUserMetadata();
 
         userProfile = userApi.getUser().getUserProfiles().get("github.com");
+        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
+        assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
+        assertEquals("Toronto", userProfile.getLocation());
+    }
+
+    @Test
+    public void testUpdateUserMetadataToGetIds() {
+        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
+        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
+
+        // DockstoreUser2's profile elements should be initially set to null since the GitHub metadata isn't synced yet
+        assertNull(userProfile.getEmail());
+        assertNull(userProfile.getAvatarURL());
+        assertNull(userProfile.getLocation());
+
+        // The API call updateUserMetadataToGetIds() should not throw an error and exit if any users' tokens are out of date or absent
+        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
+        userApi.updateUserMetadataToGetIds();
+        String userId = "17859829";
+        io.dockstore.openapi.client.model.User user = userApi.getUser();
+        userProfile = user.getUserProfiles().get("github.com");
+        String onlineProfileId = testingPostgres.runSelectStatement("SELECT onlineprofileid FROM user_profile WHERE id = '" + user.getId() + "'", String.class);
+        assertEquals(userId, onlineProfileId);
         assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("Toronto", userProfile.getLocation());

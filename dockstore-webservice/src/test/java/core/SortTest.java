@@ -15,10 +15,9 @@
  */
 package core;
 
+import io.dockstore.webservice.core.SourceFile;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import io.dockstore.webservice.core.SourceFile;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,10 +1,6 @@
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import static org.junit.Assert.assertEquals;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -18,6 +14,11 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,8 +27,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * A collection of tests for the version validation system
@@ -406,7 +405,7 @@ public class ValidationIT extends BaseIT {
         client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/heads/missingFile", installationId);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "versions", true);
+        Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "versions", SERVICE);
         Assert.assertFalse("Should be invalid due to missing file in dockstore.yml", isWorkflowVersionValid(service, "missingFile"));
     }
 

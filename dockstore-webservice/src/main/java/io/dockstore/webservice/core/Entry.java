@@ -16,6 +16,17 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.helpers.EntryStarredSerializer;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
@@ -25,7 +36,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -52,18 +62,6 @@ import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.EntryType;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.helpers.EntryStarredSerializer;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
@@ -117,7 +115,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
      */
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "container_id_seq")
-    @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq")
+    @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
@@ -129,7 +127,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String description;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
     @OrderBy("id")
     @BatchSize(size = 25)
@@ -228,7 +226,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty("input_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_input_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the input file formats of every version of an entry", position = 15)
     @OrderBy("id")
     @BatchSize(size = 25)
@@ -236,7 +234,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonProperty("output_file_formats")
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "entry_output_fileformat", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "File formats for describing the output file formats of every version of an entry", position = 16)
     @OrderBy("id")
     @BatchSize(size = 25)

@@ -5,7 +5,7 @@
 version: '2.2'
 services:
   es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
     container_name: es01
     environment:
       - node.name=es01
@@ -42,7 +42,7 @@ services:
     # networks:
       # - elastic
   postgres_db:
-    image: postgres:11.8
+    image: postgres:13.3
     container_name: postgres1
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust

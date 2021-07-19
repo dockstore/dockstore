@@ -1,24 +1,23 @@
 package io.dockstore.webservice.permissions;
 
+import static org.mockito.Mockito.when;
+
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Workflow;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Workflow;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
-
-import static org.mockito.Mockito.when;
 
 public class PermissionsInterfaceTest {
 

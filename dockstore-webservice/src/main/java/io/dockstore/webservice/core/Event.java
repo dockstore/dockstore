@@ -1,7 +1,10 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -14,12 +17,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -45,17 +44,19 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 public class Event {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "event_id_seq")
+    @SequenceGenerator(name = "event_id_seq", sequenceName = "event_id_seq", allocationSize = 1)
+    @Column(columnDefinition = "bigint default nextval('event_id_seq')")
     @ApiModelProperty(value = "Implementation specific ID for the event in this web service", position = 0)
     private long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "id")
+    @JoinColumn(name = "userId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "User that the event is acting on.", position = 1)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organizationId", referencedColumnName = "id")
+    @JoinColumn(name = "organizationId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Organization that the event is acting on.", position = 2)
     private Organization organization;
 
@@ -72,13 +73,13 @@ public class Event {
     private BioWorkflow workflow;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collectionId", referencedColumnName = "id")
+    @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
     @JsonIgnoreProperties({ "entries" })
     private Collection collection;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiatorUserId", referencedColumnName = "id")
+    @JoinColumn(name = "initiatorUserId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "User initiating the event.", position = 6)
     private User initiatorUser;
 
@@ -107,6 +108,7 @@ public class Event {
     private Timestamp dbUpdateDate;
 
     public Event() { }
+
     public Event(User user, Organization organization, Collection collection, BioWorkflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
         this.organization = organization;
@@ -225,6 +227,7 @@ public class Event {
         private Organization organization;
         private Tool tool;
         private BioWorkflow bioWorkflow;
+        private AppTool appTool;
         private Service service;
         private Collection collection;
         private User initiatorUser;
@@ -260,6 +263,11 @@ public class Event {
 
         public Builder withBioWorkflow(BioWorkflow workflow) {
             this.bioWorkflow = workflow;
+            return this;
+        }
+
+        public Builder withAppTool(AppTool appTool) {
+            this.appTool = appTool;
             return this;
         }
 

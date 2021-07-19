@@ -15,17 +15,15 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.container.ContainerRequestContext;
-
 import com.github.zafarkhaja.semver.Version;
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.User;
+import java.util.List;
+import java.util.Optional;
+import javax.ws.rs.container.ContainerRequestContext;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +34,21 @@ import org.slf4j.LoggerFactory;
 public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
+
+    /**
+     * Check if admin or if container belongs to user
+     *
+     * @param user the user that is requesting something
+     * @param list
+     */
+    static void checkUserAccessEntries(User user, List<? extends Entry> list) {
+        for (Entry entry : list) {
+            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                    HttpStatus.SC_FORBIDDEN);
+            }
+        }
+    }
 
     /**
      * Check if tool is null
@@ -82,21 +95,6 @@ public interface AuthenticatedResourceInterface {
         if (userCannotRead(user, entry)) {
             throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
                     HttpStatus.SC_FORBIDDEN);
-        }
-    }
-
-    /**
-     * Check if admin or if container belongs to user
-     *
-     * @param user the user that is requesting something
-     * @param list
-     */
-    static void checkUser(User user, List<? extends Entry> list) {
-        for (Entry entry : list) {
-            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-            }
         }
     }
 

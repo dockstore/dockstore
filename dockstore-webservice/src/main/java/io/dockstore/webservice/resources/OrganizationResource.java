@@ -1,24 +1,6 @@
 package io.dockstore.webservice.resources;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -51,6 +33,25 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -62,8 +63,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Collection of organization endpoints
@@ -280,7 +279,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public Organization updateOrganizationDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Organization's description in markdown.", required = true) @Parameter(description = "Organization's description in markdown.", name = "description", required = true) String description) {
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -316,7 +315,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Operation(operationId = "getOrganizationMembers", summary = "Retrieve all members for an organization.", description = "Retrieve all members for an organization. Supports optional authentication.", security = @SecurityRequirement(name = "bearer"))
     public Set<OrganizationUser> getOrganizationMembers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
-        return getOrganizationByIdOptionalAuth(user, id).getUsers();
+        Set<OrganizationUser> acceptedUsers = getOrganizationByIdOptionalAuth(user, id).getUsers()
+                .stream()
+                .filter(orgUser -> orgUser.isAccepted())
+                .collect(Collectors.toSet());
+
+        return acceptedUsers;
     }
 
     @GET
@@ -411,7 +415,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             // User is given, check if organization is either approved or the user has access
             // Admins and curators should be able to see unapproved organizations
             boolean doesOrgExist =
-                doesOrganizationExistToUser(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+                doesOrganizationExistToUserResourceDAO(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
             if (!doesOrgExist) {
                 String msg = "Organization not found";
                 LOG.info(msg);
@@ -543,7 +547,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization to update with.", required = true) @Parameter(description = "Organization to register.", name = "organization", required = true) Organization organization,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
 
-        boolean doesOrgExist = doesOrganizationExistToUser(id, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(id, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -773,7 +777,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Accept or reject.", required = true) @Parameter(description = "Accept or reject.", name = "accept", in = ParameterIn.QUERY, required = true) @QueryParam("accept") boolean accept) {
 
         // Check that the organization exists
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -855,7 +859,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
-    private boolean doesOrganizationExistToUser(Long organizationId, Long userId) {
+    private boolean doesOrganizationExistToUserResourceDAO(Long organizationId, Long userId) {
         return doesOrganizationExistToUser(organizationId, userId, organizationDAO);
     }
 
@@ -911,7 +915,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      */
     private Pair<Organization, User> commonUserOrg(Long organizationId, Long userId, User user) {
         // Check that the organization exists
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);

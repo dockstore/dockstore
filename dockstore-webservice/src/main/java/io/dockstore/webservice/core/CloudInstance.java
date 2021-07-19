@@ -1,8 +1,12 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.Set;
-
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -17,14 +21,14 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import javax.persistence.UniqueConstraint;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @ApiModel(value = "CloudInstance", description = "Instances that launch-with cloud partners have")
 @Entity
-@Table(name = "cloud_instance")
+@Table(name = "cloud_instance", uniqueConstraints = @UniqueConstraint(name = "unique_user_instances", columnNames = { "url", "user_id",
+        "partner" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT ci from CloudInstance ci where user_id is null")
 })
@@ -46,6 +50,10 @@ public class CloudInstance implements Serializable {
     @ApiModelProperty(value = "The URL of the launch-with partner's private cloud instance")
     private String url;
 
+    @Column(name = "display_name", nullable = false)
+    @ApiModelProperty(value = "User friendly display name")
+    private String displayName;
+
     @Column(name = "supports_http_imports")
     @ApiModelProperty(value = "Whether the CloudInstance supports http imports or not")
     private boolean supportsHttpImports;
@@ -55,13 +63,26 @@ public class CloudInstance implements Serializable {
     private boolean supportsFileImports;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id", columnDefinition = "bigint")
     @JsonIgnore
     private User user;
 
     @ElementCollection(targetClass = Language.class)
     @ApiModelProperty(value = "The languages the cloud instance is known to support")
     private Set<Language> supportedLanguages;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    @ApiModelProperty(dataType = "long")
+    @Schema(type = "integer", format = "int64")
+    private Timestamp dbUpdateDate;
+
 
     public long getId() {
         return id;
@@ -117,5 +138,13 @@ public class CloudInstance implements Serializable {
 
     public void setSupportedLanguages(Set<Language> supportedLanguages) {
         this.supportedLanguages = supportedLanguages;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }

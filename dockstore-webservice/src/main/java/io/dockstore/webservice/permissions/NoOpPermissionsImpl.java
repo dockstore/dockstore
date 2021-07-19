@@ -1,13 +1,12 @@
 package io.dockstore.webservice.permissions;
 
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Workflow;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 
 /**

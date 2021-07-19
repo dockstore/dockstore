@@ -17,7 +17,6 @@ package io.dockstore.webservice.resources.rss;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Iterator;
-
 import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;

@@ -16,9 +16,11 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
+import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
+import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
+import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClientWithSpaces;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.RegressionTest;
@@ -31,6 +33,9 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
@@ -45,12 +50,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
-import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
-import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClientWithSpaces;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * This test suite will have tests for the workflow mode of the old Dockstore Client.
@@ -81,7 +80,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
         TestUtility.createFakeDockstoreConfigFile();
-        url = new URL("https://github.com/dockstore/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
+        url = new URL("https://github.com/dockstore/dockstore-cli/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         assertTrue(dockstore.setExecutable(true));

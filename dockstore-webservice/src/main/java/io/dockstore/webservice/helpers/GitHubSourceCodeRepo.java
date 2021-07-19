@@ -16,6 +16,42 @@
 
 package io.dockstore.webservice.helpers;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.SourceControl;
+import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.common.yaml.DockstoreYaml12;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
+import io.dockstore.common.yaml.Service12;
+import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.webservice.CacheHitListener;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.time.Instant;
@@ -33,34 +69,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguageSubclass;
-import io.dockstore.common.SourceControl;
-import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.common.yaml.DockstoreYaml12;
-import io.dockstore.common.yaml.DockstoreYamlHelper;
-import io.dockstore.common.yaml.Service12;
-import io.dockstore.common.yaml.YamlWorkflow;
-import io.dockstore.webservice.CacheHitListener;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.LicenseInformation;
-import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.SourceControlOrganization;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Validation;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.core.WorkflowVersion;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -79,6 +87,7 @@ import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHTagObject;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.HttpConnector;
@@ -87,12 +96,6 @@ import org.kohsuke.github.extras.ImpatientHttpConnector;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -388,8 +391,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflowName Name of the workflow
      * @return Workflow
      */
-    public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+    public Workflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
         BioWorkflow workflow = new BioWorkflow();
+        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    }
+
+    public Workflow initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+        AppTool workflow = new AppTool();
+        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    }
+
+    /**
+     * Initialize bioworkflow/apptool object for GitHub repository
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @param subclass Subclass of the workflow
+     * @param workflowName Name of the workflow
+     * @param workflow Workflow to update
+     * @return Workflow
+     */
+    public Workflow setWorkflowInfo(final String repositoryId, final String subclass, final String workflowName,
+            final Workflow workflow) {
         workflow.setOrganization(repositoryId.split("/")[0]);
         workflow.setRepository(repositoryId.split("/")[1]);
         workflow.setSourceControl(SourceControl.GITHUB);
@@ -411,7 +432,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -470,6 +491,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         return workflow;
     }
+
 
     /**
      * Retrieves a repository from github
@@ -723,7 +745,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
-            final Optional<YamlWorkflow> maybeWorkflow = dockstoreYaml12.getWorkflows().stream().filter(wf -> {
+            List<YamlWorkflow> workflows;
+            if (workflow instanceof AppTool) {
+                workflows = dockstoreYaml12.getTools();
+            } else {
+                workflows = dockstoreYaml12.getWorkflows();
+            }
+
+            final Optional<YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
                 final String wfName = wf.getName();
                 final String dockstoreWorkflowPath =
                         "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");
@@ -1015,25 +1044,64 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
+     * @param tokenDAO Optional tokenDAO used if the user's GitHub token information needs to be updated as well.
      */
-    public void syncUserMetadataFromGitHub(User user) {
+    public void syncUserMetadataFromGitHub(User user, Optional<TokenDAO> tokenDAO) {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
-            User.Profile profile = new User.Profile();
-            profile.name = myself.getName();
+            User.Profile profile = getProfile(user, myself);
             profile.email = getEmail(myself);
-            profile.avatarURL = myself.getAvatarUrl();
-            profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
-            profile.location = myself.getLocation();
-            profile.company = myself.getCompany();
-            profile.username = myself.getLogin();
-            Map<String, User.Profile> userProfile = user.getUserProfiles();
-            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
-            user.setAvatarUrl(myself.getAvatarUrl());
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            if (tokenDAO.isPresent()) {
+                Token usersGitHubToken = tokenDAO.get().findGithubByUserId(user.getId()).get(0);
+                usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+                usersGitHubToken.setUsername(profile.username);
+            }
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername(), ex);
         }
+    }
+
+    // DO NOT USE THIS FUNCTION ELSEWHERE
+    // This function has no use outside of gathering user's GitHub IDs the first time. This uses the GitHub token of the admin user calling the new, one-time-use endpoint.
+    // This will attempt to get the GitHub profile info (including id) of users we were unable to get by calling the github.getMyself() function above.
+    public void syncUserMetadataFromGitHubByUsername(User user, TokenDAO tokenDAO) {
+        // eGit user object
+        try {
+            if (user.getUserProfiles().get(TokenType.GITHUB_COM.toString()) == null) {
+                throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
+            }
+            GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
+            User.Profile profile = getProfile(user, ghUser);
+            profile.email = ghUser.getEmail();
+
+            // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
+            Token usersGitHubToken = tokenDAO.findGithubByUserId(user.getId()).get(0);
+            usersGitHubToken.setOnlineProfileId(profile.onlineProfileId);
+            usersGitHubToken.setUsername(profile.username);
+        } catch (IOException ex) {
+            String msg = "Unable to get GitHub user id for Dockstore user " + user.getUsername() + " " + user.getId();
+            LOG.info(msg, ex);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
+        LOG.info("GitHub user profile id is {} and GitHub username is {} for Dockstore user {}", ghUser.getId(), ghUser.getLogin(), user.getUsername());
+        User.Profile profile = new User.Profile();
+        profile.onlineProfileId = String.valueOf(ghUser.getId());
+        profile.username = ghUser.getLogin();
+        profile.name = ghUser.getName();
+        profile.avatarURL = ghUser.getAvatarUrl();
+        profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
+        profile.location = ghUser.getLocation();
+        profile.company = ghUser.getCompany();
+        Map<String, User.Profile> userProfile = user.getUserProfiles();
+        userProfile.put(TokenType.GITHUB_COM.toString(), profile);
+        user.setAvatarUrl(ghUser.getAvatarUrl());
+        return profile;
     }
 
     /**

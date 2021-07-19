@@ -15,11 +15,10 @@
  */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import io.swagger.api.NotFoundException;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-
-import io.swagger.api.NotFoundException;
 
 /**
  * Created by kcao on 01/03/17.

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<work:work put-code="7777777" visibility="public" xmlns:common="http://www.orcid.org/ns/common" xmlns:work="http://www.orcid.org/ns/work"
+>
+    <common:created-date>2021-04-15T18:59:23.975Z</common:created-date>
+    <common:last-modified-date>2021-04-15T18:59:23.975Z</common:last-modified-date>
+    <common:source>
+        <common:source-client-id>
+            <common:uri>https://sandbox.orcid.org/client/APP-VNDDBW64JV1ZYHQR</common:uri>
+            <common:path>APP-VNDDBW64JV1ZYHQR</common:path>
+            <common:host>sandbox.orcid.org</common:host>
+        </common:source-client-id>
+        <common:source-name>Dockstore Local Testing</common:source-name>
+    </common:source>
+    <work:title>
+        <common:title>github.com/dockstore/dockstore-ui2/test:fakeVersionName</common:title>
+    </work:title>
+    <work:journal-title>Dockstore</work:journal-title>
+    <work:type>software</work:type>
+    <common:external-ids>
+        <common:external-id>
+            <common:external-id-type>doi</common:external-id-type>
+            <common:external-id-value>https://doi.org/10.1038/s41586-020-1969-6</common:external-id-value>
+            <common:external-id-normalized transient="true">10.1038/s41586-020-1969-6</common:external-id-normalized>
+            <common:external-id-url>https://doi.org/10.1038/s41586-020-1969-6</common:external-id-url>
+            <common:external-id-relationship>self</common:external-id-relationship>
+        </common:external-id>
+    </common:external-ids>
+</work:work>

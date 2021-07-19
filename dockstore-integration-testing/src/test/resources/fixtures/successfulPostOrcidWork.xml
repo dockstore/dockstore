@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<error xmlns="http://www.orcid.org/ns/error">
+<response-code>409</response-code>
+<developer-message>409 Conflict: You have already added this activity (matched by external identifiers), please see element with put-code 7777777. If you are trying to edit the item, please use PUT instead of POST.</developer-message>
+<user-message>There was an error when updating the record. Please try again. If the error persists, please contact Dockstore Local Testing for assistance.</user-message>
+<error-code>9021</error-code>
+<more-info>https://members.orcid.org/api/resources/troubleshooting</more-info>
+</error>

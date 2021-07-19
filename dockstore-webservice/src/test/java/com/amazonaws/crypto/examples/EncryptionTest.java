@@ -17,18 +17,16 @@
 // You provide the KMS key ARN and plaintext string as arguments.
 package com.amazonaws.crypto.examples;
 
-import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.Map;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CryptoResult;
 import com.amazonaws.encryptionsdk.MasterKeyProvider;
 import com.amazonaws.encryptionsdk.jce.JceMasterKey;
 import com.amazonaws.encryptionsdk.multi.MultipleProviderFactory;
+import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.Map;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import org.junit.Test;
 
 public class EncryptionTest {
@@ -41,7 +39,7 @@ public class EncryptionTest {
         String data = "foo";
 
         // Instantiate the SDK
-        final AwsCrypto crypto = new AwsCrypto();
+        final AwsCrypto crypto = AwsCrypto.builder().build();
 
         // Set up the master key provider
         SecretKey cryptoKey = retrieveEncryptionKey();

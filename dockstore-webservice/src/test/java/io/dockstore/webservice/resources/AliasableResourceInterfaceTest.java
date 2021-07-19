@@ -1,16 +1,15 @@
 package io.dockstore.webservice.resources;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.User;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.User;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class AliasableResourceInterfaceTest {
     private static final String[] ZENODO_DOI_ALIASES = {"10.5281/zenodo.6094", "10.5281/zenodo.60943", "10.5281/zenodo.6094355",

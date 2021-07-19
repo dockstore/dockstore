@@ -15,22 +15,13 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
@@ -43,6 +34,15 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
@@ -172,7 +172,7 @@ public class ElasticListener implements StateListenerInterface {
         }
         // sort entries into workflows and tools
         List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
-        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool)).collect(Collectors.toList());
+        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool) || (entry instanceof AppTool)).collect(Collectors.toList());
         if (!workflowsEntryList.isEmpty()) {
             postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
         }

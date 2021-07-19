@@ -15,28 +15,9 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.List;
-import java.util.Optional;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.xml.bind.JAXBException;
-import javax.xml.datatype.DatatypeConfigurationException;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -44,6 +25,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.CollectionOrganization;
+import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
@@ -79,15 +61,30 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.xml.bind.JAXBException;
+import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Prototype for methods that apply identically across tools and workflows.
@@ -219,6 +216,30 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
     }
 
+    @GET
+    @UnitOfWork
+    @Path("/{entryId}/versions/{versionId}/descriptionMetrics")
+    @ApiOperation(value = "Retrieve metrics on the description of an entry")
+    @Operation(operationId = "getDescriptionMetrics", description = "Retrieve metrics on the description of an entry", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully calculated description metrics", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = DescriptionMetrics.class)))
+    public DescriptionMetrics calculateDescriptionMetrics(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        @Parameter(name = "entryId", description = "Entry to retrieve the version from", required = true, in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
+        @Parameter(name = "versionId", description = "Version to retrieve the sourcefile types from", required = true, in = ParameterIn.PATH) @PathParam("versionId") Long versionId) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
+        checkEntry(entry);
+
+        checkEntryPermissions(user, entry);
+
+        Version version = versionDAO.findVersionInEntry(entryId, versionId);
+        if (version == null) {
+            throw new CustomWebApplicationException("Version " + versionId + " does not exist for this entry", HttpStatus.SC_NOT_FOUND);
+        }
+
+        final String description = version.getVersionMetadata().getDescription();
+
+        return new DescriptionMetrics(description);
+    }
+
     @POST
     @Path("/{entryId}/exportToOrcid")
     @Timed
@@ -267,60 +288,68 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         String orcidWorkString;
         try {
             orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
-        } catch (JAXBException | DatatypeConfigurationException e) {
-            throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        try {
             if (putCode == null) {
                 createOrcidWork(optionalVersion, entry, user, orcidWorkString, orcidByUserId);
             } else {
-                updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
+                boolean success = updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
+                if (!success) {
+                    LOG.error("Could not find ORCID work based on put code: " + putCode);
+                    // This is almost going to be redundant because it's going to attempt to create a new work
+                    setPutCode(optionalVersion, entry, null);
+                    orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
+                    createOrcidWork(optionalVersion, entry, user, orcidWorkString, orcidByUserId);
+                }
             }
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException | JAXBException | DatatypeConfigurationException e) {
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void setPutCode(Optional<Version> optionalVersion, Entry entry, String putCode) {
+        if (optionalVersion.isPresent()) {
+            optionalVersion.get().getVersionMetadata().setOrcidPutCode(putCode);
+        } else {
+            entry.setOrcidPutCode(putCode);
         }
     }
 
     private void createOrcidWork(Optional<Version> optionalVersion, Entry entry, User user, String orcidWorkString, List<Token> orcidTokens)
-            throws IOException {
-        try (CloseableHttpResponse response = ORCIDHelper.postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken())) {
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(),
-                        response.getStatusLine().getStatusCode());
-            } else {
-                if (optionalVersion.isPresent()) {
-                    optionalVersion.get().getVersionMetadata().setOrcidPutCode(getPutCodeFromLocation(response));
-                } else {
-                    entry.setOrcidPutCode(getPutCodeFromLocation(response));
-                }
-            }
-        }
-    }
-
-    private void updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode) throws IOException {
-        try (CloseableHttpResponse response = ORCIDHelper.putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken(), putCode)) {
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new CustomWebApplicationException("Could not export to ORCID: " + response.getStatusLine().getReasonPhrase(),
-                        response.getStatusLine().getStatusCode());
-            }
+            throws IOException, URISyntaxException, InterruptedException {
+        HttpResponse<String> response = ORCIDHelper
+                .postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken());
+        switch (response.statusCode()) {
+        case HttpStatus.SC_CREATED:
+            setPutCode(optionalVersion, entry, getPutCodeFromLocation(response));
+            break;
+        case HttpStatus.SC_CONFLICT:
+            // User has an ORCID work with the same DOI URL. Rather than link the Dockstore entry to ORCID work, just throw error.
+            throw new CustomWebApplicationException(
+                    "Could not export to ORCID. There exists another ORCID work with the same DOI URL. \n" + response.body(),
+                    response.statusCode());
+        default:
+            throw new CustomWebApplicationException("Could not export to ORCID.\n" + response.body(), response.statusCode());
         }
     }
 
     /**
-     * Get the ORCID put code from the response
-     * @param httpResponse
-     * @return
+     * return true means everything is fine
+     * return false means there's a syncing problem (Dockstore has put code, ORCID does not)
      */
-    private static String getPutCodeFromLocation(HttpResponse httpResponse) {
-        Header[] locations = httpResponse.getHeaders("Location");
-        URI uri;
-        try {
-            uri = new URI(locations[0].getValue());
-        } catch (URISyntaxException e) {
-            throw new CustomWebApplicationException("Could not get ORCID work put code", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    private boolean updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode)
+            throws IOException, URISyntaxException, InterruptedException {
+        HttpResponse<String> response = ORCIDHelper
+                .putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken(), putCode);
+        switch (response.statusCode()) {
+        case HttpStatus.SC_OK:
+            return true;
+        case HttpStatus.SC_NOT_FOUND:
+            return false;
+        default:
+            throw new CustomWebApplicationException("Could not export to ORCID: " + response.body(), response.statusCode());
         }
-        String path = uri.getPath();
-        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     @POST

@@ -16,11 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.FileContent;
 import io.dockstore.webservice.core.SourceFile;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 
@@ -58,6 +57,6 @@ public class FileDAO extends AbstractDAO<SourceFile> {
     }
 
     public List<SourceFile> findSourceFilesByVersion(Long versionId) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion").setParameter("versionId", versionId));
+        return list(namedTypedQuery("io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion").setParameter("versionId", versionId));
     }
 }

@@ -1,11 +1,9 @@
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.CloudInstance;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
 
 public class CloudInstanceDAO extends AbstractDAO<CloudInstance> {
     public CloudInstanceDAO(SessionFactory sessionFactory) {
@@ -21,7 +19,7 @@ public class CloudInstanceDAO extends AbstractDAO<CloudInstance> {
     }
 
     public List<CloudInstance> findAllWithoutUser() {
-        return list((Query<CloudInstance>) namedQuery("io.dockstore.webservice.core.CloudInstance.findAllWithoutUser"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.CloudInstance.findAllWithoutUser"));
     }
 
     public void deleteById(Long id) {

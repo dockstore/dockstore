@@ -16,26 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import javax.validation.constraints.NotNull;
+import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -64,12 +45,29 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
 
 /**
  * Abstract class for registries of docker containers.
@@ -414,10 +412,10 @@ public abstract class AbstractImageRegistry {
 
     private Optional<String> getDockerHubToolAsString(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
-        return getDockerHubToolAsString(repo);
+        return getDockerHubToolAsOptionalString(repo);
     }
 
-    public static Optional<String> getDockerHubToolAsString(String repo) {
+    public static Optional<String> getDockerHubToolAsOptionalString(String repo) {
         final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
         Optional<String> response;
         try {

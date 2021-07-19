@@ -16,42 +16,13 @@
 
 package io.dockstore.webservice.resources;
 
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.common.DescriptorLanguage.WDL;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.annotations.Beta;
@@ -64,6 +35,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
@@ -80,6 +52,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingRequest;
+import io.dockstore.webservice.core.languageparsing.LanguageParsingResponse;
 import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -118,10 +92,46 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.zenodo.client.ApiClient;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -130,14 +140,6 @@ import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.common.DescriptorLanguage.WDL;
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
-import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.VERSION_PAGINATION_LIMIT;
 
 /**
  * TODO: remember to document new security concerns for hosted vs other workflows
@@ -162,6 +164,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String VALIDATIONS = "validations";
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
+    private static final String AUTHORS = "authors";
+    private static final String SERVICE = "service";
+    private static final String BIOWORKFLOW = "bioworkflow";
+    private static final String APPTOOL = "apptool";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -533,7 +539,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 String refreshUrl = zenodoUrl + "/oauth/token";
                 String payload = "client_id=" + zenodoClientID + "&client_secret=" + zenodoClientSecret
                         + "&grant_type=refresh_token&refresh_token=" + zenodoToken.getRefreshToken();
-                refreshToken(refreshUrl, zenodoToken, client, tokenDAO, null, null, payload);
+                refreshToken(refreshUrl, zenodoToken, client, tokenDAO, payload);
             }
         }
         return tokenDAO.findByUserId(user.getId());
@@ -797,8 +803,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
             @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-            @Parameter(name = "services", description = "Whether to get a service or workflow", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "false")) @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
-        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the following: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL) @QueryParam("subclass") String subclass) {
+        final Class<? extends Workflow> targetClass = getSubClass(subclass);
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
@@ -806,6 +812,21 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         initializeAdditionalFields(include, workflow);
         return workflow;
     }
+
+    private Class<? extends Workflow> getSubClass(String subclass) {
+        final Class<? extends Workflow> targetClass;
+        if (subclass.equals(SERVICE)) {
+            targetClass = Service.class;
+        } else if (subclass.equals(BIOWORKFLOW)) {
+            targetClass = BioWorkflow.class;
+        } else if (subclass.equals(APPTOOL)) {
+            targetClass = AppTool.class;
+        } else {
+            throw new CustomWebApplicationException(subclass + " is not a valid subclass.", HttpStatus.SC_BAD_REQUEST);
+        }
+        return targetClass;
+    }
+
     @SuppressWarnings("checkstyle:MagicNumber")
     private void setWorkflowVersionSubset(Workflow workflow, String include, String versionName) {
         sessionFactory.getCurrentSession().detach(workflow);
@@ -998,7 +1019,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
         checkEntry(workflows);
-        AuthenticatedResourceInterface.checkUser(user, workflows);
+        AuthenticatedResourceInterface.checkUserAccessEntries(user, workflows);
         return workflows;
     }
 
@@ -1044,7 +1065,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
         @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
         return getSourceFile(workflowId, tag, fileType, user, fileDAO);
     }
 
@@ -1059,7 +1080,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
         return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
     }
 
@@ -1073,7 +1094,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
         return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
     }
 
@@ -1288,20 +1309,33 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                 boolean nowFrozen = existingTag.isFrozen();
                 // If version is snapshotted on this update, grab and store image information. Also store dag and tool table json if not available.
                 if (!wasFrozen && nowFrozen) {
-                    Optional<String> toolsJSONTable;
+                    Optional<String> toolsJSONTable = Optional.empty();
                     LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(w.getFileType());
-                    // Store tool table json
-                    if (existingTag.getToolTableJson() == null) {
-                        toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-                        existingTag.setToolTableJson(toolsJSONTable.get());
+
+                    // Check if tooltablejson in the DB has the "specifier" key because this key was added later on, so there may be entries in the DB that are missing it.
+                    // If tooltablejson is missing it, retrieve it again so it has this new key.
+                    // Don't need to re-retrieve tooltablejson if it's an empty array because it will just return an empty array again (since the workflow has no Docker images).
+                    String existingToolTableJson = existingTag.getToolTableJson();
+                    if (existingToolTableJson != null && (existingToolTableJson.contains("\"specifier\"") || "[]".equals(existingToolTableJson))) {
+                        toolsJSONTable = Optional.of(existingToolTableJson);
                     } else {
-                        toolsJSONTable = Optional.of(existingTag.getToolTableJson());
+                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
+                        if (mainDescriptor != null) {
+                            // Store tool table json
+                            toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), mainDescriptor.getContent(),
+                                    extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
+                            toolsJSONTable.ifPresent(existingTag::setToolTableJson);
+                        }
                     }
 
                     if (toolsJSONTable.isPresent()) {
+                        // Check that a snapshot can occur (all images are referenced by tag or digest)
+                        lInterface.checkSnapshotImages(existingTag.getName(), toolsJSONTable.get());
+
                         Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
                         existingTag.getImages().addAll(images);
                     }
+
                     // Grab checksum for file descriptors if not already available.
                     for (SourceFile sourceFile : existingTag.getSourceFiles()) {
                         Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
@@ -1319,8 +1353,12 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                     // store dag
                     if (existingTag.getDagJson() == null) {
-                        String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), getMainDescriptorFile(existingTag).getContent(), extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
-                        existingTag.setDagJson(dagJson);
+                        SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
+                        if (mainDescriptor != null) {
+                            String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), mainDescriptor.getContent(),
+                                    extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
+                            existingTag.setDagJson(dagJson);
+                        }
                     }
                 }
             }
@@ -1346,6 +1384,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("Could not find workflow version", HttpStatus.SC_NOT_FOUND);
+        }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
         // json in db cleared after a refresh
@@ -1359,8 +1400,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             final String dagJson = lInterface.getCleanDAG(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                     LanguageHandlerInterface.Type.DAG, toolDAO);
-
-            workflowVersion.setDagJson(dagJson);
+            if (!workflowVersion.isFrozen()) {
+                workflowVersion.setDagJson(dagJson);
+            }
             return dagJson;
         }
         return null;
@@ -1393,19 +1435,23 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // json in db cleared after a refresh
-        if (workflowVersion.getToolTableJson() != null) {
-            return workflowVersion.getToolTableJson();
+        // tooltablejson in DB cleared after a refresh
+        // Check if tooltablejson in the DB has the "specifier" key because this key was added later on, so there may be entries in the DB that are missing it.
+        // If tooltablejson is missing it, retrieve it again so it has this new key.
+        // Don't need to re-retrieve tooltablejson if it's an empty array because it will just return an empty array again (since the workflow has no Docker images).
+        String toolTableJson = workflowVersion.getToolTableJson();
+        if (toolTableJson != null && (toolTableJson.contains("\"specifier\"") || "[]".equals(toolTableJson))) {
+            return toolTableJson;
         }
 
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
             Set<SourceFile> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
-            final Optional<String> toolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+            final Optional<String> newToolTableJson = lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
 
-            final String json = toolTableJson.orElse(null);
+            final String json = newToolTableJson.orElse(null);
 
             // Can't UPDATE workflowversion when frozen = true
             if (workflowVersion.isFrozen()) {
@@ -1558,6 +1604,38 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             }
             workflow.setDescriptorType(descriptorLanguage);
             return workflow;
+        }
+    }
+
+    @POST
+    @Path("/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation")
+    @Timed
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @UnitOfWork
+    @RolesAllowed({"curator", "admin"})
+    @Operation(description = "Language parser calls this endpoint to update parsed information for this version",
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "hidden", hidden = true)
+    public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH)
+        @PathParam("workflowId") Long workflowId,
+        @Parameter(name = "workflowVersionId", description = "Workflow version to retrieve the version from.", required = true,
+            in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId,
+        @RequestBody(description = "Response from language parsing lambda", required = true, content = @Content(schema =
+        @Schema(implementation = LanguageParsingResponse.class))) LanguageParsingResponse languageParsingResponse) {
+        checkLanguageParsingRequest(languageParsingResponse, workflowId, workflowVersionId);
+        // TODO: Actually do something useful with this endpoint
+    }
+
+    private static void checkLanguageParsingRequest(LanguageParsingResponse languageParsingResponse, Long entryId, Long versionId) {
+        LanguageParsingRequest languageParsingRequest = languageParsingResponse.getLanguageParsingRequest();
+        if (entryId != languageParsingRequest.getEntryId()) {
+            throw new CustomWebApplicationException("Entry Id from the LambdaParsingResponse does not match the path parameter",
+                HttpStatus.SC_BAD_REQUEST);
+        }
+        if (versionId != languageParsingRequest.getVersionId()) {
+            throw new CustomWebApplicationException("Version Id from the LambdaParsingResponse does not match the path parameter",
+                HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -1736,6 +1814,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (checkIncludes(include, VERSIONS)) {
             Hibernate.initialize(workflow.getWorkflowVersions());
         }
+        if (checkIncludes(include, AUTHORS)) {
+            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getOrcidAuthors()));
+        }
     }
 
     @Override
@@ -1782,6 +1863,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("Could not find workflow version", HttpStatus.SC_NOT_FOUND);
+        }
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
         java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
         if (sourceFiles == null || sourceFiles.size() == 0) {

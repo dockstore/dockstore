@@ -16,28 +16,15 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import javax.ws.rs.core.GenericType;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -82,6 +69,27 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.Workflow.DescriptorTypeEnum;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.model.DescriptorType;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import javax.ws.rs.core.GenericType;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -99,16 +107,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -333,9 +331,9 @@ public class WorkflowIT extends BaseIT {
         }
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
-        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, null, false);
+        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
         final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId(), false);
 
         // tests for reference type for bitbucket workflows
@@ -492,16 +490,15 @@ public class WorkflowIT extends BaseIT {
         branchToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", branchVersion.getId()), String.class);
         assertNull(branchToolJson);
 
-        // Test freezing versions
-        tagVersion.setFrozen(true);
-
-        List<WorkflowVersion> versions = workflowApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(tagVersion));
-        WorkflowVersion frozenVersion = versions.stream().filter(version -> version.getName().equals("test")).findFirst().get();
+        // Test freezing versions (uses a different workflow that has versioned images)
+        workflow = manualRegisterAndPublish(workflowApi, "dockstore-testing/hello_world", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
+        WorkflowVersion frozenVersion = snapshotWorkflowVersion(workflowApi, workflow, "1.0.1");
         String frozenDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         String frozenToolTableJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", frozenVersion.getId()), String.class);
         assertNotNull(frozenDagJson);
         assertNotNull(frozenToolTableJson);
     }
+
     /**
      * This tests that you are able to download zip files for versions of a workflow
      */
@@ -753,7 +750,7 @@ public class WorkflowIT extends BaseIT {
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null, false);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null, BIOWORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
@@ -802,7 +799,7 @@ public class WorkflowIT extends BaseIT {
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null, false);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null, BIOWORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         assertEquals("workflow does not include expected config included files", 3,
@@ -823,7 +820,7 @@ public class WorkflowIT extends BaseIT {
         workflowByPathGithub.setDescriptorType(DescriptorTypeEnum.NFL);
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null, false);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null, BIOWORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
@@ -977,7 +974,7 @@ public class WorkflowIT extends BaseIT {
 
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
-        final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+        final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
         // refresh targeted
         workflowApi.refresh(workflowByPath.getId(), false);
 
@@ -996,7 +993,7 @@ public class WorkflowIT extends BaseIT {
         Lists.newArrayList("github.com/" + DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
             "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "github.com/DockstoreTestUser2/parameter_test_workflow")
             .forEach(path -> {
-                Workflow workflow = workflowApi.getWorkflowByPath(path, null, false);
+                Workflow workflow = workflowApi.getWorkflowByPath(path, null, BIOWORKFLOW);
                 workflowApi.refresh(workflow.getId(), false);
                 workflowApi.publish(workflow.getId(), publishRequest);
             });
@@ -1077,23 +1074,56 @@ public class WorkflowIT extends BaseIT {
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
 
         //Check image info is grabbed
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/hello_world", DescriptorType.CWL.toString(), "/hello_world.cwl", "1.0.1");
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello_world", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/hello_world.cwl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "1.0.1");
         assertEquals("Should only be one image in this workflow", 1, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello_world");
         verifyTRSImageConversion(versions, "1.0.1", 1);
 
-        // Test that a workflow version containing an unversioned image isn't saved
-        WorkflowVersion workflowVersionWithoutVersionedImage = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/tools-cwl-workflow-experiments", DescriptorType.CWL.toString(), "/cwl/workflow_docker.cwl", "1.0");
-        assertEquals("Should not have grabbed any images", 0, workflowVersionWithoutVersionedImage.getImages().size());
-
         // Test that a workflow version that contains duplicate images will not store multiples
-        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/zhanghj-8555114", DescriptorType.CWL.toString(), "/main.cwl", "1.0");
+        workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/zhanghj-8555114", "", DescriptorType.CWL.toString(), SourceControl.GITHUB, "/main.cwl", true);
+        WorkflowVersion versionWithDuplicateImages = snapshotWorkflowVersion(workflowsApi, workflow, "1.0");
         assertEquals("Should have grabbed 3 images", 3, versionWithDuplicateImages.getImages().size());
         verifyImageChecksumsAreSaved(versionWithDuplicateImages);
         versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/zhanghj-8555114");
         verifyTRSImageConversion(versions, "1.0", 3);
+    }
+
+    /**
+     * Tests that snapshotting a workflow version fails if any of the images have no tag, use the 'latest' tag, or are specified using a parameter.
+     */
+    @Test
+    public void testSnapshotImageFailures() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", false);
+        String errorMessage = "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.";
+
+        // Test that the snapshot fails for a workflow version containing an image with no tag
+        try {
+            snapshotWorkflowVersion(workflowsApi, workflow, "noTagImage");
+            Assert.fail("Should not be able to snapshot a workflow version containing an image with no tag.");
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, "noTagImage")));
+        }
+
+        // Test that the snapshot fails for a workflow version containing an image with the 'latest' tag
+        try {
+            snapshotWorkflowVersion(workflowsApi, workflow, "latestTagImage");
+            Assert.fail("Should not be able to snapshot a workflow version containing an image with the 'latest' tag.");
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, "latestTagImage")));
+        }
+
+        // Test that the snapshot fails for a workflow version containing an image specified using a parameter
+        try {
+            snapshotWorkflowVersion(workflowsApi, workflow, "parameterImage");
+            Assert.fail("Should not be able to snapshot a workflow version containing an image specified using a parameter.");
+        } catch (ApiException ex) {
+            Assert.assertTrue(ex.getMessage().contains(String.format(errorMessage, "parameterImage")));
+        }
     }
 
     @Test
@@ -1195,8 +1225,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowVersion snapshotVersion = workflow2.getWorkflowVersions().stream().filter(v -> v.getName().equals("1.0.1")).findFirst().get();
         List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(snapshotVersion.getId());
         assertNotNull(sourceFiles);
-        snapshotVersion.setFrozen(true);
-        workflowsApi.updateWorkflowVersion(workflow2.getId(), Collections.singletonList(snapshotVersion));
+        snapshotWorkflowVersion(workflowsApi, workflow2, "1.0.1");
         verifySourcefileChecksumsSaved(sourceFiles);
 
         // Make sure refresh does not error.
@@ -1255,8 +1284,65 @@ public class WorkflowIT extends BaseIT {
         assertTrue("Snapshotted version should be in the list", snapshotInList);
     }
 
-    private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, String workflowPath, String descriptorType, String descriptorPath, String versionName) {
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, workflowPath, "", descriptorType, SourceControl.GITHUB, descriptorPath, true);
+
+
+    /**
+     * Test that the image_name is set correctly after TRS image conversion.
+     * This is a separate test from verifyTRSImageConversion because it's difficult to map the snapshot version's images to the
+     * TRS version's images if there's more than 1 Docker reference in the workflow.
+     * This test works with workflows containing 1 Docker reference (may not necessarily have only 1 image because DockerHub can provide
+     * multiple images for a single version, one for each os/architecture).
+     */
+    @Test
+    public void testTRSImageName() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+        WorkflowVersion snapshotVersion;
+        ToolVersion trsVersion;
+
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "",
+                DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
+
+        // Workflow with Quay image specified using a tag
+        String quayTagVersionName = "1.0";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, quayTagVersionName);
+        assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", quayTagVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
+        trsVersion.getImages().stream().forEach(image -> assertEquals("quay.io/ga4gh-dream/dockstore-tool-helloworld:1.0.2", image.getImageName()));
+
+        // Workflow with Quay image specified using a digest
+        String quayDigestVersionName = "quayDigestImage";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, quayDigestVersionName);
+        assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", quayDigestVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
+        trsVersion.getImages().stream().forEach(image -> assertEquals(
+                "quay.io/ga4gh-dream/dockstore-tool-helloworld@sha256:3a854fd1ebd970011fa57c8c099347314eda36cc746fd831f4deff9a1d433718",
+                image.getImageName()));
+
+        // Workflow with Docker Hub image specified using a tag (6 images actually retrieved, one per architecture type)
+        String dockerHubTagVersionName = "dockerHubTagImage";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, dockerHubTagVersionName);
+        assertEquals("Should only be six images in this workflow", 6, snapshotVersion.getImages().size()); // 1 image per architecture type
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", dockerHubTagVersionName);
+        assertEquals("Should be six images in this TRS version", 6, trsVersion.getImages().size());
+        trsVersion.getImages().stream().forEach(image -> assertEquals("library/ubuntu:16.04", image.getImageName()));
+
+        // Workflow with Docker Hub image specified using a digest
+        String dockerHubDigestVersionName = "dockerHubDigestImage";
+        snapshotVersion = snapshotWorkflowVersion(workflowsApi, workflow, dockerHubDigestVersionName);
+        assertEquals("Should only be one image in this workflow", 1, snapshotVersion.getImages().size());
+        trsVersion = ga4Ghv20Api.toolsIdVersionsVersionIdGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow", dockerHubDigestVersionName);
+        assertEquals("Should be one image in this TRS version", 1, trsVersion.getImages().size());
+        // library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c refers to ubuntu version 16.04, amd64 os/arch
+        trsVersion.getImages().stream().forEach(image ->
+            assertEquals("library/ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c", image.getImageName()));
+    }
+
+    private WorkflowVersion snapshotWorkflowVersion(WorkflowsApi workflowsApi, Workflow workflow, String versionName) {
         WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionName)).findFirst().get();
         version.setFrozen(true);
         workflowsApi.updateWorkflowVersion(workflow.getId(), Collections.singletonList(version));
@@ -1282,7 +1368,8 @@ public class WorkflowIT extends BaseIT {
 
         // Test that a version of an official dockerhub image will get an image per architecture. (python 2.7) Also check that regular
         // DockerHub images are grabbed correctly broadinstitute/gatk:4.0.1.1
-        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", DescriptorType.WDL.toString(), "/JointGenotypingWf.wdl", "1.1.2");
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/broad-prod-wgs-germline-snps-indels", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/JointGenotypingWf.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "1.1.2");
         assertEquals("Should 10 images in this workflow", 10, version.getImages().size());
         verifyImageChecksumsAreSaved(version);
 
@@ -1418,7 +1505,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi
             .manualRegister("github", "DockstoreTestUser2/workflow-seq-import", "/cwls/chksum_seqval_wf_interleaved_fq.cwl", "", "cwl",
                 "/examples/chksum_seqval_wf_interleaved_fq.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, null, BIOWORKFLOW);
 
         workflowApi.refresh(workflowByPathGithub.getId(), false);
         Assert.assertEquals("GNU General Public License v3.0", workflowByPathGithub.getLicenseInformation().getLicenseName());
@@ -1447,7 +1534,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi
                 .manualRegister("github", "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "", "wdl",
                         "");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", null, BIOWORKFLOW);
 
         workflowApi.refresh(workflowByPathGithub.getId(), false);
         workflowApi.publish(workflowByPathGithub.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -1587,7 +1674,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
@@ -1615,7 +1702,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, BIOWORKFLOW);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
@@ -1695,7 +1782,7 @@ public class WorkflowIT extends BaseIT {
     public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME, testingPostgres));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, BIOWORKFLOW);
         workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         // should not be able to get content normally
@@ -1765,7 +1852,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, BIOWORKFLOW);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -1825,7 +1912,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl",
             "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW, null, BIOWORKFLOW);
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
 
         Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());
@@ -1878,7 +1965,7 @@ public class WorkflowIT extends BaseIT {
             .manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", workflowName, "cwl",
                 "/workflows/dnaseq/transform.cwl.json");
         final Workflow workflowByPathGithub = userWorkflowsApi
-            .getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW + "/" + workflowName, null, false);
+            .getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW + "/" + workflowName, null, BIOWORKFLOW);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
 
         // Publish workflow, which will also add a topic
@@ -1912,7 +1999,7 @@ public class WorkflowIT extends BaseIT {
         userWorkflowsApi.manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/metadata.cwl", "metadata", "cwl",
             "/cwl/v1.1/cat-job.json");
         final Workflow workflowByPathGithub = userWorkflowsApi
-            .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", null, false);
+            .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/metadata", null, BIOWORKFLOW);
         final Workflow workflow = userWorkflowsApi.refresh(workflowByPathGithub.getId(), true);
         workflow.getWorkflowVersions().forEach(workflowVersion -> {
             Assert.assertEquals("Print the contents of a file to stdout using 'cat' running in a docker container.", workflow.getDescription());
@@ -1940,7 +2027,7 @@ public class WorkflowIT extends BaseIT {
             .manualRegister("github", "dockstore-testing/Workflows-For-CI", "/cwl/v1.1/count-lines1-wf.cwl", "count-lines1-wf", "cwl",
                 "/cwl/v1.1/wc-job.json");
         final Workflow workflowByPathGithub2 = userWorkflowsApi
-            .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", null, false);
+            .getWorkflowByPath("github.com/dockstore-testing/Workflows-For-CI/count-lines1-wf", null, BIOWORKFLOW);
         final Workflow workflow2 = userWorkflowsApi.refresh(workflowByPathGithub2.getId(), false);
         Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(versions -> "master".equals(versions.getName())));
         Optional<WorkflowVersion> optionalWorkflowVersion2 = workflow2.getWorkflowVersions().stream()
@@ -1965,7 +2052,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv",
                 "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, BIOWORKFLOW);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -2015,7 +2102,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv",
                 "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, BIOWORKFLOW);
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -2052,7 +2139,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertNull("Getting workflow version via published workflow has null alias", workflowVersionByPublshed.getAliases());
 
         final Workflow workflowByPath = workflowApi
-                .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "versions", false);
+                .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "versions", BIOWORKFLOW);
         assertNotNull("did not get published workflow by path", workflowByPath);
         Optional<WorkflowVersion> optionalWorkflowVersionByPath = workflowByPath.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();
@@ -2090,7 +2177,7 @@ public class WorkflowIT extends BaseIT {
                 MapUtils.isEmpty(workflowVersionByPublshedValidation.getAliases()));
 
         final Workflow workflowByPathValidation = workflowApi
-                .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "aliases", false);
+                .getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "aliases", BIOWORKFLOW);
         assertNotNull("did not get published workflow by path", workflowByPathValidation);
         Optional<WorkflowVersion> optionalWorkflowVersionByPathValidation = workflowByPathValidation.getWorkflowVersions().stream()
                 .filter(version -> "master".equalsIgnoreCase(version.getName())).findFirst();

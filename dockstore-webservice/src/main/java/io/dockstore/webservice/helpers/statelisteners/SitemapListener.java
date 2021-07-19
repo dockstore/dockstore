@@ -15,13 +15,12 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.util.List;
-import java.util.SortedSet;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import java.util.List;
+import java.util.SortedSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

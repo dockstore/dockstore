@@ -1,7 +1,11 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -10,17 +14,13 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -29,7 +29,8 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel("LambdaEvent")
 @Entity
-@Table(name = "LambdaEvent")
+@Table(name = "LambdaEvent", indexes = { @Index(name = "organization_index", columnList = "organization"),
+        @Index(name = "user_index", columnList = "userid") })
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByRepository", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository = :repository"),
         @NamedQuery(name = "io.dockstore.webservice.core.LambdaEvent.findByOrganization", query = "SELECT lambdaEvent FROM LambdaEvent lambdaEvent WHERE lambdaEvent.repository like :organization"),
@@ -39,8 +40,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 @SuppressWarnings("checkstyle:magicnumber")
 public class LambdaEvent {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lambdaevent_id_seq")
+    @SequenceGenerator(name = "lambdaevent_id_seq", sequenceName = "lambdaevent_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Unique ID of the event.", position = 0)
+    @Column(columnDefinition = "bigint default nextval('lambdaevent_id_seq')")
     private long id;
 
     @Column(columnDefinition = "TEXT")
@@ -73,7 +76,7 @@ public class LambdaEvent {
     private LambdaEventType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", referencedColumnName = "id")
+    @JoinColumn(name = "userId", referencedColumnName = "id", columnDefinition = "bigint")
     @ApiModelProperty(value = "User that the event is acting on (if exists in Dockstore).", position = 8)
     @JsonIgnore
     private User user;

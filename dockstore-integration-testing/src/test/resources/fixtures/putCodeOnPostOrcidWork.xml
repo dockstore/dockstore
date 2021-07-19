@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<error xmlns="http://www.orcid.org/ns/error">
+    <response-code>400</response-code>
+    <developer-message>400 Bad Request: Put-code is included when not expected. When posting new activities, the put code should be omitted.</developer-message>
+    <user-message>There was an error when updating the record. Please try again. If the error persists, please contact Dockstore Local Testing for assistance.</user-message>
+    <error-code>9024</error-code>
+    <more-info>https://members.orcid.org/api/resources/troubleshooting</more-info>
+</error>

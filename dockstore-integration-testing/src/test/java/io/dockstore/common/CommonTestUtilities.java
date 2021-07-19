@@ -16,16 +16,6 @@
 
 package io.dockstore.common;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.core.GenericType;
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -39,6 +29,14 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import javax.ws.rs.core.GenericType;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -54,7 +52,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
-    public static final String OLD_DOCKSTORE_VERSION = "1.7.4";
+    public static final String OLD_DOCKSTORE_VERSION = "1.9.0";
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
     public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
@@ -97,7 +95,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", dropwizardConfigurationFile);
         application
             .run("db", "migrate", dropwizardConfigurationFile, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,"
-                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0");
+                    + "1.6.0,1.7.0,1.8.0,1.9.0,1.10.0,1.11.0,1.12.0");
     }
 
     /**
@@ -118,7 +116,7 @@ public final class CommonTestUtilities {
                 isNewApplication);
 
         List<String> migrationList = Arrays
-            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+            .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0");
         runMigration(migrationList, application, dropwizardConfigurationFile);
     }
 
@@ -135,7 +133,7 @@ public final class CommonTestUtilities {
                 isNewApplication);
 
         List<String> migrationList = Arrays
-                .asList("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+                .asList("1.3.0.generated", "1.3.1.consistency", "test", "add_test_tools", "1.4.0",  "1.5.0", "test_1.5.0", "1.6.0", "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0");
         runMigration(migrationList, application, dropwizardConfigurationFile);
     }
 
@@ -205,7 +203,7 @@ public final class CommonTestUtilities {
 
         List<String> migrationList = Arrays
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0",
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -249,7 +247,7 @@ public final class CommonTestUtilities {
         List<String> migrationList = Arrays
             .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
 
-                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+                "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -267,7 +265,7 @@ public final class CommonTestUtilities {
         List<String> migrationList = Arrays
                 .asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "add_test_tools", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0",
 
-                        "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+                        "1.7.0", "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0");
         runMigration(migrationList, application, configPath);
     }
 
@@ -297,7 +295,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         application
             .run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0,samepaths");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0,1.11.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.7.0, 1.8.0, 1.9.0,1.10.0,1.11.0, 1.12.0");
 
     }
 
@@ -314,7 +312,7 @@ public final class CommonTestUtilities {
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
         List<String> migrationList = Arrays
                 .asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0", "1.7.0",
-                        "1.8.0", "1.9.0", "1.10.0", "1.11.0");
+                        "1.8.0", "1.9.0", "1.10.0", "1.11.0", "1.12.0");
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 

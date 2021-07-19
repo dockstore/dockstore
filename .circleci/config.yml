@@ -1,11 +1,14 @@
 version: 2.1
+orbs:
+  aws-s3: circleci/aws-s3@1.0.0
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9
+      - image: cimg/openjdk:11.0.10
         environment:
+          JAVA_TOOL_OPTIONS: -Xmx512m # Nothing to do with surefire plugin, it has its own JVM. The two of these plus ES (1.3 GB) must add up to a bit less than 6GB.
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:11.8
+      - image: circleci/postgres:13.3
         command: postgres -c max_connections=200
         environment:
           POSTGRES_USER: postgres
@@ -13,7 +16,7 @@ executors:
           PG_HOST: localhost
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_PASSWORD: postgres
-      - image: docker.elastic.co/elasticsearch/elasticsearch:7.9.3
+      - image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
         environment:
           - xpack.security.enabled: false
           - transport.host: localhost
@@ -43,23 +46,33 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-          context: sonarcloud
       - unit_test:
           <<: *common_filters
           requires:
             - build
+          context:
+            - sonarcloud
+            - aws
       - workflow-integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
+      - language-parsing-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
       - tool-integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - integration-tests:
           <<: *common_filters
           requires:
             - build
+          context: sonarcloud
       - regression-integration-tests:
           filters:
             branches:
@@ -77,6 +90,7 @@ jobs:
       - old_python
       - setup_machine
       - setup_test
+      - setup_postgres_docker
       - setup_integration_test
       - save_test_results
   cwltool-tests:
@@ -87,6 +101,7 @@ jobs:
       - old_python
       - setup_machine
       - setup_test
+      - setup_postgres_docker
       - setup_integration_test
       - save_test_results
   integration-tests:
@@ -97,6 +112,8 @@ jobs:
       - setup_remote_docker:
           version: 19.03.13
       - setup_test
+      - install-postgres
+      - setup_postgres
       - setup_integration_test
       - save_test_results
   tool-integration-tests:
@@ -105,6 +122,8 @@ jobs:
       TESTING_PROFILE: tool-integration-tests
     steps:
       - setup_test
+      - install-postgres
+      - setup_postgres
       - setup_integration_test
       - save_test_results
   workflow-integration-tests:
@@ -113,11 +132,45 @@ jobs:
       TESTING_PROFILE: workflow-integration-tests
     steps:
       - setup_test
+      - install-postgres
+      - setup_postgres
+      - setup_integration_test
+      - save_test_results
+  language-parsing-tests:
+    executor: machine_integration_test_exec
+    environment:
+      TESTING_PROFILE: language-parsing-tests
+    steps:
+      - old_python
+      - setup_machine
+      - install-pip
+      - run: 
+          name: build sam-cli
+          command: |
+            pip3 install aws-sam-cli
+            sudo apt install unzip
+            wget https://github.com/dockstore/lambda/releases/download/0.1.6-SNAPSHOT/wdl-parsing.zip
+            unzip wdl-parsing.zip
+            cd wdl-parsing
+            # docker pull amazon/aws-sam-cli-build-image-java11
+            # cannot seem to `sam build --use-container` using local jdk and mvn instead
+            sam build --use-container
+      - run:
+          name: run sam-cli
+          command: |
+            cd wdl-parsing
+            sam local start-api
+          background: true
+      - setup_test
+      - setup_postgres_docker
+      - run:
+          name: Wait for lambda
+          command: wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:3000 || true
       - setup_integration_test
       - save_test_results
   build:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9
+      - image: cimg/openjdk:11.0.10
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
@@ -146,11 +199,21 @@ jobs:
           paths:
             - .
       - run:
-          name: SonarCloud scan
-          command: mvn verify sonar:sonar
+          name: check generated flattened POMs match checked-in files.
+          command: |
+            # need better solution, but leaving this as-is fouls up the release since the Maven release plugin doesn't know about the flattened poms
+            if [[ -z "${CIRCLE_TAG}" ]]; then
+              scripts/check_poms.sh
+            fi
+          environment:
+            TESTING_PROFILE: automated-review
   unit_test: # runs not using Workflows must have a `build` job as entry point
+    parameters:
+      aws_bucket:
+        type: string
+        default: "${AWS_BUCKET}"
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.9
+      - image: cimg/openjdk:11.0.10
         environment:
           PGHOST: 127.0.0.1
       - image: circleci/postgres:11.8
@@ -163,12 +226,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dockstore-web-cache-unit-test-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
-      - run:
-          name: Install postgresql client
-          command: |
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo apt update
-            sudo apt install -y postgresql-client
+      - install-postgres
       - install-git-secrets
       - setup_postgres
             psql -c 'create extension pgcrypto;' -U postgres webservice_test
@@ -179,7 +237,7 @@ jobs:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-            /usr/local/jdk-11.0.9/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+            /usr/local/jdk-11.0.10/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             export SKIP_SIGNATURE_CHECK=false
             if [[ -z "${CIRCLE_TAG}" ]]; then
               # If it is a branch, skip the signature check
@@ -232,6 +290,9 @@ jobs:
       - store_artifacts:
           path: ~/junit
       - run:
+          name: SonarCloud scan - coverage
+          command: mvn sonar:sonar
+      - run:
           name: Make jar directory
           command: mkdir /tmp/artifacts
       - run:
@@ -256,8 +317,23 @@ jobs:
             export dockerVersion=${tagOrBranch//\//_}
             docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
             echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
+            # Gather the checksum information
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
+            docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests
+            docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt
+      - install-pip
+      - aws-s3/copy:
+          from: image-digest.txt
+          to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
 commands:
+  install-postgres:
+    steps:
+      - run:
+          name: Install postgresql client
+          command: |
+            sudo rm -rf /var/lib/apt/lists/*
+            sudo apt update
+            sudo apt install -y postgresql-client
   install-git-secrets:
     steps:
       - run:
@@ -267,6 +343,17 @@ commands:
             tar -zxf git-secrets-1.3.0.tar.gz
             cd git-secrets-1.3.0
             sudo make install
+  install-pip:
+    steps:
+      - run:
+          name: install pip
+          command: |
+            sudo apt update
+            sudo apt install python3-distutils python3-dev python3-pip
+            # For debug purposes, a python3 version was installed in the image, pip is untagged
+            python3 --version
+            pip3 --version
+            alias pip=pip3
   setup_postgres:
     steps:
       - run:
@@ -274,6 +361,13 @@ commands:
           command: |
             psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
             psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+  setup_postgres_docker:
+    steps:
+      - run:
+          name: setup postgres
+          command: |
+            docker exec -it -u postgres postgres1 psql -c "create user dockstore with password 'dockstore' createdb;"
+            docker exec -it -u postgres postgres1 psql -c "create database webservice_test with owner = dockstore;"
   old_python: # Need Python 3.6 for old Dockstore 1.7 requirements.txt
     steps:
       - run:
@@ -307,26 +401,11 @@ commands:
       - run:
           name: manually copy back .m2
           command: cp -r .m2 ~/.m2
-      - run:
-          name: Install postgresql client
-          command: |
-            sudo rm -rf /var/lib/apt/lists/*
-            sudo apt update
-            sudo apt install -y postgresql-client
       - restore_cache:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
     steps:
-      - run:
-          name: install pip
-          command: |
-            sudo apt update
-            sudo apt install python3-distutils python3-dev
-            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-            python3 get-pip.py
-            # For debug purposes, a python3 version was installed in the image, pip is untagged
-            python3 --version
-            pip3 --version
+      - install-pip
       - run:
           name: install pip dependencies
           command: scripts/install-tests.sh
@@ -344,7 +423,6 @@ commands:
       - run:
           name: Wait for db
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
-      - setup_postgres
       - run:
           name: Wait for ES
           command: |
@@ -355,6 +433,9 @@ commands:
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+      - run:
+          name: SonarCloud scan - coverage
+          command: mvn sonar:sonar
   save_test_results:
     steps:
       - save_cache:

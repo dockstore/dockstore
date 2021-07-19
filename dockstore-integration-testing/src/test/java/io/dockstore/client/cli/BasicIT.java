@@ -16,11 +16,12 @@
 
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
+import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -44,6 +45,11 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -53,13 +59,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-
-import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Basic confidential integration tests, focusing on publishing/unpublishing both automatic and manually added tools
@@ -198,7 +197,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
     }
@@ -239,7 +238,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", false);
+            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // artificially create an invalid version
@@ -1414,7 +1413,7 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
-            workflowsApi.getWorkflowByPath("potato", "potato", false);
+            workflowsApi.getWorkflowByPath("potato", "potato", BIOWORKFLOW);
             Assert.fail("Should've not been able to get an entry that does not exist");
         } catch (ApiException e) {
             Assert.assertEquals("Entry not found", e.getMessage());

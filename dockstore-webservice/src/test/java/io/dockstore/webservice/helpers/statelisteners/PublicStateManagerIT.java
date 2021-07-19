@@ -15,14 +15,7 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,14 +31,20 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.ResourceHelpers;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
 public class PublicStateManagerIT {
     private static PublicStateManager manager;

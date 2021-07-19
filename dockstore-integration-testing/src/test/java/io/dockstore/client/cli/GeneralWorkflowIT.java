@@ -16,10 +16,16 @@
 
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
+import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
+import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -37,6 +43,10 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -50,17 +60,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-
-import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
-import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
-import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
-import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * This test suite tests various workflow related processes.
@@ -170,7 +169,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // Smart refresh individual that is valid (should add versions that doesn't exist)
-        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, "", false);
+        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // All versions should be synced
@@ -232,7 +231,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // refresh individual that is valid
-        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
+        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", BIOWORKFLOW);
         workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertNotNull("Should have a license object even if it's null name", workflow.getLicenseInformation());
         Assert.assertNotNull("Should have no license name", workflow.getLicenseInformation().getLicenseName());
@@ -519,7 +518,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "", false);
+            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "", BIOWORKFLOW);
 
         // Update workflow path
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
@@ -739,6 +738,37 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     /**
+     * This tests the case where the version is:
+     *  invalid
+     *  has files
+     *  processable (not too invalid which depends on the CWL handler)
+     * can be snapshotted
+     *
+     * Specifically, this is a particular CWL CommandLineTool registered as a Workflow
+     */
+    @Test
+    public void testFreezingInvalidWorkflow() {
+        String versionToSnapshot = "1.0.1";
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/md5sum-checker", "",
+            DescriptorLanguage.CWL.toString(),
+            SourceControl.GITHUB, "/md5sum/md5sum-tool.cwl", false);
+        Workflow workflowBeforeFreezing = workflowsApi.refresh(workflow.getId(), false);
+        WorkflowVersion version =
+            workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
+        version.setFrozen(true);
+        version.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
+        version.setDoiURL("foo");
+        assertFalse("Double check that this version is in fact invalid", version.isValid());
+        List<WorkflowVersion> workflowVersions = workflowsApi
+            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(version));
+        version = workflowVersions.stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
+        assertEquals("foo", version.getDoiURL());
+        assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, version.getDoiStatus());
+    }
+
+    /**
      * This tests that a workflow's default version can be automatically set during refresh
      */
     @Test
@@ -819,6 +849,12 @@ public class GeneralWorkflowIT extends BaseIT {
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
         }
+
+        // Tests that a frozen version without a saved DAG could generate a DAG does not try to save it
+        testingPostgres.runUpdateStatement("update workflowversion set frozen='t'");
+        String workflowDag = workflowsApi.getWorkflowDag(workflow.getId(), defaultVersionNumber);
+        Assert.assertTrue(workflowDag.contains("nodes"));
+        Assert.assertTrue(workflowDag.contains("edges"));
     }
 
     /**

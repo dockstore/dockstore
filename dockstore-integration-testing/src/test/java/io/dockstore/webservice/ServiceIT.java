@@ -15,12 +15,14 @@
  */
 package io.dockstore.webservice;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static junit.framework.TestCase.assertNotSame;
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.BasicIT;
@@ -47,7 +49,13 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tool;
+import java.util.List;
+import java.util.Map;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
+import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -62,20 +70,13 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static junit.framework.TestCase.assertNotSame;
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 /**
  * @author dyuen
  */
 @Category(ConfidentialTest.class)
 public class ServiceIT extends BaseIT {
+
+    private final boolean servicesExposedInTRS = false;
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -139,8 +140,11 @@ public class ServiceIT extends BaseIT {
         final ApiClient webClient = getWebClient(true, false);
         Ga4GhApi client = new Ga4GhApi(webClient);
         final List<Tool> tools = client.toolsGet(null, null, null, null, null, null, null, null, null, null, null);
-        assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("service")).count() >= 2);
         assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("workflow")).count() >= 1);
+        // TODO: change boolean once services are exposed
+        if (servicesExposedInTRS) {
+            assertTrue(tools.stream().filter(tool -> tool.getToolclass().getName().equalsIgnoreCase("service")).count() >= 2);
+        }
     }
 
     @Test
@@ -175,7 +179,7 @@ public class ServiceIT extends BaseIT {
      * @param path         Path of endpoint
      */
     private void testXTotalCount(Client jerseyClient, String path) {
-        Response response = jerseyClient.target(path).request().get();
+        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Object xTotalCount = headers.getFirst("X-total-count");
@@ -209,7 +213,7 @@ public class ServiceIT extends BaseIT {
         client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "versions", true);
+        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "versions", SERVICE);
 
         assertNotNull(service);
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
@@ -378,7 +382,7 @@ public class ServiceIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
 
-        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "", true);
+        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "", SERVICE);
         // io.swagger.client.model.Workflow service = services.get(0);
         try {
             client.refresh(service.getId(), false);

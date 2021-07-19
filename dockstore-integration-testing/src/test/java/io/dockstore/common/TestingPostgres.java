@@ -15,13 +15,12 @@
 
 package io.dockstore.common;
 
-import java.util.List;
-
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.jdbi3.JdbiFactory;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.DropwizardTestSupport;
+import java.util.List;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Query;
 

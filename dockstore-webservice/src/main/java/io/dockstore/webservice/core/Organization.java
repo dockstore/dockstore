@@ -1,5 +1,11 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.webservice.helpers.EntryStarredSerializer;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -7,7 +13,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -26,18 +31,12 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.dockstore.webservice.helpers.EntryStarredSerializer;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -64,8 +63,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organization implements Serializable, Aliasable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "organization_id_seq")
+    @SequenceGenerator(name = "organization_id_seq", sequenceName = "organization_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the organization in this web service", position = 0)
+    @Column(columnDefinition = "bigint default nextval('organization_id_seq')")
     private long id;
 
     @Column(nullable = false)
@@ -111,7 +112,7 @@ public class Organization implements Serializable, Aliasable {
     private String displayName;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
-    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "starred_organizations", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "organizationid", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "This indicates the users that have starred this organization", required = false, position = 10)
     @JsonSerialize(using = EntryStarredSerializer.class)
     @OrderBy("id")
@@ -127,7 +128,7 @@ public class Organization implements Serializable, Aliasable {
     private long collectionsLength;
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "organization_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
+    @JoinTable(name = "organization_alias", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for organizations")
     private Map<String, Alias> aliases = new HashMap<>();
@@ -308,7 +309,8 @@ public class Organization implements Serializable, Aliasable {
         this.displayName = displayName;
     }
 
-    public enum ApplicationState { PENDING, REJECTED, APPROVED }
+    public enum ApplicationState { PENDING, REJECTED, APPROVED
+    }
 
     public String getAvatarUrl() {
         return avatarUrl;

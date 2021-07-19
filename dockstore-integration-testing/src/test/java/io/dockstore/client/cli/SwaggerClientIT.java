@@ -16,23 +16,14 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ws.rs.core.UriBuilder;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
@@ -64,13 +55,29 @@ import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
-import io.swagger.client.model.Token;
+import io.swagger.client.model.TokenUser;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.ws.rs.core.UriBuilder;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -85,15 +92,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-
-import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests the actual ApiClient generated via Swagger
@@ -200,7 +198,7 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
-        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
+        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null, BIOWORKFLOW);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
@@ -214,7 +212,7 @@ public class SwaggerClientIT extends BaseIT {
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
 
         // updating label should fail since user is not owner
-        workflow = userApi1.getWorkflowByPath("github.com/A/l", null, false);
+        workflow = userApi1.getWorkflowByPath("github.com/A/l", null, BIOWORKFLOW);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
         userApi2.updateLabels(containerId, "foobar", "");
@@ -482,7 +480,7 @@ public class SwaggerClientIT extends BaseIT {
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
 
-        List<Token> tokens = usersApi.getUserTokens(user.getId());
+        List<TokenUser> tokens = usersApi.getUserTokens(user.getId());
 
         assertFalse(tokens.isEmpty());
     }
@@ -803,7 +801,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, false);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, BIOWORKFLOW);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             Assert.assertEquals(403, e.getCode());
@@ -821,7 +819,7 @@ public class SwaggerClientIT extends BaseIT {
         Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, false);
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, BIOWORKFLOW);
         user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId(), null);
 
         // But User 2 cannot edit the hosted workflow
@@ -888,7 +886,7 @@ public class SwaggerClientIT extends BaseIT {
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         try {
-            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null, false);
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null, BIOWORKFLOW);
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
             Assert.assertEquals(401, ex.getCode());

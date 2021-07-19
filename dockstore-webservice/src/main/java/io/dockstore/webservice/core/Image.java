@@ -16,10 +16,13 @@
 
 package io.dockstore.webservice.core;
 
+import io.dockstore.common.Registry;
+import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifier;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -28,11 +31,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import io.dockstore.common.Registry;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -43,8 +43,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 public class Image {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "image_id_seq")
+    @SequenceGenerator(name = "image_id_seq", sequenceName = "image_id_seq", allocationSize = 1)
     @ApiModelProperty(value = "Implementation specific ID for the image in this webservice", position = 0)
+    @Column(columnDefinition = "bigint default nextval('image_id_seq')")
     private long id;
 
     @Column(columnDefinition = "varchar")
@@ -76,6 +78,11 @@ public class Image {
     @Column()
     @ApiModelProperty(value = "Stores the OS and, if available the OS version. Separated by a / and only applicable to Docker Hub", position = 7)
     private String os;
+
+    @Column()
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "How the image is specified")
+    private DockerSpecifier specifier;
 
     @Column()
     @ApiModelProperty(value = "The size of the image in bytes")
@@ -177,5 +184,13 @@ public class Image {
 
     public String getImageUpdateDate() {
         return imageUpdateDate;
+    }
+
+    public DockerSpecifier getSpecifier() {
+        return specifier;
+    }
+
+    public void setSpecifier(DockerSpecifier specifier) {
+        this.specifier = specifier;
     }
 }

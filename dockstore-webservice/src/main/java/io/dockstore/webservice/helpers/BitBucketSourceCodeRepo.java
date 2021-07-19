@@ -16,19 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.core.GenericType;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
@@ -46,19 +34,27 @@ import io.swagger.bitbucket.client.Configuration;
 import io.swagger.bitbucket.client.api.RefsApi;
 import io.swagger.bitbucket.client.api.RepositoriesApi;
 import io.swagger.bitbucket.client.model.Branch;
-import io.swagger.bitbucket.client.model.PaginatedBranches;
 import io.swagger.bitbucket.client.model.PaginatedRefs;
 import io.swagger.bitbucket.client.model.PaginatedRepositories;
-import io.swagger.bitbucket.client.model.PaginatedTags;
 import io.swagger.bitbucket.client.model.PaginatedTreeentries;
 import io.swagger.bitbucket.client.model.Repository;
 import io.swagger.bitbucket.client.model.Tag;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.ws.rs.core.GenericType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -74,6 +70,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
+
+
 
     /**
      * @param gitUsername           username that owns the bitbucket token
@@ -219,44 +217,30 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
         }
+        String workspace = repositoryId.split("/")[0];
+        String repoSlug = repositoryId.split("/")[1];
+        String name = version.getReference();
         RefsApi refsApi = new RefsApi(apiClient);
+        // There isn't exactly a single Bitbucket endpoint to get a version which then allows us to determine if it's a branch or tag.
+        // This code checks two endpoints (branches and tags) to see if it belongs in which.
         try {
-            PaginatedBranches paginatedBranches = refsApi
-                .repositoriesUsernameRepoSlugRefsBranchesGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedBranches != null) {
-                if (paginatedBranches.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.BRANCH);
-                }
-                if (paginatedBranches.getNext() != null) {
-                    paginatedBranches = getArbitraryURL(paginatedBranches.getNext(), new GenericType<PaginatedBranches>() {
-                    });
-                } else {
-                    paginatedBranches = null;
-                }
-            }
+            refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.BRANCH);
+            return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
+            LOG.warn(gitUsername + ": apiexception on reading branches" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
 
         try {
-            PaginatedTags paginatedTags = refsApi
-                .repositoriesUsernameRepoSlugRefsTagsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-            while (paginatedTags != null) {
-                if (paginatedTags.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
-                    version.setReferenceType(Version.ReferenceType.TAG);
-                }
-                if (paginatedTags.getNext() != null) {
-                    paginatedTags = getArbitraryURL(paginatedTags.getNext(), new GenericType<PaginatedTags>() {
-                    });
-                } else {
-                    paginatedTags = null;
-                }
-            }
+            refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(workspace, name, repoSlug);
+            version.setReferenceType(Version.ReferenceType.TAG);
+            return;
         } catch (ApiException e) {
-            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
+            LOG.warn(gitUsername + ": apiexception on reading tags" + e.getMessage(), e);
             // this is not so critical to warrant a http error code
         }
+        throw new CustomWebApplicationException(name + " is not a Bitbucket branch or tag in " + repositoryId, HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @Override

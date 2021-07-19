@@ -16,11 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
@@ -38,6 +33,10 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.Workflow;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -115,7 +114,7 @@ public class ExtendedTRSIT extends BaseIT {
             WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
             workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
                 defaultTestParameterFilePath);
-            workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+            workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, BIOWORKFLOW);
 
             // refresh and publish the workflow
             final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);

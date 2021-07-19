@@ -16,14 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-import java.util.SortedSet;
-
 import io.dockstore.webservice.core.FileContent;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
+import java.util.SortedSet;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
@@ -33,6 +32,7 @@ import org.hibernate.query.Query;
 public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
     private final FileContentDAO fileContentDAO;
+    
     public VersionDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
         this.fileContentDAO = new FileContentDAO(sessionFactory);

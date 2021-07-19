@@ -1,13 +1,12 @@
 package io.dockstore.webservice.helpers;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;

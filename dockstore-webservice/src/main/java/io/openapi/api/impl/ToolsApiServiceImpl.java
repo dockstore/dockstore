@@ -16,29 +16,13 @@
 
 package io.openapi.api.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.SecurityContext;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
+import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
+import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -48,6 +32,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
@@ -72,20 +57,34 @@ import io.openapi.model.FileWrapper;
 import io.openapi.model.ToolFile;
 import io.openapi.model.ToolVersion;
 import io.swagger.api.impl.ToolsImplCommon;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
-import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
-import static io.swagger.api.impl.ToolsImplCommon.SERVICE_PREFIX;
-import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
     public static final Response BAD_DECODE_RESPONSE = Response.status(getExtendedStatus(Status.BAD_REQUEST, "Could not decode version")).build();
@@ -206,6 +205,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
         if (parsedID.toolType() == ParsedRegistryID.ToolType.TOOL) {
             entry = toolDAO.findByPath(entryPath, user.isEmpty());
+            if (entry == null) {
+                entry = workflowDAO.findByPath(entryPath, user.isEmpty(), AppTool.class).orElse(null);
+            }
         } else if (parsedID.toolType() == ParsedRegistryID.ToolType.WORKFLOW) {
             entry = workflowDAO.findByPath(entryPath, user.isEmpty(), BioWorkflow.class).orElse(null);
         } else if (parsedID.toolType() == ParsedRegistryID.ToolType.SERVICE) {
@@ -226,7 +228,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -240,7 +242,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -258,7 +260,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (type == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getFileType(type);
+        final Optional<DescriptorLanguage.FileType> fileType = DescriptorLanguage.getOptionalFileType(type);
         if (fileType.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -426,13 +428,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
             if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
                 if (descriptorType == null  || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
+                    all.addAll(workflowDAO.filterTrsToolsGet(AppTool.class, descriptorLanguage, registry, organization, name, toolname, description, author, checker));
                     all.addAll(toolDAO.findAllPublished());
                 }
 
             }
             if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
                 // filter published workflows using criteria builder
-                all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker));
+                all.addAll(workflowDAO.filterTrsToolsGet(BioWorkflow.class, descriptorLanguage, registry, organization, name, toolname, description, author, checker));
             }
         }
         return all;
@@ -469,6 +472,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
         boolean unwrap, Optional<User> user) {
+        Response.StatusType fileNotFoundStatus = getExtendedStatus(Status.NOT_FOUND,
+            "version found, but file not found (bad filename, invalid file, etc.)");
 
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = null;
@@ -573,6 +578,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     containerfilesList.add(dockerfile);
                     return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
+                } else {
+                    return Response.status(fileNotFoundStatus).build();
                 }
             }
             String path;
@@ -611,9 +618,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
             }
         }
-        Response.StatusType status = getExtendedStatus(Status.NOT_FOUND,
-            "version found, but file not found (bad filename, invalid file, etc.)");
-        return Response.status(status).build();
+        return Response.status(fileNotFoundStatus).build();
     }
 
     public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
@@ -783,7 +788,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * and services have a "#service" prepended to it.
      */
     public static class ParsedRegistryID {
-        private enum ToolType { TOOL, SERVICE, WORKFLOW };
+        private enum ToolType { TOOL, SERVICE, WORKFLOW
+        }
+
         private ToolType type = ToolType.TOOL;
         private final String registry;
         private final String organization;

@@ -16,19 +16,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -55,6 +42,18 @@ import io.swagger.quay.client.model.QuayOrganization;
 import io.swagger.quay.client.model.QuayRepo;
 import io.swagger.quay.client.model.QuayTag;
 import io.swagger.quay.client.model.UserView;
+import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;

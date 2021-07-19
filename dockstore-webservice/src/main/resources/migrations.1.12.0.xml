@@ -1,0 +1,81 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2021 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.12.0">
+    <changeSet author="ktran (generated)" id="addImageSpecifier">
+        <addColumn tableName="image">
+            <column name="specifier" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addAppTool">
+        <createTable tableName="apptool">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="apptool_pkey"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="conceptdoi" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="licensename" type="VARCHAR(255)"/>
+            <column name="orcidputcode" type="VARCHAR(255)"/>
+            <column name="topicid" type="BIGINT"/>
+            <column name="checkerid" type="BIGINT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="n/a" name="descriptortypesubclass" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forumurl" type="VARCHAR(256)"/>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+            <column name="actualdefaultversion" type="BIGINT"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="apptool" constraintName="fk_defaultversion_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_apptool" tableName="apptool"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_checkerid_apptool" tableName="apptool"/>
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="apptool" constraintName="fk_checkerid_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="upgradeLiquibase">
+        <dropIndex tableName="cloud_instance" indexName="unique_user_instances"/>
+        <addUniqueConstraint columnNames="url, user_id, partner" constraintName="unique_user_instances" tableName="cloud_instance"/>
+    </changeSet>
+</databaseChangeLog>

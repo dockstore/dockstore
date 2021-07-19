@@ -16,12 +16,17 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Workflow;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -29,13 +34,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.SourceControlConverter;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -87,7 +85,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
         SourceControlConverter converter = new SourceControlConverter();
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Workflow> query = namedTypedQuery(fullQueryName)
             .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
@@ -141,7 +139,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         SourceControlConverter converter = new SourceControlConverter();
 
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Workflow> query = namedTypedQuery(fullQueryName)
             .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
@@ -179,13 +177,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public List<Workflow> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
+    public <T extends Workflow> List<T> filterTrsToolsGet(Class<T> workflowType, DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
             String description, String author, Boolean checker) {
 
         final SourceControlConverter converter = new SourceControlConverter();
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
-        final Root<Workflow> entryRoot = q.from(Workflow.class);
+        final CriteriaQuery<T> q = cb.createQuery(workflowType);
+        final Root<T> entryRoot = q.from(workflowType);
 
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
@@ -206,9 +204,9 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
 
         q.where(predicate);
-        TypedQuery<Workflow> query = currentSession().createQuery(q);
+        TypedQuery<T> query = currentSession().createQuery(q);
 
-        List<Workflow> workflows = query.getResultList();
+        List<T> workflows = query.getResultList();
         return workflows;
     }
 
@@ -277,30 +275,30 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));
     }
 
     public List<Workflow> findPublishedByOrganization(String organization) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
             .setParameter("organization", organization));
     }
 
     public List<Workflow> findByOrganization(SourceControl sourceControl, String organization) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
                 .setParameter("organization", organization)
                 .setParameter("sourceControl", sourceControl));
     }
 
     public List<Workflow> findByOrganizationWithoutUser(SourceControl sourceControl, String organization, User user) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
                 .setParameter("organization", organization)
                 .setParameter("user", user)
                 .setParameter("sourceControl", sourceControl));
     }
 
     public Workflow findByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
     /**
@@ -312,7 +310,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      */
     public Optional<Workflow> getWorkflowByWorkflowVersionId(long workflowVersionId) {
         try {
-            Workflow workflow = uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
+            Workflow workflow = uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
                     .setParameter("workflowVersionId", workflowVersionId));
             return Optional.of(workflow);
         } catch (NoResultException nre) {

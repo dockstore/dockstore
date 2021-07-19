@@ -18,10 +18,15 @@
 
 package io.dockstore.webservice;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import io.dockstore.client.cli.BaseIT;
@@ -30,18 +35,27 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
+import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
+import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Author;
 import io.swagger.client.model.LambdaEvent;
+import io.swagger.client.model.OrcidAuthor;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Validation;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -55,16 +69,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-
-import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author agduncan
@@ -88,6 +92,7 @@ public class WebhookIT extends BaseIT {
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
     private final String installationId = "1179416";
+    private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
     private FileDAO fileDAO;
 
     @Before
@@ -123,9 +128,8 @@ public class WebhookIT extends BaseIT {
         assertTrue("All versions should be legacy", workflow.getWorkflowVersions().stream().allMatch(WorkflowVersion::isLegacyVersion));
 
         // Webhook call should convert workflow to DOCKSTORE_YML
-        workflowApi.
-                handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
-        workflow = workflowApi.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        workflowApi.handleGitHubRelease(workflowRepo, "DockstoreTestUser2", "refs/tags/0.1", installationId);
+        workflow = workflowApi.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", BIOWORKFLOW);
         assertEquals("Workflow should be DOCKSTORE_YML mode", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertTrue("One version should be not legacy", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()));
 
@@ -205,7 +209,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
-        io.dockstore.openapi.client.model.Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
@@ -216,10 +220,10 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, workflowCount);
 
         // Ensure that existing workflow is updated
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "", false);
+        workflow = getFoobar1Workflow(client);
 
         // Ensure that new workflow is created and is what is expected
-        io.dockstore.openapi.client.model.Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         assertEquals("Should be a CWL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.CWL, workflow2.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow2.getMode());
         assertEquals("Should have one version 0.2", 1, workflow2.getWorkflowVersions().size());
@@ -237,12 +241,12 @@ public class WebhookIT extends BaseIT {
             assertEquals("Should be able to get license after manual GitHub App version update", "Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName());
         });
 
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        workflow = getFoobar1Workflow(client);
         assertTrue("Should have a master version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
         assertTrue("Should have a 0.1 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.1")));
         assertTrue("Should have a 0.2 version.", workflow.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        workflow2 = getFoobar2Workflow(client);
         assertTrue("Should have a master version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")));
         assertTrue("Should have a 0.2 version.", workflow2.getWorkflowVersions().stream().anyMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
@@ -266,9 +270,9 @@ public class WebhookIT extends BaseIT {
 
         // Delete tag 0.2
         client.handleGitHubBranchDeletion(workflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/0.2", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        workflow = getFoobar1Workflow(client);
         assertTrue("Should not have a 0.2 version.", workflow.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        workflow2 = getFoobar2Workflow(client);
         assertTrue("Should not have a 0.2 version.", workflow2.getWorkflowVersions().stream().noneMatch((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "0.2")));
 
         // Add version that doesn't exist
@@ -317,10 +321,35 @@ public class WebhookIT extends BaseIT {
 
         // Try adding version with empty test parameter file (should work)
         client.handleGitHubRelease("refs/heads/emptytestparameter", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
-
+        workflow2 = getFoobar2Workflow(client);
         assertTrue("Should have emptytestparameter version that is valid", workflow2.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "emptytestparameter")).findFirst().get().isValid());
         testValidationUpdate(client);
+        testDefaultVersion(client);
+    }
+
+    private void testDefaultVersion(io.dockstore.openapi.client.api.WorkflowsApi client) {
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
+        assertNull(workflow2.getDefaultVersion());
+        io.dockstore.openapi.client.model.Workflow workflow = getFoobar1Workflow(client);
+        assertEquals(null, workflow.getDefaultVersion());
+        client.handleGitHubRelease("refs/tags/0.4", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        workflow2 = getFoobar2Workflow(client);
+        assertEquals("The new tag says the latest tag should be the default version", "0.4", workflow2.getDefaultVersion());
+        workflow = getFoobar1Workflow(client);
+        assertEquals(null, workflow.getDefaultVersion());
+
+    }
+    
+    private io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "versions");
+    }
+
+    private Workflow getFoobar1Workflow(WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", BIOWORKFLOW);
+    }
+
+    private io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", BIOWORKFLOW, "versions");
     }
 
     /**
@@ -330,12 +359,12 @@ public class WebhookIT extends BaseIT {
     private void testValidationUpdate(io.dockstore.openapi.client.api.WorkflowsApi client) {
         testingPostgres.runUpdateStatement("update workflowversion set valid='f'");
 
-        io.dockstore.openapi.client.model.Workflow workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        io.dockstore.openapi.client.model.Workflow workflow2 = getFoobar2Workflow(client);
         Optional<io.dockstore.openapi.client.model.WorkflowVersion> masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertFalse("Master version should be invalid because it was manually changed", masterVersion.get().isValid());
 
         client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
-        workflow2 = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", "versions", false);
+        workflow2 = getFoobar2Workflow(client);
         masterVersion = workflow2.getWorkflowVersions().stream().filter((io.dockstore.openapi.client.model.WorkflowVersion version) -> Objects.equals(version.getName(), "master")).findFirst();
         assertTrue("Master version should be valid after GitHub App triggered again", masterVersion.get().isValid());
     }
@@ -351,7 +380,7 @@ public class WebhookIT extends BaseIT {
 
         // Add 1.0 tag and set as default version
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
-        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals("should have 1 version", 1, workflow.getWorkflowVersions().size());
         assertNull("should have no default version until set", workflow.getDefaultVersion());
         workflow = client.updateWorkflowDefaultVersion(workflow.getId(), workflow.getWorkflowVersions().get(0).getName());
@@ -359,18 +388,18 @@ public class WebhookIT extends BaseIT {
 
         // Add 2.0 tag
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals("should have 2 versions", 2, workflow.getWorkflowVersions().size());
 
         // Delete 1.0 tag, should reassign 2.0 as the default version
         client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals("should have 1 version after deletion", 1, workflow.getWorkflowVersions().size());
         assertNotNull("should have reassigned the default version during deletion", workflow.getDefaultVersion());
 
         // Delete 2.0 tag, unset default version
         client.handleGitHubBranchDeletion(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals("should have 0 versions after deletion", 0, workflow.getWorkflowVersions().size());
         assertNull("should have no default version after final version is deleted", workflow.getDefaultVersion());
     }
@@ -389,7 +418,7 @@ public class WebhookIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertEquals(1, workflowCount);
 
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be able to get license after GitHub App register", "Apache License 2.0", workflow.getLicenseInformation().getLicenseName());
 
         // Ensure that new workflow is created and is what is expected
@@ -445,7 +474,7 @@ public class WebhookIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertEquals(1, workflowCount);
         // Ensure that new workflow is created and is what is expected
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version", 1, workflow.getWorkflowVersions().size());
@@ -467,7 +496,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
@@ -508,7 +537,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new workflow is created and is what is expected
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         assertEquals("Should be a WDL workflow", Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
@@ -520,7 +549,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new version is in the correct state (invalid)
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", BIOWORKFLOW);
         assertNotNull(workflow);
         assertEquals("Should have two versions", 2, workflow.getWorkflowVersions().size());
 
@@ -540,7 +569,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, workflowCount);
 
         // Ensure that new version is in the correct state (invalid)
-        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", false);
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "validations", BIOWORKFLOW);
         assertNotNull(workflow);
         assertEquals("Should have three versions", 3, workflow.getWorkflowVersions().size());
 
@@ -580,7 +609,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
-        Workflow workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", false);
+        Workflow workflow = getFoobar1Workflow(client);
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue("Test file should have the expected path", sourceFiles.stream().filter(sourceFile -> sourceFile.getPath().equals("/dockstore.wdl.json")).findFirst().isPresent());
@@ -596,7 +625,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
-        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", BIOWORKFLOW);
         assertNotNull(workflow);
     }
 
@@ -618,64 +647,64 @@ public class WebhookIT extends BaseIT {
 
         // master should be excluded by all of the workflows with filters
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/master", installationId);
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false));
-        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", BIOWORKFLOW));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", BIOWORKFLOW));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", BIOWORKFLOW));
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals(1, workflow.getWorkflowVersions().size());
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", BIOWORKFLOW));
 
         // tag 2.0 should be excluded by all of the workflows with filters
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/2.0", installationId);
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", false));
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", BIOWORKFLOW));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", BIOWORKFLOW));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "", BIOWORKFLOW));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals(2, workflow.getWorkflowVersions().size());
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", BIOWORKFLOW));
 
         // develop2 should be accepted by the heads/dev* filter in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/develop2", installationId);
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", false);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", BIOWORKFLOW));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", BIOWORKFLOW));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", BIOWORKFLOW);
         assertEquals(1, workflow.getWorkflowVersions().size());
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals(3, workflow.getWorkflowVersions().size());
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", BIOWORKFLOW));
 
         // tag 1.1 should be accepted by the 1.* filter in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.1", installationId);
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", false));
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", false);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", BIOWORKFLOW));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "", BIOWORKFLOW));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", BIOWORKFLOW);
         assertEquals(2, workflow.getWorkflowVersions().size());
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals(4, workflow.getWorkflowVersions().size());
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", BIOWORKFLOW));
 
         // tag 1.0 should be accepted by tags/1.0 in filtertag and 1.* in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", false));
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "versions", false);
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "", BIOWORKFLOW));
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "versions", BIOWORKFLOW);
         assertEquals(1, workflow.getWorkflowVersions().size());
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", BIOWORKFLOW);
         assertEquals(3, workflow.getWorkflowVersions().size());
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals(5, workflow.getWorkflowVersions().size());
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", BIOWORKFLOW));
 
         // develop should be accepted by develop in filterbranch and heads/dev* in filtermulti
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/develop", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterbranch", "versions", BIOWORKFLOW);
         assertEquals(1, workflow.getWorkflowVersions().size());
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtertag", "versions", BIOWORKFLOW);
         assertEquals(1, workflow.getWorkflowVersions().size());
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filtermulti", "versions", BIOWORKFLOW);
         assertEquals(4, workflow.getWorkflowVersions().size());
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions", BIOWORKFLOW);
         assertEquals(6, workflow.getWorkflowVersions().size());
-        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", false));
+        assertThrows(ApiException.class, () -> client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filterregexerror", "", BIOWORKFLOW));
     }
 
     /**
@@ -689,10 +718,90 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/publish", installationId);
-        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", BIOWORKFLOW);
         assertTrue(workflow.isIsPublished());
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/unpublish", installationId);
-        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", false);
+        workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "", BIOWORKFLOW);
         assertFalse(workflow.isIsPublished());
+    }
+
+    /**
+     * This tests multiple authors functionality in .dockstore.yml
+     * @throws Exception
+     */
+    @Test
+    public void testDockstoreYmlAuthors() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/authors", installationId);
+        final Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", "versions,authors", BIOWORKFLOW);
+        final WorkflowVersion version = workflow.getWorkflowVersions().get(0);
+        final List<Author> authors = version.getAuthors();
+        assertEquals(2, authors.size());
+        final List<OrcidAuthor> orcidAuthors = version.getOrcidAuthors();
+        assertEquals(2, orcidAuthors.size());
+    }
+
+    @Test
+    public void testTools() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", APPTOOL);
+        Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions", BIOWORKFLOW);
+
+        assertNotNull(workflow);
+        assertNotNull(appTool);
+
+        assertEquals(1, appTool.getWorkflowVersions().size());
+        assertEquals(1, workflow.getWorkflowVersions().size());
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", APPTOOL);
+        workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", BIOWORKFLOW);
+        assertEquals(2, appTool.getWorkflowVersions().size());
+        assertEquals(2, workflow.getWorkflowVersions().size());
+
+        WorkflowVersion invalidVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
+        invalidVersion.getValidations();
+        Validation workflowValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
+        assertFalse(workflowValidation.isValid());
+        assertTrue(workflowValidation.getMessage().contains("Did you mean to register a tool"));
+        appTool.getWorkflowVersions().stream().forEach(workflowVersion -> {
+            if (!workflowVersion.isValid()) {
+                fail("Tool should be valid for both versions");
+            }
+        });
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidTool", installationId);
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", APPTOOL);
+        workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, "versions,validations", BIOWORKFLOW);
+        assertEquals(3, appTool.getWorkflowVersions().size());
+        assertEquals(3, workflow.getWorkflowVersions().size());
+
+        invalidVersion = appTool.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
+        Validation toolValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
+        assertFalse(toolValidation.isValid());
+        assertTrue(toolValidation.getMessage().contains("Did you mean to register a workflow"));
+
+        testingPostgres.runUpdateStatement("update apptool set ispublished = 't' where id = " + appTool.getId());
+        testingPostgres.runUpdateStatement("update workflow set ispublished = 't' where id = " + workflow.getId());
+
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
+        final List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        assertEquals(2, tools.size());
+
+        final Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools");
+        assertNotNull(tool);
+        assertEquals("CommandLineTool", tool.getToolclass().getDescription());
+
+        final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/github.com/DockstoreTestUser2/test-workflows-and-tools");
+        assertNotNull(trsWorkflow);
+        assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
     }
 }

@@ -15,13 +15,6 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Alias;
@@ -30,6 +23,12 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 

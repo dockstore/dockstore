@@ -1,9 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
-
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Alias;
@@ -14,6 +10,9 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.resources.AliasableResourceInterface;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

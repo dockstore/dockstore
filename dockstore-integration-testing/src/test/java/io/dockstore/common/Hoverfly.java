@@ -16,7 +16,15 @@
 
 package io.dockstore.common;
 
-import javax.ws.rs.core.MediaType;
+import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
+import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
+import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.badRequest;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.notFound;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
+import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
+import static io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers.contains;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.services.oauth2.model.Tokeninfo;
@@ -28,14 +36,8 @@ import io.dockstore.webservice.core.TokenType;
 import io.specto.hoverfly.junit.core.SimulationSource;
 import io.specto.hoverfly.junit.core.model.RequestFieldMatcher;
 import io.specto.hoverfly.junit.dsl.matchers.HoverflyMatchers;
-
-import static io.dropwizard.testing.FixtureHelpers.fixture;
-import static io.specto.hoverfly.junit.core.SimulationSource.dsl;
-import static io.specto.hoverfly.junit.dsl.HoverflyDsl.response;
-import static io.specto.hoverfly.junit.dsl.HoverflyDsl.service;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.notFound;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.success;
-import static io.specto.hoverfly.junit.dsl.ResponseCreators.unauthorised;
+import javax.ws.rs.core.MediaType;
+import org.apache.http.HttpStatus;
 
 /**
  * This class contains the Hoverfly simulation for GitHub and Google.
@@ -56,6 +58,11 @@ public final class Hoverfly {
     public static final String SUFFIX2 = "GitHub2";
     public static final String SUFFIX3 = "Google3";
     public static final String SUFFIX4 = "Google4";
+
+    // These two are for ORCID
+    public static final String BAD_PUT_CODE = "666666";
+    public static final String PUT_CODE = "7777777";
+
     private static final String GITHUB_USER1 = fixture("fixtures/GitHubUser.json");
     private static final String GITHUB_USER2 = fixture("fixtures/GitHubUser2.json");
     private static final String GITHUB_RATE_LIMIT = fixture("fixtures/GitHubRateLimit.json");
@@ -137,40 +144,50 @@ public final class Hoverfly {
         .get("/repos/tuber/xenahub/installation").willReturn(success(GITHUB_APP_ON_TUBER_XENAHUB, MediaType.APPLICATION_JSON))
 
         .get(RequestFieldMatcher.newRegexMatcher("/repos/[^/]+/[^/]+/installation")).willReturn(notFound()));
-    private static Gson gson = new Gson();
+    private static final Gson GSON = new Gson();
+
+    public static final SimulationSource ORCID_SIMULATION_SOURCE = dsl(
+            service("https://api.sandbox.orcid.org")
+                    .post("/v3.0/0000-0001-8365-0487/work").anyBody().willReturn(response().status(HttpStatus.SC_CREATED).andSetState("Work", "Created").header("Location", PUT_CODE))
+                    .post("/v3.0/0000-0001-8365-0487/work").withState("Work", "Created").anyBody().willReturn(response().status(HttpStatus.SC_CONFLICT).body(fixture(
+                    "fixtures/successfulPostOrcidWork.xml")))
+                    .post("/v3.0/0000-0001-8365-0487/work").body(contains(PUT_CODE)).willReturn(badRequest().body(fixture("fixtures/putCodeOnPostOrcidWork.xml")))
+                    .put("/v3.0/0000-0001-8365-0487/work/" + PUT_CODE).body(contains(PUT_CODE)).willReturn(success().body(fixture("fixtures/successfulPutOrcidWork.xml")))
+                    .put("/v3.0/0000-0001-8365-0487/work/" + BAD_PUT_CODE).body(contains(BAD_PUT_CODE)).willReturn(notFound()));
+
     public static final SimulationSource SIMULATION_SOURCE = dsl(service("https://www.googleapis.com")
 
             .post("/oauth2/v4/token").body(HoverflyMatchers.contains(getFakeCode(SUFFIX3))).anyQueryParams()
-            .willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX3)), MediaType.APPLICATION_JSON))
+            .willReturn(success(GSON.toJson(getFakeTokenResponse(SUFFIX3)), MediaType.APPLICATION_JSON))
 
             .post("/oauth2/v4/token").body(HoverflyMatchers.contains(getFakeCode(SUFFIX4))).anyQueryParams()
-            .willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX4)), MediaType.APPLICATION_JSON))
+            .willReturn(success(GSON.toJson(getFakeTokenResponse(SUFFIX4)), MediaType.APPLICATION_JSON))
 
             .post("/oauth2/v4/token").anyBody().anyQueryParams().willReturn(unauthorised())
 
             .post("/oauth2/v2/tokeninfo").anyBody().queryParam("access_token", getFakeAccessToken(SUFFIX3))
-            .willReturn(success(gson.toJson(getFakeTokeninfo(GOOGLE_ACCOUNT_USERNAME1)), MediaType.APPLICATION_JSON))
+            .willReturn(success(GSON.toJson(getFakeTokeninfo(GOOGLE_ACCOUNT_USERNAME1)), MediaType.APPLICATION_JSON))
 
             .post("/oauth2/v2/tokeninfo").anyBody().queryParam("access_token", getFakeAccessToken(SUFFIX4))
-            .willReturn(success(gson.toJson(getFakeTokeninfo(GOOGLE_ACCOUNT_USERNAME2)), MediaType.APPLICATION_JSON))
+            .willReturn(success(GSON.toJson(getFakeTokeninfo(GOOGLE_ACCOUNT_USERNAME2)), MediaType.APPLICATION_JSON))
 
             .post("/oauth2/v2/tokeninfo").anyBody().anyQueryParams().willReturn(unauthorised())
 
             .get("/oauth2/v2/userinfo").anyQueryParams()
             .header("Authorization", (Object[])new String[] { "Bearer " + getFakeAccessToken(SUFFIX3) })
-            .willReturn(success(gson.toJson(getFakeUserinfoplus(GOOGLE_ACCOUNT_USERNAME1)), MediaType.APPLICATION_JSON))
+            .willReturn(success(GSON.toJson(getFakeUserinfoplus(GOOGLE_ACCOUNT_USERNAME1)), MediaType.APPLICATION_JSON))
 
             .get("/oauth2/v2/userinfo").anyQueryParams()
             .header("Authorization", (Object[])new String[] { "Bearer " + getFakeAccessToken(SUFFIX4) })
-            .willReturn(success(gson.toJson(getFakeUserinfoplus(GOOGLE_ACCOUNT_USERNAME2)), MediaType.APPLICATION_JSON)),
+            .willReturn(success(GSON.toJson(getFakeUserinfoplus(GOOGLE_ACCOUNT_USERNAME2)), MediaType.APPLICATION_JSON)),
 
         service("https://github.com")
 
             .post("/login/oauth/access_token").body(HoverflyMatchers.contains(getFakeCode(SUFFIX1))).anyQueryParams()
-            .willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX1)), MediaType.APPLICATION_JSON))
+            .willReturn(success(GSON.toJson(getFakeTokenResponse(SUFFIX1)), MediaType.APPLICATION_JSON))
 
             .post("/login/oauth/access_token").body(HoverflyMatchers.contains(getFakeCode(SUFFIX2))).anyQueryParams()
-            .willReturn(success(gson.toJson(getFakeTokenResponse(SUFFIX2)), MediaType.APPLICATION_JSON)),
+            .willReturn(success(GSON.toJson(getFakeTokenResponse(SUFFIX2)), MediaType.APPLICATION_JSON)),
 
         service("https://api.github.com")
 
@@ -185,6 +202,7 @@ public final class Hoverfly {
             .get("/user/orgs").willReturn(success(GITHUB_ORGANIZATIONS, MediaType.APPLICATION_JSON))
 
             .get("/user/emails").willReturn(success(GITHUB_EMAIL, MediaType.APPLICATION_JSON)));
+
     private Hoverfly() {
         // utility class
     }
@@ -206,10 +224,10 @@ public final class Hoverfly {
      * @return A custom satellizer token for testing
      */
     public static String getSatellizer(String suffix, boolean register) {
-        Satellizer satellizer = gson.fromJson(BASE_SATELLIZER, Satellizer.class);
+        Satellizer satellizer = GSON.fromJson(BASE_SATELLIZER, Satellizer.class);
         satellizer.getUserData().setRegister(register);
         satellizer.getOauthData().setCode(getFakeCode(suffix));
-        return gson.toJson(satellizer);
+        return GSON.toJson(satellizer);
     }
 
     public static String getFakeCode(String suffix) {

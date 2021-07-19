@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.11.0-alpha.2-SNAPSHOT
+  version: 1.12.0-alpha.1-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -591,7 +591,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -612,7 +612,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_Auth'
           description: default response
       security:
       - bearer: []
@@ -632,7 +632,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -652,7 +652,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -672,7 +672,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_Auth'
           description: default response
       security:
       - bearer: []
@@ -693,7 +693,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -714,7 +714,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -734,7 +734,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -761,7 +761,7 @@ paths:
       tags:
       - tokens
     get:
-      description: Get a specific token by id.
+      description: Get information about a specific token by id.
       operationId: listToken
       parameters:
       - in: path
@@ -775,7 +775,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Token'
+                $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -2005,7 +2005,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Notification'
       responses:
@@ -2071,6 +2071,36 @@ paths:
                 items:
                   $ref: '#/components/schemas/VersionVerifiedPlatform'
           description: default response
+      security:
+      - bearer: []
+      tags:
+      - entries
+  /entries/{entryId}/versions/{versionId}/descriptionMetrics:
+    get:
+      description: Retrieve metrics on the description of an entry
+      operationId: getDescriptionMetrics
+      parameters:
+      - description: Entry to retrieve the version from
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Version to retrieve the sourcefile types from
+        in: path
+        name: versionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescriptionMetrics'
+          description: Successfully calculated description metrics
       security:
       - bearer: []
       tags:
@@ -4420,10 +4450,38 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/updateUserMetadataToGetIds:
+    get:
+      deprecated: true
+      description: Attempt to update the metadata of all GitHub and Google users and
+        then returns a list of Dockstore users who could not be updated.
+      operationId: updateUserMetadataToGetIds
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: Get list Dockstore users we were unable to get GitHub/Google
+            IDs for.
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/user:
     delete:
       description: Delete user if possible.
       operationId: selfDestruct
+      parameters:
+      - description: Optional user id if deleting another user. Only admins can delete
+          another user.
+        in: query
+        name: userId
+        schema:
+          type: integer
+          format: int64
       responses:
         default:
           content:
@@ -4964,7 +5022,7 @@ paths:
       - users
   /users/{userId}/tokens:
     get:
-      description: Get tokens with user id.
+      description: Get information about tokens with user id.
       operationId: getUserTokens
       parameters:
       - in: path
@@ -4980,7 +5038,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Token'
+                  $ref: '#/components/schemas/Token_User'
           description: default response
       security:
       - bearer: []
@@ -5419,12 +5477,13 @@ paths:
         name: include
         schema:
           type: string
-      - description: Whether to get a service or workflow
+      - description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
+          \ bioworkflow, apptool"
         in: query
-        name: services
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          type: string
       responses:
         default:
           content:
@@ -6567,6 +6626,42 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation:
+    post:
+      description: Language parser calls this endpoint to update parsed information
+        for this version
+      operationId: postParsedInformation
+      parameters:
+      - description: Workflow to retrieve the version from.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Workflow version to retrieve the version from.
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LanguageParsingResponse'
+        description: Response from language parsing lambda
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
     get:
       description: Retrieve sourcefiles for an entry's version
@@ -6657,14 +6752,27 @@ components:
       properties:
         content:
           type: string
+    AppTool:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
+    Author:
+      type: object
+      properties:
+        affiliation:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
     BioWorkflow:
       type: object
       allOf:
       - $ref: '#/components/schemas/Workflow'
       - type: object
         properties:
-          is_checker:
-            type: boolean
           parent_id:
             type: integer
             format: int64
@@ -6692,6 +6800,8 @@ components:
     CloudInstance:
       type: object
       properties:
+        displayName:
+          type: string
         id:
           type: integer
           format: int64
@@ -6840,6 +6950,8 @@ components:
           type: string
         featuredContentUrl:
           type: string
+        featuredNewsUrl:
+          type: string
         gitBuildVersion:
           type: string
         gitCommitId:
@@ -6894,6 +7006,18 @@ components:
           type: string
         zenodoScope:
           type: string
+    DescriptionMetrics:
+      type: object
+      properties:
+        calculatedEntropy:
+          type: integer
+          format: int64
+        calculatedWordCount:
+          type: integer
+          format: int64
+        descriptionLength:
+          type: integer
+          format: int64
     DescriptorLanguageBean:
       type: object
       properties:
@@ -7228,6 +7352,7 @@ components:
           - TOOL
           - WORKFLOW
           - SERVICE
+          - APPTOOL
         lastUpdateDate:
           type: integer
           format: int64
@@ -7358,6 +7483,14 @@ components:
         size:
           type: integer
           format: int64
+        specifier:
+          type: string
+          enum:
+          - PARAMETER
+          - NO_TAG
+          - LATEST
+          - TAG
+          - DIGEST
         tag:
           type: string
     ImageData:
@@ -7435,6 +7568,99 @@ components:
           - PUBLISH
     Language:
       type: object
+      properties:
+        language:
+          type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+        version:
+          type: string
+    LanguageParsingRequest:
+      type: object
+      description: Request sent to the external language parsing service
+      properties:
+        branch:
+          type: string
+          description: The Git branch/tag
+        descriptorLanguage:
+          type: string
+          description: The language of the workflow
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+        descriptorRelativePathInGit:
+          type: string
+          description: The relative path to the primary descriptor (relative to the
+            base in Git)
+        entryId:
+          type: integer
+          format: int64
+          description: Id of the Dockstore entry
+        sourceFiles:
+          type: array
+          description: List of SourceFiles that will be required for parsing hosted
+            entries from Dockstore
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        uri:
+          type: string
+          description: The Git URI
+        versionId:
+          type: integer
+          format: int64
+          description: Id of the Dockstore entry's workflowVersion
+      required:
+      - branch
+      - descriptorRelativePathInGit
+      - entryId
+      - uri
+      - versionId
+    LanguageParsingResponse:
+      type: object
+      description: Response from the external lambda parsing service
+      properties:
+        author:
+          type: string
+          description: Author found from parsing the version (may possibly be different
+            from what will be stored in Dockstore)
+        clonedRepositoryAbsolutePath:
+          type: string
+        description:
+          type: string
+          description: Description found from parsing the version (may possibly be
+            different from what will be stored in Dockstore)
+        email:
+          type: string
+          description: Email found from parsing the version (may possibly be different
+            from what will be stored in Dockstore)
+        languageParsingRequest:
+          $ref: '#/components/schemas/LanguageParsingRequest'
+        orcidID:
+          type: string
+          description: ORCID ID found from parsing the version (may possibly be different
+            from what will be stored in Dockstore)
+        parsedInformation:
+          $ref: '#/components/schemas/ParsedInformation'
+        secondaryFilePaths:
+          type: array
+          items:
+            type: string
+        sourceFiles:
+          type: array
+          description: List of SourceFiles returned after parsing a non-hosted entry
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        versionTypeValidation:
+          $ref: '#/components/schemas/VersionTypeValidation'
     LicenseInformation:
       type: object
       properties:
@@ -7479,6 +7705,11 @@ components:
           enum:
           - SITEWIDE
           - NEWSBODY
+    OrcidAuthor:
+      type: object
+      properties:
+        orcid:
+          type: string
     Organization:
       type: object
       properties:
@@ -7864,6 +8095,11 @@ components:
       properties:
         author:
           type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          uniqueItems: true
         automated:
           type: boolean
         commitID:
@@ -7921,6 +8157,11 @@ components:
           description: "Implementation specific, can be a quay.io or docker hub tag\
             \ name"
           example: latest
+        orcidAuthors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -7969,7 +8210,7 @@ components:
       required:
       - name
       - reference
-    Token:
+    Token_Auth:
       type: object
       properties:
         content:
@@ -7987,6 +8228,34 @@ components:
           type: string
         token:
           type: string
+        tokenSource:
+          type: string
+          enum:
+          - quay.io
+          - github.com
+          - dockstore
+          - bitbucket.org
+          - gitlab.com
+          - zenodo.org
+          - google.com
+          - orcid.org
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+    Token_User:
+      type: object
+      properties:
+        dbCreateDate:
+          type: integer
+          format: int64
+        dbUpdateDate:
+          type: integer
+          format: int64
+        id:
+          type: integer
+          format: int64
         tokenSource:
           type: string
           enum:
@@ -8374,6 +8643,11 @@ components:
       properties:
         author:
           type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          uniqueItems: true
         commitID:
           type: string
         dbUpdateDate:
@@ -8420,6 +8694,11 @@ components:
           description: "Implementation specific, can be a quay.io or docker hub tag\
             \ name"
           example: latest
+        orcidAuthors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          uniqueItems: true
         output_file_formats:
           type: array
           items:
@@ -8466,6 +8745,10 @@ components:
     VersionMetadata:
       type: object
       properties:
+        description:
+          type: string
+          description: "This is a human-readable description of this container and\
+            \ what it is trying to accomplish, required GA4GH"
         id:
           type: integer
           format: int64
@@ -8475,6 +8758,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ParsedInformation'
+    VersionTypeValidation:
+      type: object
+      properties:
+        message:
+          type: object
+          additionalProperties:
+            type: string
+        valid:
+          type: boolean
     VersionVerifiedPlatform:
       type: object
       properties:
@@ -8646,6 +8938,11 @@ components:
             $ref: '#/components/schemas/Alias'
         author:
           type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          uniqueItems: true
         commitID:
           type: string
         dbUpdateDate:
@@ -8697,6 +8994,11 @@ components:
           description: "Implementation specific, can be a quay.io or docker hub tag\
             \ name"
           example: latest
+        orcidAuthors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          uniqueItems: true
         output_file_formats:
           type: array
           items:

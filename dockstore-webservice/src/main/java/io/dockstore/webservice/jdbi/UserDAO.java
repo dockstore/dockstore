@@ -16,9 +16,8 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.User;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
@@ -48,7 +47,7 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
     }
 
     public List<User> findAll() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findAll"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.User.findAll"));
     }
 
     /**
@@ -56,24 +55,36 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
      *
      * @param username username of user to find
      * @deprecated likely dangerous to use with changing usernames
-     * @return
+     * @return username
      */
     @Deprecated
     public User findByUsername(String username) {
-        Query query = namedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
-        return (User)query.uniqueResult();
+        Query<User> query = namedTypedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
+        return query.uniqueResult();
     }
 
     public User findByGoogleEmail(String email) {
-        final Query query = namedQuery("io.dockstore.webservice.core.User.findByGoogleEmail")
+        final Query<User> query = namedTypedQuery("io.dockstore.webservice.core.User.findByGoogleEmail")
             .setParameter("email", email);
-        return (User)query.uniqueResult();
+        return query.uniqueResult();
+    }
+
+    public User findByGoogleOnlineProfileId(String id) {
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.User.findByGoogleUserId").setParameter("id", id));
     }
 
     public User findByGitHubUsername(String username) {
-        final Query query = namedQuery("io.dockstore.webservice.core.User.findByGitHubUsername")
+        final Query<User> query = namedTypedQuery("io.dockstore.webservice.core.User.findByGitHubUsername")
             .setParameter("username", username);
-        return (User)query.uniqueResult();
+        return query.uniqueResult();
+    }
+
+    public User findByGitHubUserId(String id) {
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.User.findByGitHubUserId").setParameter("id", id));
+    }
+
+    public List<User> findAllGitHubUsers() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.User.findAllGitHubUsers"));
     }
 
     public long findPublishedEntries(String username)  {
