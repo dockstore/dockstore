@@ -45,8 +45,8 @@
         <property name="fileExtensions" value="java"/>
         <!-- Dockstore override, addition -->
         <property name="severity" value="warning"/>
-        <!-- Dockstore override, 100 to 140 -->
-        <property name="max" value="140"/>
+        <!-- Dockstore override, 100 to 200 -->
+        <property name="max" value="200"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
     <!-- Dockstore override, addition -->

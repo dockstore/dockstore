@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.12.0-alpha.0-SNAPSHOT"
+  version: "1.12.0-alpha.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2506,6 +2506,8 @@ paths:
       summary: "Update a notification"
       description: "Curator/admin only"
       operationId: "updateNotification"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2548,6 +2550,36 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+  /entries/{entryId}/versions/{versionId}/descriptionMetrics:
+    get:
+      tags:
+      - "entries"
+      summary: "Retrieve metrics on the description of an entry"
+      description: ""
+      operationId: "calculateDescriptionMetrics"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/User"
+      - name: "entryId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "versionId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DescriptionMetrics"
   /entries/{id}/aliases:
     post:
       tags:
@@ -6452,6 +6484,18 @@ definitions:
       zenodoScope:
         type: "string"
     description: "Configuration information for UI clients of the Dockstore webservice."
+  DescriptionMetrics:
+    type: "object"
+    properties:
+      calculatedEntropy:
+        type: "integer"
+        format: "int64"
+      calculatedWordCount:
+        type: "integer"
+        format: "int64"
+      descriptionLength:
+        type: "integer"
+        format: "int64"
   DescriptorLanguageBean:
     type: "object"
     properties:
@@ -7208,6 +7252,20 @@ definitions:
         format: "int64"
         position: 6
         description: "Timestamp at which the notification was last updated"
+  Optional:
+    type: "object"
+    properties:
+      empty:
+        type: "boolean"
+      present:
+        type: "boolean"
+  OptionalUser:
+    type: "object"
+    properties:
+      empty:
+        type: "boolean"
+      present:
+        type: "boolean"
   OrcidAuthor:
     type: "object"
     required:
@@ -8370,6 +8428,10 @@ definitions:
   VersionMetadata:
     type: "object"
     properties:
+      description:
+        type: "string"
+        description: "This is a human-readable description of this container and what\
+          \ it is trying to accomplish, required GA4GH"
       id:
         type: "integer"
         format: "int64"

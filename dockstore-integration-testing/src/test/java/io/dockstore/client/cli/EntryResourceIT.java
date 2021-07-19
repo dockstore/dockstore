@@ -13,6 +13,7 @@ import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DescriptionMetrics;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -124,6 +125,64 @@ public class EntryResourceIT extends BaseIT {
                 Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
                 Assert.assertTrue(e.getMessage().contains("Could not export to ORCID. There exists another ORCID work with the same DOI URL."));
             }
+        }
+    }
+
+    @Test
+    public void testDescriptionMetrics() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(client);
+        UsersApi usersApi = new UsersApi(client);
+        User user = usersApi.getUser();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+            DescriptorLanguage.WDL.getShortName(), "");
+
+        List<Workflow> workflows = usersApi.userWorkflows(user.getId());
+        Long workflowId = workflows.get(0).getId();
+        workflowsApi.refresh1(workflowId, false);
+
+        Assert.assertTrue(workflows.size() > 0);
+
+        Workflow workflow = workflowsApi.getWorkflow(workflowId, null);
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        Long workflowVersionId = workflowVersions.get(0).getId();
+
+        // The provided workflow should have a description
+        try {
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertTrue(descriptionMetrics.getCalculatedEntropy() > 0
+                && descriptionMetrics.getCalculatedWordCount() > 0
+                && descriptionMetrics.getDescriptionLength() > 0);
+        } catch (Exception e) {
+            fail("Description metrics should have calculated nonzero values for the description.");
+        }
+
+        // Update the version description to something specific
+        final String newDescription = "'Test 1'";
+        final String updateStatement = String.format("UPDATE version_metadata SET description=%s WHERE id=%d",
+            newDescription, workflowVersionId);
+        testingPostgres.runUpdateStatement(updateStatement);
+        try {
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertEquals("Incorrect entropy", 5, (long) descriptionMetrics.getCalculatedEntropy());
+            Assert.assertEquals("Incorrect word count", 2, (long) descriptionMetrics.getCalculatedWordCount());
+            Assert.assertEquals("Incorrect description length", 6, (long) descriptionMetrics.getDescriptionLength());
+        } catch (ApiException e) {
+            fail("Description metrics should have calculated nonzero values for the description.");
+        }
+
+        // Update the version description to be null
+        final String updateToNull = String.format("UPDATE version_metadata SET description=NULL WHERE id=%d", workflowVersionId);
+        testingPostgres.runUpdateStatement(updateToNull);
+        try {
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertEquals("Incorrect entropy", 0, (long) descriptionMetrics.getCalculatedEntropy());
+            Assert.assertEquals("Incorrect word count", 0, (long) descriptionMetrics.getCalculatedWordCount());
+            Assert.assertEquals("Incorrect description length", 0, (long) descriptionMetrics.getDescriptionLength());
+        } catch (ApiException e) {
+            fail("The version does not have a description, so metrics should be set to 0.");
         }
     }
 }
