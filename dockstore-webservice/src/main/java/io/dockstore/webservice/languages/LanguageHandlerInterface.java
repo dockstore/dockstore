@@ -447,7 +447,9 @@ public interface LanguageHandlerInterface {
 
         // Remove tag or digest if exists
         Matcher m;
-        if (dockerSpecifier == DockerSpecifier.DIGEST) {
+        // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
+        // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
+        if (dockerSpecifier == DockerSpecifier.DIGEST && !dockerImage.contains(":")) {
             m = IMAGE_DIGEST_PATTERN.matcher(dockerImage);
         } else {
             m = IMAGE_TAG_PATTERN.matcher(dockerImage);
@@ -649,6 +651,13 @@ public interface LanguageHandlerInterface {
                     String imageNameWithSpecifier = String.join("/", Arrays.asList(splitDocker).subList(2, splitDocker.length)); // image name can have slashes
                     splitSpecifier = imageNameWithSpecifier.split(specifierSymbol); // ["image-name", "1"]
                     String imageName = splitSpecifier[0];
+
+                    // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
+                    // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
+                    // Remove the left-over ":"
+                    if (imageSpecifier == DockerSpecifier.DIGEST && imageName.contains(":")) {
+                        imageName = imageName.split(":")[0];
+                    }
 
                     String repo = String.join("/", owner, imageName);
                     String specifierName = splitSpecifier[1];
