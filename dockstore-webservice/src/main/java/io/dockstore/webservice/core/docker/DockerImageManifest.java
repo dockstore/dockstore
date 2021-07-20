@@ -15,12 +15,11 @@
  */
 package io.dockstore.webservice.core.docker;
 
-// This class describe's Docker's version 2 schema 2 image manifest.
-// Source: https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest
+// The image manifest provides a configuration and a set of layers for a container image
+// This class is compatible with both the Docker V2 schema 2 image manifest (https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest)
+// and the OCI image manifest specification (https://github.com/opencontainers/image-spec/blob/main/manifest.md).
 public class DockerImageManifest {
-    private int schemaVersion;
-
-    private String mediaType;
+    private int schemaVersion; // Should be 2 for both Docker V2 schema 2 and OCI
 
     private DockerLayer config;
 
@@ -32,14 +31,6 @@ public class DockerImageManifest {
 
     public void setSchemaVersion(int schemaVersion) {
         this.schemaVersion = schemaVersion;
-    }
-
-    public String getMediaType() {
-        return mediaType;
-    }
-
-    public void setMediaType(String mediaType) {
-        this.mediaType = mediaType;
     }
 
     public DockerLayer getConfig() {
