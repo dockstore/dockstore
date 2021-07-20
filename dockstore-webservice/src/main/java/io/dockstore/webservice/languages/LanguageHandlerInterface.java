@@ -110,7 +110,7 @@ public interface LanguageHandlerInterface {
     Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+(:|@sha256:)(.++)");
     // ghcr.io/<owner>/<image_name>:<image_tag> -> ghcr.io/icgc-argo/workflow-gateway
     // ghcr.io/<owner>/<image_name>@sha256:<image_digest>
-    Pattern GITHUB_CONTAINER_REGISTRY_IMAGE = Pattern.compile("(ghcr\\.io)/([a-zA-Z0-9-]++)/([a-z0-9._-]++)(:|@sha256:)(.++)");
+    Pattern GITHUB_CONTAINER_REGISTRY_IMAGE = Pattern.compile("(ghcr\\.io)/([a-zA-Z0-9-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
     Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):(\\S++)");
     Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@(\\S++)");
 
@@ -642,22 +642,21 @@ public interface LanguageHandlerInterface {
                     dockerImages.addAll(dockerHubImages);
                 }
             } else if (registryFound == Registry.GITHUB_CONTAINER_REGISTRY) {
-                try {
-                    splitDocker = image.split("/"); // ghcr.io/<repo>/<image>:1 -> ["ghcr.io", "repo-name", "image-name:1"]
-                    String imageNameWithSpecifier = splitDocker[2];
+                splitDocker = image.split("/"); // ghcr.io/<repo>/<image>:1 -> ["ghcr.io", "repo-name", "image-name:1"]
+                int minNumOfNameComponents = 3;
+                if (splitDocker.length >= minNumOfNameComponents) {
+                    String owner = splitDocker[1];
+                    String imageNameWithSpecifier = String.join("/", Arrays.asList(splitDocker).subList(2, splitDocker.length)); // image name can have slashes
                     splitSpecifier = imageNameWithSpecifier.split(specifierSymbol); // ["image-name", "1"]
-                } catch (ArrayIndexOutOfBoundsException ex) {
-                    LOG.error("URL to image on GitHub Container Registry incomplete", ex);
-                    continue;
-                }
+                    String imageName = splitSpecifier[0];
 
-                if (splitDocker.length > 2) { // ["ghcr.io", "repo-name", "image-name"]
-                    String repo = String.join("/", splitDocker[1], splitSpecifier[0]);
+                    String repo = String.join("/", owner, imageName);
                     String specifierName = splitSpecifier[1];
                     Set<Image> gitHubContainerRegistryImages = getImagesFromGitHubContainerRegistry(repo, imageSpecifier, specifierName);
                     dockerImages.addAll(gitHubContainerRegistryImages);
                 } else {
-                    LOG.error("Could not find image version specified for {}", splitDocker[1]);
+                    LOG.error("URL to image {} on GitHub Container Registry incomplete", image);
+                    continue;
                 }
             }
         }
