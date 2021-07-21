@@ -861,7 +861,7 @@ public interface LanguageHandlerInterface {
     }
 
     /**
-     * Get a Docker image's manifest by calling the Docker Registry HTTP API V2 endpoint: GET /v2/<repo>/manifests/<reference>
+     * Get a Docker image's manifest by calling the Docker Registry HTTP API V2 endpoint: GET /v2/[repo]/manifests/[tag_or_digest]
      *
      * @param token Authentication token with pull access for the image's repository
      * @param registryDockerPath
@@ -889,7 +889,7 @@ public interface LanguageHandlerInterface {
     }
 
     /**
-     * Get a blob specified by digest for a Docker image by calling the Docker Registry HTTP API V2 endpoint: GET /v2/<repo>/blobs/<digest>
+     * Get a blob specified by digest for a Docker image by calling the Docker Registry HTTP API V2 endpoint: GET /v2/[repo]/blobs/[digest]
      *
      * @param token Authentication token with pull access for the image's repository
      * @param registryDockerPath
