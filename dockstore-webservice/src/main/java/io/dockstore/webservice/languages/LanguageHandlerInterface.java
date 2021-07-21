@@ -835,7 +835,7 @@ public interface LanguageHandlerInterface {
      * Source for manifest calculation: https://docs.docker.com/registry/spec/api/#content-digests
      *
      * @param manifestBody Docker Registry V2 Schema 2 image manifest body
-     * @return
+     * @return Docker image digest
      */
     default String calculateDockerImageDigest(String manifestBody) {
         return Hashing.sha256().hashString(manifestBody, StandardCharsets.UTF_8).toString();
@@ -867,7 +867,7 @@ public interface LanguageHandlerInterface {
      * @param registryDockerPath
      * @param repo
      * @param specifierName Value of the specifier. Either a tag or a digest
-     * @return
+     * @return HttpResponse
      * @throws URISyntaxException
      * @throws IOException
      * @throws InterruptedException
