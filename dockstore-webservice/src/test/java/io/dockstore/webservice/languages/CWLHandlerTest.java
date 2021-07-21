@@ -175,6 +175,9 @@ public class CWLHandlerTest {
                 handler.getURLFromEntry("ghcr.io/foo/bar:1", toolDAO, DockerSpecifier.TAG));
         Assert.assertEquals("https://ghcr.io/foo/bar",
                 handler.getURLFromEntry("ghcr.io/foo/bar@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
+        // A specific architecture image is referenced by digest but it may also include a tag from the multi-arch image
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar:1@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
 
         // When toolDAO.findAllByPath() returns non-empty List<Tool>
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(Tool.class)));

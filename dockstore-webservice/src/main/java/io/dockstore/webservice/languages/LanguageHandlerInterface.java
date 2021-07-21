@@ -447,15 +447,23 @@ public interface LanguageHandlerInterface {
 
         // Remove tag or digest if exists
         Matcher m;
-        // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
-        // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
-        if (dockerSpecifier == DockerSpecifier.DIGEST && !dockerImage.contains(":")) {
+        if (dockerSpecifier == DockerSpecifier.DIGEST) {
             m = IMAGE_DIGEST_PATTERN.matcher(dockerImage);
         } else {
             m = IMAGE_TAG_PATTERN.matcher(dockerImage);
         }
         if (m.matches()) {
             dockerImage = m.group(1);
+        }
+
+        // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
+        // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
+        // Check for tag and remove if necessary
+        if (dockerSpecifier == DockerSpecifier.DIGEST) {
+            m = IMAGE_TAG_PATTERN.matcher(dockerImage);
+            if (m.matches()) {
+                dockerImage = m.group(1);
+            }
         }
 
         if (dockerImage.isEmpty()) {
@@ -654,7 +662,7 @@ public interface LanguageHandlerInterface {
 
                     // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
                     // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
-                    // Remove the left-over ":"
+                    // Remove the left-over tag
                     if (imageSpecifier == DockerSpecifier.DIGEST && imageName.contains(":")) {
                         imageName = imageName.split(":")[0];
                     }
