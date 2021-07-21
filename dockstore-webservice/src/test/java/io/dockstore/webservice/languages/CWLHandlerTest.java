@@ -15,6 +15,8 @@ import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifie
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -211,6 +213,39 @@ public class CWLHandlerTest {
                 handler.getURLFromEntry("ghcr.io/foo/bar:1", toolDAO, DockerSpecifier.TAG));
         Assert.assertEquals("https://www.dockstore.org/containers/ghcr.io/foo/bar",
                 handler.getURLFromEntry("ghcr.io/foo/bar@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
+    }
+
+    /**
+     * Test that the calculated digest matches the actual digest of the image.
+     * @throws URISyntaxException
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Test
+    public void testCalculateDockerImageDigest() throws URISyntaxException, IOException, InterruptedException {
+        final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
+        // GHCR image used: ghcr.io/helm/tiller@sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f (associated tag is 'v2.17.0')
+        String repo = "helm/tiller";
+        String digest = "sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f";
+
+        String token = null;
+        try {
+            token = handler.getDockerToken(Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath(), repo);
+        } catch (URISyntaxException | IOException | InterruptedException ex) {
+            Assert.fail("Could not retrieve token");
+        }
+
+        HttpResponse<String> manifestResponse = null;
+        try {
+            manifestResponse = handler.getDockerManifest(token, Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath(), repo, digest);
+        } catch (URISyntaxException | IOException | InterruptedException ex) {
+            Assert.fail("Could not retrieve manifest");
+        }
+        Assert.assertEquals(HttpStatus.SC_OK, manifestResponse.statusCode());
+        
+        String manifestBody = manifestResponse.body();
+        String calculatedDigest = String.format("sha256:%s", handler.calculateDockerImageDigest(manifestBody));
+        Assert.assertEquals(digest, calculatedDigest);
     }
 
     @Test
