@@ -314,7 +314,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
-                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
+                ZonedDateTime zonedDateTime = Instant.ofEpochMilli(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
                 throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + ", please wait til " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
