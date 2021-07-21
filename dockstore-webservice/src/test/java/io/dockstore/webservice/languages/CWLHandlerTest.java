@@ -242,7 +242,7 @@ public class CWLHandlerTest {
             Assert.fail("Could not retrieve manifest");
         }
         Assert.assertEquals(HttpStatus.SC_OK, manifestResponse.statusCode());
-        
+
         String manifestBody = manifestResponse.body();
         String calculatedDigest = String.format("sha256:%s", handler.calculateDockerImageDigest(manifestBody));
         Assert.assertEquals(digest, calculatedDigest);

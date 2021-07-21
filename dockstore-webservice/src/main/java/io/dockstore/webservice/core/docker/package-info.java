@@ -17,5 +17,7 @@
  * Models for responses from the Docker Registry HTTP API V2. Used right now just to grab image metadata, such as the image checksum.
  * But if other fields are needed in the future, then the fields that are two words (ex: imageID) need something like @SerializedName("image_id").
  * These models are compatible with both Docker V2 Schema 2 image manifests and Open Container Initiative (OCI) image manifest specifications.
+ * Compatibility matrix between OCI specifications and Docker V2 Schema 2 specifications:
+ * https://github.com/opencontainers/image-spec/blob/main/media-types.md#compatibility-matrix
  */
 package io.dockstore.webservice.core.docker;
