@@ -494,7 +494,13 @@
                                         <exclude>javax.validation:validation-api</exclude>
                                         <exclude>javax.activation:activation</exclude>
                                         <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
+                                        <!-- should be using v2 api -->
+                                        <exclude>com.amazonaws:*</exclude>
                                     </excludes>
+                                    <includes>
+                                        <!-- exempt encryption library which hasn't moved to new namespace -->
+                                        <include>com.amazonaws:aws-encryption-sdk-java</include>
+                                    </includes>
                                 </bannedDependencies>
                             </rules>
                         </configuration>
