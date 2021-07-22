@@ -8758,6 +8758,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ParsedInformation'
+        publicAccessibleTestParameterFile:
+          type: boolean
     VersionTypeValidation:
       type: object
       properties:
