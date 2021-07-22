@@ -443,30 +443,10 @@ public interface LanguageHandlerInterface {
         String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
         String dockstorePath = "https://www.dockstore.org/containers/"; // Update to tools once UI is updated to use /tools instead of /containers
         String amazonECRPublicPath = "https://gallery.ecr.aws/"; // Amazon ECR Public Gallery
-
-        String dockerImage = dockerEntry;
         String url;
 
         // Remove tag or digest if exists
-        Matcher m;
-        if (dockerSpecifier == DockerSpecifier.DIGEST) {
-            m = IMAGE_DIGEST_PATTERN.matcher(dockerImage);
-        } else {
-            m = IMAGE_TAG_PATTERN.matcher(dockerImage);
-        }
-        if (m.matches()) {
-            dockerImage = m.group(1);
-        }
-
-        // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
-        // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
-        // Check for tag and remove if necessary
-        if (dockerSpecifier == DockerSpecifier.DIGEST) {
-            m = IMAGE_TAG_PATTERN.matcher(dockerImage);
-            if (m.matches()) {
-                dockerImage = m.group(1);
-            }
-        }
+        String dockerImage = getImageNameWithoutSpecifier(dockerEntry, dockerSpecifier);
 
         if (dockerImage.isEmpty()) {
             return null;
@@ -535,6 +515,38 @@ public interface LanguageHandlerInterface {
         return url;
     }
 
+    /**
+     * Returns an image name without the specifier (tag or digest), if present.
+     * @param image
+     * @param specifier
+     * @return image name without specifier
+     */
+    default String getImageNameWithoutSpecifier(final String image, final DockerSpecifier specifier) {
+        String imageNameWithoutSpecifier = image;
+        // Remove tag or digest if exists
+        Matcher m;
+        if (specifier == DockerSpecifier.DIGEST) {
+            m = IMAGE_DIGEST_PATTERN.matcher(image);
+        } else {
+            m = IMAGE_TAG_PATTERN.matcher(image);
+        }
+        if (m.matches()) {
+            imageNameWithoutSpecifier = m.group(1);
+        }
+
+        // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
+        // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
+        // Check for tag and remove if necessary
+        if (specifier == DockerSpecifier.DIGEST) {
+            m = IMAGE_TAG_PATTERN.matcher(imageNameWithoutSpecifier);
+            if (m.matches()) {
+                imageNameWithoutSpecifier = m.group(1);
+            }
+        }
+
+        return imageNameWithoutSpecifier;
+    }
+
     static DockerSpecifier determineImageSpecifier(String image, DockerImageReference imageReference) {
         DockerSpecifier dockerSpecifier = null;
         String latestTag = "latest";
@@ -592,94 +604,98 @@ public interface LanguageHandlerInterface {
         for (Map.Entry<String, DockerSpecifier> dockerString : dockerStrings.entrySet()) {
             String image = dockerString.getKey();
             DockerSpecifier imageSpecifier = dockerString.getValue();
-            String[] splitDocker;
-            String[] splitSpecifier; // Specifier is either a tag or a digest
-            String specifierSymbol; // The symbol that separates the image name and specifier name
-
-            // Determine what symbol to use for splitting the image string
-            if (imageSpecifier == DockerSpecifier.DIGEST) {
-                specifierSymbol = "@";
-            } else {
-                specifierSymbol = ":";
-            }
 
             Optional<Registry> registry = determineImageRegistry(image);
             Registry registryFound = registry.isEmpty() ? null : registry.get();
             if (registryFound == null || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
                 continue;
-            } else if (registryFound == Registry.QUAY_IO) {
-                try {
-                    splitDocker = image.split("/");
-                    splitSpecifier = splitDocker[2].split(specifierSymbol);
-                } catch (ArrayIndexOutOfBoundsException ex) {
-                    LOG.error("URL to image on Quay incomplete", ex);
+            } else {
+                String repoName = getRepositoryName(registryFound, image, imageSpecifier);
+                String specifierName = getSpecifierName(image, imageSpecifier);
+                if (repoName.isEmpty()) {
+                    LOG.error("URL to image {} on {} incomplete", image, registryFound.getFriendlyName());
+                    continue;
+                }
+                if (specifierName.isEmpty()) {
+                    LOG.error("Could not find specifier for image {} on {}", image, registryFound.getFriendlyName());
                     continue;
                 }
 
-                if (splitSpecifier.length > 1) {
-                    String repo = splitDocker[1] + "/" + splitSpecifier[0];
-                    String specifierName = splitSpecifier[1];
-                    Set<Image> quayImages = getImageResponseFromQuay(repo, specifierName, imageSpecifier);
-                    dockerImages.addAll(quayImages);
-
+                Set<Image> images;
+                if (registryFound == Registry.QUAY_IO) {
+                    images = getImageResponseFromQuay(repoName, imageSpecifier, specifierName);
+                } else if (registryFound == Registry.DOCKER_HUB) {
+                    images = getImagesFromDockerHub(repoName, imageSpecifier, specifierName);
+                } else if (registryFound == Registry.GITHUB_CONTAINER_REGISTRY) {
+                    images = getImagesFromGitHubContainerRegistry(repoName, imageSpecifier, specifierName);
                 } else {
-                    LOG.error("Could not find image version specified for " + splitDocker[1]);
-                }
-            } else if (registryFound == Registry.DOCKER_HUB) {
-                // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
-                if (DOCKER_HUB.matcher(image).matches()) {
-                    try {
-                        splitDocker = image.split("/");
-                        splitSpecifier = splitDocker[1].split(specifierSymbol);
-                    } catch (ArrayIndexOutOfBoundsException ex) {
-                        LOG.error("URL to image on DockerHub incomplete", ex);
-                        continue;
-                    }
-
-                    String repo = splitDocker[0] + "/" + splitSpecifier[0];
-                    String specifierName = splitSpecifier[1];
-                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, specifierName, imageSpecifier);
-                    dockerImages.addAll(dockerHubImages);
-                } else {
-                    try {
-                        splitDocker = image.split(specifierSymbol);
-                    } catch (ArrayIndexOutOfBoundsException ex) {
-                        LOG.error("URL to image on DockerHub incomplete", ex);
-                        continue;
-                    }
-                    // <repo>:<version> -> python:2.7
-                    String repo = "library" + "/" + splitDocker[0];
-                    String specifierName = splitDocker[1];
-                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, specifierName, imageSpecifier);
-                    dockerImages.addAll(dockerHubImages);
-                }
-            } else if (registryFound == Registry.GITHUB_CONTAINER_REGISTRY) {
-                splitDocker = image.split("/"); // ghcr.io/<repo>/<image>:1 -> ["ghcr.io", "repo-name", "image-name:1"]
-                int minNumOfNameComponents = 3;
-                if (splitDocker.length >= minNumOfNameComponents) {
-                    String owner = splitDocker[1];
-                    String imageNameWithSpecifier = String.join("/", Arrays.asList(splitDocker).subList(2, splitDocker.length)); // image name can have slashes
-                    splitSpecifier = imageNameWithSpecifier.split(specifierSymbol); // ["image-name", "1"]
-                    String imageName = splitSpecifier[0];
-
-                    // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
-                    // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
-                    // Remove the left-over tag
-                    if (imageSpecifier == DockerSpecifier.DIGEST && imageName.contains(":")) {
-                        imageName = imageName.split(":")[0];
-                    }
-
-                    String repo = String.join("/", owner, imageName);
-                    String specifierName = splitSpecifier[1];
-                    Set<Image> gitHubContainerRegistryImages = getImagesFromGitHubContainerRegistry(repo, imageSpecifier, specifierName);
-                    dockerImages.addAll(gitHubContainerRegistryImages);
-                } else {
-                    LOG.error("URL to image {} on GitHub Container Registry incomplete", image);
+                    LOG.error("Could not get images from unsupported registry {}", registryFound.getFriendlyName());
                     continue;
                 }
+                dockerImages.addAll(images);
             }
         }
         return dockerImages;
+    }
+
+    /**
+     * Gets an image's full repository name.
+     * The repository name returned is the image's name without the registry docker path (if applicable, like Quay and GHCR) and the specifier.
+     * @param registry
+     * @param image
+     * @param specifier
+     * @return repository name of the image
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
+    default String getRepositoryName(final Registry registry, final String image, final DockerSpecifier specifier) {
+        String repoName = "";
+        boolean isOfficialDockerHubImage = false;
+        int minNumOfNameComponents = 0;
+        int numOfNameComponents = image.split("/").length;
+
+        if (registry == Registry.QUAY_IO || registry == Registry.GITHUB_CONTAINER_REGISTRY) {
+            minNumOfNameComponents = 3; // <registry_docker_path>/<owner>/<repo> -> quay.io/collaboratory/dockstore-tool-bamstats
+        } else if (registry == Registry.DOCKER_HUB) {
+            if (OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches()) {
+                minNumOfNameComponents = 1; // <repo> -> python
+                isOfficialDockerHubImage = true;
+            } else {
+                minNumOfNameComponents = 2; // <owner>/<repo> -> collaboratory/dockstore-tool-bamstats
+            }
+        }
+
+        if (numOfNameComponents >= minNumOfNameComponents) {
+            repoName = getImageNameWithoutSpecifier(image, specifier);
+
+            if (registry == Registry.GITHUB_CONTAINER_REGISTRY || registry == Registry.QUAY_IO) {
+                // Remove registry docker path
+                repoName = repoName.replaceFirst(registry.getDockerPath() + "/", "");
+            } else if (registry == Registry.DOCKER_HUB && isOfficialDockerHubImage) {
+                repoName = "library/" + repoName;
+            }
+        }
+
+        return repoName;
+    }
+
+    /**
+     * Gets the name of an image's specifier (tag or digest).
+     * @param image
+     * @param specifier
+     * @return specifier name
+     */
+    default String getSpecifierName(final String image, final DockerSpecifier specifier) {
+        String specifierName = "";
+        Matcher m;
+        if (specifier == DockerSpecifier.DIGEST) {
+            m = IMAGE_DIGEST_PATTERN.matcher(image);
+        } else {
+            m = IMAGE_TAG_PATTERN.matcher(image);
+        }
+        if (m.matches()) {
+            specifierName = m.group(2);
+        }
+        return specifierName;
     }
 
     /**
@@ -931,7 +947,7 @@ public interface LanguageHandlerInterface {
         return gitHubContainerRegistryImages;
     }
 
-    default Set<Image> getImagesFromDockerHub(final String repo, final String specifierName, final DockerSpecifier specifierType) {
+    default Set<Image> getImagesFromDockerHub(final String repo, final DockerSpecifier specifierType, final String specifierName) {
         Set<Image> dockerHubImages = new HashSet<>();
         Map<String, String> errorMap = new HashMap<>();
         Optional<String> response;
@@ -1049,7 +1065,7 @@ public interface LanguageHandlerInterface {
         return imageInfo;
     }
 
-    default Set<Image> getImageResponseFromQuay(String repo, String specifierName, DockerSpecifier specifierType) {
+    default Set<Image> getImageResponseFromQuay(String repo, DockerSpecifier specifierType, String specifierName) {
         Set<Image> quayImages = new HashSet<>();
         RepositoryApi api = new RepositoryApi(API_CLIENT);
         try {
