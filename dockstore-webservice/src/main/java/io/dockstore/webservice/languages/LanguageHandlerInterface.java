@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.languages;
 
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+
 import com.google.common.base.Strings;
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
@@ -881,7 +883,7 @@ public interface LanguageHandlerInterface {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI(getManifestURL))
                 .header(HttpHeaders.ACCEPT, acceptHeader)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .header(HttpHeaders.AUTHORIZATION, String.join(" ", JWT_SECURITY_DEFINITION_NAME, token))
                 .GET()
                 .build();
 
@@ -906,7 +908,7 @@ public interface LanguageHandlerInterface {
         String getBlobURL = String.format("https://%s/v2/%s/blobs/%s", registryDockerPath, repo, digest);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI(getBlobURL))
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .header(HttpHeaders.AUTHORIZATION, String.join(" ", JWT_SECURITY_DEFINITION_NAME, token))
                 .GET()
                 .build();
 
