@@ -775,10 +775,6 @@ POM as their parent.
                         <artifactId>httpclient-osgi</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-compress</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.apache.httpcomponents</groupId>
                         <artifactId>httpcore-osgi</artifactId>
                     </exclusion>

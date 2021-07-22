@@ -110,10 +110,6 @@
           <groupId>org.apache.httpcomponents</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-compress</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
-        <exclusion>
           <artifactId>httpcore-osgi</artifactId>
           <groupId>org.apache.httpcomponents</groupId>
         </exclusion>
