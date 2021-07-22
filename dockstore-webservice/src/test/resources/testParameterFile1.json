@@ -62,6 +62,8 @@
   "TopMedVariantCaller.ref_hs38DH_fa_sa":  "https://storage.googleapis.com/topmed_workflow_testing/topmed_variant_caller/reference_files/hg38/hs38DH.fa.sa",
   "TopMedVariantCaller.ref_hs38DH_winsize100_gc":  "https://storage.googleapis.com/topmed_workflow_testing/topmed_variant_caller/reference_files/hg38/hs38DH.winsize100.gc",
 
-  "TopMedVariantCaller.docker_image": "quay.io/ucsc_cgl/topmed_freeze3_calling:1.9.0"
+  "TopMedVariantCaller.docker_image": "quay.io/ucsc_cgl/topmed_freeze3_calling:1.9.0",
+  "duplicate": "https://storage.googleapis.com/topmed_workflow_testing/topmed_variant_caller/reference_files/hg38/hs38DH.winsize100.gc",
+  "boolean": true,
+  "number": 5
 }
-

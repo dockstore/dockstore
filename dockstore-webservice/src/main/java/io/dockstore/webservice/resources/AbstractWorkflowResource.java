@@ -8,6 +8,7 @@ import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 import com.google.common.collect.Sets;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
@@ -33,6 +34,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.CheckUrlHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -101,6 +103,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected final String bitbucketClientSecret;
     protected final String bitbucketClientID;
+    protected final String checkUrlLambdaUrl;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource,
             DockstoreWebserviceConfiguration configuration) {
@@ -120,6 +123,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
         gitHubAppId = configuration.getGitHubAppId();
+        this.checkUrlLambdaUrl = configuration.getCheckUrlLambdaUrl();
 
     }
 
@@ -256,6 +260,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (Validation versionValidation : remoteVersion.getValidations()) {
             existingVersion.addOrUpdateValidation(versionValidation);
         }
+
+        // Setup CheckUrl
+        if (checkUrlLambdaUrl != null) {
+            existingVersion.getSourceFiles().forEach(sourceFile -> {
+                // Currently only handle JSON
+                // TODO: Handle YAML
+                if (sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE) && sourceFile.getAbsolutePath().endsWith(".json")) {
+                    Boolean publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl);
+                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls);
+                }
+            });
+        }
+
         return existingVersion;
     }
 

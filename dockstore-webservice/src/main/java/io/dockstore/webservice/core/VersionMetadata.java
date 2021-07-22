@@ -112,6 +112,9 @@ public class VersionMetadata {
     @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
+    @Column()
+    @ApiModelProperty()
+    private Boolean publicAccessibleTestParameterFile;
 
     public long getId() {
         return id;
@@ -147,4 +150,11 @@ public class VersionMetadata {
         return description;
     }
 
+    public Boolean getPublicAccessibleTestParameterFile() {
+        return publicAccessibleTestParameterFile;
+    }
+
+    public void setPublicAccessibleTestParameterFile(Boolean publicAccessibleTestParameterFile) {
+        this.publicAccessibleTestParameterFile = publicAccessibleTestParameterFile;
+    }
 }
