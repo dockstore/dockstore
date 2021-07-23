@@ -16,8 +16,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import static java.lang.Boolean.parseBoolean;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.ProxySelector;
@@ -27,6 +25,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -59,18 +57,26 @@ public final class CheckUrlHelper {
             return null;
         }
         request =
-                HttpRequest.newBuilder().uri(uri).header(HttpHeaders.CONTENT_LENGTH, "0").GET().build();
+            HttpRequest.newBuilder().uri(uri).GET().build();
         try {
-            return parseBoolean(HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
-                HttpResponse.BodyHandlers.ofString()).body());
+            String s = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+                HttpResponse.BodyHandlers.ofString()).body();
+            if ("{\"message\":true}".equals(s)) {
+                return true;
+            }
+            if ("{\"message\":false}".equals(s)) {
+                return false;
+            }
+            return null;
         } catch (IOException | InterruptedException e) {
             return null;
         }
     }
 
     private static Boolean checkUrls(Set<String> urls, String baseURL) {
-        List<Boolean> objectStream = urls.stream().map(url -> checkUrl(url, baseURL)).collect(Collectors.toList());
-        if (objectStream.stream().anyMatch(urlStatus -> !urlStatus)) {
+        List<Boolean> objectStream = urls.parallelStream().map(url -> checkUrl(url, baseURL))
+            .collect(Collectors.toCollection(ArrayList::new));
+        if (objectStream.stream().anyMatch(urlStatus -> Objects.equals(urlStatus, false))) {
             return false;
         }
         if (objectStream.stream().anyMatch(Objects::isNull)) {

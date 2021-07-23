@@ -263,23 +263,33 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         // Setup CheckUrl
         if (checkUrlLambdaUrl != null) {
-            existingVersion.getSourceFiles().forEach(sourceFile -> {
-                if (sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)) {
-                    if (sourceFile.getAbsolutePath().endsWith(".json")) {
-                        Boolean publicAccessibleUrls =
-                            CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, "JSON");
-                        existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls);
-                    }
-                    if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
-                        Boolean publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                            "YAML");
-                        existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls);
-                    }
-                }
-            });
+            publicAccessibleUrls(existingVersion, checkUrlLambdaUrl);
         }
 
         return existingVersion;
+    }
+
+    /**
+     * Sets the publicly accessible URL version metadata.
+     *
+     * @param existingVersion   Hibernate initialized version
+     * @param checkUrlLambdaUrl URL of the checkUrl lambda
+     */
+    public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
+        existingVersion.getSourceFiles().forEach(sourceFile -> {
+            if (sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)) {
+                if (sourceFile.getAbsolutePath().endsWith(".json")) {
+                    Boolean publicAccessibleUrls =
+                        CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, "JSON");
+                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls);
+                }
+                if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
+                    Boolean publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                        "YAML");
+                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls);
+                }
+            }
+        });
     }
 
     /**
