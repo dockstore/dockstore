@@ -30,6 +30,7 @@ import java.net.http.HttpResponse;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,6 +40,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 public final class CheckUrlHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckUrlHelper.class);
@@ -82,41 +84,48 @@ public final class CheckUrlHelper {
      * @param contents  Contents of a JSON file
      * @return  The URLs
      */
-    public static Set<String> getUrls(String contents) {
+    public static Set<String> getUrlsFromJSON(String contents) {
         Set<String> urls = new HashSet<>();
         JSONObject jsonFile = new JSONObject(contents);
-        getUrls(jsonFile, urls);
+        getUrlsFromJSON(jsonFile, urls);
         return urls;
     }
 
-    private static void getUrls(Object object, Set<String> urls) {
+    private static void getUrlsFromJSON(Object object, Set<String> urls) {
         if (object instanceof JSONObject) {
-            getUrls((JSONObject)object, urls);
+            getUrlsFromJSON((JSONObject)object, urls);
         }
         if (object instanceof String) {
-            getUrls((String)object, urls);
+            getUrl((String)object, urls);
         }
         if (object instanceof JSONArray) {
-            getUrls((JSONArray) object, urls);
+            getUrlsFromJSON((JSONArray) object, urls);
         }
         // Ignore instanceof boolean, number, or null
     }
-    private static void getUrls(JSONArray jsonArray, Set<String> urls) {
+    private static void getUrlsFromJSON(JSONArray jsonArray, Set<String> urls) {
         for (int i = 0; i < jsonArray.length(); i++) {
-            getUrls(jsonArray.get(i), urls);
+            getUrlsFromJSON(jsonArray.get(i), urls);
         }
     }
 
-    private static void getUrls(JSONObject jsonObject, Set<String> urls) {
+    private static void getUrlsFromJSON(JSONObject jsonObject, Set<String> urls) {
         Iterator<?> keys = jsonObject.keys();
         while (keys.hasNext()) {
             String key = (String) keys.next();
             Object o = jsonObject.get(key);
-            getUrls(o, urls);
+            getUrlsFromJSON(o, urls);
         }
     }
 
-    private static void getUrls(String string, Set<String> urls) {
+    private static Set<String> getUrlsFromYAML(String content) {
+        Yaml yaml = new Yaml();
+        Map<String, Object> map = yaml.load(content);
+        JSONObject jsonObject = new JSONObject(map);
+        return getUrlsFromJSON(jsonObject.toString());
+    }
+
+    private static void getUrl(String string, Set<String> urls) {
         try {
             new URL(string);
             urls.add(string);
@@ -134,8 +143,13 @@ public final class CheckUrlHelper {
      * @param baseURL   Base URL of the CheckURL lambda
      * @return  Whether the URLs of the JSON are publicly accessible
      */
-    public static Boolean checkTestParameterFile(String content, String baseURL) {
-        Set<String> urls = getUrls(content);
+    public static Boolean checkTestParameterFile(String content, String baseURL, String fileType) {
+        Set<String> urls;
+        if ("YAML".equals(fileType)) {
+            urls = getUrlsFromYAML(content);
+        } else {
+            urls = getUrlsFromJSON(content);
+        }
         return checkUrls(urls, baseURL);
     }
 }
