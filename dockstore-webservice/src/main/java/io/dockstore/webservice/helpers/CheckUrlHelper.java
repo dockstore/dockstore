@@ -151,12 +151,17 @@ public final class CheckUrlHelper {
      * @return Whether the URLs of the JSON are publicly accessible
      */
     public static Boolean checkTestParameterFile(String content, String baseURL, String fileType) {
-        Set<String> urls;
-        if ("YAML".equals(fileType)) {
-            urls = getUrlsFromYAML(content);
-        } else {
-            urls = getUrlsFromJSON(content);
+        try {
+            Set<String> urls;
+            if ("YAML".equals(fileType)) {
+                urls = getUrlsFromYAML(content);
+            } else {
+                urls = getUrlsFromJSON(content);
+            }
+            return checkUrls(urls, baseURL);
+        } catch (Exception e) {
+            LOGGER.error("Could not parse test parameter file", e);
+            return null;
         }
-        return checkUrls(urls, baseURL);
     }
 }

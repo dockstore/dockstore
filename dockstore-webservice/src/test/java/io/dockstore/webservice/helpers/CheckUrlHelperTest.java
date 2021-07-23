@@ -44,4 +44,12 @@ public class CheckUrlHelperTest {
         Assert.assertEquals("Should have same amount of URLs as the JSON equivalent above",
             61, urls.size());
     }
+    @Test
+    public void getUrlsFromInvalidFile() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
+        String s = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
+        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", "YAML"));
+        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", "JSON"));
+    }
+
 }
