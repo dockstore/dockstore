@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
+import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class CheckUrlHelperTest {
+
     @Test
     public void getUrlsFromJSON() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.json"));
@@ -43,11 +45,12 @@ public class CheckUrlHelperTest {
         Assert.assertEquals("Should have same amount of URLs as the JSON equivalent above",
             61, urls.size());
     }
+
     @Test
     public void getUrlsFromInvalidFile() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
         String s = Files.asCharSource(file, Charsets.UTF_8).read();
-        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", "YAML"));
-        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", "JSON"));
+        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML));
+        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.JSON));
     }
 }

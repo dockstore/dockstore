@@ -35,6 +35,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.CheckUrlHelper;
+import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -278,15 +279,20 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
         existingVersion.getSourceFiles().forEach(sourceFile -> {
             if (sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)) {
+                Optional<Boolean> publicAccessibleUrls = Optional.empty();
                 if (sourceFile.getAbsolutePath().endsWith(".json")) {
-                    Boolean publicAccessibleUrls =
-                        CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, "JSON");
-                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls);
+                    publicAccessibleUrls =
+                        CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, TestFileType.JSON);
+                } else {
+                    if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
+                        publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                            TestFileType.YAML);
+                    }
                 }
-                if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
-                    Boolean publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                        "YAML");
-                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls);
+                if (publicAccessibleUrls.isEmpty()) {
+                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(null);
+                } else {
+                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls.get());
                 }
             }
         });

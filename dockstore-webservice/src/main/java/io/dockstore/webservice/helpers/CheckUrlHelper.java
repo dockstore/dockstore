@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.UriBuilder;
@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 public final class CheckUrlHelper {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckUrlHelper.class);
 
     private CheckUrlHelper() {
@@ -48,45 +49,47 @@ public final class CheckUrlHelper {
     }
 
 
-    private static Boolean checkUrl(String url, String baseURL) {
+    private static Optional<Boolean> checkUrl(String url, String baseURL) {
         HttpRequest request;
         URI uri;
         try {
             uri = UriBuilder.fromUri(new URI(baseURL)).queryParam("url", url).build();
         } catch (URISyntaxException e) {
-            return null;
+            return Optional.empty();
         }
-        request =
-            HttpRequest.newBuilder().uri(uri).GET().build();
+        request = HttpRequest.newBuilder().uri(uri).GET().build();
         try {
             String s = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString()).body();
             if ("{\"message\":true}".equals(s)) {
-                return true;
+                return Optional.of(true);
             }
             if ("{\"message\":false}".equals(s)) {
-                return false;
+                return Optional.of(false);
             }
-            return null;
-        } catch (IOException | InterruptedException e) {
-            return null;
+            return Optional.empty();
+        } catch (IOException e) {
+            return Optional.empty();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Optional.empty();
         }
     }
 
-    private static Boolean checkUrls(Set<String> urls, String baseURL) {
-        List<Boolean> objectStream = urls.parallelStream().map(url -> checkUrl(url, baseURL))
+    private static Optional<Boolean> checkUrls(Set<String> urls, String baseURL) {
+        List<Optional<Boolean>> objectStream = urls.parallelStream().map(url -> checkUrl(url, baseURL))
             .collect(Collectors.toCollection(ArrayList::new));
-        if (objectStream.stream().anyMatch(urlStatus -> Objects.equals(urlStatus, false))) {
-            return false;
+        if (objectStream.stream().anyMatch(urlStatus -> urlStatus.isPresent() && urlStatus.get().equals(false))) {
+            return Optional.of(false);
         }
-        if (objectStream.stream().anyMatch(Objects::isNull)) {
-            return null;
+        if (objectStream.stream().anyMatch(Optional::isEmpty)) {
+            return Optional.empty();
         }
-        return true;
+        return Optional.of(true);
     }
 
     /**
-     * Get all the URLs from a JSON file
+     * Get all the URLs from a JSON file.
      *
      * @param contents Contents of a JSON file
      * @return The URLs
@@ -127,7 +130,7 @@ public final class CheckUrlHelper {
     }
 
     /**
-     * Get all the URLs from a JSON file
+     * Get all the URLs from a YAML file.
      *
      * @param content Contents of a YAML file
      * @return The URLs
@@ -144,7 +147,7 @@ public final class CheckUrlHelper {
             new URL(string);
             urls.add(string);
         } catch (MalformedURLException e) {
-            LOGGER.debug("Not a valid URL: " + string);
+            LOGGER.debug(String.format("Not a valid URL: %s", string));
         }
     }
 
@@ -156,10 +159,10 @@ public final class CheckUrlHelper {
      * @param baseURL Base URL of the CheckURL lambda
      * @return Whether the URLs of the JSON are publicly accessible
      */
-    public static Boolean checkTestParameterFile(String content, String baseURL, String fileType) {
+    public static Optional<Boolean> checkTestParameterFile(String content, String baseURL, TestFileType fileType) {
         try {
             Set<String> urls;
-            if ("YAML".equals(fileType)) {
+            if (fileType == TestFileType.YAML) {
                 urls = getUrlsFromYAML(content);
             } else {
                 urls = getUrlsFromJSON(content);
@@ -167,7 +170,11 @@ public final class CheckUrlHelper {
             return checkUrls(urls, baseURL);
         } catch (Exception e) {
             LOGGER.error("Could not parse test parameter file", e);
-            return null;
+            return Optional.empty();
         }
+    }
+
+    public enum TestFileType {
+        YAML, JSON
     }
 }
