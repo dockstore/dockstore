@@ -50,7 +50,7 @@ public class CheckUrlHelperTest {
     public void getUrlsFromInvalidFile() throws IOException {
         File file = new File(ResourceHelpers.resourceFilePath("valid_description_example.wdl"));
         String s = Files.asCharSource(file, Charsets.UTF_8).read();
-        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML));
-        Assert.assertNull(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.JSON));
+        Assert.assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.YAML).isEmpty());
+        Assert.assertTrue(CheckUrlHelper.checkTestParameterFile(s, "fakeBaseUrl", TestFileType.JSON).isEmpty());
     }
 }
