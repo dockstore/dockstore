@@ -58,7 +58,7 @@ POM as their parent.
         <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.2.21</postgresql.version>
         <mockito.version>2.28.2</mockito.version>
-        <cwlavro.version>2.0.4.4</cwlavro.version>
+        <cwlavro.version>2.0.4.6</cwlavro.version>
         <okhttp.version>4.7.0</okhttp.version>
         <slf4j.version>1.7.30</slf4j.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
@@ -780,6 +780,7 @@ POM as their parent.
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- Used by cwlavro. Even though cwlavro uses 1.21, cwlavro's avro dependency uses 1.20 -->
             <dependency>
                 <groupId>io.cwl</groupId>
                 <artifactId>cwlavro-generated</artifactId>
@@ -867,10 +868,11 @@ POM as their parent.
                 <artifactId>pf4j</artifactId>
                 <version>3.2.0</version>
             </dependency>
+            <!-- Used by cwlavro. Even though cwlavro uses 1.21, cwlavro's avro dependency uses 1.20 -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.20</version>
+                <version>1.21</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
