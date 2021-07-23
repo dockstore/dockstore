@@ -28,11 +28,20 @@ import org.junit.Test;
 public class CheckUrlHelperTest {
 
     @Test
-    public void getUrls() throws IOException {
+    public void getUrlsFromJSON() throws IOException {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testParameterFile1.json"));
         String s = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
-        Set<String> urls = CheckUrlHelper.getUrls(s);
+        Set<String> urls = CheckUrlHelper.getUrlsFromJSON(s);
         Assert.assertEquals("Should have 69 minus 4 from JSON spacing minus 4 from quay.io, boolean, number, duplicate",
+            61, urls.size());
+    }
+
+    @Test
+    public void getUrlsFromYAML() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testParameterFile1.yaml"));
+        String s = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
+        Set<String> urls = CheckUrlHelper.getUrlsFromYAML(s);
+        Assert.assertEquals("Should have same amount of URLs as the JSON equivalent above",
             61, urls.size());
     }
 }

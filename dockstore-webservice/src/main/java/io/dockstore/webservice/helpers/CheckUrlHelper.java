@@ -81,8 +81,9 @@ public final class CheckUrlHelper {
 
     /**
      * Get all the URLs from a JSON file
-     * @param contents  Contents of a JSON file
-     * @return  The URLs
+     *
+     * @param contents Contents of a JSON file
+     * @return The URLs
      */
     public static Set<String> getUrlsFromJSON(String contents) {
         Set<String> urls = new HashSet<>();
@@ -93,16 +94,17 @@ public final class CheckUrlHelper {
 
     private static void getUrlsFromJSON(Object object, Set<String> urls) {
         if (object instanceof JSONObject) {
-            getUrlsFromJSON((JSONObject)object, urls);
+            getUrlsFromJSON((JSONObject) object, urls);
         }
         if (object instanceof String) {
-            getUrl((String)object, urls);
+            getUrl((String) object, urls);
         }
         if (object instanceof JSONArray) {
             getUrlsFromJSON((JSONArray) object, urls);
         }
         // Ignore instanceof boolean, number, or null
     }
+
     private static void getUrlsFromJSON(JSONArray jsonArray, Set<String> urls) {
         for (int i = 0; i < jsonArray.length(); i++) {
             getUrlsFromJSON(jsonArray.get(i), urls);
@@ -118,7 +120,13 @@ public final class CheckUrlHelper {
         }
     }
 
-    private static Set<String> getUrlsFromYAML(String content) {
+    /**
+     * Get all the URLs from a JSON file
+     *
+     * @param content Contents of a YAML file
+     * @return The URLs
+     */
+    public static Set<String> getUrlsFromYAML(String content) {
         Yaml yaml = new Yaml();
         Map<String, Object> map = yaml.load(content);
         JSONObject jsonObject = new JSONObject(map);
@@ -135,13 +143,12 @@ public final class CheckUrlHelper {
     }
 
     /**
-     * Determines whether all the URLs of a JSON are publicly accessible.
-     * True means all of the URLs found are accessible
-     * False means at least one of the URLs are not accessible
-     * Null means don't know, something went wrong with at least one of the URLs
-     * @param content   Contents of the test parameter file
-     * @param baseURL   Base URL of the CheckURL lambda
-     * @return  Whether the URLs of the JSON are publicly accessible
+     * Determines whether all the URLs of a JSON are publicly accessible. True means all of the URLs found are accessible False means at
+     * least one of the URLs are not accessible Null means don't know, something went wrong with at least one of the URLs
+     *
+     * @param content Contents of the test parameter file
+     * @param baseURL Base URL of the CheckURL lambda
+     * @return Whether the URLs of the JSON are publicly accessible
      */
     public static Boolean checkTestParameterFile(String content, String baseURL, String fileType) {
         Set<String> urls;
