@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.Hoverfly.CHECK_URL_SOURCE;
+import static io.specto.hoverfly.junit.core.HoverflyConfig.localConfigs;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
@@ -36,8 +37,10 @@ import org.junit.Test;
 
 public class CheckUrlHelperIT {
 
+    public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
+
     @ClassRule
-    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(CHECK_URL_SOURCE);
+    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(CHECK_URL_SOURCE, localConfigs().destination(fakeCheckUrlLambdaBaseURL));
 
     @Test
     public void checkUrlsFromLambdaGood() throws IOException {
@@ -49,7 +52,7 @@ public class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         Assert.assertNull("Double-check that it's not originally true/false",
             workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, "http://fakecheckurllambdabaseurl:3000/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
         Assert.assertTrue(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -63,7 +66,7 @@ public class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         Assert.assertNull("Double-check that it's not originally true/false",
             workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, "http://fakecheckurllambdabaseurl:3000/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
         Assert.assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -77,7 +80,7 @@ public class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         Assert.assertNull("Double-check that it's not originally true/false",
             workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, "http://fakecheckurllambdabaseurl:3000/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
         Assert.assertFalse(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
@@ -91,7 +94,7 @@ public class CheckUrlHelperIT {
         WorkflowVersion workflowVersion = setupWorkflowVersion(s);
         Assert.assertNull("Double-check that it's not originally true/false",
             workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
-        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, "http://fakecheckurllambdabaseurl:3000/lambda");
+        AbstractWorkflowResource.publicAccessibleUrls(workflowVersion, fakeCheckUrlLambdaBaseURL + "/lambda");
         Assert.assertNull(workflowVersion.getVersionMetadata().getPublicAccessibleTestParameterFile());
     }
 
