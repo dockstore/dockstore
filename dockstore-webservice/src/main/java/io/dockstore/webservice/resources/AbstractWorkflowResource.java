@@ -636,6 +636,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
             } else {
+                if (checkUrlLambdaUrl != null) {
+                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl);
+                }
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
             }
 
