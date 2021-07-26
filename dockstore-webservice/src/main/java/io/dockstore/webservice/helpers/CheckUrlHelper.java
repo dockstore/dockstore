@@ -145,7 +145,11 @@ public final class CheckUrlHelper {
     private static void getUrl(String string, Set<String> urls) {
         try {
             new URL(string);
-            urls.add(string);
+            // Disable FTP checking until lambda supports it
+            // TODO: Remove if-statement once lambda supports it
+            if (!string.toLowerCase().startsWith("ftp")) {
+                urls.add(string);
+            }
         } catch (MalformedURLException e) {
             LOGGER.debug(String.format("Not a valid URL: %s", string));
         }
