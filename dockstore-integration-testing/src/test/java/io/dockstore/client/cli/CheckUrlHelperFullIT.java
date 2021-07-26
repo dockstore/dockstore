@@ -24,15 +24,16 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ConfigOverride;
-import io.dropwizard.testing.DropwizardTestSupport;
+import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.Optional;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,9 +44,10 @@ import org.junit.runner.Description;
 @Category(ConfidentialTest.class)
 public class CheckUrlHelperFullIT {
 
+    @ClassRule
+    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE =
+        new DropwizardAppRule<>(DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
-    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH, ConfigOverride.config("checkUrlLambdaUrl", fakeCheckUrlLambdaBaseURL));
     protected static TestingPostgres testingPostgres;
     @Rule
     public final TestRule watcher = new TestWatcher() {
@@ -57,21 +59,22 @@ public class CheckUrlHelperFullIT {
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
-        SUPPORT.before();
-        testingPostgres = new TestingPostgres(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(RULE.getTestSupport());
+        testingPostgres = new TestingPostgres(RULE.getTestSupport());
+    }
+
+    @Before
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.dropAndCreateWithTestData(RULE.getTestSupport(), false);
     }
 
     /**
-     * If the check URL code was not running, it would default to null
-     * This tests that the check URL code was called and was able to set the version metadata
-     * Hoverfly is not used because the test parameter file had no URL to check
-     *
+     * If the check URL code was not running, it would default to null This tests that the check URL code was called and was able to set the version metadata Hoverfly is not used because the test
+     * parameter file had no URL to check
      */
     @Test
     public void settingVersionMetadata() throws Exception {
-
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        CommonTestUtilities.cleanStatePrivate2(RULE.getTestSupport(), false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi client = new WorkflowsApi(webClient);
         final String installationId = "1179416";
