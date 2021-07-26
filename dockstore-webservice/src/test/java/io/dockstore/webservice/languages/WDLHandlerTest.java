@@ -53,7 +53,7 @@ public class WDLHandlerTest {
         final Version workflow = new WorkflowVersion();
         workflow.setAuthor("Jane Doe");
         workflow.setDescriptionAndDescriptionSource("A good description", DescriptionSource.DESCRIPTOR);
-        workflow.setEmail("janedoe@example.org");
+        workflow.setEmail("Jane Doe", "janedoe@example.org");
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 

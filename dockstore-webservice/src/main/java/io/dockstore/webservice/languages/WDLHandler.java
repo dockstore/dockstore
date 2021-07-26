@@ -159,7 +159,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     version.setAuthor(String.join(", ", authors));
                 }
                 if (!emails.isEmpty()) {
-                    version.setEmail(String.join(", ", emails));
+                    version.setEmail(String.join(", ", authors), String.join(", ", emails));
                 }
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
                     version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
@@ -173,7 +173,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
                 version.setAuthor(null);
                 version.setDescriptionAndDescriptionSource(null, null);
-                version.setEmail(null);
+                version.setEmail(null, null);
                 return version;
             }
         } catch (IOException e) {

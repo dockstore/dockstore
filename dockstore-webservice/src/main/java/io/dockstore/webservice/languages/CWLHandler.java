@@ -177,7 +177,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             version.setAuthor(author);
             String email = (String)map.get(emailKey);
             if (!Strings.isNullOrEmpty(email)) {
-                version.setEmail(email.replaceFirst("^mailto:", ""));
+                version.setEmail(author, email.replaceFirst("^mailto:", ""));
             }
         } else {
             LOG.info(errorMessage);

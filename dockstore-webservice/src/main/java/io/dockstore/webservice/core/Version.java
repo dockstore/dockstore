@@ -452,19 +452,17 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setAuthor(String newAuthor) {
         this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
-        authors.clear();
-        if (newAuthor != null) {
+        boolean isNewAuthor = authors.stream().noneMatch(author -> author.getName().equals(newAuthor));
+        if (newAuthor != null && isNewAuthor) {
             authors.add(new Author(newAuthor));
         }
     }
 
-    public void setEmail(String newEmail) {
+    public void setEmail(String newAuthor, String newEmail) {
         this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
-        if (authors.size() == 1) {
-            Optional<Author> author = authors.stream().findFirst();
-            if (author.isPresent() && author.get().getEmail() == null) {
-                author.get().setEmail(newEmail);
-            }
+        Optional<Author> existingAuthor = authors.stream().filter(author -> author.getName().equals(newAuthor)).findFirst();
+        if (existingAuthor.isPresent() && existingAuthor.get().getEmail() == null) {
+            existingAuthor.get().setEmail(newEmail);
         }
     }
 
@@ -561,7 +559,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      */
     public void setVersionMetadata(VersionMetadata newVersionMetadata) {
         this.setAuthor(newVersionMetadata.author);
-        this.setEmail(newVersionMetadata.email);
+        this.setEmail(newVersionMetadata.author, newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }
