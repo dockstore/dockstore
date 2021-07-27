@@ -145,19 +145,15 @@ public final class CheckUrlHelper {
     private static void getUrl(String string, Set<String> urls) {
         try {
             new URL(string);
-            // Disable FTP checking until lambda supports it
-            // TODO: Remove if-statement once lambda supports it
-            if (!string.toLowerCase().startsWith("ftp")) {
-                urls.add(string);
-            }
+            urls.add(string);
         } catch (MalformedURLException e) {
             LOGGER.debug(String.format("Not a valid URL: %s", string));
         }
     }
 
     /**
-     * Determines whether all the URLs of a JSON are publicly accessible. True means all of the URLs found are accessible False means at
-     * least one of the URLs are not accessible Null means don't know, something went wrong with at least one of the URLs
+     * Determines whether all the URLs of a JSON are publicly accessible. True means all of the URLs found are accessible False means at least one of the URLs are not accessible Null means don't know,
+     * something went wrong with at least one of the URLs
      *
      * @param content Contents of the test parameter file
      * @param baseURL Base URL of the CheckURL lambda
