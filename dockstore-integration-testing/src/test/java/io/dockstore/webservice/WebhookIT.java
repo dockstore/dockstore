@@ -45,6 +45,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Author;
 import io.swagger.client.model.LambdaEvent;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Validation;
@@ -742,6 +743,10 @@ public class WebhookIT extends BaseIT {
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(3, version.getAuthors().size());
         assertEquals(2, version.getOrcidAuthors().size());
+        Optional<Author> descriptorAuthor = version.getAuthors().stream().filter(author -> author.getName().equals("Descriptor Author")).findFirst();
+        assertTrue(descriptorAuthor.isPresent());
+        assertEquals("Descriptor Author", descriptorAuthor.get().getName());
+        assertEquals("Email should be set for descriptor author", "descriptor.author@gmail.com", descriptorAuthor.get().getEmail());
 
         // Workflow containing only .dockstore.yml authors
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDockstoreYmlAuthors", installationId);
