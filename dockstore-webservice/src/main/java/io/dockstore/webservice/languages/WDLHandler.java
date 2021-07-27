@@ -174,6 +174,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                 version.setAuthor(null);
                 version.setDescriptionAndDescriptionSource(null, null);
                 version.setEmail(null, null);
+                version.setAuthors(new HashSet<>());
+                version.setOrcidAuthors(new HashSet<>());
                 return version;
             }
         } catch (IOException e) {

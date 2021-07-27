@@ -764,7 +764,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, version.getAuthors().size());
         assertEquals(0, version.getOrcidAuthors().size());
 
-        // Workflow containing multiple descriptor authors and no .dockstore.yml authors
+        // Workflow containing multiple descriptor authors separated by a comma ("Author 1, Author 2") and no .dockstore.yml authors
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/multipleDescriptorAuthors", installationId);
         workflow = client.getWorkflowByPath("github.com/" + authorsRepo + "/foobar", "versions,authors", BIOWORKFLOW);
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("multipleDescriptorAuthors")).findFirst().get();
