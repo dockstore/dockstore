@@ -24,6 +24,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.WorkflowsApi;
@@ -31,7 +32,6 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.Optional;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -44,10 +44,13 @@ import org.junit.runner.Description;
 @Category(ConfidentialTest.class)
 public class CheckUrlHelperFullIT {
 
+    public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
+
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE =
-        new DropwizardAppRule<>(DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-    public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
+        new DropwizardAppRule<>(DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH, ConfigOverride.config("checkUrlLambdaUrl", fakeCheckUrlLambdaBaseURL),
+            ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "create"));
+
     protected static TestingPostgres testingPostgres;
     @Rule
     public final TestRule watcher = new TestWatcher() {
@@ -59,13 +62,8 @@ public class CheckUrlHelperFullIT {
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(RULE.getTestSupport());
+        CommonTestUtilities.dropAndCreateWithTestData(RULE.getTestSupport(), true);
         testingPostgres = new TestingPostgres(RULE.getTestSupport());
-    }
-
-    @Before
-    public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestData(RULE.getTestSupport(), false);
     }
 
     /**
