@@ -4560,6 +4560,21 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/user/updateAcceptedDocuments:
+    get:
+      description: Update the user's TOS and privacy policy to the latest versions.
+      operationId: updateAcceptedDocuments
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/user/updateUserMetadata:
     get:
       description: Update metadata for logged in user.

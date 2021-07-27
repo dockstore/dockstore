@@ -433,6 +433,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 user = new User();
                 user.setUsername(username);
                 userID = userDAO.create(user);
+                acceptTOSAndPrivacyPolicy(user);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
             }
@@ -458,9 +459,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 googleToken = tokens.get(0);
             }
         }
-
-        user = userDAO.findById(userID);
-        acceptTOSAndPrivacyPolicy(user);
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
@@ -489,7 +487,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
-    private void acceptTOSAndPrivacyPolicy(User user) {
+    public static void acceptTOSAndPrivacyPolicy(User user) {
         Date date = new Date();
         if (user.getTOSVersion() != CURRENT_TOS_VERSION) {
             user.setTOSVersion(CURRENT_TOS_VERSION);
@@ -576,7 +574,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 User newUser = new User();
                 newUser.setUsername(username);
                 userID = userDAO.create(newUser);
-                userDAO.findById(userID);
+                user = userDAO.findById(userID);
+                acceptTOSAndPrivacyPolicy(user);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
             }
@@ -598,9 +597,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 githubToken = tokens.get(0);
             }
         }
-        // check that user has accepted the latest version of the TOS and privacy policy. If not, update since acceptance for both is passively done by logging in/registering
-        user = userDAO.findById(userID);
-        acceptTOSAndPrivacyPolicy(user);
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
