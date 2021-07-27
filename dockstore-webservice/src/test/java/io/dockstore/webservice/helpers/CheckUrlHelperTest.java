@@ -33,8 +33,8 @@ public class CheckUrlHelperTest {
         File file = new File(ResourceHelpers.resourceFilePath("testParameterFile1.json"));
         String s = Files.asCharSource(file, Charsets.UTF_8).read();
         Set<String> urls = CheckUrlHelper.getUrlsFromJSON(s);
-        Assert.assertEquals("Should have 69 minus 4 from JSON spacing minus 4 from quay.io, boolean, number, duplicate",
-            61, urls.size());
+        Assert.assertEquals("Should have 69 minus 4 from JSON spacing minus 4 from quay.io, boolean, number, duplicate + 1 FTP",
+            62, urls.size());
     }
 
     @Test
@@ -43,7 +43,7 @@ public class CheckUrlHelperTest {
         String s = Files.asCharSource(file, Charsets.UTF_8).read();
         Set<String> urls = CheckUrlHelper.getUrlsFromYAML(s);
         Assert.assertEquals("Should have same amount of URLs as the JSON equivalent above",
-            61, urls.size());
+            62, urls.size());
     }
 
     @Test
