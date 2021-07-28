@@ -50,7 +50,7 @@ public class NFLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.NEXTFLOW_CONFIG);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new WorkflowVersion());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
+        assertEquals(2, entry.getAuthors().size());
         assertTrue("incorrect description", entry.getDescription().startsWith("Nextflow RNA-Seq analysis pipeline, part of the nf-core community."));
     }
 

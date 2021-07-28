@@ -26,6 +26,7 @@ import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Validation;
@@ -74,8 +75,11 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertNull("incorrect email", entry.getEmail());
+        Set<Author> authors = entry.getAuthors();
+        assertEquals(2, authors.size());
+        for (Author author : authors) {
+            assertNull(author.getEmail());
+        }
     }
 
     @Test
@@ -84,8 +88,8 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
+        assertEquals(3, entry.getAuthors().size());
+        assertEquals("incorrect description", "This is a cool workflow", entry.getDescription());
     }
 
     @Test

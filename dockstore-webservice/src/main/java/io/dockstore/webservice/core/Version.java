@@ -450,19 +450,20 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
     }
 
+    // remove this method when author is removed from VersionMetadata
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
-        boolean isNewAuthor = authors.stream().noneMatch(author -> author.getName().equals(newAuthor));
-        if (newAuthor != null && isNewAuthor) {
-            authors.add(new Author(newAuthor));
-        }
+        this.getVersionMetadata().author = newAuthor;
     }
 
-    public void setEmail(String newAuthor, String newEmail) {
-        this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
-        Optional<Author> existingAuthor = authors.stream().filter(author -> author.getName().equals(newAuthor)).findFirst();
-        if (existingAuthor.isPresent() && existingAuthor.get().getEmail() == null) {
-            existingAuthor.get().setEmail(newEmail);
+    // remove this method when author is removed from VersionMetadata
+    public void setEmail(String newEmail) {
+        this.getVersionMetadata().email = newEmail;
+    }
+
+    public void addAuthor(final Author author) {
+        boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
+        if (isNewAuthor) {
+            this.authors.add(author);
         }
     }
 
@@ -559,7 +560,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      */
     public void setVersionMetadata(VersionMetadata newVersionMetadata) {
         this.setAuthor(newVersionMetadata.author);
-        this.setEmail(newVersionMetadata.author, newVersionMetadata.email);
+        this.setEmail(newVersionMetadata.email);
         this.setDescriptionAndDescriptionSource(newVersionMetadata.description, newVersionMetadata.descriptionSource);
         this.getVersionMetadata().setParsedInformationSet(newVersionMetadata.parsedInformationSet);
     }

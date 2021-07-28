@@ -22,6 +22,7 @@ import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
@@ -62,8 +63,9 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         final MinimalLanguageInterface.WorkflowMetadata workflowMetadata = minimalLanguageInterface
             .parseWorkflowForMetadata(filepath, content, new HashMap<>());
-        version.setAuthor(workflowMetadata.getAuthor());
-        version.setEmail(workflowMetadata.getAuthor(), workflowMetadata.getEmail());
+        Author author = new Author(workflowMetadata.getAuthor());
+        author.setEmail(workflowMetadata.getEmail());
+        version.addAuthor(author);
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
         return version;
