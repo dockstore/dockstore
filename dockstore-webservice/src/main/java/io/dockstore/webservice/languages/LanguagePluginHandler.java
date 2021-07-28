@@ -63,9 +63,11 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         final MinimalLanguageInterface.WorkflowMetadata workflowMetadata = minimalLanguageInterface
             .parseWorkflowForMetadata(filepath, content, new HashMap<>());
-        Author author = new Author(workflowMetadata.getAuthor());
-        author.setEmail(workflowMetadata.getEmail());
-        version.addAuthor(author);
+        if (workflowMetadata.getAuthor() != null) {
+            Author author = new Author(workflowMetadata.getAuthor());
+            author.setEmail(workflowMetadata.getEmail());
+            version.addAuthor(author);
+        }
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
         return version;
