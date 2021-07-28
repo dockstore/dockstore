@@ -158,7 +158,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                     }
                 });
 
-                if (!authors.isEmpty()) {
+                // Add authors from descriptor if there are no .dockstore.yml authors
+                if (!authors.isEmpty() && version.getAuthors().isEmpty()) {
                     // Only set emails for authors if every author has an email.
                     // Otherwise, ignore emails because we don't know which email belongs to which author
                     if (!emails.isEmpty() && authors.size() == emails.size()) {

@@ -63,7 +63,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         final MinimalLanguageInterface.WorkflowMetadata workflowMetadata = minimalLanguageInterface
             .parseWorkflowForMetadata(filepath, content, new HashMap<>());
-        if (workflowMetadata.getAuthor() != null) {
+        // Add authors from descriptor if there are no .dockstore.yml authors
+        if (workflowMetadata.getAuthor() != null && version.getAuthors().isEmpty()) {
             Author author = new Author(workflowMetadata.getAuthor());
             author.setEmail(workflowMetadata.getEmail());
             version.addAuthor(author);

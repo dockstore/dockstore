@@ -45,7 +45,6 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Author;
 import io.swagger.client.model.LambdaEvent;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Validation;
@@ -726,7 +725,9 @@ public class WebhookIT extends BaseIT {
     }
 
     /**
-     * This tests multiple authors functionality in .dockstore.yml and descriptor file
+     * This tests multiple authors functionality in .dockstore.yml and descriptor file.
+     * If there are authors in .dockstore.yml, then only .dockstore.yml authors are saved, even if the descriptor has an author.
+     * If there are no authors in .dockstore.yml, then authors from the descriptor are saved.
      * @throws Exception
      */
     @Test
@@ -739,40 +740,31 @@ public class WebhookIT extends BaseIT {
         String nextflowWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar3");
         Workflow workflow;
         WorkflowVersion version;
-        Optional<Author> descriptorAuthor;
 
-        // Workflows containing 1 descriptor author and multiple .dockstore.yml authors
+        // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
+        // If the .dockstore.yml specifies an author, then only the .dockstore.yml's authors should be saved
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
         // WDL workflow
         workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, "versions,authors", BIOWORKFLOW);
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(3, version.getAuthors().size());
+        assertEquals(2, version.getAuthors().size());
         assertEquals(2, version.getOrcidAuthors().size());
         final String wdlDescriptorAuthorName = "Descriptor Author";
-        descriptorAuthor = version.getAuthors().stream().filter(author -> author.getName().equals(wdlDescriptorAuthorName)).findFirst();
-        assertTrue(descriptorAuthor.isPresent());
-        assertEquals(wdlDescriptorAuthorName, descriptorAuthor.get().getName());
-        assertEquals("Email should be set for WDL descriptor author", "descriptor.author@gmail.com", descriptorAuthor.get().getEmail());
+        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
         // CWL workflow
         workflow = client.getWorkflowByPath(cwlWorkflowRepoPath, "versions,authors", BIOWORKFLOW);
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(2, version.getAuthors().size());
+        assertEquals(1, version.getAuthors().size());
         assertEquals(1, version.getOrcidAuthors().size());
         final String cwlDescriptorAuthorName = "Test User";
-        descriptorAuthor = version.getAuthors().stream().filter(author -> author.getName().equals(cwlDescriptorAuthorName)).findFirst();
-        assertTrue(descriptorAuthor.isPresent());
-        assertEquals(cwlDescriptorAuthorName, descriptorAuthor.get().getName());
-        assertEquals("Email should be set for CWL descriptor author", "test@dockstore.org", descriptorAuthor.get().getEmail());
+        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(cwlDescriptorAuthorName)));
         // Nextflow workflow
         workflow = client.getWorkflowByPath(nextflowWorkflowRepoPath, "versions,authors", BIOWORKFLOW);
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(2, version.getAuthors().size());
+        assertEquals(1, version.getAuthors().size());
         assertEquals(1, version.getOrcidAuthors().size());
         final String nextflowDescriptorAuthorName = "Nextflow Test Author";
-        descriptorAuthor = version.getAuthors().stream().filter(author -> author.getName().equals(nextflowDescriptorAuthorName)).findFirst();
-        assertTrue(descriptorAuthor.isPresent());
-        assertEquals(nextflowDescriptorAuthorName, descriptorAuthor.get().getName());
-        assertNull("Email should not be set for Nextflow descriptor author", descriptorAuthor.get().getEmail());
+        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
 
         // WDL workflow containing only .dockstore.yml authors
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDockstoreYmlAuthors", installationId);
@@ -786,6 +778,7 @@ public class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, "versions,authors", BIOWORKFLOW);
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDescriptorAuthor")).findFirst().get();
         assertEquals(1, version.getAuthors().size());
+        assertEquals(wdlDescriptorAuthorName, version.getAuthor());
         assertEquals(0, version.getOrcidAuthors().size());
 
         // Release WDL workflow containing only a descriptor author again and test that it doesn't create a duplicate author
@@ -793,6 +786,7 @@ public class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, "versions,authors", BIOWORKFLOW);
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDescriptorAuthor")).findFirst().get();
         assertEquals(1, version.getAuthors().size());
+        assertEquals(wdlDescriptorAuthorName, version.getAuthor());
         assertEquals(0, version.getOrcidAuthors().size());
 
         // WDL workflow containing multiple descriptor authors separated by a comma ("Author 1, Author 2") and no .dockstore.yml authors
