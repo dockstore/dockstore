@@ -460,6 +460,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             }
         }
 
+        user = userDAO.findById(userID);
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
             dockstoreToken = createDockstoreToken(userID, user.getUsername());

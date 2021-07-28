@@ -4565,12 +4565,12 @@ paths:
       description: Update the user's TOS and privacy policy to the latest versions.
       operationId: updateAcceptedDocuments
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: User with updated TOS/Privacy Policy
       security:
       - bearer: []
       tags:

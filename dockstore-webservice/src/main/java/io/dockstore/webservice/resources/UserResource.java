@@ -837,6 +837,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork
     @Path("/user/updateAcceptedDocuments")
     @Operation(operationId = "updateAcceptedDocuments", description = "Update the user's TOS and privacy policy to the latest versions.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "User with updated TOS/Privacy Policy", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiOperation(value = "Update the user's TOS and privacy policy to the latest versions.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
     public User updateAcceptedDocuments(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user) {
         User dbUser = userDAO.findById(user.getId());
