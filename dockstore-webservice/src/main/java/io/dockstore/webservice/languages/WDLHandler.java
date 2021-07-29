@@ -133,6 +133,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);
                 Queue<String> authors = new LinkedList<>();
                 Queue<String> emails = new LinkedList<>();
+                Set<Author> newAuthors = new HashSet<>();
                 final String[] mainDescription = { null };
 
                 metadata.forEach(metaBlock -> {
@@ -152,6 +153,24 @@ public class WDLHandler implements LanguageHandlerInterface {
                         }
                     }
 
+                    if (!authors.isEmpty()) {
+                        // Only set emails for authors if every author has an email.
+                        // Otherwise, ignore emails because we don't know which email belongs to which author
+                        if (authors.size() == emails.size()) {
+                            while (!authors.isEmpty()) {
+                                Author newAuthor = new Author(authors.remove());
+                                newAuthor.setEmail(emails.remove());
+                                newAuthors.add(newAuthor);
+                            }
+                        } else {
+                            while (!authors.isEmpty()) {
+                                Author newAuthor = new Author(authors.remove());
+                                newAuthors.add(newAuthor);
+                            }
+                            emails.clear();
+                        }
+                    }
+
                     String description = metaBlock.get("description");
                     if (description != null && !description.isBlank()) {
                         mainDescription[0] = description;
@@ -159,21 +178,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 });
 
                 // Add authors from descriptor if there are no .dockstore.yml authors
-                if (!authors.isEmpty() && version.getAuthors().isEmpty()) {
-                    // Only set emails for authors if every author has an email.
-                    // Otherwise, ignore emails because we don't know which email belongs to which author
-                    if (!emails.isEmpty() && authors.size() == emails.size()) {
-                        while (!authors.isEmpty()) {
-                            Author author = new Author();
-                            author.setName(authors.remove());
-                            author.setEmail(emails.remove());
-                            version.addAuthor(author);
-                        }
-                    } else {
-                        while (!authors.isEmpty()) {
-                            Author author = new Author(authors.remove());
-                            version.addAuthor(author);
-                        }
+                if (!newAuthors.isEmpty() && version.getAuthors().isEmpty()) {
+                    for (Author author: newAuthors) {
+                        version.addAuthor(author);
                     }
                 }
 

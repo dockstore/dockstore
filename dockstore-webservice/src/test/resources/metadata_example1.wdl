@@ -130,7 +130,8 @@ task metasoft_scatter {
     }
 
     meta {
-        author: "Francois Aguet"
+        author: "Francois Aguet, Not Francois Aguet"
+        email: "not.francois.aguet@gmail.com"
     }
 }
 

@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FileUtils;
@@ -76,7 +77,7 @@ public class WDLParseTest {
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         Set<Author> authors = entry.getAuthors();
-        assertEquals(2, authors.size());
+        assertEquals(3, authors.size());
         for (Author author : authors) {
             assertNull(author.getEmail());
         }
@@ -88,7 +89,12 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertEquals(3, entry.getAuthors().size());
+        Set<Author> authors = entry.getAuthors();
+        assertEquals(3, authors.size());
+        Optional<Author> authorWithEmail = authors.stream().filter(author -> author.getName().equals("Mr. Foo")).findFirst();
+        assertTrue(authorWithEmail.isPresent());
+        assertEquals("foo@foo.com", authorWithEmail.get().getEmail());
+        authors.stream().filter(author -> !author.getName().equals("Mr. Foo")).forEach(authorWithoutEmail -> assertNull(authorWithoutEmail.getEmail()));
         assertEquals("incorrect description", "This is a cool workflow", entry.getDescription());
     }
 
