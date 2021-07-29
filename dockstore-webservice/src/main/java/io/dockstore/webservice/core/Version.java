@@ -450,21 +450,20 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
     }
 
+    // remove this method when author is removed from VersionMetadata
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
-        authors.clear();
-        if (newAuthor != null) {
-            authors.add(new Author(newAuthor));
-        }
+        this.getVersionMetadata().author = newAuthor;
     }
 
+    // remove this method when author is removed from VersionMetadata
     public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
-        if (authors.size() == 1) {
-            Optional<Author> author = authors.stream().findFirst();
-            if (author.isPresent() && author.get().getEmail() == null) {
-                author.get().setEmail(newEmail);
-            }
+        this.getVersionMetadata().email = newEmail;
+    }
+
+    public void addAuthor(final Author author) {
+        boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
+        if (isNewAuthor) {
+            this.authors.add(author);
         }
     }
 

@@ -363,6 +363,7 @@ public class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        // Workflow only has one author (who also has an email)
         assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
     }
 
@@ -378,7 +379,8 @@ public class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.wdl");
         file.setAbsolutePath("/Dockstore.wdl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
+        // Workflow has multiple authors, but only one author has an email. The author returned may be one of the authors without an email.
+        assertTrue(!dockstoreWorkflow.getAuthor().isEmpty());
     }
 
     @Test

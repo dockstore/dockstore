@@ -33,6 +33,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.ParsedInformation;
@@ -129,12 +130,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     LOG.info("Description not found!");
                 }
 
-                String dctKey = "dct:creator";
-                String schemaKey = "s:author";
-                if (map.containsKey(schemaKey)) {
-                    processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
-                } else if (map.containsKey(dctKey)) {
-                    processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                // Add authors from descriptor if there are no .dockstore.yml authors
+                if (version.getAuthors().isEmpty()) {
+                    String dctKey = "dct:creator";
+                    String schemaKey = "s:author";
+                    if (map.containsKey(schemaKey)) {
+                        processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
+                    } else if (map.containsKey(dctKey)) {
+                        processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                    }
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
@@ -174,11 +178,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         map = (Map)o;
         if (map != null) {
             String author = (String)map.get(authorKey);
-            version.setAuthor(author);
+            Author newAuthor = new Author(author);
             String email = (String)map.get(emailKey);
             if (!Strings.isNullOrEmpty(email)) {
-                version.setEmail(email.replaceFirst("^mailto:", ""));
+                newAuthor.setEmail(email.replaceFirst("^mailto:", ""));
             }
+            version.addAuthor(newAuthor);
         } else {
             LOG.info(errorMessage);
         }
