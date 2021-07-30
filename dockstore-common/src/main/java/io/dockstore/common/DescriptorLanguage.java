@@ -157,13 +157,6 @@ public enum DescriptorLanguage {
         return testParamType;
     }
 
-    public static Optional<FileType> getTestParameterType(String descriptorType) {
-        if (descriptorType == null) {
-            return Optional.empty();
-        }
-        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> descriptorType.equalsIgnoreCase(lang.toString())).findFirst().map(DescriptorLanguage::getTestParamType);
-    }
-
     public boolean isServiceLanguage() {
         return serviceLanguage;
     }

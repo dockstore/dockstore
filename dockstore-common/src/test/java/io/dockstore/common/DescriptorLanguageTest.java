@@ -16,6 +16,7 @@
 
 package io.dockstore.common;
 
+import io.dockstore.common.DescriptorLanguage.FileType;
 import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,8 +41,8 @@ public class DescriptorLanguageTest {
 
     @Test
     public void testGetTestParamFileType() {
-        Assert.assertEquals(DescriptorLanguage.getTestParameterType("CWL").get(), DescriptorLanguage.FileType.CWL_TEST_JSON);
-        Assert.assertEquals(DescriptorLanguage.getTestParameterType("WDL").get(), DescriptorLanguage.FileType.WDL_TEST_JSON);
-        Assert.assertEquals(DescriptorLanguage.getTestParameterType("FOO"), Optional.empty());
+        Assert.assertEquals(DescriptorLanguage.CWL.getTestParamType(), DescriptorLanguage.FileType.CWL_TEST_JSON);
+        Assert.assertEquals(DescriptorLanguage.WDL.getTestParamType(), DescriptorLanguage.FileType.WDL_TEST_JSON);
+        Assert.assertEquals(DescriptorLanguage.NEXTFLOW.getTestParamType(), FileType.NEXTFLOW_TEST_PARAMS);
     }
 }
