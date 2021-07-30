@@ -678,30 +678,6 @@ public class UserResourceIT extends BaseIT {
         assertEquals("Toronto", userProfile.getLocation());
     }
 
-    @Test
-    public void testUpdateUserMetadataToGetIds() {
-        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
-
-        // DockstoreUser2's profile elements should be initially set to null since the GitHub metadata isn't synced yet
-        assertNull(userProfile.getEmail());
-        assertNull(userProfile.getAvatarURL());
-        assertNull(userProfile.getLocation());
-
-        // The API call updateUserMetadataToGetIds() should not throw an error and exit if any users' tokens are out of date or absent
-        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
-        userApi.updateUserMetadataToGetIds();
-        String userId = "17859829";
-        io.dockstore.openapi.client.model.User user = userApi.getUser();
-        userProfile = user.getUserProfiles().get("github.com");
-        String onlineProfileId = testingPostgres.runSelectStatement("SELECT onlineprofileid FROM user_profile WHERE id = '" + user.getId() + "'", String.class);
-        assertEquals(userId, onlineProfileId);
-        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
-        assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
-        assertEquals("Toronto", userProfile.getLocation());
-    }
-
     /**
      * Tests the endpoint while all users have no valid GitHub token and the caller also does not have a valid token
      */
