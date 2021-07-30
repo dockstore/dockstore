@@ -28,7 +28,7 @@ public enum Registry {
     QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/", false, false),
     DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/", false, false),
     GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/", false, false),
-    AMAZON_ECR(null, "Amazon ECR", null, true, true),
+    AMAZON_ECR("public.ecr.aws", "Amazon ECR", null, true, false),
     SEVEN_BRIDGES(null, "Seven Bridges", null, true, true),
     GITHUB_CONTAINER_REGISTRY("ghcr.io", "GitHub Container Registry", "https://ghcr.io/", false, false);
 
