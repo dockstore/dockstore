@@ -130,7 +130,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     public T createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
         @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
-        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") String descriptorType,
+        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage,
         @ApiParam(value = "The Docker namespace (Tools only)") @QueryParam("namespace") String namespace,
             @ApiParam(value = "Optional entry name (Tools only)") @QueryParam("entryName") String entryName) {
 
@@ -142,7 +142,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         // Only check type for workflows
-        DescriptorLanguage convertedDescriptorType = checkType(descriptorType);
+        DescriptorLanguage convertedDescriptorType = checkType(descriptorLanguage);
         String convertedRegistry = checkRegistry(registry);
         T entry = getEntry(user, convertedRegistry, name, convertedDescriptorType, namespace, entryName);
         checkForDuplicatePath(entry);
@@ -369,7 +369,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param descriptorType
      * @return Verified type
      */
-    protected abstract DescriptorLanguage checkType(String descriptorType);
+    protected abstract DescriptorLanguage checkType(DescriptorLanguage descriptorType);
 
     /**
      * Check that the registry is a valid registry and return the registry object

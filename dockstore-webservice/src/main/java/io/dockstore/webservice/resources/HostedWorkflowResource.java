@@ -117,7 +117,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+    public Workflow createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Workflow workflow = super.createHosted(user, registry, name, descriptorType, namespace, entryName);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;
@@ -294,13 +294,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected DescriptorLanguage checkType(String descriptorType) {
-        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
-            if (Objects.equals(descriptorLanguage.toString().toLowerCase(), descriptorType.toLowerCase())) {
-                return descriptorLanguage;
-            }
-        }
-        throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
+    protected DescriptorLanguage checkType(DescriptorLanguage descriptorLanguage) {
+        // This should be impossible
+        throw new CustomWebApplicationException(descriptorLanguage.toString() + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
     }
 
     @Override
