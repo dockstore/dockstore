@@ -5961,6 +5961,8 @@ paths:
       summary: "Star a workflow."
       description: ""
       operationId: "starEntry"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:

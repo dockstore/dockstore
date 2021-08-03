@@ -45,7 +45,6 @@ import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
-import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import java.util.List;
@@ -734,31 +733,32 @@ public class UserResourceIT extends BaseIT {
     @Test
     public void testGetStarredWorkflowsAndServices() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        final WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
-        final UsersApi usersApi = new UsersApi(webClient);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
         final long userId = usersApi.getUser().getId();
 
         // Add service
-        workflowsApi.handleGitHubRelease(SERVICE_REPO, USER_2_USERNAME, "refs/tags/1.0", INSTALLATION_ID);
+        workflowsApi.handleGitHubRelease("refs/tags/1.0", INSTALLATION_ID, SERVICE_REPO, USER_2_USERNAME);
         assertEquals(1, usersApi.userServices(userId).size());
         assertEquals(0, usersApi.userWorkflows(userId).size());
 
         // Star service
-        io.swagger.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, "", SERVICE);
-        workflowsApi.starEntry(service.getId(), new StarRequest().star(true));
+        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, SERVICE, "");
+        io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
+        workflowsApi.starEntry1(service.getId(), starRequest);
         assertEquals(1, usersApi.getStarredServices().size());
         assertEquals(0, usersApi.getStarredWorkflows().size());
 
         // Add workflow
-        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
                 "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
-        workflow = workflowsApi.refresh(workflow.getId(), false);
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
         assertEquals(1, usersApi.userServices(userId).size());
         assertEquals(1, usersApi.userWorkflows(userId).size());
 
         // Star workflow
-        workflowsApi.starEntry(workflow.getId(), new StarRequest().star(true));
+        workflowsApi.starEntry1(workflow.getId(), starRequest);
         assertEquals(1, usersApi.getStarredServices().size());
         assertEquals(1, usersApi.getStarredWorkflows().size());
     }

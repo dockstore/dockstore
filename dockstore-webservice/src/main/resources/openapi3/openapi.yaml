@@ -4402,15 +4402,14 @@ paths:
       description: Get the authenticated user's starred services.
       operationId: getStarredServices
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Entry'
-                uniqueItems: true
-          description: default response
+          description: A list of the authenticated user's starred services
       security:
       - bearer: []
       tags:
@@ -6413,7 +6412,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
       responses:
