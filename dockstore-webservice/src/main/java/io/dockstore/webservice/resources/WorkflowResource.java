@@ -1078,8 +1078,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        @PathParam("relative-path") String path, @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
     }
 
@@ -1092,8 +1092,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
     }
 
