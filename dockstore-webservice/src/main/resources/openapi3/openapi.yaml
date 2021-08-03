@@ -857,6 +857,13 @@ paths:
         name: descriptorType
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       - in: query
         name: namespace
         schema:
@@ -1494,6 +1501,13 @@ paths:
         name: language
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -1758,6 +1772,13 @@ paths:
         name: descriptorType
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -5262,6 +5283,13 @@ paths:
         name: descriptorType
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       - in: query
         name: namespace
         schema:
@@ -5926,6 +5954,13 @@ paths:
         required: true
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -6068,6 +6103,13 @@ paths:
         name: language
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -6366,6 +6408,13 @@ paths:
         name: language
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
