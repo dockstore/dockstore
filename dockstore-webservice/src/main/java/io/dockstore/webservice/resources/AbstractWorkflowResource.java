@@ -62,6 +62,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -272,30 +273,36 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Sets the publicly accessible URL version metadata.
+     * If all test parameter files have publicly accessible URLs (true), then version metadata is true
+     * If there's 1+ test parameter file that is null but there's no false, then version metadata is null
+     * If there's 1+ test parameter file that is false, then version metadata is false
      *
      * @param existingVersion   Hibernate initialized version
      * @param checkUrlLambdaUrl URL of the checkUrl lambda
      */
     public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
-        existingVersion.getSourceFiles().forEach(sourceFile -> {
-            if (sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)) {
-                Optional<Boolean> publicAccessibleUrls = Optional.empty();
-                if (sourceFile.getAbsolutePath().endsWith(".json")) {
-                    publicAccessibleUrls =
-                        CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, TestFileType.JSON);
-                } else {
-                    if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
-                        publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
-                            TestFileType.YAML);
-                    }
-                }
-                if (publicAccessibleUrls.isEmpty()) {
-                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(null);
-                } else {
-                    existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls.get());
+        Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
+        while (sourceFileIterator.hasNext()) {
+            SourceFile sourceFile = sourceFileIterator.next();
+            Optional<Boolean> publicAccessibleUrls = Optional.empty();
+            if (sourceFile.getAbsolutePath().endsWith(".json")) {
+                publicAccessibleUrls =
+                    CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, TestFileType.JSON);
+            } else {
+                if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
+                    publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                        TestFileType.YAML);
                 }
             }
-        });
+            if (publicAccessibleUrls.isEmpty()) {
+                // Doesn't matter if the previous test parameter was true, override it
+                existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(null);
+            } else {
+                existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls.get());
+                // If the current test parameter file is not publicly accessible, then all previous and future ones don't matter
+                break;
+            }
+        }
     }
 
     /**
