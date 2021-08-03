@@ -57,7 +57,6 @@ import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -727,88 +726,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         return userDAO.findAll();
-    }
-
-    // TODO: Do equivalent of below, but for Google users.
-    @GET
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @Path("/updateUserMetadataToGetIds")
-    @Deprecated
-    @Operation(operationId = "updateUserMetadataToGetIds", description = "Attempt to update the metadata of all GitHub and Google users and then returns a list of Dockstore users who could not be updated.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get list Dockstore users we were unable to get GitHub/Google IDs for.", content = @Content(
-            mediaType = "application/json",
-            array = @ArraySchema(schema = @Schema(implementation = User.class))))
-    @ApiOperation(value = "See OpenApi for details", hidden = true)
-    public List<User> updateUserMetadataToGetIds(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
-        List<Token> googleTokens = tokenDAO.findAllGoogleTokens();
-        List<User> gitHubUsersNotUpdatedWithToken = new ArrayList<>();
-        List<User> usersCouldNotBeUpdated = new ArrayList<>();
-
-        // Try to update Google metadata using user's token. This is the only option for Google.
-        LOG.info("Beginning update for " + googleTokens.size() + " Google users.");
-        for (Token t : googleTokens) {
-            User currentUser = userDAO.findById(t.getUserId());
-            if (currentUser != null) {
-                updateGoogleAccessToken(currentUser.getId());
-                try {
-                    currentUser.updateUserMetadata(tokenDAO, TokenType.GOOGLE_COM, true);
-                    LOG.info("Updated " + currentUser.getUsername());
-                } catch (Exception ex) {
-                    LOG.info("Could not retrieve Google ID for user: " + currentUser.getUsername(), ex);
-                    usersCouldNotBeUpdated.add(currentUser);
-                }
-            }
-        }
-
-        // Try to update GitHub metadata using user's token and getMyself().
-        List<User> gitHubUsers = userDAO.findAllGitHubUsers();
-        LOG.info("Beginning update for " + gitHubUsers.size() + " GitHub users.");
-        for (User u: gitHubUsers) {
-            List<Token> tokens = tokenDAO.findGithubByUserId(u.getId());
-            if (!tokens.isEmpty()) {
-                try {
-                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
-                    gitHubSourceCodeRepo.syncUserMetadataFromGitHub(u, Optional.of(tokenDAO));
-                    LOG.info("Updated " + u.getUsername());
-                } catch (Exception ex) {
-                    LOG.info("Could not retrieve GitHub ID for user: " + u.getUsername());
-                    gitHubUsersNotUpdatedWithToken.add(u);
-                }
-            } else {
-                LOG.info("No GitHub token for user: " + u.getUsername());
-                gitHubUsersNotUpdatedWithToken.add(u);
-            }
-        }
-
-        // For users we could not get their GitHub id using their token, get the GitHub id from the avatarurl we have stored.
-        LOG.info("Beginning update for " + gitHubUsersNotUpdatedWithToken.size() + " GitHub users who could not be updated with token.");
-        for (User u : gitHubUsersNotUpdatedWithToken) {
-            if (!u.isBanned()) {
-                User.Profile userProfile = u.getUserProfiles().get(TokenType.GITHUB_COM.toString());
-                String avatarUrl = userProfile.avatarURL;
-
-                if (avatarUrl != null) {
-                    Matcher m = GITHUB_ID_PATTERN.matcher(avatarUrl);
-                    if (m.matches()) {
-                        String id = m.group(1);
-                        userProfile.onlineProfileId = id;
-                        List<Token> userTokens = tokenDAO.findGithubByUserId(u.getId());
-                        if (!userTokens.isEmpty()) {
-                            userTokens.get(0).setOnlineProfileId(id);
-                        }
-                        LOG.info("Updated " + u.getUsername() + " with GitHub id " + id);
-                    }
-
-                } else {
-                    usersCouldNotBeUpdated.add(u);
-                    LOG.info(u.getUsername() + "could not be updated.");
-                }
-            }
-        }
-
-        return usersCouldNotBeUpdated;
     }
 
     /**

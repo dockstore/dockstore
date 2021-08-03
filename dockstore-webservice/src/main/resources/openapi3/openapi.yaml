@@ -4450,26 +4450,6 @@ paths:
       - bearer: []
       tags:
       - users
-  /users/updateUserMetadataToGetIds:
-    get:
-      deprecated: true
-      description: Attempt to update the metadata of all GitHub and Google users and
-        then returns a list of Dockstore users who could not be updated.
-      operationId: updateUserMetadataToGetIds
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-          description: Get list Dockstore users we were unable to get GitHub/Google
-            IDs for.
-      security:
-      - bearer: []
-      tags:
-      - users
   /users/user:
     delete:
       description: Delete user if possible.
