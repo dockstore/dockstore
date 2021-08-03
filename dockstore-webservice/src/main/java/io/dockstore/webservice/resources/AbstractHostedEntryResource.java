@@ -142,9 +142,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         // Only check type for workflows
-        DescriptorLanguage convertedDescriptorType = checkType(descriptorLanguage);
         String convertedRegistry = checkRegistry(registry);
-        T entry = getEntry(user, convertedRegistry, name, convertedDescriptorType, namespace, entryName);
+        T entry = getEntry(user, convertedRegistry, name, descriptorLanguage, namespace, entryName);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -363,13 +362,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             }
         }
     }
-
-    /**
-     * Check that the descriptor type is a valid type and return the descriptor type object. Not required for tools, since a tool has many types.
-     * @param descriptorType
-     * @return Verified type
-     */
-    protected abstract DescriptorLanguage checkType(DescriptorLanguage descriptorType);
 
     /**
      * Check that the registry is a valid registry and return the registry object

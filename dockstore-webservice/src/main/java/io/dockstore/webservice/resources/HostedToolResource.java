@@ -241,12 +241,6 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected DescriptorLanguage checkType(DescriptorLanguage descriptorType) {
-        // Descriptor type does not matter for tools
-        return null;
-    }
-
-    @Override
     protected String checkRegistry(String registry) {
         for (Registry registryObject : Registry.values()) {
             if (Objects.equals(registry.toLowerCase(), registryObject.getDockerPath())) {

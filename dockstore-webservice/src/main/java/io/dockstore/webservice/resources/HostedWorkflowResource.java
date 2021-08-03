@@ -294,12 +294,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected DescriptorLanguage checkType(DescriptorLanguage descriptorLanguage) {
-        // This should be impossible
-        throw new CustomWebApplicationException(descriptorLanguage.toString() + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
-    }
-
-    @Override
     protected String checkRegistry(String registry) {
         // Registry does not matter for workflows
         return null;
