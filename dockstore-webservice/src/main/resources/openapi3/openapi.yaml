@@ -4397,6 +4397,24 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/starredServices:
+    get:
+      description: Get the authenticated user's starred services.
+      operationId: getStarredServices
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+                uniqueItems: true
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/starredTools:
     get:
       description: Get the authenticated user's starred tools.
