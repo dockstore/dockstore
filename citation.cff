@@ -1,0 +1,101 @@
+abstract: "Dockstore (https://dockstore.org/) is an open source platform for publishing, sharing, and finding bioinformatics tools and workflows. The platform has facilitated large-scale biomedical research collaborations by using cloud technologies to increase the Findability, Accessibility, Interoperability and Reusability (FAIR) of computational resources, thereby promoting the reproducibility of complex bioinformatics analyses. Dockstore supports a variety of source repositories, analysis frameworks, and language technologies to provide a seamless publishing platform for authors to create a centralized catalogue of scientific software. The ready-to-use packaging of hundreds of tools and workflows, combined with the implementation of interoperability standards, enables users to launch analyses across multiple environments. Dockstore is widely used, more than twenty-five high-profile organizations share analysis collections through the platform in a variety of workflow languages, including the Broad Institute's GATK best practice and COVID-19 workflows (WDL), nf-core workflows (Nextflow), the Intergalactic Workflow Commission tools (Galaxy), and workflows from Seven Bridges (CWL) to highlight just a few. Here we describe the improvements made over the last four years, including the expansion of system integrations supporting authors, the addition of collaboration features and analysis platform integrations supporting users, and other enhancements that improve the overall scientific reproducibility of Dockstore content."
+authors: 
+  -
+    affiliation: "Ontario Institute for Cancer Research"
+    family-names: Yuen
+    given-names: Denis
+    orcid: "https://orcid.org/0000-0002-6130-1021"
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Cabansay
+    given-names: Louise
+    orcid: "https://orcid.org/0000-0002-1475-5979"
+  -
+    affiliation: "Ontario Institute for Cancer Research"
+    family-names: Duncan
+    given-names: Andrew
+  -
+    affiliation: "Ontario Institute for Cancer Research"
+    family-names: Luu
+    given-names: Gary
+  -
+    affiliation: "Ontario Institute for Cancer Research"
+    family-names: Hogue
+    given-names: Gregory
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Overbeck
+    given-names: Charles
+  -
+    family-names: Perez
+    given-names: Natalie
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Shands
+    given-names: Walt
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Steinberg
+    given-names: David
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Reid
+    given-names: Chaz
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Olunwa
+    given-names: Nneka
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Hansen
+    given-names: Richard
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Sheets
+    given-names: Elizabeth
+    orcid: "https://orcid.org/0000-0002-6335-4952"
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: "O'Farrell"
+    given-names: Ash
+  -
+    affiliation: "Ontario Institute for Cancer Research"
+    family-names: Cullion
+    given-names: Kim
+  -
+    affiliation: "Data Sciences Platform, Broad Institute"
+    family-names: "O'Connor"
+    given-names: Brian
+    name-particle: D
+  -
+    affiliation: "UC Santa Cruz Genomics Institute"
+    family-names: Paten
+    given-names: Benedict
+  -
+    affiliation: "Ontario Institute for Cancer Research"
+    family-names: Stein
+    given-names: Lincoln
+cff-version: "1.1.0"
+date-released: 2021-05-12
+doi: "10.1093/nar/gkab346"
+license: "Apache 2.0"
+message: "If you use this software, please cite it in general using this paper, particularly for Dockstore 1.10 and above"
+repository-code: "https://github.com/dockstore/dockstore"
+title: "The Dockstore: enhancing a community platform for sharing reproducible and accessible computational protocols "
+version: "1.11"
+
+
+references:
+  - type: article
+    scope: "Cite this paper to reference Dockstore up to version 1.9"
+    title: "The Dockstore: enabling modular, community-focused sharing of Docker-based genomics tools and workflows"
+    year: 2017-01-18
+    journal: F1000Research
+    volume: "6"
+    issue: "52"
+    doi: "10.12688/f1000research.10137.1"
+  - type: software-code
+    scope: "Cite Zenodo when citing the source code"
+    title: "dockstore/dockstore"
+    doi: "10.5281/zenodo.592056"
+    version: "1.11"
