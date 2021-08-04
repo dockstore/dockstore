@@ -5533,6 +5533,10 @@ paths:
         enum:
         - "CWL"
         - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"

@@ -1651,13 +1651,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
         @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath") String testParameterPath,
         @ApiParam(value = "Entry Id of parent tool/workflow.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Descriptor type of the workflow, only CWL or WDL are support.", required = true, allowableValues = "CWL, WDL") @PathParam("descriptorType") DescriptorLanguage descriptorType) {
+        @ApiParam(value = "Descriptor type of the workflow, only CWL or WDL are support.", required = true) @PathParam("descriptorType") DescriptorLanguage descriptorType) {
         // Find the entry
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
 
         // Check if valid descriptor type
         if (!descriptorType.isSupportsChecker()) {
-            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only " + DescriptorLanguage.CWL + " and " + DescriptorLanguage.WDL + " are valid.",
+            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only " + CWL + " and " + WDL + " are valid.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1696,10 +1696,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
 
             // Get default test parameter path and toolname
-            if (descriptorType.equals(DescriptorLanguage.WDL)) {
+            if (descriptorType.equals(WDL)) {
                 workflowName += "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
-            } else if (descriptorType.equals(DescriptorLanguage.CWL)) {
+            } else if (descriptorType.equals(CWL)) {
                 workflowName += "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
             } else {

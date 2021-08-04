@@ -433,7 +433,7 @@ public class CRUDClientIT extends BaseIT {
         try {
             api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), "cwll", "coolNamespace", null);
         } catch (ApiException e) {
-            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
         }
         api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), null, "coolNamespace", null);
     }

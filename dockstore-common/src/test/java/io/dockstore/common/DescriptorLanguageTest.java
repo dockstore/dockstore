@@ -41,8 +41,8 @@ public class DescriptorLanguageTest {
 
     @Test
     public void testGetTestParamFileType() {
-        Assert.assertEquals(DescriptorLanguage.CWL.getTestParamType(), DescriptorLanguage.FileType.CWL_TEST_JSON);
-        Assert.assertEquals(DescriptorLanguage.WDL.getTestParamType(), DescriptorLanguage.FileType.WDL_TEST_JSON);
-        Assert.assertEquals(DescriptorLanguage.NEXTFLOW.getTestParamType(), FileType.NEXTFLOW_TEST_PARAMS);
+        Assert.assertEquals(FileType.CWL_TEST_JSON, DescriptorLanguage.CWL.getTestParamType());
+        Assert.assertEquals(FileType.WDL_TEST_JSON, DescriptorLanguage.WDL.getTestParamType());
+        Assert.assertEquals(FileType.NEXTFLOW_TEST_PARAMS, DescriptorLanguage.NEXTFLOW.getTestParamType());
     }
 }
