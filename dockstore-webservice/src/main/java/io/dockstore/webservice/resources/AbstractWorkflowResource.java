@@ -273,7 +273,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Sets the publicly accessible URL version metadata.
-     * If all test parameter files have publicly accessible URLs (true), then version metadata is true
+     * If at least one test parameter file is publicly accessible, then version metadata is true
      * If there's 1+ test parameter file that is null but there's no false, then version metadata is null
      * If there's 1+ test parameter file that is false, then version metadata is false
      *
@@ -281,6 +281,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param checkUrlLambdaUrl URL of the checkUrl lambda
      */
     public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
+        Boolean publicAccessibleTestParameterFile = null;
         Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
         while (sourceFileIterator.hasNext()) {
             SourceFile sourceFile = sourceFileIterator.next();
@@ -294,15 +295,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         TestFileType.YAML);
                 }
             }
-            if (publicAccessibleUrls.isEmpty()) {
-                // Doesn't matter if the previous test parameter was true, override it
-                existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(null);
-            } else {
-                existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleUrls.get());
-                // If the current test parameter file is not publicly accessible, then all previous and future ones don't matter
-                break;
+            // Do not care about null, it will never override a true/false
+            if (publicAccessibleUrls.isPresent()) {
+                publicAccessibleTestParameterFile = publicAccessibleUrls.get();
+                if (publicAccessibleTestParameterFile) {
+                    // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
+                    break;
+                }
             }
         }
+        existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleTestParameterFile);
     }
 
     /**
