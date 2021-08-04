@@ -4397,6 +4397,23 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/starredServices:
+    get:
+      description: Get the authenticated user's starred services.
+      operationId: getStarredServices
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+          description: A list of the authenticated user's starred services
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/starredTools:
     get:
       description: Get the authenticated user's starred tools.
@@ -6375,7 +6392,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
       responses:

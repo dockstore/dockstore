@@ -697,7 +697,20 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get the authenticated user's starred workflows.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
-        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
+        return u.getStarredEntries().stream().filter(element -> element instanceof BioWorkflow)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/starredServices")
+    @Operation(operationId = "getStarredServices", description = "Get the authenticated user's starred services.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get the authenticated user's starred services.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of the authenticated user's starred services", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
+    public Set<Entry> getStarredServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        User u = userDAO.findById(user.getId());
+        return u.getStarredEntries().stream().filter(element -> element instanceof Service)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

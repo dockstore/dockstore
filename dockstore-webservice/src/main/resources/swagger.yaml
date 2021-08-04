@@ -4117,6 +4117,25 @@ paths:
               $ref: "#/definitions/Organization"
       security:
       - BEARER: []
+  /users/starredServices:
+    get:
+      tags:
+      - "users"
+      summary: "Get the authenticated user's starred services."
+      description: ""
+      operationId: "getStarredServices"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /users/starredTools:
     get:
       tags:
@@ -5942,6 +5961,8 @@ paths:
       summary: "Star a workflow."
       description: ""
       operationId: "starEntry"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:

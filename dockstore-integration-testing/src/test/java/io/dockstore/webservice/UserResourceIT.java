@@ -68,6 +68,8 @@ import org.junit.rules.ExpectedException;
  */
 @Category(ConfidentialTest.class)
 public class UserResourceIT extends BaseIT {
+    private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
+    private static final String INSTALLATION_ID = "1179416";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -221,9 +223,6 @@ public class UserResourceIT extends BaseIT {
         ApiClient client = getAnonymousWebClient();
         UsersApi userApi = new UsersApi(client);
 
-        String serviceRepo = "DockstoreTestUser2/test-service";
-        String installationId = "1179416";
-
         // anon should not exist
         boolean shouldFail = false;
         try {
@@ -247,7 +246,7 @@ public class UserResourceIT extends BaseIT {
         // try to delete with published workflows & service
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        workflowsApi.handleGitHubRelease(serviceRepo, USER_2_USERNAME, "refs/tags/1.0", installationId);
+        workflowsApi.handleGitHubRelease(SERVICE_REPO, USER_2_USERNAME, "refs/tags/1.0", INSTALLATION_ID);
 
         final Workflow workflowByPath = workflowsApi
             .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
@@ -257,7 +256,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
         adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
-        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, SERVICE);
+        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, null, SERVICE);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -291,7 +290,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the service
         boolean expectedAdminServiceAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, SERVICE);
+            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, null, SERVICE);
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             expectedAdminServiceAccessToFail = true;
@@ -705,5 +704,38 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
+    }
+
+    @Test
+    public void testGetStarredWorkflowsAndServices() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final long userId = usersApi.getUser().getId();
+
+        // Add service
+        workflowsApi.handleGitHubRelease("refs/tags/1.0", INSTALLATION_ID, SERVICE_REPO, USER_2_USERNAME);
+        assertEquals(1, usersApi.userServices(userId).size());
+        assertEquals(0, usersApi.userWorkflows(userId).size());
+
+        // Star service
+        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, SERVICE, "");
+        io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
+        workflowsApi.starEntry1(service.getId(), starRequest);
+        assertEquals(1, usersApi.getStarredServices().size());
+        assertEquals(0, usersApi.getStarredWorkflows().size());
+
+        // Add workflow
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
+                "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        assertEquals(1, usersApi.userServices(userId).size());
+        assertEquals(1, usersApi.userWorkflows(userId).size());
+
+        // Star workflow
+        workflowsApi.starEntry1(workflow.getId(), starRequest);
+        assertEquals(1, usersApi.getStarredServices().size());
+        assertEquals(1, usersApi.getStarredWorkflows().size());
     }
 }
