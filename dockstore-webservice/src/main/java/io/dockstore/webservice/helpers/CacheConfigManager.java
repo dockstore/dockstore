@@ -1,9 +1,9 @@
 package io.dockstore.webservice.helpers;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.CacheStats;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -88,7 +88,7 @@ public class CacheConfigManager {
         // so we don't fetch a token that may expire as we use it
         final int timeOutInMinutes = 58;
         if (installationAccessTokenCache == null) {
-            installationAccessTokenCache = CacheBuilder.newBuilder()
+            installationAccessTokenCache = Caffeine.newBuilder()
                     .maximumSize(maxSize)
                     .expireAfterWrite(timeOutInMinutes, TimeUnit.MINUTES)
                     .recordStats()
