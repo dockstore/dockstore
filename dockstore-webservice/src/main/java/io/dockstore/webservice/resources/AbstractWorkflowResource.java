@@ -298,7 +298,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Do not care about null, it will never override a true/false
             if (publicAccessibleUrls.isPresent()) {
                 publicAccessibleTestParameterFile = publicAccessibleUrls.get();
-                if (publicAccessibleTestParameterFile) {
+                if (publicAccessibleUrls.get()) {
                     // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
                     break;
                 }
