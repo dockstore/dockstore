@@ -15,15 +15,13 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.core.Response;
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import java.util.List;
+import java.util.Optional;
+import javax.ws.rs.core.Response;
 
 /**
  * Future home of code for managing cached TRS entries
