@@ -78,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -138,9 +137,9 @@ public class MetadataResource {
     @ApiOperation(value = "List all available workflow, tool, organization, and collection paths.", notes = "List all available workflow, tool, organization, and collection paths. Available means published for tools/workflows, and approved for organizations and their respective collections.")
     public String sitemap() {
         try {
-            SortedSet<String> sitemap = sitemapListener.getCache().get(SITEMAP_KEY, this::getSitemap);
+            SortedSet<String> sitemap = sitemapListener.getCache().get(SITEMAP_KEY, (k) -> getSitemap());
             return String.join(System.lineSeparator(), sitemap);
-        } catch (ExecutionException e) {
+        } catch (RuntimeException e) {
             throw new CustomWebApplicationException("Sitemap cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -202,8 +201,8 @@ public class MetadataResource {
     @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
         try {
-            return rssListener.getCache().get(RSS_KEY, this::getRSS);
-        } catch (ExecutionException e) {
+            return rssListener.getCache().get(RSS_KEY, (k) -> getRSS());
+        } catch (RuntimeException e) {
             throw new CustomWebApplicationException("RSS cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
