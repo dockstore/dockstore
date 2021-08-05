@@ -873,9 +873,10 @@ public interface LanguageHandlerInterface {
         }
 
         if (tokenResponse.statusCode() != HttpStatus.SC_OK) {
-            Map<String, List<Map<String, String>>> errorMap = GSON.fromJson(tokenResponse.body(), Map.class);
-            Map<String, String> error = errorMap.get("errors").get(0);
-            LOG.error("Token response has error code {} '{}' with message '{}'", tokenResponse.statusCode(), error.get("code"), error.get("message"));
+            Optional<Map<String, String>> error = getDockerError(tokenResponse);
+            if (error.isPresent()) {
+                LOG.error("Blob response has error code {} '{}' with message '{}'", tokenResponse.statusCode(), error.get().get("code"), error.get().get("message"));
+            }
             return Optional.empty();
         }
 
@@ -922,9 +923,10 @@ public interface LanguageHandlerInterface {
                 if (manifestResponse.statusCode() == HttpStatus.SC_OK) {
                     success = true;
                 } else {
-                    Map<String, List<Map<String, String>>> errorMap = GSON.fromJson(manifestResponse.body(), Map.class);
-                    Map<String, String> error = errorMap.get("errors").get(0);
-                    LOG.error("Manifest response has error code {} '{}' with message '{}'", manifestResponse.statusCode(), error.get("code"), error.get("message"));
+                    Optional<Map<String, String>> error = getDockerError(manifestResponse);
+                    if (error.isPresent()) {
+                        LOG.error("Manifest response has error code {} '{}' with message '{}'", manifestResponse.statusCode(), error.get().get("code"), error.get().get("message"));
+                    }
                 }
             } while (!success && (retries++ < maxRetries) && (manifestResponse.statusCode() == tooManyRequestsCode));
             if (!success) {
@@ -980,12 +982,29 @@ public interface LanguageHandlerInterface {
         }
 
         if (blobResponse.statusCode() != HttpStatus.SC_OK) {
-            Map<String, List<Map<String, String>>> errorMap = GSON.fromJson(blobResponse.body(), Map.class);
-            Map<String, String> error = errorMap.get("errors").get(0);
-            LOG.error("Blob response has error code {} '{}' with message '{}'", blobResponse.statusCode(), error.get("code"), error.get("message"));
+            Optional<Map<String, String>> error = getDockerError(blobResponse);
+            if (error.isPresent()) {
+                LOG.error("Blob response has error code {} '{}' with message '{}'", blobResponse.statusCode(), error.get().get("code"), error.get().get("message"));
+            }
             return Optional.empty();
         }
         return Optional.of(blobResponse);
+    }
+
+    /**
+     * Gets the error map of an unsuccessful Docker Registry HTTP API V2 response
+     * Failures are reported as part of 4xx responses, in a json response body (https://docs.docker.com/registry/spec/api/#errors)
+     *
+     * @param response Docker Registry HTTP API V2 response
+     * @return an error map of the response if it exists
+     */
+    default Optional<Map<String, String>> getDockerError(HttpResponse<String> response) {
+        Map<String, List<Map<String, String>>> errorMap = GSON.fromJson(response.body(), Map.class);
+        List<Map<String, String>> errors = errorMap.get("errors");
+        if (errors != null) {
+            return Optional.of(errors.get(0));
+        }
+        return Optional.empty();
     }
 
     default Set<Image> getImagesFromDockerHub(final String repo, final DockerSpecifier specifierType, final String specifierName) {
