@@ -587,12 +587,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new bitbucket.org token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -608,12 +614,18 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_Auth'
-          description: default response
+          description: Satellizer successfully posted a new GitHub token to Dockstore
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -628,12 +640,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new github.com token
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -648,12 +666,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new gitlab.com token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -668,12 +692,16 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_Auth'
-          description: default response
+          description: Successfully posted a new Google token to Dockstore
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
       security:
       - bearer: []
       tags:
@@ -689,12 +717,20 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added orcid.org token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
+        "500":
+          description: Internal server error
       security:
       - bearer: []
       summary: Add a new orcid.org token
@@ -710,12 +746,14 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new quay IO token
+        "404":
+          description: Token not found
       security:
       - bearer: []
       tags:
@@ -730,12 +768,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new zenodo.org token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -752,10 +796,10 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
+        "204":
+          description: Successfully deleted token
+        "404":
+          description: Token not found
       security:
       - bearer: []
       tags:
@@ -771,12 +815,14 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: A token specified by id
+        "404":
+          description: Token not found
       security:
       - bearer: []
       tags:
