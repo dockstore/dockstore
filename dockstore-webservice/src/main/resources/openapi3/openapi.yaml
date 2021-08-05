@@ -4188,12 +4188,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: boolean
-          description: default response
+          description: Boolean indicating if a user with the specified username exists
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4287,14 +4293,14 @@ paths:
           format: int32
           default: 100
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/LambdaEvent'
-          description: default response
+          description: A list of GitHub Events for the logged in user
       security:
       - bearer: []
       tags:
@@ -4324,14 +4330,16 @@ paths:
       description: Syncs Dockstore account with GitHub App Installations.
       operationId: syncUserWithGitHub
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: Successfully synced Dockstore account with GitHub App installations
+        "400":
+          description: Bad request
       security:
       - bearer: []
       tags:
@@ -4341,7 +4349,7 @@ paths:
       description: Get all of the git registries accessible to the logged in user.
       operationId: getUserRegistries
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
@@ -4353,7 +4361,7 @@ paths:
                   - github.com
                   - bitbucket.org
                   - gitlab.com
-          description: default response
+          description: A list of the git registries accessible to the logged in user
       security:
       - bearer: []
       tags:
@@ -4376,15 +4384,15 @@ paths:
           - bitbucket.org
           - gitlab.com
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   type: string
-                uniqueItems: true
-          description: default response
+          description: A list of organizations for a given git registry accessible
+            to the logged in user
       security:
       - bearer: []
       tags:
@@ -4413,14 +4421,15 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Repository'
-          description: default response
+          description: A list of repositories for an organization for a given git
+            registry accessible to the logged in user
       security:
       - bearer: []
       tags:
@@ -4430,15 +4439,14 @@ paths:
       description: Get the authenticated user's starred organizations.
       operationId: getStarredOrganizations
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organization'
-                uniqueItems: true
-          description: default response
+          description: A list of the authenticated user's starred organizations
       security:
       - bearer: []
       tags:
@@ -4465,15 +4473,14 @@ paths:
       description: Get the authenticated user's starred tools.
       operationId: getStarredTools
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Entry'
-                uniqueItems: true
-          description: default response
+          description: A list of the authenticated user's starred tools
       security:
       - bearer: []
       tags:
@@ -4483,15 +4490,14 @@ paths:
       description: Get the authenticated user's starred workflows.
       operationId: getStarredWorkflows
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Entry'
-                uniqueItems: true
-          description: default response
+          description: A list of the authenticated user's starred workflows
       security:
       - bearer: []
       tags:
@@ -4501,14 +4507,16 @@ paths:
       description: Update metadata of all users.
       operationId: updateUserMetadata
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-          description: default response
+          description: Successfully updated metadata of all users
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       tags:
@@ -4526,12 +4534,16 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: boolean
-          description: default response
+          description: Boolean indicating if user was deleted successfully
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       tags:
@@ -4540,12 +4552,12 @@ paths:
       description: Get the logged-in user.
       operationId: getUser
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: The logged-in user
       security:
       - bearer: []
       tags:
@@ -4560,12 +4572,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: Successfully changed username
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       tags:
@@ -4575,12 +4591,12 @@ paths:
       description: Get additional information about the authenticated user.
       operationId: getExtendedUserData
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExtendedUserData'
-          description: default response
+          description: Additional information about the authenticated user
       security:
       - bearer: []
       tags:
@@ -4590,15 +4606,14 @@ paths:
       description: Get the logged-in user's memberships.
       operationId: getUserMemberships
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrganizationUser'
-                uniqueItems: true
-          description: default response
+          description: A set of the logged-in user's memberships
       security:
       - bearer: []
       tags:
@@ -4637,12 +4652,14 @@ paths:
           - google.com
           - orcid.org
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: Successfully updated metadata for logged in user
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       tags:
@@ -4659,12 +4676,16 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: boolean
-          description: default response
+          description: Successfully deleted user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4681,12 +4702,16 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Limits'
-          description: default response
+          description: A user's limits
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4707,12 +4732,16 @@ paths:
             schema:
               $ref: '#/components/schemas/Limits'
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Limits'
-          description: default response
+          description: Successfully updated the user's limits
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4728,12 +4757,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: A user with the specified username
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4755,14 +4790,14 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/EntryUpdateTime'
-          description: default response
+          description: A list of the entries for a user
       security:
       - bearer: []
       tags:
@@ -4785,14 +4820,14 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrganizationUpdateTime'
-          description: default response
+          description: A list of the Dockstore organizations for a user
       security:
       - bearer: []
       tags:
@@ -4809,12 +4844,16 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: A user with the specified userId
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4840,6 +4879,10 @@ paths:
                 items:
                   $ref: '#/components/schemas/CloudInstance'
           description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4869,6 +4912,8 @@ paths:
           description: Unauthorized
         "403":
           description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4955,14 +5000,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-          description: default response
+          description: A list of tools owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4979,14 +5028,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-          description: default response
+          description: A list of published tools from a user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5013,14 +5066,20 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-          description: default response
+          description: A list of tools owned by the user with the specified organization
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5044,12 +5103,16 @@ paths:
               $ref: '#/components/schemas/PrivilegeRequest'
         required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: Successfully updated user to admin or curator status
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5066,14 +5129,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: A list of services owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5090,14 +5157,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: A list of tokens belonging to user specified by userId
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5115,14 +5186,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: A list of workflows owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5147,14 +5222,19 @@ paths:
         description: "This is here to appease Swagger. It requires PATCH methods to\
           \ have a body, even if it is empty. Please leave it empty."
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: Successfully added user to Dockstore workflows that they should
+            have access to
+        "400":
+          description: Bad request
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5171,14 +5251,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: A list of published workflows from a user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:

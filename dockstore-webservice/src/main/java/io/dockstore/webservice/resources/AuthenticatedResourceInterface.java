@@ -112,6 +112,17 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if user is null
+     *
+     * @param user user to check if null
+     */
+    default void checkUserExists(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
+    /**
      * Check if entry belongs to user
      *
      * @param user the user that is requesting something
