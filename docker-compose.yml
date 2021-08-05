@@ -42,7 +42,7 @@ services:
     # networks:
       # - elastic
   postgres_db:
-    image: postgres:12.0
+    image: postgres:12.7
     container_name: postgres1
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
