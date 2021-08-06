@@ -15,8 +15,8 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import java.util.List;
@@ -30,7 +30,7 @@ public class RSSListener implements StateListenerInterface {
 
     public static final String RSS_KEY = "rss";
     private static final Logger LOGGER = LoggerFactory.getLogger(RSSListener.class);
-    private Cache<String, String> cache = CacheBuilder.newBuilder().build();
+    private Cache<String, String> cache = Caffeine.newBuilder().build();
 
     /**
      * Custom getter
