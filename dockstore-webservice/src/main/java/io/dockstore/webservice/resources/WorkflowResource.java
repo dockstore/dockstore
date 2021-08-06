@@ -1908,7 +1908,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
 
         // Find matching source control
-        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+        List<Token> scTokens = getAndRefreshBitbucketTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -1965,7 +1965,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
-        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+        List<Token> scTokens = getAndRefreshBitbucketTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());

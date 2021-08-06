@@ -112,7 +112,7 @@ public interface SourceControlResourceInterface {
     }
 
     /**
-     * Refreshes all tokens that require refreshing, and return all tokens
+     * Refreshes the first bitbucket token all tokens and return all tokens
      * @param user
      * @param tokenDAO
      * @param client
@@ -120,7 +120,7 @@ public interface SourceControlResourceInterface {
      * @param bitbucketClientSecret
      * @return All tokens
      */
-    default List<Token> getAndRefreshTokens(User user, TokenDAO tokenDAO, HttpClient client, String bitbucketClientID, String bitbucketClientSecret) {
+    default List<Token> getAndRefreshBitbucketTokens(User user, TokenDAO tokenDAO, HttpClient client, String bitbucketClientID, String bitbucketClientSecret) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
 
         if (!tokens.isEmpty()) {

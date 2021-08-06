@@ -841,7 +841,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     })
     public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
-        Token githubToken = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
+        Token githubToken = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
                 .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
         if (githubToken != null) {
             SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
@@ -867,7 +867,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
                 Collectors.toList());
 
-        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+        List<Token> scTokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
                 .collect(Collectors.toList());
@@ -1096,7 +1096,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @return mapping of git url to repository path
      */
     private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
-        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+        List<Token> scTokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
