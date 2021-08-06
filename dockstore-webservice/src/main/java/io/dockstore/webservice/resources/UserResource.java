@@ -26,6 +26,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_OFF
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.collect.Lists;
+import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
@@ -139,6 +140,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
     private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
+    private static final String USER_NOT_FOUND_DESCRIPTION = "User not found";
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
@@ -185,9 +187,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/username/{username}")
     @Operation(operationId = "listUser", description = "Get a user by username.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A user with the specified username", content = @Content(schema = @Schema(implementation = User.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User listUser(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") @NotBlank String username) {
@@ -204,8 +206,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/{userId}")
     @Operation(operationId = "getSpecificUser", description = "Get user by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A user with the specified userId", content = @Content(schema = @Schema(implementation = User.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(nickname = "getSpecificUser", value = "Get user by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         checkUser(authUser, userId);
@@ -264,8 +266,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/user/changeUsername")
     @Operation(operationId = "changeUsername", description = "Change username if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully changed username", content = @Content(schema = @Schema(implementation = User.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiOperation(value = "Change username if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User changeUsername(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
@@ -317,8 +319,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/user")
     @Operation(operationId = "selfDestruct", description = "Delete user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Boolean indicating if user was deleted successfully", content = @Content(schema = @Schema(implementation = Boolean.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = HttpStatusMessageConstants.INTERNAL_SERVER_ERROR)
     @ApiOperation(value = "Delete user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
     public boolean selfDestruct(
             @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
@@ -392,8 +395,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @RolesAllowed("admin")
     @Operation(operationId = "terminateUsers", description = "Terminate user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted user", content = @Content(schema = @Schema(implementation = Boolean.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Terminate user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class, nickname = "terminateUser")
     public boolean terminateUser(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,  @ApiParam("User to terminate") @PathParam("userId") long targetUserId) {
@@ -417,9 +420,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "checkUserExists", description = "Check if user with some username exists.", security = @SecurityRequirement(name = "bearer"))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "Boolean indicating if a user with the specified username exists", content = @Content(schema = @Schema(implementation = Boolean.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     public boolean checkUserExists(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
                                    @ApiParam("User name to check") @PathParam("username") @NotBlank String username) {
         @SuppressWarnings("deprecation")
@@ -438,8 +441,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "getUserTokens", description = "Get information about tokens with user id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of tokens belonging to user specified by userId", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Token.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Get information about tokens with user id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
@@ -456,8 +459,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/{userId}/containers/published")
     @Operation(operationId = "userPublishedContainers", description = "List all published tools from a user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of published tools from a user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tool.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "List all published tools from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -480,8 +483,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "userPublishedWorkflows", description = "List all published workflows from a user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of published workflows from a user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "List all published workflows from a user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -511,9 +514,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "refreshToolsByOrganization", description = "Refresh all tools owned by the authenticated user with specified organization.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of tools owned by the user with the specified organization", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tool.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Refresh all tools owned by the authenticated user with specified organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
@@ -579,8 +582,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "userWorkflows", description = "List all workflows owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of workflows owned by the user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "List all workflows owned by the authenticated user.", nickname = "userWorkflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -619,8 +622,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "userServices", description = "List all services owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A list of services owned by the user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "List all services owned by the authenticated user.", nickname = "userServices", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> userServices(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -657,8 +660,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork(readOnly = true)
     @Operation(operationId = "userContainers", description = "List all tools owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of tools owned by the user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tool.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "List all tools owned by the authenticated user.", nickname = "userContainers", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -801,7 +804,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "updateUserMetadata", description = "Update metadata of all users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "Successfully updated metadata of all users", content = @Content(array = @ArraySchema(schema = @Schema(implementation = User.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiOperation(value = "Update metadata of all users.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only.", response = User.class, responseContainer = "List")
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<User> users = userDAO.findAll();
@@ -824,7 +827,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/user/updateUserMetadata")
     @Operation(operationId = "updateLoggedInUserMetadata", description = "Update metadata for logged in user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully updated metadata for logged in user", content = @Content(schema = @Schema(implementation = User.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiOperation(value = "Update metadata for logged in user.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true)@Parameter(hidden = true, name = "user")@Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
@@ -855,8 +858,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/user/{userId}/limits")
     @Operation(operationId = "getUserLimits", description = "Returns the specified user's limits. ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A user's limits", content = @Content(schema = @Schema(implementation = Limits.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Returns the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
     public Limits getUserLimits(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
@@ -875,8 +878,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/user/{userId}/limits")
     @Operation(operationId = "setUserLimits", description = "Update the specified user's limits. ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully updated the user's limits", content = @Content(schema = @Schema(implementation = Limits.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Update the specified user's limits. ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Limits.class)
     public Limits setUserLimits(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user", in = ParameterIn.HEADER)@Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
@@ -897,7 +900,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "syncUserWithGitHub", description = "Syncs Dockstore account with GitHub App Installations.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "Successfully synced Dockstore account with GitHub App installations", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
     @ApiOperation(value = "Syncs Dockstore account with GitHub App Installations.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
             response = Workflow.class, responseContainer = "List")
@@ -915,7 +918,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "getMyGitHubOrgs", description = "Gets GitHub organizations for current user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponses(value = {
             @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Descriptions of Github organizations (including but not limited to id, names)", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SourceControlOrganization.class)))),
-            @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
+            @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
     })
     public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
@@ -936,8 +939,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "addUserToDockstoreWorkflows", description = "Adds the logged-in user to any Dockstore workflows that they should have access to.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "Successfully added user to Dockstore workflows that they should have access to", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     public List<Workflow> addUserToDockstoreWorkflows(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
             @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "User to update", required = true) long userId,
             @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
@@ -976,8 +979,8 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Consumes("application/json")
     @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully updated user to admin or curator status", content = @Content(schema = @Schema(implementation = User.class)))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
     public User setUserPrivilege(@Parameter(hidden = true, name = "user")@Auth User authUser,
                                  @Parameter(name = "User ID", required = true) @PathParam("userId") Long userID,
@@ -1042,7 +1045,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/registries/{gitRegistry}/organizations")
     @Operation(operationId = "getUserOrganizations", description = "Get all of the organizations for a given git registry accessible to the logged in user.", security = @SecurityRequirement(name = "bearer"))
     @ApiResponse(responseCode = HttpStatus.SC_OK
-            + "", description = "A list of organizations for a given git registry accessible to the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class))))
+            + "", description = "A list of organizations for a given git registry accessible to the logged in user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class), uniqueItems = true)))
     @ApiOperation(value = "See OpenApi for details")
     public Set<String> getUserOrganizations(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
                                             @Parameter(name = "gitRegistry", description = "Git registry", required = true, in = ParameterIn.PATH) @PathParam("gitRegistry") SourceControl gitRegistry) {
@@ -1076,9 +1079,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     @Operation(operationId = "getUserCloudInstances", description = "Get all cloud instances belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
-            + "", description = "OK", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+            + "", description = HttpStatusMessageConstants.OK, content = @Content(array = @ArraySchema(schema = @Schema(implementation = CloudInstance.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     public Set<CloudInstance> getUserCloudInstances(@Parameter(hidden = true, name = "user")@Auth User authUser,
         @ApiParam(name = "userId", required = true, value = "User to update") @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to get cloud instances for", required = true) long userId) {
         final User user = userDAO.findById(userId);
@@ -1095,10 +1098,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/{userId}/cloudInstances")
     @Operation(operationId = "postUserCloudInstance", description = "Create a new cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = HttpStatusMessageConstants.NO_CONTENT)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public Set<CloudInstance> postUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
             @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to create the cloud instance for", required = true) long userId,
@@ -1125,10 +1128,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork()
     @Path("/{userId}/cloudInstances/{cloudInstanceId}")
     @Operation(operationId = "deleteUserCloudInstance", description = "Delete a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = HttpStatusMessageConstants.NO_CONTENT)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public void deleteUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
             @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to delete the cloud instance for", required = true) long userId,
@@ -1149,10 +1152,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "putUserCloudInstance", description = "Update a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
-    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = HttpStatusMessageConstants.NO_CONTENT)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
     public void putUserCloudInstance(@Parameter(hidden = true, name = "user")@Auth User authUser,
             @PathParam("userId") @Parameter(name = "userId", in = ParameterIn.PATH, description = "ID of user to update the cloud instance for", required = true) long userId,
             @PathParam("cloudInstanceId") @Parameter(name = "cloudInstanceId", in = ParameterIn.PATH, description = CLOUD_INSTANCE_ID_DESCRIPTION, required = true) long cloudInstanceId,

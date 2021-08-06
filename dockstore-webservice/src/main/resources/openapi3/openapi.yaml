@@ -702,6 +702,12 @@ paths:
           description: Bad request
         "401":
           description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
+        "417":
+          description: Expectation failed
       security:
       - bearer: []
       tags:
@@ -752,8 +758,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Token_User'
           description: Successfully added a new quay IO token
+        "400":
+          description: Bad request
         "404":
-          description: Token not found
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -798,6 +808,8 @@ paths:
       responses:
         "204":
           description: Successfully deleted token
+        "403":
+          description: Forbidden
         "404":
           description: Token not found
       security:
@@ -4391,6 +4403,7 @@ paths:
                 type: array
                 items:
                   type: string
+                uniqueItems: true
           description: A list of organizations for a given git registry accessible
             to the logged in user
       security:
@@ -4544,6 +4557,8 @@ paths:
           description: Bad request
         "403":
           description: Forbidden
+        "500":
+          description: Internal server error
       security:
       - bearer: []
       tags:
@@ -4907,7 +4922,7 @@ paths:
         required: true
       responses:
         "204":
-          description: No Content
+          description: No content
         "401":
           description: Unauthorized
         "403":
@@ -4939,13 +4954,13 @@ paths:
           format: int64
       responses:
         "204":
-          description: No Content
+          description: No content
         "401":
           description: Unauthorized
         "403":
           description: Forbidden
         "404":
-          description: Not Found
+          description: Not found
       security:
       - bearer: []
       tags:
@@ -4977,13 +4992,13 @@ paths:
         required: true
       responses:
         "204":
-          description: No Content
+          description: No content
         "401":
           description: Unauthorized
         "403":
           description: Forbidden
         "404":
-          description: Not Found
+          description: Not found
       security:
       - bearer: []
       tags:
