@@ -190,7 +190,7 @@ public class TokenResourceIT {
                 tokensApi.listToken(currToken.getId());
                 fail("Should not be able to list a deleted token");
             } catch (ApiException e) {
-                boolean firstExceptionCheck = e.getMessage().contains("There was an error processing your request");
+                boolean firstExceptionCheck = "Token not found.".equals(e.getMessage());
                 boolean secondExceptionCheck = "Credentials are required to access this resource.".equals(e.getMessage());
                 Assert.assertTrue(firstExceptionCheck || secondExceptionCheck);
             }
