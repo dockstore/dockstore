@@ -744,7 +744,7 @@ paths:
       - tokens
   /auth/tokens/quay.io:
     get:
-      description: Add a new quay IO token.
+      description: Add a new Quay.io token.
       operationId: addQuayToken
       parameters:
       - in: query
@@ -757,7 +757,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: Successfully added a new quay IO token
+          description: Successfully added a new Quay.io token
         "400":
           description: Bad request
         "404":

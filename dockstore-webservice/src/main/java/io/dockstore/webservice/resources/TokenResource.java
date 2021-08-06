@@ -127,6 +127,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private static final String TOKEN_NOT_FOUND_DESCRIPTION = "Token not found";
+    private static final String USER_NOT_FOUND_MESSAGE = "User not found";
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
@@ -215,12 +216,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @UnitOfWork
     @Path("/quay.io")
     @JsonView(TokenViews.User.class)
-    @Operation(operationId = "addQuayToken", description = "Add a new quay IO token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added a new quay IO token", content = @Content(schema = @Schema(implementation = Token.class)))
+    @Operation(operationId = "addQuayToken", description = "Add a new Quay.io token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added a new Quay.io token", content = @Content(schema = @Schema(implementation = Token.class)))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
     @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
-    @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new Quay.io token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
@@ -248,7 +249,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -365,7 +366,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
 
     }
@@ -733,7 +734,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -814,7 +815,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -874,7 +875,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -892,6 +893,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             LOG.info("Username: {}", username);
             return username;
         }
-        throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+        throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
     }
 }

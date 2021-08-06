@@ -1233,7 +1233,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new quay IO token."
+      summary: "Add a new Quay.io token."
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
