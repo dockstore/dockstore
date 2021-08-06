@@ -1110,6 +1110,24 @@ public class WorkflowIT extends BaseIT {
         verifyTRSImageConversion(versions, "ghcrImages", 7);
     }
 
+    @Test
+    public void testGettingImagesFromAmazonECR() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.ApiClient openAPIClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openAPIClient);
+
+        // Test that a versioned multi-architecture image gets an image per architecture: public.ecr.aws/ubuntu/ubuntu:18.04 -> 4 OS/Arch images
+        // Test that an image referenced by digest is grabbed correctly
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
+        WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "ecrImages");
+        assertEquals(5, version.getImages().size());
+        verifyImageChecksumsAreSaved(version);
+
+        List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow");
+        verifyTRSImageConversion(versions, "ecrImages", 5);
+    }
+
     /**
      * Tests that snapshotting a workflow version fails if any of the images have no tag, use the 'latest' tag, or are specified using a parameter.
      */

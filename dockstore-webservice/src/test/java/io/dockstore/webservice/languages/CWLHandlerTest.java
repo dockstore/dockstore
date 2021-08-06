@@ -20,6 +20,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -56,6 +57,7 @@ public class CWLHandlerTest {
         Assert.assertTrue("Should be empty for no version being included", cwlHandler.determineImageRegistry("knowengdev/data_cleanup_pipeline").isEmpty());
         Assert.assertTrue("Should be empty for no version being included", cwlHandler.determineImageRegistry("python:").isEmpty());
         Assert.assertEquals("Should be Amazon", Registry.AMAZON_ECR, cwlHandler.determineImageRegistry("137112412989.dkr.ecr.us-east-1.amazonaws.com/amazonlinux:latest").get());
+        Assert.assertEquals("Should be Amazon", Registry.AMAZON_ECR, cwlHandler.determineImageRegistry("public.ecr.aws/ubuntu/ubuntu:latest").get());
         Assert.assertTrue("Should be empty, Google not supported yet", cwlHandler.determineImageRegistry("gcr.io/project-id/image:tag").isEmpty());
         Assert.assertEquals("Should be Quay", Registry.QUAY_IO, cwlHandler.determineImageRegistry("quay.io/ucsc_cgl/verifybamid:1.30.0").get());
     }
@@ -224,6 +226,7 @@ public class CWLHandlerTest {
         Assert.assertEquals("foo/bar", handler.getImageNameWithoutSpecifier("foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
         Assert.assertEquals("quay.io/foo/bar", handler.getImageNameWithoutSpecifier("quay.io/foo/bar:1", DockerSpecifier.TAG));
         Assert.assertEquals("ghcr.io/foo/bar", handler.getImageNameWithoutSpecifier("ghcr.io/foo/bar:1@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("public.ecr.aws/foo/bar", handler.getImageNameWithoutSpecifier("public.ecr.aws/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
     }
 
     @Test
@@ -241,6 +244,14 @@ public class CWLHandlerTest {
         Assert.assertEquals("foo/bar/test", handler.getRepositoryName(Registry.GITHUB_CONTAINER_REGISTRY, "ghcr.io/foo/bar/test:1", DockerSpecifier.TAG));
         Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.GITHUB_CONTAINER_REGISTRY, "ghcr.io/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
         Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.GITHUB_CONTAINER_REGISTRY, "ghcr.io/foo/bar:1@sha256:123456789abc", DockerSpecifier.DIGEST));
+
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.AMAZON_ECR, "public.ecr.aws/foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar/test", handler.getRepositoryName(Registry.AMAZON_ECR, "public.ecr.aws/foo/bar/test:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.AMAZON_ECR, "public.ecr.aws/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar",
+                handler.getRepositoryName(Registry.AMAZON_ECR, "012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar",
+                handler.getRepositoryName(Registry.AMAZON_ECR, "012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
     }
 
     @Test
@@ -266,24 +277,23 @@ public class CWLHandlerTest {
         // GHCR image used: ghcr.io/helm/tiller@sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f (associated tag is 'v2.17.0')
         String repo = "helm/tiller";
         String digest = "sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f";
+        Optional<String> token = handler.getDockerToken(Registry.GITHUB_CONTAINER_REGISTRY, repo);
+        Assert.assertTrue(token.isPresent());
+        Optional<HttpResponse<String>> manifestResponse = handler.getDockerManifest(token.get(), Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath(), repo, digest);
+        Assert.assertEquals(HttpStatus.SC_OK, manifestResponse.get().statusCode());
+        String manifestBody = manifestResponse.get().body();
+        String calculatedDigest = "sha256:" + handler.calculateDockerImageDigest(manifestBody);
+        Assert.assertEquals(digest, calculatedDigest);
 
-        String token = null;
-        try {
-            token = handler.getDockerToken(Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath(), repo);
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
-            Assert.fail("Could not retrieve token");
-        }
-
-        HttpResponse<String> manifestResponse = null;
-        try {
-            manifestResponse = handler.getDockerManifest(token, Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath(), repo, digest);
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
-            Assert.fail("Could not retrieve manifest");
-        }
-        Assert.assertEquals(HttpStatus.SC_OK, manifestResponse.statusCode());
-
-        String manifestBody = manifestResponse.body();
-        String calculatedDigest = String.format("sha256:%s", handler.calculateDockerImageDigest(manifestBody));
+        // Amazon ECR image used: public.ecr.aws/nginx/unit:1.24.0-minimal
+        repo = "nginx/unit";
+        digest = "sha256:5711186c4c24cf544c1d6ea1f64de288fc3d1f47bc506cae251a75047b15a89a";
+        token = handler.getDockerToken(Registry.AMAZON_ECR, repo);
+        Assert.assertTrue(token.isPresent());
+        manifestResponse = handler.getDockerManifest(token.get(), Registry.AMAZON_ECR.getDockerPath(), repo, digest);
+        Assert.assertEquals(HttpStatus.SC_OK, manifestResponse.get().statusCode());
+        manifestBody = manifestResponse.get().body();
+        calculatedDigest = "sha256:" + handler.calculateDockerImageDigest(manifestBody);
         Assert.assertEquals(digest, calculatedDigest);
     }
 
