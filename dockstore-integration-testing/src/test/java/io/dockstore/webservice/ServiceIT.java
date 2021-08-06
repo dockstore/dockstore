@@ -212,7 +212,7 @@ public class ServiceIT extends BaseIT {
         client.handleGitHubRelease(serviceRepo, "DockstoreTestUser2", "refs/tags/1.0", installationId);
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
-        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "versions", SERVICE);
+        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "versions", SERVICE, null);
 
         assertNotNull(service);
         assertEquals("Should have a new version", 1, service.getWorkflowVersions().size());
@@ -381,7 +381,7 @@ public class ServiceIT extends BaseIT {
         long workflowCount = testingPostgres.runSelectStatement("select count(*) from service", long.class);
         assertEquals(1, workflowCount);
 
-        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "", SERVICE);
+        io.swagger.client.model.Workflow service = client.getWorkflowByPath("github.com/" + serviceRepo, "", SERVICE, null);
         // io.swagger.client.model.Workflow service = services.get(0);
         try {
             client.refresh(service.getId(), false);

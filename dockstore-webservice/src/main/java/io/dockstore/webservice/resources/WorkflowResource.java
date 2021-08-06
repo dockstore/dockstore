@@ -128,6 +128,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -803,8 +804,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
             @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the following: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL) @QueryParam("subclass") String subclass) {
-        final Class<? extends Workflow> targetClass = getSubClass(subclass);
+            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the following: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL) @QueryParam("subclass") String subclass,
+            @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.11.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true) @ApiParam(value = "services", defaultValue = "false") @QueryParam("services") boolean services, @Context ContainerRequestContext containerContext) {
+        final Class<? extends Workflow> targetClass;
+        List<String> userAgent = containerContext.getHeaders().get("User-Agent");
+        if (userAgent != null && userAgent.get(0).contains("Dockstore-CLI")) {
+            targetClass = services ? Service.class : BioWorkflow.class;
+        } else {
+            targetClass = getSubClass(subclass);
+        }
+
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
