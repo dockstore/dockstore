@@ -8464,6 +8464,8 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/ParsedInformation"
+      publicAccessibleTestParameterFile:
+        type: "boolean"
   Workflow:
     type: "object"
     required:
