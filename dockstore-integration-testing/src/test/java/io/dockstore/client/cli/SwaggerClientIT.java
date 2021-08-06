@@ -198,7 +198,7 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
-        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null, BIOWORKFLOW, null);
+        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null, BIOWORKFLOW);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
@@ -212,7 +212,7 @@ public class SwaggerClientIT extends BaseIT {
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
 
         // updating label should fail since user is not owner
-        workflow = userApi1.getWorkflowByPath("github.com/A/l", null, BIOWORKFLOW, null);
+        workflow = userApi1.getWorkflowByPath("github.com/A/l", null, BIOWORKFLOW);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
         userApi2.updateLabels(containerId, "foobar", "");
@@ -801,7 +801,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, BIOWORKFLOW, null);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, BIOWORKFLOW);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             Assert.assertEquals(403, e.getCode());
@@ -819,7 +819,7 @@ public class SwaggerClientIT extends BaseIT {
         Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, BIOWORKFLOW, null);
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null, BIOWORKFLOW);
         user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId(), null);
 
         // But User 2 cannot edit the hosted workflow
@@ -886,7 +886,7 @@ public class SwaggerClientIT extends BaseIT {
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         try {
-            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null, BIOWORKFLOW, null);
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null, BIOWORKFLOW);
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
             Assert.assertEquals(401, ex.getCode());

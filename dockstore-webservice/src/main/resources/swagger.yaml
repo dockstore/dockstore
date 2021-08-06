@@ -5071,14 +5071,8 @@ paths:
         in: "query"
         description: "Which Workflow subclass to retrieve. One of the following: service,\
           \ bioworkflow, apptool"
-        required: false
+        required: true
         type: "string"
-      - name: "services"
-        in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
       responses:
         200:
           description: "successful operation"
