@@ -315,7 +315,7 @@ Lists of 358 third-party dependencies.
      (EPL 2.0) (GPL2 w/ CPE) OSGi resource locator (org.glassfish.hk2:osgi-resource-locator:1.0.3 - https://projects.eclipse.org/projects/ee4j/osgi-resource-locator)
      (MIT) parser (org.typelevel:jawn-parser_2.12:1.0.0 - http://github.com/typelevel/jawn)
      (The Apache Software License, Version 2.0) PF4J (org.pf4j:pf4j:3.2.0 - http://nexus.sonatype.org/oss-repository-hosting.html/pf4j-parent/pf4j)
-     (BSD-2-Clause) PostgreSQL JDBC Driver (org.postgresql:postgresql:42.2.19 - https://jdbc.postgresql.org)
+     (BSD-2-Clause) PostgreSQL JDBC Driver (org.postgresql:postgresql:42.2.21 - https://jdbc.postgresql.org)
      (The Apache Software License, Version 2.0) PowerMock (org.powermock:powermock-api-easymock:2.0.4 - http://www.powermock.org)
      (MIT) pprint_2.12 (com.lihaoyi:pprint_2.12:0.6.0 - https://github.com/lihaoyi/PPrint)
      (The Apache Software License, Version 2.0) rank-eval (org.elasticsearch.plugin:rank-eval-client:7.10.2 - https://github.com/elastic/elasticsearch)
