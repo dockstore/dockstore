@@ -59,7 +59,6 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.URIHelper;
@@ -1907,6 +1906,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         User foundUser = userDAO.findById(authUser.getId());
 
         SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(foundUser, gitRegistry, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
+        if (sourceCodeRepo == null) {
+            String msg = "User does not have access to the given source control registry.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + gitRegistry + ":" + repository + ".git";

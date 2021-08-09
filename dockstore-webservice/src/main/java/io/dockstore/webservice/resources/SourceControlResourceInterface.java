@@ -123,31 +123,16 @@ public interface SourceControlResourceInterface {
     default SourceCodeRepoInterface createSourceCodeRepo(User user, SourceControl sourceControl, TokenDAO tokenDAO, HttpClient client, String bitbucketClientID, String bitbucketClientSecret) {
         if (sourceControl.equals(SourceControl.GITHUB)) {
             List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
-            if (tokens.size() == 0) {
-                String msg = "User does not have access to the given source control registry.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            }
             return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
         }
         if (sourceControl.equals(SourceControl.BITBUCKET)) {
             List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-            if (tokens.size() == 0) {
-                String msg = "User does not have access to the given source control registry.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            }
             // Refresh Bitbucket token
             refreshBitbucketToken(tokens.get(0), client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
             return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
         }
         if (sourceControl.equals(SourceControl.GITLAB)) {
             List<Token> tokens = tokenDAO.findGitlabByUserId(user.getId());
-            if (tokens.size() == 0) {
-                String msg = "User does not have access to the given source control registry.";
-                LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            }
             return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
         }
         return null;

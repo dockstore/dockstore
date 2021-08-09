@@ -26,7 +26,6 @@ import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;

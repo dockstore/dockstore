@@ -20,11 +20,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import java.net.http.HttpClient;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -166,9 +162,9 @@ public final class SourceCodeRepoFactory {
             return SourceControl.GITLAB;
         }
         if (SourceControl.BITBUCKET.toString().equals(source)) {
-            return SourceControl.GITHUB;
+            return SourceControl.BITBUCKET;
         }
-        LOG.info("Do not support: " + source);
-        throw new CustomWebApplicationException("Sorry, we do not support " + source + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+        LOG.info(String.format("Do not support: %s", source));
+        throw new CustomWebApplicationException(String.format("Sorry, we do not support %s.", source), HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
     }
 }
