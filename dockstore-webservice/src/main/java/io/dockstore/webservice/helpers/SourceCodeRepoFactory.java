@@ -140,4 +140,29 @@ public final class SourceCodeRepoFactory {
         map.put("Repository", gitRepository);
         return map;
     }
+
+    /**
+     * Determines which SourceControl is associated with the Git url.
+     *
+     * @param url The Git url of the repository
+     * @return The associated SourceControl
+     */
+    public static SourceControl mapGitUrlToSourceCodeRepo(String url) {
+        Map<String, String> repoUrlMap = parseGitUrl(url);
+        if (repoUrlMap == null) {
+            throw new CustomWebApplicationException("Dockstore could not parse: " + url, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+        String source = repoUrlMap.get("Source");
+        if (SourceControl.GITHUB.toString().equals(source)) {
+            return SourceControl.GITHUB;
+        }
+        if (SourceControl.GITLAB.toString().equals(source)) {
+            return SourceControl.GITLAB;
+        }
+        if (SourceControl.BITBUCKET.toString().equals(source)) {
+            return SourceControl.GITHUB;
+        }
+        LOG.info("Do not support: " + source);
+        throw new CustomWebApplicationException("Sorry, we do not support " + source + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+    }
 }

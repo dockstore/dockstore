@@ -9,6 +9,7 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
@@ -124,18 +125,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
-        List<Token> tokens = this.tokenDAO.findByUserId(user.getId());
-
-        final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
-        Token gitHubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        final String gitlabTokenContent = getToken(tokens, TokenType.GITLAB_COM);
-
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(gitUrl, bitbucketTokenContent, gitlabTokenContent, gitHubToken);
-        if (sourceCodeRepo == null) {
-            throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
+        SourceControl sourceControl = SourceCodeRepoFactory.mapGitUrlToSourceCodeRepo(gitUrl);
+        if (sourceControl.equals(SourceControl.GITHUB)) {
+            List<Token> tokens = this.tokenDAO.findGithubByUserId(user.getId());
+            return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
         }
-        return sourceCodeRepo;
+        if (sourceControl.equals(SourceControl.BITBUCKET)) {
+            List<Token> tokens = this.tokenDAO.findBitbucketByUserId(user.getId());
+            // Refresh Bitbucket token
+            refreshBitbucketToken(tokens.get(0), client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+            return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+        }
+        if (sourceControl.equals(SourceControl.GITLAB)) {
+            List<Token> tokens = this.tokenDAO.findGitlabByUserId(user.getId());
+            return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+        }
+        throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
     }
 
     private String getToken(List<Token> tokens, TokenType tokenType) {
