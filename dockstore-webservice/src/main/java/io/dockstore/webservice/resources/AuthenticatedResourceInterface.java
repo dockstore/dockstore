@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import java.util.List;
 import java.util.Optional;
@@ -107,6 +108,17 @@ public interface AuthenticatedResourceInterface {
     default void checkUser(User user, long id) {
         if (!user.getIsAdmin() && user.getId() != id) {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
+        }
+    }
+
+    /**
+     * Check if user is null
+     *
+     * @param user user to check if null
+     */
+    default void checkUserExists(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -231,6 +243,17 @@ public interface AuthenticatedResourceInterface {
             } else {
                 checkUser(user.get(), entry);
             }
+        }
+    }
+
+    /**
+     * Check if token is null
+     *
+     * @param token token to check if null
+     */
+    default void checkTokenExists(Token token) {
+        if (token == null) {
+            throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
 

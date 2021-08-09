@@ -78,4 +78,9 @@
         <dropIndex tableName="cloud_instance" indexName="unique_user_instances"/>
         <addUniqueConstraint columnNames="url, user_id, partner" constraintName="unique_user_instances" tableName="cloud_instance"/>
     </changeSet>
+    <changeSet author="gluu (generated)" id="addCheckUrl">
+        <addColumn tableName="version_metadata">
+            <column name="publicaccessibletestparameterfile" type="bool"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

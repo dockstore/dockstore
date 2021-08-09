@@ -8,6 +8,7 @@ import static io.dockstore.webservice.core.WorkflowMode.FULL;
 import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 import com.google.common.collect.Sets;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
@@ -33,6 +34,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.CheckUrlHelper;
+import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
@@ -59,6 +62,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,6 +105,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     protected final String bitbucketClientSecret;
     protected final String bitbucketClientID;
+    protected final String checkUrlLambdaUrl;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource,
             DockstoreWebserviceConfiguration configuration) {
@@ -120,6 +125,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
         gitHubAppId = configuration.getGitHubAppId();
+        this.checkUrlLambdaUrl = configuration.getCheckUrlLambdaUrl();
 
     }
 
@@ -256,7 +262,49 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (Validation versionValidation : remoteVersion.getValidations()) {
             existingVersion.addOrUpdateValidation(versionValidation);
         }
+
+        // Setup CheckUrl
+        if (checkUrlLambdaUrl != null) {
+            publicAccessibleUrls(existingVersion, checkUrlLambdaUrl);
+        }
+
         return existingVersion;
+    }
+
+    /**
+     * Sets the publicly accessible URL version metadata.
+     * If at least one test parameter file is publicly accessible, then version metadata is true
+     * If there's 1+ test parameter file that is null but there's no false, then version metadata is null
+     * If there's 1+ test parameter file that is false, then version metadata is false
+     *
+     * @param existingVersion   Hibernate initialized version
+     * @param checkUrlLambdaUrl URL of the checkUrl lambda
+     */
+    public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
+        Boolean publicAccessibleTestParameterFile = null;
+        Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
+        while (sourceFileIterator.hasNext()) {
+            SourceFile sourceFile = sourceFileIterator.next();
+            Optional<Boolean> publicAccessibleUrls = Optional.empty();
+            if (sourceFile.getAbsolutePath().endsWith(".json")) {
+                publicAccessibleUrls =
+                    CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, TestFileType.JSON);
+            } else {
+                if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
+                    publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                        TestFileType.YAML);
+                }
+            }
+            // Do not care about null, it will never override a true/false
+            if (publicAccessibleUrls.isPresent()) {
+                publicAccessibleTestParameterFile = publicAccessibleUrls.get();
+                if (Boolean.TRUE.equals(publicAccessibleUrls.get())) {
+                    // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
+                    break;
+                }
+            }
+        }
+        existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleTestParameterFile);
     }
 
     /**
@@ -597,6 +645,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
             } else {
+                if (checkUrlLambdaUrl != null) {
+                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl);
+                }
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
             }
 

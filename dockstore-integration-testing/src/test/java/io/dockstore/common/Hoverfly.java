@@ -155,6 +155,19 @@ public final class Hoverfly {
                     .put("/v3.0/0000-0001-8365-0487/work/" + PUT_CODE).body(contains(PUT_CODE)).willReturn(success().body(fixture("fixtures/successfulPutOrcidWork.xml")))
                     .put("/v3.0/0000-0001-8365-0487/work/" + BAD_PUT_CODE).body(contains(BAD_PUT_CODE)).willReturn(notFound()));
 
+    public static final SimulationSource CHECK_URL_SOURCE =
+        dsl(service("http://fakecheckurllambdabaseurl:3000")
+            .get("/lambda").withState("status", "good").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_OK).body(
+                "{\"message\":true}"))
+            .get("/lambda").withState("status", "bad").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_OK).body(
+                "{\"message\":false}"))
+            .get("/lambda").withState("status", "someGoodSomeBad").anyBody().queryParam("url", "https://badUrl.com").willReturn(response().status(HttpStatus.SC_OK).body(
+                "{\"message\":false}"))
+            .get("/lambda").withState("status", "someGoodSomeBad").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_OK).body(
+                "{\"message\":true}"))
+            .get("/lambda").withState("status", "terriblyWrong").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_SERVICE_UNAVAILABLE))
+        );
+
     public static final SimulationSource SIMULATION_SOURCE = dsl(service("https://www.googleapis.com")
 
             .post("/oauth2/v4/token").body(HoverflyMatchers.contains(getFakeCode(SUFFIX3))).anyQueryParams()

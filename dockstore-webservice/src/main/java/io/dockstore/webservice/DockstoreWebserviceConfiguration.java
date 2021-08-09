@@ -146,6 +146,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private UIConfig uiConfig;
 
+    private String checkUrlLambdaUrl;
+
     @JsonProperty("toolTesterBucket")
     public String getToolTesterBucket() {
         return toolTesterBucket;
@@ -533,6 +535,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setLanguagePluginLocation(String languagePluginLocation) {
         this.languagePluginLocation = languagePluginLocation;
+    }
+
+    public String getCheckUrlLambdaUrl() {
+        return checkUrlLambdaUrl;
+    }
+
+    public void setCheckUrlLambdaUrl(String checkUrlLambdaUrl) {
+        this.checkUrlLambdaUrl = checkUrlLambdaUrl;
     }
 
     /**
