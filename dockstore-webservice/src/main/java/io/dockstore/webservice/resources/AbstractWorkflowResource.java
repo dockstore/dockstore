@@ -124,7 +124,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
-        List<Token> tokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
+        List<Token> tokens = this.tokenDAO.findByUserId(user.getId());
 
         final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
         Token gitHubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);

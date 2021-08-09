@@ -841,7 +841,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     })
     public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
-        Token githubToken = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
+        Token githubToken = tokenDAO.findGithubByUserId(user.getId()).stream()
                 .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
         if (githubToken != null) {
             SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);

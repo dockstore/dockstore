@@ -112,7 +112,7 @@ public interface SourceControlResourceInterface {
     }
 
     /**
-     * Refreshes the first bitbucket token all tokens and return all tokens
+     * Refreshes the first bitbucket token and return all tokens
      * @param user
      * @param tokenDAO
      * @param client
