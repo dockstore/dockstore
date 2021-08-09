@@ -92,13 +92,6 @@ POM as their parent.
 
     <dependencyManagement>
         <dependencies>
-            <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
-            <dependency>
-                <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-core</artifactId>
-                <version>4.4.3</version>
-            </dependency>
-
             <!-- Specify newer version of reflections to pass pgpverify-maven-plugin check -->
             <!-- https://mvnrepository.com/artifact/org.reflections/reflections -->
             <dependency>
