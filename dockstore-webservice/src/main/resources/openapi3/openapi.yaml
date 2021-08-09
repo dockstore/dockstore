@@ -5634,7 +5634,7 @@ paths:
         name: include
         schema:
           type: string
-      - description: "Which Workflow subclass to retrieve. One of the folowing: service,\
+      - description: "Which Workflow subclass to retrieve. One of the following: service,\
           \ bioworkflow, apptool"
         in: query
         name: subclass
