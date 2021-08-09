@@ -20,7 +20,11 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import java.net.http.HttpClient;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -45,6 +49,7 @@ public final class SourceCodeRepoFactory {
         return new GitHubSourceCodeRepo("JWT", token);
     }
 
+    // Assumes the token has already been refreshed
     public static SourceCodeRepoInterface createSourceCodeRepo(Token token) {
         SourceCodeRepoInterface repo;
         if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
@@ -62,6 +67,7 @@ public final class SourceCodeRepoFactory {
         return repo;
     }
 
+    // Assumes the token has already been refreshed
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, String bitbucketTokenContent, String gitlabTokenContent,
             Token githubToken) {
 

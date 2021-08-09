@@ -1092,21 +1092,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     /**
      * For a given user and git registry, retrieve a map of git url to repository path
      * @param user
-     * @param gitRegistry
+     * @param sourceControl
      * @return mapping of git url to repository path
      */
-    private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
-        List<Token> scTokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
-                .stream()
-                .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
-                .collect(Collectors.toList());
-
-        if (scTokens.size() > 0) {
-            Token scToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken);
-            return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-        } else {
+    private Map<String, String> getGitRepositoryMap(User user, SourceControl sourceControl) {
+        SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(user, sourceControl, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
+        if (sourceCodeRepo == null) {
             return new HashMap<>();
+        } else {
+            return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
         }
     }
 
