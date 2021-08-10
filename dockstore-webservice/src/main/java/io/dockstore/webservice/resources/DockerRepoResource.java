@@ -26,6 +26,7 @@ import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
@@ -946,8 +947,8 @@ public class DockerRepoResource
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
-            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
+            LOG.info("The tag '" + Utilities.cleanForLogging(tagName) + "' for tool '" + tool.getToolPath() + "' does not exist.");
+            throw new CustomWebApplicationException("The tag '" + tagName + "' for tool '" + tool.getToolPath() + "' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -982,8 +983,8 @@ public class DockerRepoResource
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
-            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
+            LOG.info("The tag '" + Utilities.cleanForLogging(tagName) + "' for tool '" + tool.getToolPath() + "' does not exist.");
+            throw new CustomWebApplicationException("The tag '" + tagName + "' for tool '" + tool.getToolPath() + "' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 

@@ -183,7 +183,7 @@ public final class Utilities {
                 }
                 // not sure why commons-exec does not throw an exception
                 if (resultHandler.getExitValue() != 0) {
-                    resultHandler.getException().printStackTrace();
+                    LOG.error("problems running command: " + command, resultHandler.getException());
                     throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
                 }
                 return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
@@ -203,5 +203,9 @@ public final class Utilities {
         } catch (IOException e) {
             throw new RuntimeException("could not close output streams", e);
         }
+    }
+
+    public static String cleanForLogging(String input) {
+        return input.replaceAll("[\n\r\t]", "_");
     }
 }

@@ -5,6 +5,7 @@ import static io.dockstore.webservice.Constants.OPTIONAL_AUTH_MESSAGE;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -81,7 +82,7 @@ public class AliasResource implements AliasableResourceInterface<WorkflowVersion
 
         final WorkflowVersion workflowVersion = this.workflowVersionDAO.findByAlias(alias);
         if (workflowVersion == null) {
-            LOG.error("Could not find workflow version using the alias: " + alias);
+            LOG.error("Could not find workflow version using the alias: " + Utilities.cleanForLogging(alias));
             throw new CustomWebApplicationException("Workflow version not found when searching with alias: " + alias, HttpStatus.SC_BAD_REQUEST);
         }
 

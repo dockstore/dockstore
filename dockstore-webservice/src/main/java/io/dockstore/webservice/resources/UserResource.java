@@ -30,6 +30,7 @@ import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Repository;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
@@ -154,15 +155,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final LambdaEventDAO lambdaEventDAO;
     private final DeletedUsernameDAO deletedUsernameDAO;
     private final PermissionsInterface authorizer;
-    private final CachingAuthenticator cachingAuthenticator;
+    private final CachingAuthenticator<String, User> cachingAuthenticator;
     private final HttpClient client;
 
     private final String bitbucketClientSecret;
     private final String bitbucketClientID;
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource, ServiceResource serviceResource,
-                        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
+    public UserResource(HttpClient client, SessionFactory sessionFactory, WorkflowResource workflowResource,
+        DockerRepoResource dockerRepoResource, CachingAuthenticator<String, User> cachingAuthenticator, PermissionsInterface authorizer, DockstoreWebserviceConfiguration configuration) {
         this.eventDAO = new EventDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
@@ -282,7 +283,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         }
 
         if (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
-            String errorMsg = "Cannot change user to " + username + " because it is already in use";
+            String errorMsg = "Cannot change user to " + Utilities.cleanForLogging(username) + " because it is already in use";
             LOG.error(errorMsg);
             throw new CustomWebApplicationException(errorMsg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -591,10 +592,6 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         final User fetchedUser = this.userDAO.findById(userId);
         checkUserExists(fetchedUser);
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
-    }
-
-    private List<Workflow> getWorkflows(User user) {
-        return bioWorkflowDAO.findMyEntries(user.getId()).stream().map(BioWorkflow.class::cast).collect(Collectors.toList());
     }
 
     private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {

@@ -10,6 +10,7 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
@@ -313,14 +314,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
-     * @param installationId GitHub App installation ID
      * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username, String installationId) {
+    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
-            String msg = "Reference " + gitReference + " is not of the valid form";
+            String msg = "Reference " + Utilities.cleanForLogging(gitReference) + " is not of the valid form";
             LOG.error(msg);
             sessionFactory.getCurrentSession().clear();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
@@ -591,7 +591,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
-            LOG.info("Workflow " + dockstoreWorkflowPath + " has been created.");
+            LOG.info("Workflow " + Utilities.cleanForLogging(dockstoreWorkflowPath) + " has been created.");
         } else {
             workflowToUpdate = workflow.get();
             gitHubSourceCodeRepo.setLicenseInformation(workflowToUpdate, repository);
@@ -675,7 +675,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         Instant endTime = Instant.now();
         long timeElasped = Duration.between(startTime, endTime).toSeconds();
-        LOG.info("Processing .dockstore.yml workflow version " + gitReference + " for repo: " + repository + " took " + timeElasped + " seconds");
+        LOG.info("Processing .dockstore.yml workflow version " + Utilities.cleanForLogging(gitReference) + " for repo: " + Utilities.cleanForLogging(repository) + " took " + timeElasped + " seconds");
         return workflow;
     }
 
@@ -699,10 +699,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         version.setAuthors(authors);
         final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
-                .map(yamlAuthor -> {
-                    final OrcidAuthor orcidAuthor = new OrcidAuthor(yamlAuthor.getOrcid());
-                    return orcidAuthor;
-                })
+                .map(yamlAuthor -> new OrcidAuthor(yamlAuthor.getOrcid()))
                 .collect(Collectors.toSet());
         version.setOrcidAuthors(orcidAuthors);
     }
@@ -802,7 +799,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
         String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
         if (installationAccessToken == null) {
-            String msg = "Could not get an installation access token for install with id " + installationId;
+            String msg = "Could not get an installation access token for install with id " + Utilities.cleanForLogging(installationId);
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
