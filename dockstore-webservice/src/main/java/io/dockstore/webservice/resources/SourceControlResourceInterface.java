@@ -115,25 +115,37 @@ public interface SourceControlResourceInterface {
     }
 
     /**
-     * For a given user and git registry, retrieve a map of git url to repository path
+     * For a given user and source control, retrieve the source control repository interface.
      * @param user
-     * @param sourceControl
+     * @param sourceControl     Appropriate source control repo interface or null if SourceControl is unrecognized or if the user does not have a token
      * @return mapping of git url to repository path
      */
     default SourceCodeRepoInterface createSourceCodeRepo(User user, SourceControl sourceControl, TokenDAO tokenDAO, HttpClient client, String bitbucketClientID, String bitbucketClientSecret) {
         if (sourceControl.equals(SourceControl.GITHUB)) {
             List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
-            return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            if (tokens.isEmpty()) {
+                return null;
+            } else {
+                return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            }
         }
         if (sourceControl.equals(SourceControl.BITBUCKET)) {
             List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-            // Refresh Bitbucket token
-            refreshBitbucketToken(tokens.get(0), client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-            return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            if (tokens.isEmpty()) {
+                return null;
+            } else {
+                // Refresh Bitbucket token
+                refreshBitbucketToken(tokens.get(0), client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+                return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            }
         }
         if (sourceControl.equals(SourceControl.GITLAB)) {
             List<Token> tokens = tokenDAO.findGitlabByUserId(user.getId());
-            return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            if (tokens.isEmpty()) {
+                return null;
+            } else {
+                return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            }
         }
         return null;
     }
