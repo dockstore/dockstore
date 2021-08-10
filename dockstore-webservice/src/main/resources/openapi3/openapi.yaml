@@ -5634,13 +5634,16 @@ paths:
         name: include
         schema:
           type: string
-      - description: "Which Workflow subclass to retrieve. One of the following: service,\
-          \ bioworkflow, apptool"
+      - description: Which Workflow subclass to retrieve.
         in: query
         name: subclass
         required: true
         schema:
           type: string
+          enum:
+          - BIOWORKFLOW
+          - SERVICE
+          - APPTOOL
       responses:
         default:
           content:
