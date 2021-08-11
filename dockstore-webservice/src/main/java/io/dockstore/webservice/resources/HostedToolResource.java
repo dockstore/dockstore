@@ -95,7 +95,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Operation(operationId = "createHostedTool", description = "Create a hosted tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+    public Tool createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
@@ -238,12 +238,6 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
                 .findFirst();
 
         return foundFile.isPresent() && foundFile.get().isValid();
-    }
-
-    @Override
-    protected DescriptorLanguage checkType(String descriptorType) {
-        // Descriptor type does not matter for tools
-        return null;
     }
 
     @Override

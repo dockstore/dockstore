@@ -1347,6 +1347,13 @@ paths:
         description: "The descriptor type (Workflows only)"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -2039,6 +2046,13 @@ paths:
         in: "query"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -2219,7 +2233,10 @@ paths:
         enum:
         - "CWL"
         - "WDL"
-        - "NFL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -4829,6 +4846,13 @@ paths:
         description: "The descriptor type (Workflows only)"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -5503,12 +5527,16 @@ paths:
         format: "int64"
       - name: "descriptorType"
         in: "path"
-        description: "Descriptor type of the workflow, either cwl or wdl."
+        description: "Descriptor type of the workflow, only CWL or WDL are support."
         required: true
         type: "string"
         enum:
-        - "cwl"
-        - "wdl"
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -5662,6 +5690,13 @@ paths:
         in: "query"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -5945,6 +5980,13 @@ paths:
         in: "query"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"

@@ -85,7 +85,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.jaxrs.PATCH;
-import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -1079,8 +1078,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        @PathParam("relative-path") String path, @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
     }
 
@@ -1093,8 +1092,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
     }
 
@@ -1652,14 +1651,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
         @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath") String testParameterPath,
         @ApiParam(value = "Entry Id of parent tool/workflow.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Descriptor type of the workflow, either cwl or wdl.", required = true, allowableValues = "cwl, wdl") @PathParam("descriptorType") String descriptorType) {
+        @ApiParam(value = "Descriptor type of the workflow, only CWL or WDL are support.", required = true) @PathParam("descriptorType") DescriptorLanguage descriptorType) {
         // Find the entry
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
 
         // Check if valid descriptor type
-        if (!Objects.equals(descriptorType, DescriptorType.CWL.toString().toLowerCase()) && !Objects
-            .equals(descriptorType, DescriptorType.WDL.toString().toLowerCase())) {
-            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.",
+        if (!descriptorType.isSupportsChecker()) {
+            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only " + CWL + " and " + WDL + " are valid.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1698,15 +1696,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
 
             // Get default test parameter path and toolname
-            if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
+            if (descriptorType.equals(WDL)) {
                 workflowName += "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
-            } else if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
+            } else if (descriptorType.equals(CWL)) {
                 workflowName += "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
             } else {
                 throw new UnsupportedOperationException(
-                    "The descriptor type " + descriptorType + " is not valid.\nSupported types include cwl and wdl.");
+                    "The descriptor type " + descriptorType + " is not valid.\nSupported types include CWL and WDL.");
             }
 
             // Determine gitUrl
@@ -1761,7 +1759,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Create checker workflow
         BioWorkflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setMode(WorkflowMode.STUB);
-        checkerWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
+        checkerWorkflow.setDescriptorType(descriptorType);
         checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
         checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         checkerWorkflow.setOrganization(organization);

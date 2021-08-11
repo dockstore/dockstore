@@ -54,6 +54,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -429,7 +430,12 @@ public class CRUDClientIT extends BaseIT {
             "anotherName");
 
         // Invalid descriptor type does not matter for tools
-        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), "cwll", "coolNamespace", null);
+        try {
+            api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), "cwll", "coolNamespace", null);
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), null, "coolNamespace", null);
     }
 
     /**
