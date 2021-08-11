@@ -819,11 +819,11 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
     private Class<? extends Workflow> getSubClass(WorkflowSubClass subclass) {
         final Class<? extends Workflow> targetClass;
-        if (subclass.equals(WorkflowSubClass.SERVICE)) {
+        if (subclass == WorkflowSubClass.SERVICE) {
             targetClass = Service.class;
-        } else if (subclass.equals(WorkflowSubClass.BIOWORKFLOW)) {
+        } else if (subclass == WorkflowSubClass.BIOWORKFLOW) {
             targetClass = BioWorkflow.class;
-        } else if (subclass.equals(WorkflowSubClass.APPTOOL)) {
+        } else if (subclass == WorkflowSubClass.APPTOOL) {
             targetClass = AppTool.class;
         } else {
             throw new CustomWebApplicationException(subclass + " is not a valid subclass.", HttpStatus.SC_BAD_REQUEST);
