@@ -410,11 +410,9 @@ public abstract class SourceCodeRepoInterface {
     public void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
-        if (Strings.isNullOrEmpty(filePath)) {
-            if (LOG.isInfoEnabled()) {
-                String message = String.format("%s : No descriptor found for %s.", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch));
-                LOG.info(message);
-            }
+        if (Strings.isNullOrEmpty(filePath) && LOG.isInfoEnabled()) {
+            String message = String.format("%s : No descriptor found for %s.", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch));
+            LOG.info(message);
         }
         if (sourceFiles == null || sourceFiles.isEmpty()) {
             if (LOG.isInfoEnabled()) {

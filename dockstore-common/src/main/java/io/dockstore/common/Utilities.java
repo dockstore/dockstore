@@ -189,7 +189,7 @@ public final class Utilities {
                 }
                 return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
             } catch (InterruptedException | IOException e) {
-                throw new RuntimeException(PROBLEMS_RUNNING_COMMAND + command, e);
+                throw new IllegalStateException(PROBLEMS_RUNNING_COMMAND + command, e);
             } finally {
                 if (dumpOutput) {
                     LOG.info("exit code: " + resultHandler.getExitValue());
