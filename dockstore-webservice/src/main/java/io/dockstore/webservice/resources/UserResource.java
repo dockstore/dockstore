@@ -922,7 +922,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     })
     public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
-        Token githubToken = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret).stream()
+        Token githubToken = tokenDAO.findGithubByUserId(user.getId()).stream()
                 .filter(token -> token.getTokenSource() == TokenType.GITHUB_COM).findFirst().orElse(null);
         if (githubToken != null) {
             SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
@@ -953,7 +953,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         List<SourceControl> sourceControls = Arrays.stream(SourceControl.values()).filter(sourceControl -> !Objects.equals(sourceControl, SourceControl.DOCKSTORE)).collect(
                 Collectors.toList());
 
-        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+        List<Token> scTokens = getAndRefreshBitbucketTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
                 .stream()
                 .filter(token -> sourceControls.contains(token.getTokenSource().getSourceControl()))
                 .collect(Collectors.toList());
@@ -1194,21 +1194,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     /**
      * For a given user and git registry, retrieve a map of git url to repository path
      * @param user
-     * @param gitRegistry
+     * @param sourceControl
      * @return mapping of git url to repository path
      */
-    private Map<String, String> getGitRepositoryMap(User user, SourceControl gitRegistry) {
-        List<Token> scTokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
-                .stream()
-                .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
-                .collect(Collectors.toList());
-
-        if (scTokens.size() > 0) {
-            Token scToken = scTokens.get(0);
-            SourceCodeRepoInterface sourceCodeRepo =  SourceCodeRepoFactory.createSourceCodeRepo(scToken);
-            return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
-        } else {
+    private Map<String, String> getGitRepositoryMap(User user, SourceControl sourceControl) {
+        SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(user, sourceControl, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
+        if (sourceCodeRepo == null) {
             return new HashMap<>();
+        } else {
+            return sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
         }
     }
 
