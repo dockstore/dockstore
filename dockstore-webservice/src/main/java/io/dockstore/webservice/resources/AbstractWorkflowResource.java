@@ -494,7 +494,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                     try {
-                        workflow = publishWorkflow(workflow, publish);
+                        publishWorkflow(workflow, publish);
                     } catch (CustomWebApplicationException ex) {
                         LOG.warn("Could not set publish state from YML.", ex);
                         lambdaEvent.setSuccess(false);
@@ -535,7 +535,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                 try {
-                    workflow = publishWorkflow(workflow, publish);
+                    publishWorkflow(workflow, publish);
                 } catch (CustomWebApplicationException ex) {
                     LOG.warn("Could not set publish state from YML.", ex);
                     lambdaEvent.setSuccess(false);
@@ -581,7 +581,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
             if (LOG.isInfoEnabled()) {
-                LOG.info("Workflow " + Utilities.cleanForLogging(dockstoreWorkflowPath) + " has been created.");
+                LOG.info("Workflow {} has been created.", Utilities.cleanForLogging(dockstoreWorkflowPath));
             }
         } else {
             workflowToUpdate = workflow.get();
@@ -667,7 +667,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         long timeElasped = Duration.between(startTime, endTime).toSeconds();
         if (LOG.isInfoEnabled()) {
             LOG.info(
-                "Processing .dockstore.yml workflow version " + Utilities.cleanForLogging(gitReference) + " for repo: " + Utilities.cleanForLogging(repository) + " took " + timeElasped + " seconds");
+                "Processing .dockstore.yml workflow version {} for repo: {} took {} seconds", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), timeElasped);
         }
     }
 

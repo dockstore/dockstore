@@ -1926,7 +1926,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
         if (LOG.isInfoEnabled()) {
-            LOG.info("Adding " + Utilities.cleanForLogging(gitUrl));
+            LOG.info("Adding {}", Utilities.cleanForLogging(gitUrl));
         }
 
         // Create a workflow
@@ -1982,7 +1982,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
         if (LOG.isInfoEnabled()) {
-            LOG.info("Deleting " + Utilities.cleanForLogging(gitUrl));
+            LOG.info("Deleting {}", Utilities.cleanForLogging(gitUrl));
         }
 
         final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
