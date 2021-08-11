@@ -165,9 +165,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
-    private static final String SERVICE = "service";
-    private static final String BIOWORKFLOW = "bioworkflow";
-    private static final String APPTOOL = "apptool";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
