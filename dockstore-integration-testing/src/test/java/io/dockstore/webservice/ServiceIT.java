@@ -55,6 +55,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
+import org.glassfish.jersey.client.ClientProperties;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -178,7 +179,7 @@ public class ServiceIT extends BaseIT {
      * @param path         Path of endpoint
      */
     private void testXTotalCount(Client jerseyClient, String path) {
-        Response response = jerseyClient.target(path).request().get();
+        Response response = jerseyClient.target(path).request().property(ClientProperties.READ_TIMEOUT, 0).get();
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         MultivaluedMap<String, Object> headers = response.getHeaders();
         Object xTotalCount = headers.getFirst("X-total-count");
