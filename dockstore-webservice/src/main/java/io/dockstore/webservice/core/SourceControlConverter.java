@@ -47,7 +47,9 @@ public class SourceControlConverter implements AttributeConverter<SourceControl,
         if (first.isPresent()) {
             return first.get();
         } else {
-            LOG.error("could not convert source control: " + Utilities.cleanForLogging(dbData));
+            if (LOG.isErrorEnabled()) {
+                LOG.error("could not convert source control: {}", Utilities.cleanForLogging(dbData));
+            }
             return null;
         }
     }

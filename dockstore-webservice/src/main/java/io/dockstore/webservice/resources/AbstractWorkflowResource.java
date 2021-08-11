@@ -314,9 +314,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
-     * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username) {
+    protected void githubWebhookDelete(String repository, String gitReference, String username) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
@@ -352,7 +351,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
-        return workflows;
     }
 
     /**
@@ -472,13 +470,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId Installation id needed to setup GitHub apps
      * @param user User that triggered action
      * @param dockstoreYml
-     * @return List of new and updated workflows
      */
-    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
+    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml, boolean isOneStepWorkflow) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
-            List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
                 if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
@@ -506,9 +502,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                     lambdaEventDAO.create(lambdaEvent);
                 }
-                updatedWorkflows.add(workflow);
             }
-            return updatedWorkflows;
         } catch (ClassCastException ex) {
             throw new CustomWebApplicationException("Could not parse workflow array from YML.", LAMBDA_FAILURE);
         }
@@ -522,15 +516,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId installation id needed to set up GitHub Apps
      * @param user User that triggered action
      * @param dockstoreYml
-     * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
+    private void createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
             User user, final SourceFile dockstoreYml) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-        final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
             if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
-                return updatedServices;
+                return;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             final Boolean publish = service.getPublish();
@@ -551,10 +543,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
                 lambdaEventDAO.create(lambdaEvent);
             }
-
-            updatedServices.add(workflow);
         }
-        return updatedServices;
     }
 
     /**
@@ -591,7 +580,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
-            LOG.info("Workflow " + Utilities.cleanForLogging(dockstoreWorkflowPath) + " has been created.");
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Workflow " + Utilities.cleanForLogging(dockstoreWorkflowPath) + " has been created.");
+            }
         } else {
             workflowToUpdate = workflow.get();
             gitHubSourceCodeRepo.setLicenseInformation(workflowToUpdate, repository);
@@ -615,9 +606,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param dockstoreYml Dockstore YAML File
      * @param gitHubSourceCodeRepo Source Code Repo
-     * @return New or updated workflow
      */
-    private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
+    private void addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
             GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault, final List<YamlAuthor> yamlAuthors) {
         Instant startTime = Instant.now();
         try {
@@ -675,8 +665,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         Instant endTime = Instant.now();
         long timeElasped = Duration.between(startTime, endTime).toSeconds();
-        LOG.info("Processing .dockstore.yml workflow version " + Utilities.cleanForLogging(gitReference) + " for repo: " + Utilities.cleanForLogging(repository) + " took " + timeElasped + " seconds");
-        return workflow;
+        if (LOG.isInfoEnabled()) {
+            LOG.info(
+                "Processing .dockstore.yml workflow version " + Utilities.cleanForLogging(gitReference) + " for repo: " + Utilities.cleanForLogging(repository) + " took " + timeElasped + " seconds");
+        }
     }
 
     /**

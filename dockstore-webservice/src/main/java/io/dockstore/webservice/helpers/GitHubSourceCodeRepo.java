@@ -873,14 +873,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     public void reportOnGitHubRelease(GHRateLimit startRateLimit, GHRateLimit endRateLimit, String repository, String username, String gitReference, boolean isSuccessful) {
-        String gitHubRepoInfo = "Performing GitHub release for repository: " + Utilities.cleanForLogging(repository) + ", user: " + Utilities.cleanForLogging(username) + ", and git reference: " + Utilities.cleanForLogging((gitReference));
-        String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
-        if (isSuccessful) {
-            LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
-        } else {
-            LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+        if (LOG.isInfoEnabled()) {
+            String gitHubRepoInfo =
+                "Performing GitHub release for repository: " + Utilities.cleanForLogging(repository) + ", user: " + Utilities.cleanForLogging(username) + ", and git reference: " + Utilities
+                    .cleanForLogging((gitReference));
+            String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
+            if (isSuccessful) {
+                LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
+            } else {
+                LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+            }
         }
-
     }
 
     public GHRateLimit getGhRateLimitQuietly() {

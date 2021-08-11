@@ -1183,10 +1183,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorkflowVersion.isEmpty()) {
-            LOG.info("The version '" + Utilities.cleanForLogging(version) + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.");
-            throw new CustomWebApplicationException("The version '" + version + "' for workflow '"
-                + workflow.getWorkflowPath() + "' does not exist.",
-                HttpStatus.SC_BAD_REQUEST);
+            String msg = "The version '" + Utilities.cleanForLogging(version) + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         WorkflowVersion workflowVersion = potentialWorkflowVersion.get();
@@ -1926,7 +1925,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-        LOG.info("Adding " + Utilities.cleanForLogging(gitUrl));
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Adding " + Utilities.cleanForLogging(gitUrl));
+        }
 
         // Create a workflow
         final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
@@ -1980,7 +1981,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-        LOG.info("Deleting " + Utilities.cleanForLogging(gitUrl));
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Deleting " + Utilities.cleanForLogging(gitUrl));
+        }
 
         final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
         if (existingWorkflow.isEmpty()) {

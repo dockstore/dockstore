@@ -411,12 +411,17 @@ public abstract class SourceCodeRepoInterface {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
         if (Strings.isNullOrEmpty(filePath)) {
-            String message = String.format("%s : No descriptor found for %s.", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch));
-            LOG.info(message);
+            if (LOG.isInfoEnabled()) {
+                String message = String.format("%s : No descriptor found for %s.", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch));
+                LOG.info(message);
+            }
         }
         if (sourceFiles == null || sourceFiles.isEmpty()) {
-            String message = String.format("%s : Error getting descriptor for %s with path %s", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch), Utilities.cleanForLogging(filePath));
-            LOG.info(message);
+            if (LOG.isInfoEnabled()) {
+                String message = String
+                    .format("%s : Error getting descriptor for %s with path %s", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch), Utilities.cleanForLogging(filePath));
+                LOG.info(message);
+            }
             if (version.getReference() != null) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
                 if (StringUtils.isNotBlank(readmeContent)) {
