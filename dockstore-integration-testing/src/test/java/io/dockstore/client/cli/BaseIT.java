@@ -23,6 +23,7 @@ import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.resources.WorkflowSubClass;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -61,9 +62,9 @@ public class BaseIT {
     // This is not an admin
     static final String OTHER_USERNAME = "OtherUser";
 
-    public static final String SERVICE = "service";
-    public static final String BIOWORKFLOW = "bioworkflow";
-    public static final String APPTOOL = "apptool";
+    public static final String SERVICE = WorkflowSubClass.SERVICE.toString();
+    public static final String BIOWORKFLOW = WorkflowSubClass.BIOWORKFLOW.toString();
+    public static final String APPTOOL = WorkflowSubClass.APPTOOL.toString();
 
 
     @Rule
