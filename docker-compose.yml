@@ -42,7 +42,8 @@ services:
     # networks:
       # - elastic
   postgres_db:
-    image: postgres:11.12
+    image: postgres:13.3
+    command: postgres -c jit=off
     container_name: postgres1
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
