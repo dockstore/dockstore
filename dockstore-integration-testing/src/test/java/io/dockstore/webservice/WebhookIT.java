@@ -38,6 +38,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
 import io.dockstore.openapi.client.model.Tool;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.api.impl.ToolsImplCommon;
@@ -340,7 +341,7 @@ public class WebhookIT extends BaseIT {
     }
     
     private io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "versions");
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
@@ -348,7 +349,7 @@ public class WebhookIT extends BaseIT {
     }
 
     private io.dockstore.openapi.client.model.Workflow getFoobar2Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", BIOWORKFLOW, "versions");
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar2", WorkflowSubClass.BIOWORKFLOW, "versions");
     }
 
     /**

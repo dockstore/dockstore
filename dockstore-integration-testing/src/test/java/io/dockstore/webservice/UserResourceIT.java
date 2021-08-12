@@ -31,6 +31,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.SourceControlOrganization;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -720,7 +721,7 @@ public class UserResourceIT extends BaseIT {
         assertEquals(0, usersApi.userWorkflows(userId).size());
 
         // Star service
-        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, SERVICE, "");
+        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, WorkflowSubClass.SERVICE, "");
         io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
         workflowsApi.starEntry1(service.getId(), starRequest);
         assertEquals(1, usersApi.getStarredServices().size());
