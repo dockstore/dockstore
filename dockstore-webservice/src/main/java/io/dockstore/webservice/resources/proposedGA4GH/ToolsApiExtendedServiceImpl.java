@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_RESPONSE;
 
 import com.google.common.io.Resources;
+import com.google.common.util.concurrent.RateLimiter;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -47,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -79,6 +81,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
     private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
     private static final int SEARCH_TERM_LIMIT = 500;
+    private static final RateLimiter ELASTIC_SEARCH_RATE_LIMITER = RateLimiter.create(20);
+    private static final int ELASTIC_SEARCH_TIMEOUT = 1;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -217,6 +221,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
+        boolean underRateLimit = ELASTIC_SEARCH_RATE_LIMITER.tryAcquire(1, ELASTIC_SEARCH_TIMEOUT, TimeUnit.SECONDS);
+        if (!underRateLimit) {
+            throw new CustomWebApplicationException("Could not use Elasticsearch search", HttpStatus.SC_REQUEST_TIMEOUT);
+        }
+
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             // Performing a search on the UI sends multiple POST requests. When the search term ("include" key in request payload) is large,
             // one of these POST requests will fail, but the others will continue to pass.
