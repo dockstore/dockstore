@@ -3,6 +3,7 @@ package io.dockstore.webservice.resources;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Collection;
@@ -658,7 +659,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         User userToAdd = userDAO.findByUsername(username);
         if (userToAdd == null) {
-            String msg = "No user exists with the username '" + username + "'.";
+            String msg = "No user exists with the username '" + Utilities.cleanForLogging(username) + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -893,10 +894,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             return false;
         }
 
-        if (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) {
-            return true;
-        }
-        return false;
+        return organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER;
     }
 
     static boolean isUserAdminOrMaintainer(Long organizationId, Long userId, OrganizationDAO organizationDAO) {

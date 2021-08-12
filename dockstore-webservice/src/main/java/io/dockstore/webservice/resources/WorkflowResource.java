@@ -31,6 +31,7 @@ import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
@@ -1143,7 +1144,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorfklowVersion.isEmpty()) {
-            String msg = "The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
+            String msg = "The version '" + Utilities.cleanForLogging(version) + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1181,10 +1182,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorkflowVersion.isEmpty()) {
-            LOG.info("The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.");
-            throw new CustomWebApplicationException("The version '" + version + "' for workflow '"
-                + workflow.getWorkflowPath() + "' does not exist.",
-                HttpStatus.SC_BAD_REQUEST);
+            String msg = "The version '" + Utilities.cleanForLogging(version) + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         WorkflowVersion workflowVersion = potentialWorkflowVersion.get();
@@ -1912,7 +1912,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + gitRegistry + ":" + repository + ".git";
-        LOG.info("Adding " + gitUrl);
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Adding {}", Utilities.cleanForLogging(gitUrl));
+        }
 
         // Create a workflow
         final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
@@ -1966,11 +1968,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-        LOG.info("Deleting " + gitUrl);
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Deleting {}", Utilities.cleanForLogging(gitUrl));
+        }
 
         final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
         if (existingWorkflow.isEmpty()) {
-            String msg = "No workflow with path " + tokenSource + "/" + repository + " exists.";
+            String msg = "No workflow with path " + tokenSource + "/" + Utilities.cleanForLogging(repository) + " exists.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1982,7 +1986,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             eventDAO.deleteEventByEntryID(workflow.getId());
             workflowDAO.delete(workflow);
         } else {
-            String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
+            String msg = "The workflow with path " + tokenSource + "/" + Utilities.cleanForLogging(repository) + " cannot be deleted.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -2048,7 +2052,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
             @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
-        githubWebhookDelete(repository, gitReference, username, installationId);
+        githubWebhookDelete(repository, gitReference, username);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 }
