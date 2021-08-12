@@ -164,9 +164,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
-    private static final String SERVICE = "service";
-    private static final String BIOWORKFLOW = "bioworkflow";
-    private static final String APPTOOL = "apptool";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -802,8 +799,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
             @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the following: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL) @QueryParam("subclass") String subclass) {
-        final Class<? extends Workflow> targetClass = getSubClass(subclass);
+            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+            @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass;
+        if (services != null) {
+            targetClass = services ? Service.class : BioWorkflow.class;
+        } else {
+            targetClass = getSubClass(subclass);
+        }
+
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
@@ -812,13 +816,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return workflow;
     }
 
-    private Class<? extends Workflow> getSubClass(String subclass) {
+    private Class<? extends Workflow> getSubClass(WorkflowSubClass subclass) {
         final Class<? extends Workflow> targetClass;
-        if (subclass.equals(SERVICE)) {
+        if (subclass == WorkflowSubClass.SERVICE) {
             targetClass = Service.class;
-        } else if (subclass.equals(BIOWORKFLOW)) {
+        } else if (subclass == WorkflowSubClass.BIOWORKFLOW) {
             targetClass = BioWorkflow.class;
-        } else if (subclass.equals(APPTOOL)) {
+        } else if (subclass == WorkflowSubClass.APPTOOL) {
             targetClass = AppTool.class;
         } else {
             throw new CustomWebApplicationException(subclass + " is not a valid subclass.", HttpStatus.SC_BAD_REQUEST);

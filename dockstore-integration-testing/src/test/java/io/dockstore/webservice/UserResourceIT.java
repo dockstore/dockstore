@@ -31,6 +31,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.SourceControlOrganization;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -249,14 +250,14 @@ public class UserResourceIT extends BaseIT {
         workflowsApi.handleGitHubRelease(SERVICE_REPO, USER_2_USERNAME, "refs/tags/1.0", INSTALLATION_ID);
 
         final Workflow workflowByPath = workflowsApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId(), false);
 
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
-        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
-        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, null, SERVICE);
+        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
+        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -279,7 +280,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the workflow
         boolean expectedAdminAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, BIOWORKFLOW);
+            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
 
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
@@ -290,7 +291,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the service
         boolean expectedAdminServiceAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, null, SERVICE);
+            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             expectedAdminServiceAccessToFail = true;
@@ -494,7 +495,7 @@ public class UserResourceIT extends BaseIT {
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
 
         // Update an entry
-        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, BIOWORKFLOW);
+        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", BIOWORKFLOW, null);
         Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
@@ -720,7 +721,7 @@ public class UserResourceIT extends BaseIT {
         assertEquals(0, usersApi.userWorkflows(userId).size());
 
         // Star service
-        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, SERVICE, "");
+        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, WorkflowSubClass.SERVICE, "");
         io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
         workflowsApi.starEntry1(service.getId(), starRequest);
         assertEquals(1, usersApi.getStarredServices().size());

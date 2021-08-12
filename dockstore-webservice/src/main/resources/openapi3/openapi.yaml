@@ -5662,13 +5662,12 @@ paths:
         name: include
         schema:
           type: string
-      - description: "Which Workflow subclass to retrieve. One of the folowwing: service,\
-          \ bioworkflow, apptool"
+      - description: Which Workflow subclass to retrieve.
         in: query
         name: subclass
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -9139,6 +9138,12 @@ components:
           type: string
       required:
       - type
+    WorkflowSubClass:
+      type: string
+      enum:
+      - BIOWORKFLOW
+      - SERVICE
+      - APPTOOL
     WorkflowVersion:
       type: object
       properties:
