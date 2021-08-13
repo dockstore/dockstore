@@ -219,10 +219,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
+        String unableToUseESMsg = "Could not use Elasticsearch search";
         if (!ELASTIC_SEARCH_CONCURRENCY_LIMIT.tryAcquire(1)) {
-            throw new CustomWebApplicationException("Could not use Elasticsearch search", HttpStatus.SC_REQUEST_TIMEOUT);
+            LOG.error(unableToUseESMsg + ": too many concurrent requests.");
+            throw new CustomWebApplicationException("Could not use Elasticsearch search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        LOG.info("num of available permits: " + ELASTIC_SEARCH_CONCURRENCY_LIMIT.availablePermits());
 
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             // Performing a search on the UI sends multiple POST requests. When the search term ("include" key in request payload) is large,
@@ -266,7 +267,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
                 int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
                 int statusCode = e.getResponse().getStatusLine().getStatusCode();
-                LOG.error("Could not use Elasticsearch search", e);
+                LOG.error(unableToUseESMsg, e);
                 // Provide a minimal amount of error information in the browser console as outlined by
                 // https://ucsc-cgl.atlassian.net/browse/SEAB-2128
                 String reasonPhrase = e.getResponse().getStatusLine().getReasonPhrase();
@@ -276,7 +277,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     throw new CustomWebApplicationException(reasonPhrase, HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } catch (IOException e2) {
-                LOG.error("Could not use Elasticsearch search", e2);
+                LOG.error(unableToUseESMsg, e2);
                 throw new CustomWebApplicationException("Search failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
                 ELASTIC_SEARCH_CONCURRENCY_LIMIT.release(1);
