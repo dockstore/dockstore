@@ -19,7 +19,6 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 import static io.openapi.api.impl.ToolsApiServiceImpl.BAD_DECODE_RESPONSE;
 
 import com.google.common.io.Resources;
-import com.google.common.util.concurrent.RateLimiter;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -48,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -81,8 +80,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
     private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
     private static final int SEARCH_TERM_LIMIT = 500;
-    private static final RateLimiter ELASTIC_SEARCH_RATE_LIMITER = RateLimiter.create(20);
-    private static final int ELASTIC_SEARCH_TIMEOUT = 1;
+    private static final Semaphore ELASTIC_SEARCH_CONCURRENCY_LIMIT = new Semaphore(15);
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -221,10 +219,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
-        boolean underRateLimit = ELASTIC_SEARCH_RATE_LIMITER.tryAcquire(1, ELASTIC_SEARCH_TIMEOUT, TimeUnit.SECONDS);
-        if (!underRateLimit) {
+        if (!ELASTIC_SEARCH_CONCURRENCY_LIMIT.tryAcquire(1)) {
             throw new CustomWebApplicationException("Could not use Elasticsearch search", HttpStatus.SC_REQUEST_TIMEOUT);
         }
+        LOG.info("num of available permits: " + ELASTIC_SEARCH_CONCURRENCY_LIMIT.availablePermits());
 
         if (!config.getEsConfiguration().getHostname().isEmpty()) {
             // Performing a search on the UI sends multiple POST requests. When the search term ("include" key in request payload) is large,
@@ -234,6 +232,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 try {
                     String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
                     if (include.length() > SEARCH_TERM_LIMIT) {
+                        ELASTIC_SEARCH_CONCURRENCY_LIMIT.release(1);
                         throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
                     }
 
@@ -279,8 +278,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             } catch (IOException e2) {
                 LOG.error("Could not use Elasticsearch search", e2);
                 throw new CustomWebApplicationException("Search failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } finally {
+                ELASTIC_SEARCH_CONCURRENCY_LIMIT.release(1);
             }
         }
+        ELASTIC_SEARCH_CONCURRENCY_LIMIT.release(1);
         return Response.ok().entity(0).build();
     }
 
