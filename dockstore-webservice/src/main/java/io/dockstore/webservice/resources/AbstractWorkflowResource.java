@@ -10,6 +10,8 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
@@ -26,7 +28,6 @@ import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -130,23 +131,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
-        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
-
-        final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
-        Token gitHubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        final String gitlabTokenContent = getToken(tokens, TokenType.GITLAB_COM);
-
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(gitUrl, bitbucketTokenContent, gitlabTokenContent, gitHubToken);
+        SourceControl sourceControl = SourceCodeRepoFactory.mapGitUrlToSourceCodeRepo(gitUrl);
+        SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(user, sourceControl, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
         if (sourceCodeRepo == null) {
-            throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Git tokens invalid, please re-link your Git accounts.", HttpStatus.SC_BAD_REQUEST);
+        } else {
+            return sourceCodeRepo;
         }
-        return sourceCodeRepo;
-    }
 
-    private String getToken(List<Token> tokens, TokenType tokenType) {
-        final Token token = Token.extractToken(tokens, tokenType);
-        return token == null ? null : token.getContent();
     }
 
     /**
@@ -313,14 +305,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
-     * @param installationId GitHub App installation ID
-     * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username, String installationId) {
+    protected void githubWebhookDelete(String repository, String gitReference, String username) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
-            String msg = "Reference " + gitReference + " is not of the valid form";
+            String msg = "Reference " + Utilities.cleanForLogging(gitReference) + " is not of the valid form";
             LOG.error(msg);
             sessionFactory.getCurrentSession().clear();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
@@ -352,7 +342,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
-        return workflows;
     }
 
     /**
@@ -472,13 +461,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId Installation id needed to setup GitHub apps
      * @param user User that triggered action
      * @param dockstoreYml
-     * @return List of new and updated workflows
      */
-    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
+    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml, boolean isOneStepWorkflow) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
-            List<Workflow> updatedWorkflows = new ArrayList<>();
             final Path gitRefPath = Path.of(gitReference);
             for (YamlWorkflow wf : yamlWorkflows) {
                 if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
@@ -498,7 +485,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                     try {
-                        workflow = publishWorkflow(workflow, publish);
+                        publishWorkflow(workflow, publish);
                     } catch (CustomWebApplicationException ex) {
                         LOG.warn("Could not set publish state from YML.", ex);
                         lambdaEvent.setSuccess(false);
@@ -506,9 +493,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                     lambdaEventDAO.create(lambdaEvent);
                 }
-                updatedWorkflows.add(workflow);
             }
-            return updatedWorkflows;
         } catch (ClassCastException ex) {
             throw new CustomWebApplicationException("Could not parse workflow array from YML.", LAMBDA_FAILURE);
         }
@@ -522,15 +507,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId installation id needed to set up GitHub Apps
      * @param user User that triggered action
      * @param dockstoreYml
-     * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
+    private void createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
             User user, final SourceFile dockstoreYml) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-        final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
             if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
-                return updatedServices;
+                return;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             final Boolean publish = service.getPublish();
@@ -543,7 +526,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                 try {
-                    workflow = publishWorkflow(workflow, publish);
+                    publishWorkflow(workflow, publish);
                 } catch (CustomWebApplicationException ex) {
                     LOG.warn("Could not set publish state from YML.", ex);
                     lambdaEvent.setSuccess(false);
@@ -551,10 +534,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
                 lambdaEventDAO.create(lambdaEvent);
             }
-
-            updatedServices.add(workflow);
         }
-        return updatedServices;
     }
 
     /**
@@ -591,7 +571,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
-            LOG.info("Workflow " + dockstoreWorkflowPath + " has been created.");
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Workflow {} has been created.", Utilities.cleanForLogging(dockstoreWorkflowPath));
+            }
         } else {
             workflowToUpdate = workflow.get();
             gitHubSourceCodeRepo.setLicenseInformation(workflowToUpdate, repository);
@@ -615,9 +597,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param dockstoreYml Dockstore YAML File
      * @param gitHubSourceCodeRepo Source Code Repo
-     * @return New or updated workflow
      */
-    private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
+    private void addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
             GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault, final List<YamlAuthor> yamlAuthors) {
         Instant startTime = Instant.now();
         try {
@@ -675,8 +656,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         Instant endTime = Instant.now();
         long timeElasped = Duration.between(startTime, endTime).toSeconds();
-        LOG.info("Processing .dockstore.yml workflow version " + gitReference + " for repo: " + repository + " took " + timeElasped + " seconds");
-        return workflow;
+        if (LOG.isInfoEnabled()) {
+            LOG.info(
+                "Processing .dockstore.yml workflow version {} for repo: {} took {} seconds", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), timeElasped);
+        }
     }
 
     /**
@@ -699,10 +682,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         version.setAuthors(authors);
         final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
-                .map(yamlAuthor -> {
-                    final OrcidAuthor orcidAuthor = new OrcidAuthor(yamlAuthor.getOrcid());
-                    return orcidAuthor;
-                })
+                .map(yamlAuthor -> new OrcidAuthor(yamlAuthor.getOrcid()))
                 .collect(Collectors.toSet());
         version.setOrcidAuthors(orcidAuthors);
     }
@@ -802,7 +782,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
         String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
         if (installationAccessToken == null) {
-            String msg = "Could not get an installation access token for install with id " + installationId;
+            String msg = "Could not get an installation access token for install with id " + Utilities.cleanForLogging(installationId);
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }

@@ -31,6 +31,7 @@ import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
@@ -59,7 +60,6 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.URIHelper;
@@ -85,7 +85,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.jaxrs.PATCH;
-import io.swagger.model.DescriptorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -165,9 +164,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
-    private static final String SERVICE = "service";
-    private static final String BIOWORKFLOW = "bioworkflow";
-    private static final String APPTOOL = "apptool";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -803,8 +799,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
             @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve. One of the folowwing: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL, in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve. One of the following: " + SERVICE + ", " + BIOWORKFLOW +  ", " + APPTOOL) @QueryParam("subclass") String subclass) {
-        final Class<? extends Workflow> targetClass = getSubClass(subclass);
+            @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+            @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass;
+        if (services != null) {
+            targetClass = services ? Service.class : BioWorkflow.class;
+        } else {
+            targetClass = getSubClass(subclass);
+        }
+
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         checkCanRead(user, workflow);
@@ -813,13 +816,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return workflow;
     }
 
-    private Class<? extends Workflow> getSubClass(String subclass) {
+    private Class<? extends Workflow> getSubClass(WorkflowSubClass subclass) {
         final Class<? extends Workflow> targetClass;
-        if (subclass.equals(SERVICE)) {
+        if (subclass == WorkflowSubClass.SERVICE) {
             targetClass = Service.class;
-        } else if (subclass.equals(BIOWORKFLOW)) {
+        } else if (subclass == WorkflowSubClass.BIOWORKFLOW) {
             targetClass = BioWorkflow.class;
-        } else if (subclass.equals(APPTOOL)) {
+        } else if (subclass == WorkflowSubClass.APPTOOL) {
             targetClass = AppTool.class;
         } else {
             throw new CustomWebApplicationException(subclass + " is not a valid subclass.", HttpStatus.SC_BAD_REQUEST);
@@ -1079,8 +1082,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
-        @PathParam("relative-path") String path, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        @PathParam("relative-path") String path, @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getSourceFileByPath(workflowId, tag, fileType, path, user, fileDAO);
     }
 
@@ -1093,8 +1096,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
-        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(workflowId, tag, fileType, user, fileDAO);
     }
 
@@ -1145,7 +1148,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorfklowVersion.isEmpty()) {
-            String msg = "The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
+            String msg = "The version '" + Utilities.cleanForLogging(version) + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1183,10 +1186,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();
 
         if (potentialWorkflowVersion.isEmpty()) {
-            LOG.info("The version '" + version + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.");
-            throw new CustomWebApplicationException("The version '" + version + "' for workflow '"
-                + workflow.getWorkflowPath() + "' does not exist.",
-                HttpStatus.SC_BAD_REQUEST);
+            String msg = "The version '" + Utilities.cleanForLogging(version) + "' for workflow '" + workflow.getWorkflowPath() + "' does not exist.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         WorkflowVersion workflowVersion = potentialWorkflowVersion.get();
@@ -1652,14 +1654,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
         @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath") String testParameterPath,
         @ApiParam(value = "Entry Id of parent tool/workflow.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Descriptor type of the workflow, either cwl or wdl.", required = true, allowableValues = "cwl, wdl") @PathParam("descriptorType") String descriptorType) {
+        @ApiParam(value = "Descriptor type of the workflow, only CWL or WDL are support.", required = true) @PathParam("descriptorType") DescriptorLanguage descriptorType) {
         // Find the entry
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
 
         // Check if valid descriptor type
-        if (!Objects.equals(descriptorType, DescriptorType.CWL.toString().toLowerCase()) && !Objects
-            .equals(descriptorType, DescriptorType.WDL.toString().toLowerCase())) {
-            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.",
+        if (!descriptorType.isSupportsChecker()) {
+            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only " + CWL + " and " + WDL + " are valid.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1698,15 +1699,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
 
             // Get default test parameter path and toolname
-            if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
+            if (descriptorType.equals(WDL)) {
                 workflowName += "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
-            } else if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
+            } else if (descriptorType.equals(CWL)) {
                 workflowName += "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
             } else {
                 throw new UnsupportedOperationException(
-                    "The descriptor type " + descriptorType + " is not valid.\nSupported types include cwl and wdl.");
+                    "The descriptor type " + descriptorType + " is not valid.\nSupported types include CWL and WDL.");
             }
 
             // Determine gitUrl
@@ -1761,7 +1762,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         // Create checker workflow
         BioWorkflow checkerWorkflow = new BioWorkflow();
         checkerWorkflow.setMode(WorkflowMode.STUB);
-        checkerWorkflow.setDescriptorType(DescriptorLanguage.convertShortStringToEnum(descriptorType));
+        checkerWorkflow.setDescriptorType(descriptorType);
         checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
         checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         checkerWorkflow.setOrganization(organization);
@@ -1906,28 +1907,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                                    @Parameter(name = "repositoryName", description = "Git repository name", required = true, in = ParameterIn.PATH) @PathParam("repositoryName") String repositoryName) {
         User foundUser = userDAO.findById(authUser.getId());
 
-
-        // Find matching source control
-        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
-                .stream()
-                .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
-                .collect(Collectors.toList());
-
-        // Add repository as workflow
-        if (scTokens.size() == 0) {
+        SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(foundUser, gitRegistry, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
+        if (sourceCodeRepo == null) {
             String msg = "User does not have access to the given source control registry.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-
-        final Token gitToken = scTokens.get(0);
-
-        SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitToken);
-        final String tokenSource = gitToken.getTokenSource().toString();
         final String repository = organization + "/" + repositoryName;
 
-        String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-        LOG.info("Adding " + gitUrl);
+        String gitUrl = "git@" + gitRegistry + ":" + repository + ".git";
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Adding {}", Utilities.cleanForLogging(gitUrl));
+        }
 
         // Create a workflow
         final Workflow createdWorkflow = sourceCodeRepo.createStubBioworkflow(repository);
@@ -1965,7 +1956,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         User foundUser = userDAO.findById(authUser.getId());
 
         // Get all of the users source control tokens
-        List<Token> scTokens = getAndRefreshTokens(foundUser, tokenDAO, client, bitbucketClientID, bitbucketClientSecret)
+        List<Token> scTokens = this.tokenDAO.findByUserId(foundUser.getId())
                 .stream()
                 .filter(token -> Objects.equals(token.getTokenSource().getSourceControl(), gitRegistry))
                 .collect(Collectors.toList());
@@ -1981,11 +1972,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         final String repository = organization + "/" + repositoryName;
 
         String gitUrl = "git@" + tokenSource + ":" + repository + ".git";
-        LOG.info("Deleting " + gitUrl);
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Deleting {}", Utilities.cleanForLogging(gitUrl));
+        }
 
         final Optional<BioWorkflow> existingWorkflow = workflowDAO.findByPath(tokenSource + "/" + repository, false, BioWorkflow.class);
         if (existingWorkflow.isEmpty()) {
-            String msg = "No workflow with path " + tokenSource + "/" + repository + " exists.";
+            String msg = "No workflow with path " + tokenSource + "/" + Utilities.cleanForLogging(repository) + " exists.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1997,7 +1990,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             eventDAO.deleteEventByEntryID(workflow.getId());
             workflowDAO.delete(workflow);
         } else {
-            String msg = "The workflow with path " + tokenSource + "/" + repository + " cannot be deleted.";
+            String msg = "The workflow with path " + tokenSource + "/" + Utilities.cleanForLogging(repository) + " cannot be deleted.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -2063,7 +2056,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
             @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
         LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
-        githubWebhookDelete(repository, gitReference, username, installationId);
+        githubWebhookDelete(repository, gitReference, username);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
 }

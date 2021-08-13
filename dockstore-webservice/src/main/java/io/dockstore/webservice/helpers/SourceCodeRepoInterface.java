@@ -23,6 +23,7 @@ import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.EntryType;
+import io.dockstore.common.Utilities;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -409,13 +410,16 @@ public abstract class SourceCodeRepoInterface {
     public void updateVersionMetadata(String filePath, Version<?> version, DescriptorLanguage type, String repositoryId) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         String branch = version.getName();
-        if (Strings.isNullOrEmpty(filePath)) {
-            String message = String.format("%s : No descriptor found for %s.", repositoryId, branch);
+        if (Strings.isNullOrEmpty(filePath) && LOG.isInfoEnabled()) {
+            String message = String.format("%s : No descriptor found for %s.", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch));
             LOG.info(message);
         }
         if (sourceFiles == null || sourceFiles.isEmpty()) {
-            String message = String.format("%s : Error getting descriptor for %s with path %s", repositoryId, branch, filePath);
-            LOG.info(message);
+            if (LOG.isInfoEnabled()) {
+                String message = String
+                    .format("%s : Error getting descriptor for %s with path %s", Utilities.cleanForLogging(repositoryId), Utilities.cleanForLogging(branch), Utilities.cleanForLogging(filePath));
+                LOG.info(message);
+            }
             if (version.getReference() != null) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
                 if (StringUtils.isNotBlank(readmeContent)) {

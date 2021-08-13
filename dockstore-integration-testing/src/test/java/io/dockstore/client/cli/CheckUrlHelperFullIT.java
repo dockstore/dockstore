@@ -94,7 +94,7 @@ public class CheckUrlHelperFullIT {
     }
 
     private Workflow getFoobar1Workflow(WorkflowsApi client) {
-        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", "versions", BIOWORKFLOW);
+        return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "versions");
     }
 
     private WorkflowVersion getWorkflowVersion(WorkflowsApi client) {

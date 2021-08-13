@@ -17,6 +17,7 @@ package io.dockstore.webservice.core;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import java.util.Optional;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
@@ -46,7 +47,9 @@ public class SourceControlConverter implements AttributeConverter<SourceControl,
         if (first.isPresent()) {
             return first.get();
         } else {
-            LOG.error("could not convert source control: " + dbData);
+            if (LOG.isErrorEnabled()) {
+                LOG.error("could not convert source control: {}", Utilities.cleanForLogging(dbData));
+            }
             return null;
         }
     }

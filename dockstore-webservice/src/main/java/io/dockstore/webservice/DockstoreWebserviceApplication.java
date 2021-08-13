@@ -366,7 +366,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO, versionDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, deletedUsernameDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
+        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
 
         MetadataResourceHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));

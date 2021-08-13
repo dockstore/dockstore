@@ -4,6 +4,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
@@ -183,7 +184,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // No user given, only show collections from approved organizations
             Organization organization = organizationDAO.findApprovedByName(organizationName);
             if (organization == null) {
-                String msg = "Organization " + organizationName + " not found.";
+                String msg = "Organization " + Utilities.cleanForLogging(organizationName) + " not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
@@ -198,7 +199,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // Admins and curators should be able to see collections from unapproved organizations
             Organization organization = organizationDAO.findByName(organizationName);
             if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO)) {
-                String msg = "Organization " + organizationName + " not found.";
+                String msg = "Organization " + Utilities.cleanForLogging(organizationName) + " not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
