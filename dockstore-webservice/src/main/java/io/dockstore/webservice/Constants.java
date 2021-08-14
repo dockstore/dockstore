@@ -31,10 +31,7 @@ public final class Constants {
     public static final String SKIP_COMMIT_ID = "skip";
     public static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
     public static final String SHA256_TYPE_FOR_SOURCEFILES = "SHA-256";
-    public static final String[] SHA_TYPES_FOR_SOURCEFILES = new String[] {
-        SHA_TYPE_FOR_SOURCEFILES,
-        SHA256_TYPE_FOR_SOURCEFILES
-    };
+    public static final List<String> SHA_TYPES_FOR_SOURCEFILES = List.of(SHA_TYPE_FOR_SOURCEFILES, SHA256_TYPE_FOR_SOURCEFILES);
 
     private Constants() {
         // not called

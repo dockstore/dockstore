@@ -13,7 +13,6 @@ import io.dockstore.webservice.languages.CWLHandler;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -130,7 +129,7 @@ public final class FileFormatHelper {
         if (content == null) {
             return Collections.emptyList();
         } else {
-            return Arrays.stream(SHA_TYPES_FOR_SOURCEFILES)
+            return SHA_TYPES_FOR_SOURCEFILES.stream()
                 .map(shaType -> calcDigest(content, shaType).map(digest -> new Checksum(digest, shaType)))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
