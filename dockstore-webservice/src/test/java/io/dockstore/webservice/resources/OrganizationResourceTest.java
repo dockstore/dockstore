@@ -91,13 +91,12 @@ public class OrganizationResourceTest {
     @Before
     public void init() {
         idToUser = new HashMap<>();
+        idToOrganization = new HashMap<>();
 
         normalUser = mockUser(1L, false, false);
         adminUser = mockUser(2L, true, false);
         curatorUser = mockUser(3L, false, true);
         memberUser = mockUser(4L, false, false);
-
-        idToOrganization = new HashMap<>();
 
         approvedOrganization = mockOrganization(10L,
             Organization.ApplicationState.APPROVED, memberUser);
@@ -116,6 +115,9 @@ public class OrganizationResourceTest {
         Assert.assertEquals(shouldExist, exists);
     }
 
+    /**
+     * Test that {@link OrganizationResource#doesOrganizationExistToUser} implements the correct organization visibility policy.
+     */
     @Test
     public void doesOrganizationExistToUserTest() {
         final Long bogusUserID = -1L;
