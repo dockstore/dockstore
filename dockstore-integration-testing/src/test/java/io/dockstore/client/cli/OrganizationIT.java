@@ -2056,4 +2056,23 @@ public class OrganizationIT extends BaseIT {
         assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED, organization.getStatus());
         assertEquals("testname", organization.getName());
     }
+
+    /**
+     * Test an admin user accessing a nonexistent organization.
+     */
+    @Test
+    public void testAdminViewNonexistentOrganization() {
+        // Setup admin
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
+        final OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+        final Long nonexistentID = 11111111111111111L; // very unlikely an org is assigned this ID
+
+        // Access non-existent organization - this should fail
+        try {
+            organizationsApiAdmin.getOrganizationById(nonexistentID);
+            fail("An admin accessing a nonexistent organization should throw an exception");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+    }
 }
