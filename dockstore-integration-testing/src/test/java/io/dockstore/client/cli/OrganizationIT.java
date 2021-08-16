@@ -2062,12 +2062,13 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testAdminViewNonexistentOrganization() {
+
         // Setup admin
-        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
-        final OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
+        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
         final Long nonexistentID = 11111111111111111L; // very unlikely an org is assigned this ID
 
-        // Access non-existent organization - this should fail
+        // Access non-existent organization - this should fail with a 404
         try {
             organizationsApiAdmin.getOrganizationById(nonexistentID);
             fail("An admin accessing a nonexistent organization should throw an exception");
