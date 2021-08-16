@@ -382,7 +382,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
 
         // Deal with registries with custom registry paths
-        if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+        if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9._/-]+\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
         } else if (this.registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
             return Registry.SEVEN_BRIDGES;
@@ -398,8 +398,13 @@ public class Tool extends Entry<Tool, Tag> {
         case DOCKER_HUB:
             this.setRegistry(registryThing.getDockerPath());
             break;
-        case SEVEN_BRIDGES:
         case AMAZON_ECR:
+            if (!this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9._/-]+\\.amazonaws\\.com")) {
+                // set registry to public Amazon ECR docker path if it's not a private Amazon ECR registry
+                this.setRegistry(registryThing.getDockerPath());
+            }
+            break;
+        case SEVEN_BRIDGES:
             break;
         default:
             break;

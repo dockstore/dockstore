@@ -354,6 +354,18 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("A published, private tool must have either an tool author email or tool maintainer email set up.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        if (registry == Registry.AMAZON_ECR) {
+            // Public Amazon ECR tool (public.ecr.aws docker path) can't be set to private
+            if (tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && tool.isPrivateAccess()) {
+                throw new CustomWebApplicationException("The Amazon ECR tool has a public docker path and cannot be set to private.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            // Private Amazon ECR tool with custom docker path can't be set to public
+            if (!tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && !tool.isPrivateAccess()) {
+                throw new CustomWebApplicationException("The Amazon ECR tool has a custom docker path and cannot be set to public.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
         updateInfo(foundTool, tool);
 
         Tool result = toolDAO.findById(containerId);
@@ -543,6 +555,19 @@ public class DockerRepoResource
         if (tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
             throw new CustomWebApplicationException("Tool maintainer email is required for private tools.", HttpStatus.SC_BAD_REQUEST);
         }
+
+        if (registry == Registry.AMAZON_ECR) {
+            // Public Amazon ECR tool (public.ecr.aws docker path) can't be set to private
+            if (tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && tool.isPrivateAccess()) {
+                throw new CustomWebApplicationException("The Amazon ECR tool has a public docker path and cannot be set to private.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            // Private Amazon ECR tool with custom docker path can't be set to public
+            if (!tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && !tool.isPrivateAccess()) {
+                throw new CustomWebApplicationException("The Amazon ECR tool has a custom docker path and cannot be set to public.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
