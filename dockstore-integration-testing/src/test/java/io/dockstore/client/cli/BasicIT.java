@@ -1259,10 +1259,11 @@ public class BasicIT extends BaseIT {
     }
 
     /**
-     * This tests that you can manually publish a private only registry (Amazon ECR), but you can't change the tool to public
+     * This tests that you can manually publish a private Amazon ECR tool, but you can't change the tool to public since Amazon ECR has different docker paths
+     * for public and private images.
      */
     @Test
-    public void testManualPublishPrivateOnlyRegistry() {
+    public void testManualPublishPrivateAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
@@ -1270,11 +1271,11 @@ public class BasicIT extends BaseIT {
         DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
             "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
             DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
-            "test.dkr.ecr.test.amazonaws.com");
+            "test.dkr.ecr.test/test.amazonaws.com");
 
         // Check that tool is published and has correct values
         final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.test.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
+            "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.test/test.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
             long.class);
         Assert.assertEquals("one tool should be private, published and from amazon, there are " + count, 1, count);
 
@@ -1284,7 +1285,58 @@ public class BasicIT extends BaseIT {
             toolsApi.updateContainer(tool.getId(), tool);
             fail("Should not be able to update tool to public");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("The registry Amazon ECR is private only, cannot set tool to public"));
+            assertTrue(e.getMessage().contains("The Amazon ECR tool has a custom docker path and cannot be set to public."));
+        }
+    }
+
+    /**
+     * This tests that you can manually publish a public Amazon ECR tool, but you can't change the tool to private since Amazon ECR has different docker paths
+     * for public and private images.
+     */
+    @Test
+    public void testManualPublishPublicAmazonECR() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Manual publish a public Amazon ECR tool
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+
+        // Check that tool is published and has correct values
+        final long count = testingPostgres.runSelectStatement(
+                "select count(*) from tool where ispublished='true' and privateaccess='false'", long.class);
+        Assert.assertEquals("One tool should be public and published from amazon, there are " + count, 1, count);
+
+        // Update tool to private (shouldn't work)
+        tool.setPrivateAccess(true);
+        tool.setToolMaintainerEmail("testemail@domain.com");
+        try {
+            toolsApi.updateContainer(tool.getId(), tool);
+            fail("Should not be able to update public Amazon ECR tool to private");
+        } catch (ApiException e) {
+            assertEquals("The Amazon ECR tool has a public docker path and cannot be set to private.", e.getMessage());
+        }
+    }
+
+    /**
+     * This tests that you can't manually publish:
+     * - A private Amazon ECR tool that is public on Amazon ECR (has the public.ecr.aws docker path)
+     */
+    @Test
+    public void testManualPublishPathAmazonECR() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        try {
+            // Manual publish a private Amazon ECR tool that has a public docker path
+            manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                    "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                    DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
+                    "public.ecr.aws/ubuntu/ubuntu");
+            fail("Should not be able to register a public Amazon ECR tool as private");
+        } catch (ApiException e) {
+            assertEquals("The Amazon ECR tool has a public docker path and cannot be set to private.", e.getMessage());
         }
     }
 
@@ -1360,12 +1412,12 @@ public class BasicIT extends BaseIT {
 
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
-                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, false, "duncan.andrew.g@gmail.com",
-                "test.dkr.ecr.test.amazonaws.com");
+                    "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                    DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, false, "duncan.andrew.g@gmail.com",
+                    "images.sbgenomics.com");
             fail("Should fail since it is a private only registry with a public tool");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("The registry Amazon ECR is a private only registry"));
+            assertTrue(e.getMessage().contains("The registry Seven Bridges is a private only registry"));
         }
     }
 
