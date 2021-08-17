@@ -413,10 +413,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throwExceptionForNullOrganization(organization);
             return organization;
         } else {
-            // User is given, check if organization is either approved or the user has access
-            // Admins and curators should be able to see unapproved organizations
             boolean doesOrgExist =
-                doesOrganizationExistToUserResourceDAO(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+                doesOrganizationExistToUserResourceDAO(orgId, user.get().getId());
             if (!doesOrgExist) {
                 String msg = "Organization not found";
                 LOG.info(msg);
@@ -861,7 +859,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     private boolean doesOrganizationExistToUserResourceDAO(Long organizationId, Long userId) {
-        return doesOrganizationExistToUser(organizationId, userId, organizationDAO);
+        return doesOrganizationExistToUser(organizationId, userId, organizationDAO, userDAO);
     }
 
     /**
@@ -872,10 +870,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * @param userId
      * @return True if organization exists to user, false otherwise
      */
-    static boolean doesOrganizationExistToUser(Long organizationId, Long userId, OrganizationDAO organizationDAO) {
+    static boolean doesOrganizationExistToUser(Long organizationId, Long userId, OrganizationDAO organizationDAO, UserDAO userDAO) {
         Organization organization = organizationDAO.findById(organizationId);
         if (organization == null) {
             return false;
+        }
+        // Admins and curators should be able to see unapproved organizations
+        User user = userDAO.findById(userId);
+        if (user != null && (user.getIsAdmin() || user.isCurator())) {
+            return true;
         }
         OrganizationUser organizationUser = getUserOrgRole(organization, userId);
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
