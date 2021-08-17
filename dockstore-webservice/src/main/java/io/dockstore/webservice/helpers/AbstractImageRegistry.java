@@ -242,6 +242,7 @@ public abstract class AbstractImageRegistry {
                         gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
                 updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
             } catch (Exception e) {
+                LOG.info(String.format("Refreshing %s error: %s", tool.getPath(), e));
                 exceptionMessages.add(String.format("Refreshing %s error: %s", tool.getPath(), e.getMessage()));
             }
         }
