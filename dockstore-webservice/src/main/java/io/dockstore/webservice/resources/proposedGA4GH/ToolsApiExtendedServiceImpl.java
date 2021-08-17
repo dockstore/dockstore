@@ -80,6 +80,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
     private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
     private static final int SEARCH_TERM_LIMIT = 500;
+    private static final int TOO_MANY_REQUESTS_429 = 429;
+    private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -106,7 +108,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiExtendedServiceImpl.config = config;
-        ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(config.getEsConfiguration().getMaxConcurrentSessions());
+        if (config.getEsConfiguration().getMaxConcurrentSessions() == null) {
+            ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(ELASTICSEARCH_DEFAULT_LIMIT);
+        } else {
+            ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(config.getEsConfiguration().getMaxConcurrentSessions());
+        }
     }
 
     /**
@@ -221,12 +227,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
         String unableToUseESMsg = "Could not use Elasticsearch search";
+        if (!elasticSearchConcurrencyLimit.tryAcquire(1)) {
+            LOG.error(unableToUseESMsg + ": too many concurrent Elasticsearch requests.");
+            throw new CustomWebApplicationException(unableToUseESMsg, TOO_MANY_REQUESTS_429);
+        }
         try {
-            if (!elasticSearchConcurrencyLimit.tryAcquire(1)) {
-                LOG.error(unableToUseESMsg + ": too many concurrent elastic search requests.");
-                throw new CustomWebApplicationException("Could not use Elasticsearch search", org.eclipse.jetty.http.HttpStatus.TOO_MANY_REQUESTS_429);
-            }
-
             if (!config.getEsConfiguration().getHostname().isEmpty()) {
                 // Performing a search on the UI sends multiple POST requests. When the search term ("include" key in request payload) is large,
                 // one of these POST requests will fail, but the others will continue to pass.

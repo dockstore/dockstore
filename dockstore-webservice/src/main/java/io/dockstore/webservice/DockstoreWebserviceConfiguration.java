@@ -609,7 +609,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String protocol;
         private String user;
         private String password;
-        private int maxConcurrentSessions;
+        private Integer maxConcurrentSessions;
 
         public String getProtocol() {
             return protocol;
@@ -651,10 +651,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.port = port;
         }
 
-        public void setMaxConcurrentSessions(int maxConcurrentSessions) {
+        public void setMaxConcurrentSessions(Integer maxConcurrentSessions) {
             this.maxConcurrentSessions = maxConcurrentSessions;
         }
-        public int getMaxConcurrentSessions() {
+        public Integer getMaxConcurrentSessions() {
             return this.maxConcurrentSessions;
         }
     }
