@@ -21,5 +21,13 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
            ${{ runner.os }}-maven-
+      - name: Test token
+        run: |
+          echo ${{secrets.GITLAB_DEPLOY_TOKEN}}
+          echo ${{env.GITLAB_DEPLOY_TOKEN}}
       - name: Build with mvnw
         run: ./mvnw clean install -DskipTests
+      - name: Deploy with mvnw
+        run: ./mvnw --batch-mode deploy -ntp -s .github/gitlab-mvn-settings.xml -DskipTests -pl "!bom-internal"
+        env: 
+          GITLAB_DEPLOY_TOKEN: ${{ secrets.GITLAB_DEPLOY_TOKEN }}
