@@ -209,21 +209,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (SourceFile file : remoteVersion.getSourceFiles()) {
             String fileKey = file.getType().toString() + file.getAbsolutePath();
             SourceFile existingFile = existingFileMap.get(fileKey);
+            final List<Checksum> checksums = FileFormatHelper.calcDigests(file.getContent());
             if (existingFileMap.containsKey(fileKey)) {
-                List<Checksum> checksums = FileFormatHelper.calcDigests(file.getContent());
                 if (existingFile.getChecksums() == null) {
                     existingFile.setChecksums(checksums);
                 } else {
                     existingFile.getChecksums().clear();
                     existingFileMap.get(fileKey).getChecksums().addAll(checksums);
-
                 }
                 existingFile.setContent(file.getContent());
             } else {
                 final long fileID = fileDAO.create(file);
                 final SourceFile fileFromDB = fileDAO.findById(fileID);
 
-                final List<Checksum> checksums = FileFormatHelper.calcDigests(file.getContent());
                 fileFromDB.getChecksums().addAll(checksums);
                 existingVersion.getSourceFiles().add(fileFromDB);
             }

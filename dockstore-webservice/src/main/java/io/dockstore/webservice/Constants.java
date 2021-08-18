@@ -29,9 +29,13 @@ public final class Constants {
     public static final String DOCKSTORE_YML_PATH = "/.dockstore.yml";
     public static final List<String> DOCKSTORE_YML_PATHS = List.of(DOCKSTORE_YML_PATH, "/.github/.dockstore.yml");
     public static final String SKIP_COMMIT_ID = "skip";
-    public static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
+    public static final String SHA1_TYPE_FOR_SOURCEFILES = "SHA-1";
     public static final String SHA256_TYPE_FOR_SOURCEFILES = "SHA-256";
-    public static final List<String> SHA_TYPES_FOR_SOURCEFILES = List.of(SHA_TYPE_FOR_SOURCEFILES, SHA256_TYPE_FOR_SOURCEFILES);
+    public static final List<String> SHA_TYPES_FOR_SOURCEFILES = List.of(SHA1_TYPE_FOR_SOURCEFILES, SHA256_TYPE_FOR_SOURCEFILES);
+
+    // https://github.com/ga4gh-discovery/ga4gh-checksum/blob/master/hash-alg.csv, so yes, sha1 has no dash and sha-256 does
+    public static final String SHA1_TYPE_FOR_TRS = "sha1";
+    public static final String SHA256_TYPE_FOR_TRS = "sha-256";
 
     private Constants() {
         // not called

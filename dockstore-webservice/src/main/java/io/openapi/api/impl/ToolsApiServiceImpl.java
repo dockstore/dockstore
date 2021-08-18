@@ -29,6 +29,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.Constants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -92,7 +93,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
     private static final int DEFAULT_PAGE_SIZE = 1000;
-    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
+    private static final Map<String, String> DOCKSTORE_TO_TRS_SHA_MAP = Map.of(
+        Constants.SHA1_TYPE_FOR_SOURCEFILES, Constants.SHA1_TYPE_FOR_TRS,
+        Constants.SHA256_TYPE_FOR_SOURCEFILES, Constants.SHA256_TYPE_FOR_TRS);
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
@@ -626,7 +629,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (sourceFile.getChecksums() != null && !sourceFile.getChecksums().isEmpty()) {
             sourceFile.getChecksums().stream().forEach(checksum -> {
                 Checksum trsChecksum = new Checksum();
-                trsChecksum.setType(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS);
+                trsChecksum.setType(DOCKSTORE_TO_TRS_SHA_MAP.get(checksum.getType()));
                 trsChecksum.setChecksum(checksum.getChecksum());
                 trsChecksums.add(trsChecksum);
             });

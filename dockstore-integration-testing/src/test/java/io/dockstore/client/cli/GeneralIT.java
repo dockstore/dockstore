@@ -34,6 +34,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.Checksum;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
@@ -92,6 +93,7 @@ public class GeneralIT extends BaseIT {
     public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
 
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
+    private static final String DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS = "sha256";
 
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
 
@@ -417,7 +419,7 @@ public class GeneralIT extends BaseIT {
             List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
             assertTrue(sourceFiles.size() > 0);
             sourceFiles.stream().forEach(sourceFile -> {
-                assertTrue(sourceFile.getChecksums().size() > 0);
+                assertEquals(2, sourceFile.getChecksums().size());
                 sourceFile.getChecksums().stream().forEach(checksum -> {
                     assertFalse(checksum.getChecksum().isEmpty());
                     assertFalse(checksum.getType().isEmpty());
@@ -597,11 +599,11 @@ public class GeneralIT extends BaseIT {
     public void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {
         assertTrue(fileWrappers.size() > 0);
         fileWrappers.stream().forEach(fileWrapper -> {
-            assertTrue(fileWrapper.getChecksum().size() > 0);
-            fileWrapper.getChecksum().stream().forEach(checksum -> {
-                assertFalse(checksum.getChecksum().isEmpty());
-                assertEquals(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS, checksum.getType());
-            });
+            assertEquals(2, fileWrapper.getChecksum().size());
+            final Checksum sha1Checksum = fileWrapper.getChecksum().stream().filter(checksum -> DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS.equals(checksum.getType())).findFirst().get();
+            assertFalse(sha1Checksum.getChecksum().isEmpty());
+            final Checksum sha256Checksum = fileWrapper.getChecksum().stream().filter(checksum -> DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS.equals(checksum.getType())).findFirst().get();
+            assertFalse(sha256Checksum.getChecksum().isEmpty());
         });
     }
 

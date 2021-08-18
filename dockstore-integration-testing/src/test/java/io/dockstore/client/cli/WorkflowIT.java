@@ -38,6 +38,7 @@ import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.ImageData;
 import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.openapi.client.model.ToolVersion;
+import io.dockstore.webservice.Constants;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -139,8 +140,9 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
     private static final String GATK_SV_TAG = "dockstore-test";
-    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
-    private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
+    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = Constants.SHA1_TYPE_FOR_TRS;
+    private static final String DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS = Constants.SHA256_TYPE_FOR_TRS;
+    private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = Constants.SHA256_TYPE_FOR_TRS;
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -1275,18 +1277,16 @@ public class WorkflowIT extends BaseIT {
     }
 
     private void verifyTRSSourcefileConversion(final io.dockstore.openapi.client.model.FileWrapper fileWrapper) {
-        assertEquals(1, fileWrapper.getChecksum().size());
-        fileWrapper.getChecksum().stream().forEach(checksum -> {
-            assertFalse(checksum.getChecksum().isEmpty());
-            assertEquals(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS, checksum.getType());
-        });
+        assertEquals(2, fileWrapper.getChecksum().size());
+        assertTrue(fileWrapper.getChecksum().stream().anyMatch(checksum -> DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS.equals(checksum.getType()) && !checksum.getChecksum().isEmpty()));
+        assertTrue(fileWrapper.getChecksum().stream().anyMatch(checksum -> DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS.equals(checksum.getType()) && !checksum.getChecksum().isEmpty()));
     }
 
     private void verifySourcefileChecksumsSaved(final List<io.dockstore.webservice.core.SourceFile> sourceFiles) {
         assertTrue(sourceFiles.size() >= 1);
         sourceFiles.stream().forEach(sourceFile -> {
             assertFalse("Source File should have a checksum", sourceFile.getChecksums().isEmpty());
-            assertTrue(sourceFile.getChecksums().size() >= 1);
+            assertTrue(sourceFile.getChecksums().size() >= 2);
             sourceFile.getChecksums().stream().forEach(checksum -> {
                 assertFalse(checksum.getType().isEmpty());
                 assertFalse(checksum.getChecksum().isEmpty());

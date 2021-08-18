@@ -716,8 +716,7 @@ public abstract class AbstractImageRegistry {
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
-            final List<Checksum> checksums = FileFormatHelper.calcDigests(file.getContent());
-            file.getChecksums().addAll(checksums);
+            file.getChecksums().addAll(FileFormatHelper.calcDigests(file.getContent()));
             tag.addSourceFile(file);
         }
 
