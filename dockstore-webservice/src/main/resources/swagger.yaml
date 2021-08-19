@@ -3967,6 +3967,25 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/getAllUserEmails:
+    get:
+      tags:
+      - "users"
+      summary: "Get the emails of all Dockstore users"
+      description: ""
+      operationId: "getAllUserEmails"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+      security:
+      - BEARER: []
   /users/github/events:
     get:
       tags:

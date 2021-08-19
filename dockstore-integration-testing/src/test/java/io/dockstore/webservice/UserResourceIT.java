@@ -341,6 +341,29 @@ public class UserResourceIT extends BaseIT {
     }
 
     @Test
+    public void testGettingUserEmails() {
+        ApiClient client = getWebClient(OTHER_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
+        UsersApi adminUserApi = new UsersApi(adminWebClient);
+
+        List<String> emails = adminUserApi.getAllUserEmails();
+        assertTrue(emails.isEmpty());
+
+        testingPostgres.runUpdateStatement("UPDATE user_profile set email = 'fakeEmail@example.com'");
+        emails = adminUserApi.getAllUserEmails();
+        assertEquals(2, emails.size());
+
+        try {
+            userApi.getAllUserEmails();
+            fail("Should not be able to successfully call endpoint unless the user is an admin.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains("User not authorized."));
+        }
+
+    }
+
+    @Test
     public void testDeletedUsernameReuse() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);

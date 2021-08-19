@@ -4310,6 +4310,25 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/getAllUserEmails:
+    get:
+      description: Get the emails of all Dockstore users
+      operationId: getAllUserEmails
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          description: A list of Dockstores user's emails.
+        "403":
+          description: Forbidden
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/github/events:
     get:
       description: Get all of the GitHub Events for the logged in user.
