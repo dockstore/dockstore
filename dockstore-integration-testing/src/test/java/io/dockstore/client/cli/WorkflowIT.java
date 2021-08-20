@@ -38,6 +38,7 @@ import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.ImageData;
 import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.openapi.client.model.ToolVersion;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -1434,7 +1435,7 @@ public class WorkflowIT extends BaseIT {
             foundEntry = workflowsApi.getEntryByPath("dockstore.org/DockstoreTestUser2/name");
             assertEquals(workflow.getId(), foundEntry.getId());
         } catch (io.dockstore.openapi.client.ApiException e) {
-            fail("Should be able to find the workflow entry with path " + workflow.getWorkflowPath());
+            fail("Should be able to find the workflow entry with path " + workflow.getFullWorkflowPath());
         }
 
         // Try to find a workflow that doesn't exist
@@ -2385,6 +2386,50 @@ public class WorkflowIT extends BaseIT {
         sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(1, sourceFiles.size());
+    }
+
+    /**
+     * This tests that you can get all workflows by path (ignores workflow name)
+     */
+    @Test
+    public void testGetAllWorkflowByPath() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        String path = "github.com/DockstoreTestUser2/nested-wdl";
+
+        io.dockstore.openapi.client.model.Workflow workflow1 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", "workflow1", "wdl", "/test.json");
+        assertEquals(path, workflow1.getPath());
+
+        io.dockstore.openapi.client.model.Workflow workflow2 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", "workflow2", "wdl", "/test.json");
+        assertEquals(path, workflow2.getPath());
+
+        List<io.dockstore.openapi.client.model.Workflow> foundWorkflows = workflowsApi.getAllWorkflowByPath(path);
+        assertEquals(2, foundWorkflows.size());
+    }
+
+    /**
+     * This tests that you can get a workflows by full workflow path
+     */
+    @Test
+    public void testGetWorkflowByPath() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        // Find a workflow with no workflow name
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", null, "wdl", "/test.json");
+        assertEquals("github.com/DockstoreTestUser2/nested-wdl", workflow.getFullWorkflowPath());
+        io.dockstore.openapi.client.model.Workflow foundWorkflow = workflowsApi.getWorkflowByPath(workflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, "");
+        assertEquals(workflow.getId(), foundWorkflow.getId());
+
+        // Find a workflow with a workflow name
+        workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", "foo", "wdl", "/test.json");
+        assertEquals("github.com/DockstoreTestUser2/nested-wdl/foo", workflow.getFullWorkflowPath());
+        foundWorkflow = workflowsApi.getWorkflowByPath(workflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, "");
+        assertEquals(workflow.getId(), foundWorkflow.getId());
     }
 
     /**

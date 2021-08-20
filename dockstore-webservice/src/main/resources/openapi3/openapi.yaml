@@ -5846,7 +5846,7 @@ paths:
       - workflows
   /workflows/path/{repository}:
     get:
-      description: Get a list of workflows by path.
+      description: Get a list of workflows by path. Do not include workflow name.
       operationId: getAllWorkflowByPath
       parameters:
       - in: path
