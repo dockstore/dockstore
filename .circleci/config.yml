@@ -185,12 +185,13 @@ jobs:
       - run:
           name: build
           command: mvn -B clean install -DskipTests
-      # - run:
-      #     name: validate openapi
-      #     command: |
-      #       wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
+      - run:
+          name: validate openapi
+          command: |
+            wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
+      # skip swagger validation because of difficult-to-fix operationId duplications
       #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
-      #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
+            java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
       - run:
           name: copy m2 manually
           command: cp -r ~/.m2 .
