@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
@@ -334,12 +335,7 @@ public class DockerRepoResource
         checkNotHosted(foundTool);
         checkUserOwnsEntry(user, foundTool);
 
-        Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
-
-        if (duplicate != null && duplicate.getId() != containerId) {
-            LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
-            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
-        }
+        // Don't need to check for duplicate tool because the tool path can't be updated
 
         Registry registry = foundTool.getRegistryProvider();
         if (registry.isPrivateOnly() && !tool.isPrivateAccess()) {
@@ -354,15 +350,16 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("A published, private tool must have either an tool author email or tool maintainer email set up.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        // An Amazon ECR repository cannot change its visibility once it's created. Thus, Amazon ECR tools cannot have their visibility changed.
         if (registry == Registry.AMAZON_ECR) {
             // Public Amazon ECR tool (public.ecr.aws docker path) can't be set to private
-            if (tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && tool.isPrivateAccess()) {
-                throw new CustomWebApplicationException("The Amazon ECR tool has a public docker path and cannot be set to private.", HttpStatus.SC_BAD_REQUEST);
+            if (foundTool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && tool.isPrivateAccess()) {
+                throw new CustomWebApplicationException("The public Amazon ECR tool cannot be set to private.", HttpStatus.SC_BAD_REQUEST);
             }
 
             // Private Amazon ECR tool with custom docker path can't be set to public
-            if (!tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && !tool.isPrivateAccess()) {
-                throw new CustomWebApplicationException("The Amazon ECR tool has a custom docker path and cannot be set to public.", HttpStatus.SC_BAD_REQUEST);
+            if (foundTool.getRegistry().matches(AMAZON_ECR_PRIVATE_REGISTRY_REGEX) && !tool.isPrivateAccess()) {
+                throw new CustomWebApplicationException("The private Amazon ECR tool cannot be set to public.", HttpStatus.SC_BAD_REQUEST);
             }
         }
 
@@ -559,12 +556,12 @@ public class DockerRepoResource
         if (registry == Registry.AMAZON_ECR) {
             // Public Amazon ECR tool (public.ecr.aws docker path) can't be set to private
             if (tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && tool.isPrivateAccess()) {
-                throw new CustomWebApplicationException("The Amazon ECR tool has a public docker path and cannot be set to private.", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Cannot register a private tool using a public Amazon ECR image.", HttpStatus.SC_BAD_REQUEST);
             }
 
             // Private Amazon ECR tool with custom docker path can't be set to public
-            if (!tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && !tool.isPrivateAccess()) {
-                throw new CustomWebApplicationException("The Amazon ECR tool has a custom docker path and cannot be set to public.", HttpStatus.SC_BAD_REQUEST);
+            if (tool.getRegistry().matches(AMAZON_ECR_PRIVATE_REGISTRY_REGEX) && !tool.isPrivateAccess()) {
+                throw new CustomWebApplicationException("Cannot register a public tool using a private Amazon ECR image.", HttpStatus.SC_BAD_REQUEST);
             }
         }
 

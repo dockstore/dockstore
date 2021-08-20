@@ -1259,63 +1259,87 @@ public class BasicIT extends BaseIT {
     }
 
     /**
-     * This tests that you can manually publish a private Amazon ECR tool, but you can't change the tool to public since Amazon ECR has different docker paths
-     * for public and private images.
+     * This tests that you can't manually publish:
+     * - A public Amazon ECR image (has a "public.ecr.aws" path) as a private tool
+     * - A private Amazon ECR image (has a "*.dkr.ecr.*.amazonaws.com" path) as a public tool
      */
     @Test
-    public void testManualPublishPrivateAmazonECR() {
+    public void testManualPublishPrivateAccessAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
-        // Manual publish
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
-            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
-            "test.dkr.ecr.test/test.amazonaws.com");
-
-        // Check that tool is published and has correct values
-        final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.test/test.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
-            long.class);
-        Assert.assertEquals("one tool should be private, published and from amazon, there are " + count, 1, count);
-
-        // Update tool to public (shouldn't work)
-        tool.setPrivateAccess(false);
         try {
-            toolsApi.updateContainer(tool.getId(), tool);
-            fail("Should not be able to update tool to public");
+            // Try to manual publish a public Amazon ECR tool using a private Amazon ECR image
+            manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                    "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                    DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, false, null, "test.dkr.ecr.us-east-1.amazonaws.com");
+            fail("Should not be able to register a public tool using a private Amazon ECR image.");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("The Amazon ECR tool has a custom docker path and cannot be set to public."));
+            assertEquals("Cannot register a public tool using a private Amazon ECR image.", e.getMessage());
+        }
+
+        try {
+            // Try to manual publish a private Amazon ECR tool using a public Amazon ECR image
+            manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                    "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                    DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "public.ecr.aws/ubuntu/ubuntu");
+            fail("Should not be able to register a private tool using a public Amazon ECR image.");
+        } catch (ApiException e) {
+            assertEquals("Cannot register a private tool using a public Amazon ECR image.", e.getMessage());
         }
     }
 
     /**
-     * This tests that you can manually publish a public Amazon ECR tool, but you can't change the tool to private since Amazon ECR has different docker paths
-     * for public and private images.
+     * This tests that you can manually publish:
+     * - A public Amazon ECR tool, but you can't change the tool to private.
+     * - A private Amazon ECR tool, but you can't change the tool to public.
+     *
+     * Public and private Amazon ECR repositories have different docker paths, and an Amazon ECR repository cannot change its visibility once it's created.
      */
     @Test
-    public void testManualPublishPublicAmazonECR() {
+    public void testManualPublishPrivateAccessUpdateAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
+        // Manual publish a private Amazon ECR tool
+        DockstoreTool privateTool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
+                "test.dkr.ecr.us-east-1.amazonaws.com");
+
+        // Check that the tool is published and has correct values
+        final long privateCount = testingPostgres.runSelectStatement(
+                "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.us-east-1.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
+                long.class);
+        Assert.assertEquals("There should be one published, private Amazon ECR tool. There are " + privateCount, 1, privateCount);
+
+        // Update tool to public (shouldn't work)
+        privateTool.setPrivateAccess(false);
+        try {
+            toolsApi.updateContainer(privateTool.getId(), privateTool);
+            fail("Should not be able to update private Amazon ECR tool to public");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("The private Amazon ECR tool cannot be set to public."));
+        }
+
         // Manual publish a public Amazon ECR tool
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+        DockstoreTool publicTool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
                 DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
 
         // Check that tool is published and has correct values
-        final long count = testingPostgres.runSelectStatement(
+        final long publicCount = testingPostgres.runSelectStatement(
                 "select count(*) from tool where ispublished='true' and privateaccess='false'", long.class);
-        Assert.assertEquals("One tool should be public and published from amazon, there are " + count, 1, count);
+        Assert.assertEquals("There should be one published, public Amazon ECR tool. There are " + publicCount, 1, publicCount);
 
         // Update tool to private (shouldn't work)
-        tool.setPrivateAccess(true);
-        tool.setToolMaintainerEmail("testemail@domain.com");
+        publicTool.setPrivateAccess(true);
+        publicTool.setToolMaintainerEmail("testemail@domain.com");
         try {
-            toolsApi.updateContainer(tool.getId(), tool);
+            toolsApi.updateContainer(publicTool.getId(), publicTool);
             fail("Should not be able to update public Amazon ECR tool to private");
         } catch (ApiException e) {
-            assertEquals("The Amazon ECR tool has a public docker path and cannot be set to private.", e.getMessage());
+            assertEquals("The public Amazon ECR tool cannot be set to private.", e.getMessage());
         }
     }
 
@@ -1433,7 +1457,7 @@ public class BasicIT extends BaseIT {
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
+                DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
             fail("Should fail due to no custom docker path");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The provided registry is not valid"));

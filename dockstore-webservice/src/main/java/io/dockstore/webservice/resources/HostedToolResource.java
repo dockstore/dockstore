@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
@@ -246,7 +247,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
             if (Objects.equals(registry.toLowerCase(), registryObject.getDockerPath())) {
                 return registry;
             } else if (Objects.equals(registryObject.name(), Registry.AMAZON_ECR.name())) {
-                if (registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+                if (registry.matches(AMAZON_ECR_PRIVATE_REGISTRY_REGEX)) {
                     return registry;
                 }
             } else if (Objects.equals(registryObject.name(), Registry.SEVEN_BRIDGES.name())) {
