@@ -1575,7 +1575,9 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/DockstoreTool"
+            type: "array"
+            items:
+              $ref: "#/definitions/DockstoreTool"
   /containers/published:
     get:
       tags:
@@ -1760,10 +1762,12 @@ paths:
       tags:
       - "containers"
       summary: "Update the tool with the given tool."
-      description: "Updates default descriptor paths, default Docker paths, default\
+      description: "Updates default descriptor paths, default Dockerfile paths, default\
         \ test parameter paths, git url, and default version. Also updates tool maintainer\
         \ email, and private access for manual tools."
       operationId: "updateContainer"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:

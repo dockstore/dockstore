@@ -83,6 +83,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -322,10 +323,11 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateContainer", description = "Update the tool with the given tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tool with the given tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class,
-        notes = "Updates default descriptor paths, default Docker paths, default test parameter paths, git url,"
+        notes = "Updates default descriptor paths, default Dockerfile paths, default test parameter paths, git url,"
                 + " and default version. Also updates tool maintainer email, and private access for manual tools.")
     public Tool updateContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -764,8 +766,8 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}/published")
-    @Operation(operationId = "getPublishedContainerByPath", description = "Get a list of published tools by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get a list of published tools by path.", notes = "NO authentication", response = Tool.class)
+    @Operation(operationId = "getPublishedContainerByPath", description = "Get a list of published tools by path. Do not include tool name.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get a list of published tools by path.", notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> getPublishedContainerByPath(
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, true);
@@ -778,7 +780,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
-    @Operation(operationId = "getContainerByPath", description = "Get a list of tools by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getContainerByPath", description = "Get a list of tools by path. Do not include tool name.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a list of tools by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require tool name.", response = Tool.class, responseContainer = "List")
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,

@@ -935,8 +935,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
-          description: Successfully created hosted entry
+                $ref: '#/components/schemas/DockstoreTool'
+          description: Successfully created a hosted tool.
       security:
       - bearer: []
       tags:
@@ -1096,7 +1096,7 @@ paths:
       - containertags
   /containers/path/{repository}:
     get:
-      description: Get a list of tools by path.
+      description: Get a list of tools by path. Do not include tool name.
       operationId: getContainerByPath
       parameters:
       - in: path
@@ -1119,7 +1119,7 @@ paths:
       - containers
   /containers/path/{repository}/published:
     get:
-      description: Get a list of published tools by path.
+      description: Get a list of published tools by path. Do not include tool name.
       operationId: getPublishedContainerByPath
       parameters:
       - in: path
@@ -1324,7 +1324,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -5448,8 +5448,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
-          description: Successfully created hosted entry
+                $ref: '#/components/schemas/Workflow'
+          description: Successfully created a hosted workflow.
       security:
       - bearer: []
       tags:
