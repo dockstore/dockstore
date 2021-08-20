@@ -1494,6 +1494,21 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testAmazonECRHostedToolCreation() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(webClient);
+
+        // Create a hosted Amazon ECR tool using a private repository
+        io.dockstore.openapi.client.model.DockstoreTool tool = hostedApi.createHostedTool("test.dkr.ecr.us-east-1.amazonaws.com", "foo", io.openapi.model.DescriptorType.CWL.toString(), "namespace", "bar");
+        assertNotNull(containersApi.getContainer(tool.getId(), ""));
+
+        // Create a hosted Amazon ECR tool using a public repository
+        tool = hostedApi.createHostedTool("public.ecr.aws", "foo", io.openapi.model.DescriptorType.CWL.toString(), "namespace", "bar");
+        assertNotNull(containersApi.getContainer(tool.getId(), ""));
+    }
+
+    @Test
     public void testDuplicateAmazonECRHostedToolCreation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
