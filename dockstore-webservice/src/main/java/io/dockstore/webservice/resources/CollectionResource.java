@@ -198,7 +198,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // User is given, check if the collections organization is either approved or the user has access
             // Admins and curators should be able to see collections from unapproved organizations
             Organization organization = organizationDAO.findByName(organizationName);
-            if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO)) {
+            if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO, userDAO)) {
                 String msg = "Organization " + Utilities.cleanForLogging(organizationName) + " not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
@@ -414,7 +414,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             Organization organization = organizationDAO.findApprovedById(organizationId);
             throwExceptionForNullOrganization(organization);
         } else {
-            boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO);
+            boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO, userDAO);
             if (!doesOrgExist) {
                 String msg = "Organization not found.";
                 LOG.info(msg);
@@ -618,7 +618,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO);
+        return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO, userDAO);
     }
 
     /**
