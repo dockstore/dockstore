@@ -83,4 +83,14 @@
             <column name="publicaccessibletestparameterfile" type="bool"/>
         </addColumn>
     </changeSet>
+    <changeSet id="calculatedChecksums" author="coverbeck">
+        <sql dbms="postgresql">
+            alter table sourcefile disable row level security;
+        </sql>
+        <dropColumn tableName="sourcefile" columnName="checksums"></dropColumn>
+        <sql dbms="postgresql">
+            alter table sourcefile enable row level security;
+            create extension if not exists pgcrypto;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

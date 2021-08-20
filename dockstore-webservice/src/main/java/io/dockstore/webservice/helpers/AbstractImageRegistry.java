@@ -695,17 +695,6 @@ public abstract class AbstractImageRegistry {
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
-
-                    Optional<String> sha = FileFormatHelper.calcSHA1(oldFile.getContent());
-                    if (sha.isPresent()) {
-                        checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                        if (oldFile.getChecksums() == null) {
-                            oldFile.setChecksums(checksums);
-                        } else {
-                            oldFile.getChecksums().clear();
-                            oldFile.getChecksums().addAll(checksums);
-                        }
-                    }
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -721,10 +710,6 @@ public abstract class AbstractImageRegistry {
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
-            Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-            if (sha.isPresent()) {
-                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-            }
             tag.addSourceFile(file);
         }
 

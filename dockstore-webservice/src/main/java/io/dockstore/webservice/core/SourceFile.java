@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
@@ -51,8 +50,10 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +73,7 @@ import org.slf4j.LoggerFactory;
 public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
+    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -105,10 +107,11 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 5)
     private boolean frozen = false;
 
-    @Column(columnDefinition = "varchar")
-    @Convert(converter = ChecksumConverter.class)
-    @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
-    private List<Checksum> checksums = new ArrayList<>();
+    @Formula("digest(content, 'sha256')")
+    private String sha256;
+
+    @Formula("digest(content, 'sha1')")
+    private String sha1;
 
     // database timestamps
     @Column(updatable = false)
@@ -174,12 +177,14 @@ public class SourceFile implements Comparable<SourceFile> {
         return Paths.get(absolutePath).normalize().toString();
     }
 
+    @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     public List<Checksum> getChecksums() {
+        // I wanted to memoize this, but, Hibernate beans aren't thread-safe; this should be fast; it's unlikely to be called several times per instance (I think)
+        List<Checksum> checksums = new ArrayList<Checksum>();
+        if (StringUtils.isNotBlank(sha1)) {
+            checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, removeEncodingFromDigest(sha1)));
+        }
         return checksums;
-    }
-
-    public void setChecksums(final List<Checksum> checksums) {
-        this.checksums = checksums;
     }
 
     public void setAbsolutePath(String absolutePath) {
@@ -223,6 +228,20 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    /**
+     * An example digest from PG is \x24ea9b890cc4fe30b061f3c585c8988fccb95157 -- remove the \x
+     *
+     * Not sure we should do this, but it is backwards compatible with how we've been doing digests.
+     * @param sha
+     * @return
+     */
+    private String removeEncodingFromDigest(String sha) {
+        if (sha.startsWith("\\x")) {
+            return sha.substring(2);
+        }
+        return sha;
     }
 
     /**

@@ -411,7 +411,7 @@ public class GeneralIT extends BaseIT {
         verifyTRSSourceFileConversion(fileWrappers);
     }
 
-    public void verifySourcefileChecksumsSaved(final List<Tag> tags) {
+    private void verifySourcefileChecksumsSaved(final List<Tag> tags) {
         assertTrue(tags.size() > 0);
         tags.stream().forEach(tag -> {
             List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
