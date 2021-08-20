@@ -1422,6 +1422,59 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testGetEntryByPath() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.model.Entry foundEntry;
+
+        // Find a hosted workflow
+        io.dockstore.openapi.client.model.Workflow workflow = hostedApi.createHostedWorkflow(null, "name", io.openapi.model.DescriptorType.CWL.toString(), null, null);
+        try {
+            foundEntry = workflowsApi.getEntryByPath("dockstore.org/DockstoreTestUser2/name");
+            assertEquals(workflow.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the workflow entry with path " + workflow.getWorkflowPath());
+        }
+
+        // Try to find a workflow that doesn't exist
+        try {
+            workflowsApi.getEntryByPath("workflow/does/not/exist");
+            fail("Should not be able to find a workflow that doesn't exist.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals("Entry not found", e.getMessage());
+        }
+
+        // Find a hosted tool -> simple case where the repo-name has no slashes: 'foo', no tool name
+        io.dockstore.openapi.client.model.DockstoreTool tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo",
+                io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        try {
+            foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo");
+            assertEquals(tool.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+        }
+
+        // Find a hosted tool -> repo name: 'foo/bar', no tool name
+        tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        try {
+            foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo/bar");
+            assertEquals(tool.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+        }
+
+        // Find a hosted tool -> repo-name: 'foo/bar', tool name: 'tool-name'
+        tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "tool-name");
+        try {
+            foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo/bar/tool-name");
+            assertEquals(tool.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+        }
+    }
+
+    @Test
     public void testDuplicateHostedWorkflowCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -1437,6 +1490,44 @@ public class WorkflowIT extends BaseIT {
         hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
         thrown.expectMessage("already exists");
         hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
+    }
+
+    @Test
+    public void testDuplicateAmazonECRHostedToolCreation() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+
+        // Simple case: the two tools have the same names and entry names
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        try {
+            hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+            fail("Should not be able to register a hosted tool with a duplicate tool path.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals("A tool already exists with that path. Please change the tool name to something unique.", e.getMessage());
+        }
+
+        // The two tools have different names and entry names, but the tool paths are the same
+        // Scenario 1:
+        // Tool 1 has name: 'foo/bar' and no entry name
+        // Tool 2 has name: 'foo' and entry name: 'bar'
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        try {
+            hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "bar");
+            fail("Should not be able to register a hosted tool with a duplicate tool path.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals("A tool already exists with that path. Please change the tool name to something unique.", e.getMessage());
+        }
+
+        // Scenario 2:
+        // Tool 1 has name: 'foo' and entry name: 'bar'
+        // Tool 2 has name: 'foo/bar' and no entry name
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", "bar");
+        try {
+            hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", null);
+            fail("Should not be able to register a hosted tool with a duplicate tool path.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals("A tool already exists with that path. Please change the tool name to something unique.", e.getMessage());
+        }
     }
 
     @Test
