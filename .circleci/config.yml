@@ -189,8 +189,8 @@ jobs:
           name: validate openapi
           command: |
             wget --no-verbose https://repo.maven.apache.org/maven2/org/openapitools/openapi-generator-cli/4.3.0/openapi-generator-cli-4.3.0.jar -O openapi-generator-cli.jar
-      # skip swagger validation because of difficult-to-fix operationId duplications
-      #       java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
+            # skip swagger validation because of difficult-to-fix operationId duplications
+            # java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/swagger.yaml
             java -jar openapi-generator-cli.jar validate -i dockstore-webservice/src/main/resources/openapi3/openapi.yaml
       - run:
           name: copy m2 manually
