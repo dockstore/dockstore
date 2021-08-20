@@ -73,7 +73,7 @@ import org.slf4j.LoggerFactory;
 public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
-    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
+    public static final String SHA_TYPE = "SHA-256";
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -109,9 +109,6 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Formula("digest(content, 'sha256')")
     private String sha256;
-
-    @Formula("digest(content, 'sha1')")
-    private String sha1;
 
     // database timestamps
     @Column(updatable = false)
@@ -181,8 +178,8 @@ public class SourceFile implements Comparable<SourceFile> {
     public List<Checksum> getChecksums() {
         // I wanted to memoize this, but, Hibernate beans aren't thread-safe; this should be fast; it's unlikely to be called several times per instance (I think)
         List<Checksum> checksums = new ArrayList<Checksum>();
-        if (StringUtils.isNotBlank(sha1)) {
-            checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, removeEncodingFromDigest(sha1)));
+        if (StringUtils.isNotBlank(sha256)) {
+            checksums.add(new Checksum(SHA_TYPE, removeEncodingFromDigest(sha256)));
         }
         return checksums;
     }

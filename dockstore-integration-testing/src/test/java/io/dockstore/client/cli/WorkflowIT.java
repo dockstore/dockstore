@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -139,7 +140,6 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE =
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
     private static final String GATK_SV_TAG = "dockstore-test";
-    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
     private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
 
     @Rule
@@ -1278,7 +1278,7 @@ public class WorkflowIT extends BaseIT {
         assertEquals(1, fileWrapper.getChecksum().size());
         fileWrapper.getChecksum().stream().forEach(checksum -> {
             assertFalse(checksum.getChecksum().isEmpty());
-            assertEquals(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS, checksum.getType());
+            assertEquals(DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS, checksum.getType());
         });
     }
 
@@ -1288,7 +1288,7 @@ public class WorkflowIT extends BaseIT {
             assertFalse("Source File should have a checksum", sourceFile.getChecksums().isEmpty());
             assertTrue(sourceFile.getChecksums().size() >= 1);
             sourceFile.getChecksums().stream().forEach(checksum -> {
-                assertFalse(checksum.getType().isEmpty());
+                assertEquals(io.dockstore.webservice.core.SourceFile.SHA_TYPE, checksum.getType());
                 assertFalse(checksum.getChecksum().isEmpty());
             });
         });
