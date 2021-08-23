@@ -178,6 +178,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private static final int CACHE_IN_MB = 100;
     private static Cache cache = null;
 
+    static {
+        // https://ucsc-cgl.atlassian.net/browse/SEAB-3122, see org.jboss.logging.LoggerProviders.java:29
+        System.setProperty("org.jboss.logging.provider", "slf4j");
+    }
+
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<>(Token.class, Tool.class, User.class,
             Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
@@ -351,7 +356,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(tokenDAO, toolDAO, versionDAO, configuration);
+        final EntryResource entryResource = new EntryResource(tokenDAO, toolDAO, versionDAO, userDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);

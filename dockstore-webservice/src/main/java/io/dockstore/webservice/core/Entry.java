@@ -218,6 +218,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(name = "path", nullable = false, columnDefinition = "text")
     @MapKeyColumn(name = "filetype")
     @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
+    @BatchSize(size = 25)
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
     @Column

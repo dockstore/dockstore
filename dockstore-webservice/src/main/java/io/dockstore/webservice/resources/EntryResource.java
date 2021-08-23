@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenScope;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
@@ -38,6 +39,7 @@ import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -106,6 +108,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
     private final VersionDAO versionDAO;
+    private final UserDAO userDAO;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -115,10 +118,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String hostName;
     private String baseApiURL;
 
-    public EntryResource(TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, DockstoreWebserviceConfiguration configuration) {
+    public EntryResource(TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, UserDAO userDAO,
+        DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
+        this.userDAO = userDAO;
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
@@ -258,7 +263,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         checkEntryPermissions(Optional.of(user), entry);
         List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
         String putCode;
+        User nonCachedUser = this.userDAO.findById(user.getId());
         Optional<Version> optionalVersion = Optional.empty();
+
         if (versionId != null) {
             Version version = versionDAO.findVersionInEntry(entry.getId(), versionId);
             if (version == null) {
@@ -273,31 +280,39 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 throw new CustomWebApplicationException(ENTRY_NO_DOI_ERROR_MESSAGE, HttpStatus.SC_BAD_REQUEST);
             }
         }
+        if (orcidByUserId.isEmpty()) {
+            throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (!orcidByUserId.get(0).getScope().equals(TokenScope.ACTIVITIES_UPDATE)) {
+            throw new CustomWebApplicationException("Please relink your ORCID ID in the accounts page.", HttpStatus.SC_UNAUTHORIZED);
+        }
         if (baseApiURL == null) {
             LOG.error("ORCID auth URL is likely incorrect");
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        if (orcidByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("ORCID account is not linked to user account", HttpStatus.SC_BAD_REQUEST);
-        }
+
         if (optionalVersion.isPresent()) {
             putCode = optionalVersion.get().getVersionMetadata().getOrcidPutCode();
         } else {
             putCode = entry.getOrcidPutCode();
         }
         String orcidWorkString;
+        String orcidId = nonCachedUser.getOrcid();
+        if (orcidId == null) {
+            throw new CustomWebApplicationException("Dockstore could not get your ORCID ID", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
         try {
             orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
             if (putCode == null) {
-                createOrcidWork(optionalVersion, entry, user, orcidWorkString, orcidByUserId);
+                createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId);
             } else {
-                boolean success = updateOrcidWork(user, orcidWorkString, orcidByUserId, putCode);
+                boolean success = updateOrcidWork(orcidId, orcidWorkString, orcidByUserId, putCode);
                 if (!success) {
                     LOG.error("Could not find ORCID work based on put code: " + putCode);
                     // This is almost going to be redundant because it's going to attempt to create a new work
                     setPutCode(optionalVersion, entry, null);
                     orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
-                    createOrcidWork(optionalVersion, entry, user, orcidWorkString, orcidByUserId);
+                    createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId);
                 }
             }
         } catch (IOException | URISyntaxException | JAXBException | DatatypeConfigurationException e) {
@@ -316,10 +331,11 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
     }
 
-    private void createOrcidWork(Optional<Version> optionalVersion, Entry entry, User user, String orcidWorkString, List<Token> orcidTokens)
+    private void createOrcidWork(Optional<Version> optionalVersion, Entry entry, String orcidId, String orcidWorkString,
+        List<Token> orcidTokens)
             throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
-                .postWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken());
+                .postWorkString(baseApiURL, orcidId, orcidWorkString, orcidTokens.get(0).getToken());
         switch (response.statusCode()) {
         case HttpStatus.SC_CREATED:
             setPutCode(optionalVersion, entry, getPutCodeFromLocation(response));
@@ -338,10 +354,10 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
      * return true means everything is fine
      * return false means there's a syncing problem (Dockstore has put code, ORCID does not)
      */
-    private boolean updateOrcidWork(User user, String orcidWorkString, List<Token> orcidTokens, String putCode)
+    private boolean updateOrcidWork(String orcidId, String orcidWorkString, List<Token> orcidTokens, String putCode)
             throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
-                .putWorkString(baseApiURL, user.getOrcid(), orcidWorkString, orcidTokens.get(0).getToken(), putCode);
+                .putWorkString(baseApiURL, orcidId, orcidWorkString, orcidTokens.get(0).getToken(), putCode);
         switch (response.statusCode()) {
         case HttpStatus.SC_OK:
             return true;
