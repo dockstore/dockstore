@@ -22,7 +22,7 @@
     <name>swagger-java-client</name>
 
     <parent>
-        <version>1.11.6</version>
+        <version>1.11.7-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -255,7 +255,7 @@
             <!-- used just for ordering since this uses the swagger.json created by dockstore-webservice during the build -->
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.11.6</version>
+            <version>1.11.7-SNAPSHOT</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
