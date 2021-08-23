@@ -216,6 +216,12 @@ jobs:
       - image: cimg/openjdk:11.0.10
         environment:
           PGHOST: 127.0.0.1
+      - image: circleci/postgres:11.12
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_PASSWORD: postgres
     steps: # a collection of executable commands
       - checkout
       - restore_cache:
