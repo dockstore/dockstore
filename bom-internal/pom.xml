@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.11.6-SNAPSHOT</version>
+    <version>1.11.7-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
@@ -70,8 +70,8 @@ POM as their parent.
         <netty.version>4.1.60.Final</netty.version>
         <scala.version>2.12.13</scala.version>
         <cromwell.version>60</cromwell.version>
-        <jackson.version>2.12.1</jackson.version>
-        <jackson.major.version>2.12.1</jackson.major.version>
+        <jackson.version>2.12.3</jackson.version>
+        <jackson.major.version>2.12.3</jackson.major.version>
         <docker-client.version>3.2.7</docker-client.version>
 
         <skipTests>false</skipTests>
@@ -290,7 +290,7 @@ POM as their parent.
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
-                <version>1.11.86</version>
+                <version>1.12.25</version>
             </dependency>
 
             <dependency>
