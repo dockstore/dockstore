@@ -229,15 +229,25 @@ public abstract class AbstractImageRegistry {
         // Update db tools by copying over from api tools
         List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
 
+        List<String> exceptionMessages = new ArrayList<>();
+
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
-            logToolRefresh(dashboardPrefix, tool);
+            try {
+                logToolRefresh(dashboardPrefix, tool);
 
-            List<Tag> toolTags = getTags(tool);
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
-                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
-            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+                List<Tag> toolTags = getTags(tool);
+                final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                    .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
+                updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+            } catch (Exception e) {
+                LOG.info(String.format("Refreshing %s error: %s", tool.getPath(), e));
+                exceptionMessages.add(String.format("Refreshing %s error: %s", tool.getPath(), e.getMessage()));
+            }
+        }
+        if (!exceptionMessages.isEmpty()) {
+            throw new CustomWebApplicationException(String.join(System.lineSeparator(), exceptionMessages), HttpStatus.SC_EXPECTATION_FAILED);
         }
     }
 
