@@ -216,7 +216,7 @@ jobs:
       - image: cimg/openjdk:11.0.10
         environment:
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:11.12
+      - image: circleci/postgres:13.3
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
@@ -363,7 +363,7 @@ commands:
   setup_postgres_docker:
     steps:
       - run:
-          name: setup postgres docker
+          name: setup postgres
           command: |
             docker exec -it -u postgres postgres1 psql -c "create user dockstore with password 'dockstore' createdb;"
             docker exec -it -u postgres postgres1 psql -c "create database webservice_test with owner = dockstore;"
