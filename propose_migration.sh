@@ -9,15 +9,15 @@ set -o xtrace
 if [ "${CIRCLECI-false}" = "true" ]; then
     dropdb -U postgres webservice_test || true
     dropdb -U postgres webservice_test_proposed || true
-    createdb -U postgres webservice_test || true
-    createdb -U postgres webservice_test_proposed || true
+    createdb -U postgres webservice_test -O dockstore || true
+    createdb -U postgres webservice_test_proposed -O dockstore || true
     rm dockstore-webservice/target/detected-migrations.xml || true
 else
     ## uncomment/comment this section if database is running locally on postgres
     sudo -i -u postgres dropdb webservice_test || true # comment this line if you want to diff with an already loaded db dump
     sudo -i -u postgres dropdb webservice_test_proposed || true
-    sudo -i -u postgres createdb webservice_test || true # comment this line if you want to diff with an already loaded db dump
-    sudo -i -u postgres createdb webservice_test_proposed || true
+    sudo -i -u postgres createdb webservice_test -O dockstore || true # comment this line if you want to diff with an already loaded db dump
+    sudo -i -u postgres createdb webservice_test_proposed -O dockstore || true
     rm dockstore-webservice/target/detected-migrations.xml || true
     ## uncomment/comment this section if running on docker
 #    docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 dropdb webservice_test || true
