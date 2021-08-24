@@ -85,12 +85,15 @@
     </changeSet>
     <changeSet id="calculatedChecksums" author="coverbeck">
         <sql dbms="postgresql">
+            create extension if not exists pgcrypto;
             alter table sourcefile disable row level security;
         </sql>
         <dropColumn tableName="sourcefile" columnName="checksums"></dropColumn>
         <sql dbms="postgresql">
+            alter table sourcefile add column sha256 text generated always as (digest(content, 'sha256')) stored;
+        </sql>
+        <sql dbms="postgresql">
             alter table sourcefile enable row level security;
-            create extension if not exists pgcrypto;
         </sql>
     </changeSet>
 </databaseChangeLog>
