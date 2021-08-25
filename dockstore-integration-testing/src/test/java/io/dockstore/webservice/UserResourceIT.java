@@ -364,7 +364,7 @@ public class UserResourceIT extends BaseIT {
         try {
             userApi.getAllUserEmails();
             fail("Should not be able to successfully call endpoint unless the user is an admin.");
-        } catch (ApiException ex) {
+        } catch (io.dockstore.openapi.client.ApiException ex) {
             assertTrue(ex.getMessage().contains("User not authorized."));
         }
 
