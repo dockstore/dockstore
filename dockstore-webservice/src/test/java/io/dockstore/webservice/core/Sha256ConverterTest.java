@@ -28,10 +28,10 @@ public class Sha256ConverterTest {
         Assert.assertEquals(fakeDigest, checksum.getChecksum());
 
         // Shouldn't be any digests in DB without leading \x, but just in case
-        final List<Checksum> checksums1 = sha256Converter.convertToEntityAttribute(fakeDigest);
-        Assert.assertEquals(1, checksums.size());
+        final List<Checksum> checksums2 = sha256Converter.convertToEntityAttribute(fakeDigest);
+        Assert.assertEquals(1, checksums2.size());
         final Checksum checksum2 = checksums.get(0);
-        Assert.assertEquals(SourceFile.SHA_TYPE, checksum.getType());
-        Assert.assertEquals(fakeDigest, checksum.getChecksum());
+        Assert.assertEquals(SourceFile.SHA_TYPE, checksum2.getType());
+        Assert.assertEquals(fakeDigest, checksum2.getChecksum());
     }
 }
