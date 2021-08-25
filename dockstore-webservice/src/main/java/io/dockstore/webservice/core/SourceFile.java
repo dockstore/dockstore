@@ -106,7 +106,7 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 5)
     private boolean frozen = false;
 
-    @Column(columnDefinition = "text", name = "sha256", updatable = false, insertable = false)
+    @Column(columnDefinition = "TEXT", name = "sha256", updatable = false, insertable = false)
     @Convert(converter = Sha256Converter.class)
     @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     private List<Checksum> checksums = new ArrayList<>();
