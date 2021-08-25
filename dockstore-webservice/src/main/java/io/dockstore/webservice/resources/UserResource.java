@@ -819,7 +819,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @RolesAllowed("admin")
     @Path("/emails")
     @Operation(operationId = "getAllUserEmails", description = "Admin-only endpoint. Get the emails of all Dockstore users", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Admin-only endpoint. Get the emails of all Dockstore users", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of Dockstore users' emails.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserInfo.class))))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     public List<UserInfo> getAllUserEmails(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user) {

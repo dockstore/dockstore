@@ -31,6 +31,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.SourceControlOrganization;
+import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
@@ -47,7 +48,6 @@ import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
-import io.swagger.client.model.UserInfo;
 import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.Objects;
@@ -343,10 +343,10 @@ public class UserResourceIT extends BaseIT {
 
     @Test
     public void testGettingUserEmails() {
-        ApiClient client = getWebClient(OTHER_USERNAME, testingPostgres);
-        UsersApi userApi = new UsersApi(client);
-        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
-        UsersApi adminUserApi = new UsersApi(adminWebClient);
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
+        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi adminUserApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
 
         List<UserInfo> userInfo = adminUserApi.getAllUserEmails();
         assertTrue(userInfo.size() >= 2);
