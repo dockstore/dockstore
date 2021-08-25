@@ -57,6 +57,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.database.EntryLite;
 import io.dockstore.webservice.core.database.MyWorkflows;
+import io.dockstore.webservice.core.database.UserInfo;
 import io.dockstore.webservice.helpers.DeletedUserHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
@@ -816,26 +817,15 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @Path("/getAllUserEmails")
-    @Operation(operationId = "getAllUserEmails", description = "Get the emails of all Dockstore users", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get the emails of all Dockstore users", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of Dockstores user's emails.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @Path("/emails")
+    @Operation(operationId = "getAllUserEmails", description = "Admin-only endpoint. Get the emails of all Dockstore users", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Admin-only endpoint. Get the emails of all Dockstore users", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of Dockstore users' emails.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserInfo.class))))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
-    public List<String> getAllUserEmails(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user) {
-        List<User> users = userDAO.findAll();
-        List<String> emails = new ArrayList<>();
-        users.stream().forEach(u -> {
-            Map<String, User.Profile> userProfiles = u.getUserProfiles();
-            if (userProfiles.get(TokenType.GITHUB_COM.toString()) != null && userProfiles.get(TokenType.GITHUB_COM.toString()).email != null) {
-                emails.add(userProfiles.get(TokenType.GITHUB_COM.toString()).email);
-            } else if (userProfiles.get(TokenType.GOOGLE_COM.toString()) != null && userProfiles.get(TokenType.GOOGLE_COM.toString()).email != null) {
-                emails.add(userProfiles.get(TokenType.GOOGLE_COM.toString()).email);
-            } else {
-                LOG.info("Unable to get an email for user " + u.getUsername());
-            }
-        });
-        LOG.info("For the " + users.size() + " Dockstore users, we were able to get emails for " + emails.size() + " of them.");
-        return emails;
+    public List<UserInfo> getAllUserEmails(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user) {
+        List<UserInfo> userInfo = userDAO.findAllGitHubUserInfo();
+        userInfo.addAll(userDAO.findAllGoogleUserInfo());
+        return userInfo;
     }
 
     /**

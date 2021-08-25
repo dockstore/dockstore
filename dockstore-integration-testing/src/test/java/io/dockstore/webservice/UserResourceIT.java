@@ -47,6 +47,7 @@ import io.swagger.client.model.OrganizationUpdateTime;
 import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
+import io.swagger.client.model.UserInfo;
 import io.swagger.client.model.Workflow;
 import java.util.List;
 import java.util.Objects;
@@ -347,12 +348,18 @@ public class UserResourceIT extends BaseIT {
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi adminUserApi = new UsersApi(adminWebClient);
 
-        List<String> emails = adminUserApi.getAllUserEmails();
-        assertTrue(emails.isEmpty());
+        List<UserInfo> userInfo = adminUserApi.getAllUserEmails();
+        assertTrue(userInfo.size() >= 2);
+
 
         testingPostgres.runUpdateStatement("UPDATE user_profile set email = 'fakeEmail@example.com'");
-        emails = adminUserApi.getAllUserEmails();
-        assertEquals(2, emails.size());
+        userInfo = adminUserApi.getAllUserEmails();
+        userInfo.stream().forEach(info -> {
+            assertNotNull(info.getDockstoreUsername());
+            assertEquals("fakeEmail@example.com", info.getThirdPartyEmail());
+            assertNotNull(info.getThirdPartyUsername());
+            assertNotNull(info.getTokenType());
+        });
 
         try {
             userApi.getAllUserEmails();

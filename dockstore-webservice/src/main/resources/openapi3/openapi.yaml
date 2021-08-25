@@ -4310,9 +4310,9 @@ paths:
       - bearer: []
       tags:
       - users
-  /users/getAllUserEmails:
+  /users/emails:
     get:
-      description: Get the emails of all Dockstore users
+      description: Admin-only endpoint. Get the emails of all Dockstore users
       operationId: getAllUserEmails
       responses:
         "200":
@@ -4321,8 +4321,8 @@ paths:
               schema:
                 type: array
                 items:
-                  type: string
-          description: A list of Dockstores user's emails.
+                  $ref: '#/components/schemas/UserInfo'
+          description: A list of Dockstore users' emails.
         "403":
           description: Forbidden
       security:
@@ -8825,6 +8825,17 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/Profile'
         username:
+          type: string
+    UserInfo:
+      type: object
+      properties:
+        dockstoreUsername:
+          type: string
+        thirdPartyEmail:
+          type: string
+        thirdPartyUsername:
+          type: string
+        tokenType:
           type: string
     Validation:
       type: object

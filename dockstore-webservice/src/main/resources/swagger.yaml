@@ -3967,11 +3967,11 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
-  /users/getAllUserEmails:
+  /users/emails:
     get:
       tags:
       - "users"
-      summary: "Get the emails of all Dockstore users"
+      summary: "Admin-only endpoint. Get the emails of all Dockstore users"
       description: ""
       operationId: "getAllUserEmails"
       produces:
@@ -3983,7 +3983,7 @@ paths:
           schema:
             type: "array"
             items:
-              type: "string"
+              $ref: "#/definitions/UserInfo"
       security:
       - BEARER: []
   /users/github/events:
@@ -8307,6 +8307,17 @@ definitions:
         position: 16
         description: "Time privacy policy was accepted"
     description: "End users for the dockstore"
+  UserInfo:
+    type: "object"
+    properties:
+      dockstoreUsername:
+        type: "string"
+      thirdPartyEmail:
+        type: "string"
+      thirdPartyUsername:
+        type: "string"
+      tokenType:
+        type: "string"
   Validation:
     type: "object"
     required:
