@@ -37,8 +37,8 @@ while IFS= read -r email ; do
 
   curl --ssl-reqd \
   --url 'smtps://smtp.gmail.com:465' \
-  --user "nperez9@ucsc.edu:${EMAIL_APP_PASSWORD}" \
-  --mail-from 'nperez9@ucsc.edu' \
+  --user "${SENDER_EMAIL}:${EMAIL_APP_PASSWORD}" \
+  --mail-from ${SENDER_EMAIL} \
   --mail-rcpt $email \
   --upload-file mail.txt
 done < dockstoreEmails.txt
