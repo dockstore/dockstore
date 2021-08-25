@@ -1276,7 +1276,7 @@ public class BasicIT extends BaseIT {
                     DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, false, null, "test.dkr.ecr.us-east-1.amazonaws.com");
             fail("Should not be able to register a public tool using a private Amazon ECR image.");
         } catch (ApiException e) {
-            assertEquals("Cannot register a public tool using a private Amazon ECR image.", e.getMessage());
+            assertEquals("The private Amazon ECR tool cannot be set to public.", e.getMessage());
         }
 
         try {
@@ -1286,7 +1286,7 @@ public class BasicIT extends BaseIT {
                     DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "public.ecr.aws/ubuntu/ubuntu");
             fail("Should not be able to register a private tool using a public Amazon ECR image.");
         } catch (ApiException e) {
-            assertEquals("Cannot register a private tool using a public Amazon ECR image.", e.getMessage());
+            assertEquals("The public Amazon ECR tool cannot be set to private.", e.getMessage());
         }
     }
 

@@ -251,7 +251,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
             if (Objects.equals(registry.toLowerCase(), registryObject.getDockerPath())) {
                 return registry;
             } else if (Objects.equals(registryObject.name(), Registry.AMAZON_ECR.name())) {
-                if (registry.matches(AMAZON_ECR_PRIVATE_REGISTRY_REGEX)) {
+                if (AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(registry).matches()) {
                     return registry;
                 }
             } else if (Objects.equals(registryObject.name(), Registry.SEVEN_BRIDGES.name())) {

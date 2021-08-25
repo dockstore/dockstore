@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @author gluu
@@ -29,7 +30,7 @@ public final class Constants {
     public static final String DOCKSTORE_YML_PATH = "/.dockstore.yml";
     public static final List<String> DOCKSTORE_YML_PATHS = List.of(DOCKSTORE_YML_PATH, "/.github/.dockstore.yml");
     public static final String SKIP_COMMIT_ID = "skip";
-    public static final String AMAZON_ECR_PRIVATE_REGISTRY_REGEX = "^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9-]+\\.amazonaws\\.com";
+    public static final Pattern AMAZON_ECR_PRIVATE_REGISTRY_REGEX = Pattern.compile("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9-]+\\.amazonaws\\.com");
 
     private Constants() {
         // not called

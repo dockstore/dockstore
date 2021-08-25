@@ -1512,38 +1512,27 @@ public class WorkflowIT extends BaseIT {
     public void testDuplicateAmazonECRHostedToolCreation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        String alreadyExistsMessage = "already exists";
 
         // Simple case: the two tools have the same names and entry names
         hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
-        try {
-            hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
-            fail("Should not be able to register a hosted tool with a duplicate tool path.");
-        } catch (io.dockstore.openapi.client.ApiException e) {
-            assertEquals("A tool already exists with that path. Please change the tool name to something unique.", e.getMessage());
-        }
+        thrown.expectMessage(alreadyExistsMessage);
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
 
         // The two tools have different names and entry names, but the tool paths are the same
         // Scenario 1:
         // Tool 1 has name: 'foo/bar' and no entry name
         // Tool 2 has name: 'foo' and entry name: 'bar'
         hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
-        try {
-            hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "bar");
-            fail("Should not be able to register a hosted tool with a duplicate tool path.");
-        } catch (io.dockstore.openapi.client.ApiException e) {
-            assertEquals("A tool already exists with that path. Please change the tool name to something unique.", e.getMessage());
-        }
+        thrown.expectMessage(alreadyExistsMessage);
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "bar");
 
         // Scenario 2:
         // Tool 1 has name: 'foo' and entry name: 'bar'
         // Tool 2 has name: 'foo/bar' and no entry name
         hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", "bar");
-        try {
-            hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", null);
-            fail("Should not be able to register a hosted tool with a duplicate tool path.");
-        } catch (io.dockstore.openapi.client.ApiException e) {
-            assertEquals("A tool already exists with that path. Please change the tool name to something unique.", e.getMessage());
-        }
+        thrown.expectMessage(alreadyExistsMessage);
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", null);
     }
 
     @Test
