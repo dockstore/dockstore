@@ -1312,7 +1312,7 @@ public class BasicIT extends BaseIT {
         final long privateCount = testingPostgres.runSelectStatement(
                 "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.us-east-1.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
                 long.class);
-        Assert.assertEquals("There should be one published, private Amazon ECR tool. There are " + privateCount, 1, privateCount);
+        assertEquals("There should be one published, private Amazon ECR tool. There are " + privateCount, 1, privateCount);
 
         // Update tool to public (shouldn't work)
         privateTool.setPrivateAccess(false);
@@ -1331,7 +1331,7 @@ public class BasicIT extends BaseIT {
         // Check that tool is published and has correct values
         final long publicCount = testingPostgres.runSelectStatement(
                 "select count(*) from tool where ispublished='true' and privateaccess='false'", long.class);
-        Assert.assertEquals("There should be one published, public Amazon ECR tool. There are " + publicCount, 1, publicCount);
+        assertEquals("There should be one published, public Amazon ECR tool. There are " + publicCount, 1, publicCount);
 
         // Update tool to private (shouldn't work)
         publicTool.setPrivateAccess(true);

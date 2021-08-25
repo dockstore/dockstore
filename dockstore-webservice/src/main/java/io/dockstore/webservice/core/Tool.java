@@ -401,6 +401,11 @@ public class Tool extends Entry<Tool, Tag> {
             this.setRegistry(registryThing.getDockerPath());
             break;
         case AMAZON_ECR:
+            // Set registry to public Amazon ECR docker path if it's not a private Amazon ECR registry
+            if (this.registry != null && !AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(this.registry).matches()) {
+                this.setRegistry(registryThing.getDockerPath());
+            }
+            break;
         case SEVEN_BRIDGES:
             break;
         default:

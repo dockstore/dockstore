@@ -1145,7 +1145,6 @@ public class DockerRepoResource
         }
 
         // Private Amazon ECR tool with custom docker path can't be set to public
-        //if (amazonECRDockerPath.matches(AMAZON_ECR_PRIVATE_REGISTRY_REGEX) && !privateAccess) {
         if (AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(amazonECRDockerPath).matches() && !privateAccess) {
             throw new CustomWebApplicationException("The private Amazon ECR tool cannot be set to public.", HttpStatus.SC_BAD_REQUEST);
         }
