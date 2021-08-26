@@ -38,7 +38,6 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
@@ -1338,21 +1337,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
                         Set<Image> images = lInterface.getImagesFromRegistry(toolsJSONTable.get());
                         existingTag.getImages().addAll(images);
-                    }
-
-                    // Grab checksum for file descriptors if not already available.
-                    for (SourceFile sourceFile : existingTag.getSourceFiles()) {
-                        Optional<String> sha = FileFormatHelper.calcSHA1(sourceFile.getContent());
-                        if (sha.isPresent()) {
-                            List<Checksum> checksums = new ArrayList<>();
-                            checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                            if (sourceFile.getChecksums() == null) {
-                                sourceFile.setChecksums(checksums);
-                            } else if (sourceFile.getChecksums().isEmpty()) {
-                                sourceFile.getChecksums().addAll(checksums);
-                            }
-                        }
-
                     }
 
                     // store dag

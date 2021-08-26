@@ -16,8 +16,10 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.webservice.core.SourceFile.SHA_TYPE;
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -90,8 +92,6 @@ import org.kohsuke.github.RateLimitHandler;
 @Category({ ConfidentialTest.class, ToolTest.class })
 public class GeneralIT extends BaseIT {
     public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
-
-    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
 
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
 
@@ -397,7 +397,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         List<Tag> tags = tool.getWorkflowVersions();
-        verifySourcefileChecksumsSaved(tags);
+        verifySourcefileChecksums(tags);
 
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
@@ -411,7 +411,7 @@ public class GeneralIT extends BaseIT {
         verifyTRSSourceFileConversion(fileWrappers);
     }
 
-    public void verifySourcefileChecksumsSaved(final List<Tag> tags) {
+    private void verifySourcefileChecksums(final List<Tag> tags) {
         assertTrue(tags.size() > 0);
         tags.stream().forEach(tag -> {
             List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
@@ -420,7 +420,7 @@ public class GeneralIT extends BaseIT {
                 assertTrue(sourceFile.getChecksums().size() > 0);
                 sourceFile.getChecksums().stream().forEach(checksum -> {
                     assertFalse(checksum.getChecksum().isEmpty());
-                    assertFalse(checksum.getType().isEmpty());
+                    assertEquals(SHA_TYPE, checksum.getType());
                 });
             });
         });
@@ -594,13 +594,13 @@ public class GeneralIT extends BaseIT {
         assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
     }
 
-    public void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {
+    private void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {
         assertTrue(fileWrappers.size() > 0);
         fileWrappers.stream().forEach(fileWrapper -> {
             assertTrue(fileWrapper.getChecksum().size() > 0);
             fileWrapper.getChecksum().stream().forEach(checksum -> {
                 assertFalse(checksum.getChecksum().isEmpty());
-                assertEquals(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS, checksum.getType());
+                assertEquals(DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS, checksum.getType());
             });
         });
     }

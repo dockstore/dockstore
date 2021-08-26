@@ -1211,6 +1211,7 @@
                     <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
                     <logging>info</logging>
                     <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
+                    <diffExcludeObjects>column:sha256</diffExcludeObjects>
                 </configuration>
                 <dependencies>
                     <dependency>

@@ -217,7 +217,7 @@ jobs:
       - image: cimg/openjdk:11.0.10
         environment:
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:11.12
+      - image: circleci/postgres:13.3
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
