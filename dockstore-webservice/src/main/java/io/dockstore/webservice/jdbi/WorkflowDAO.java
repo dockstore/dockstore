@@ -62,7 +62,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * @return A list of workflows with the given path
      */
     public List<Workflow> findAllByPath(String path, boolean findPublished) {
-        String[] splitPath = Workflow.splitPath(path);
+        String[] splitPath = Workflow.splitPath(path, false);
 
         // Not a valid path
         if (splitPath == null) {
@@ -104,7 +104,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * @return Workflow matching the path
      */
     public List<Workflow> findByPath(String path, boolean findPublished) {
-        String[] splitPath = Workflow.splitPath(path);
+        String[] splitPath = Workflow.splitPath(path, true);
 
         // Not a valid path
         if (splitPath == null) {
@@ -229,7 +229,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         Root<Workflow> entry = q.from(Workflow.class);
 
         for (String path : paths) {
-            String[] splitPath = Workflow.splitPath(path);
+            String[] splitPath = Workflow.splitPath(path, true);
 
             if (splitPath == null) {
                 continue;

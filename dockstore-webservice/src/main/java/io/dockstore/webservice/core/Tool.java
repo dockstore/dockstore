@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -382,7 +384,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
 
         // Deal with registries with custom registry paths
-        if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+        if (AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(this.registry).matches()) {
             return Registry.AMAZON_ECR;
         } else if (this.registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
             return Registry.SEVEN_BRIDGES;
@@ -398,8 +400,13 @@ public class Tool extends Entry<Tool, Tag> {
         case DOCKER_HUB:
             this.setRegistry(registryThing.getDockerPath());
             break;
-        case SEVEN_BRIDGES:
         case AMAZON_ECR:
+            // Set registry to public Amazon ECR docker path if it's not a private Amazon ECR registry
+            if (this.registry != null && !AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(this.registry).matches()) {
+                this.setRegistry(registryThing.getDockerPath());
+            }
+            break;
+        case SEVEN_BRIDGES:
             break;
         default:
             break;

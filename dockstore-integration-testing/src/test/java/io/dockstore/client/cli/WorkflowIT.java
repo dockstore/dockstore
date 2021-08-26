@@ -38,6 +38,7 @@ import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.model.ImageData;
 import io.dockstore.openapi.client.model.Repository;
 import io.dockstore.openapi.client.model.ToolVersion;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -1422,6 +1423,59 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testGetEntryByPath() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.model.Entry foundEntry;
+
+        // Find a hosted workflow
+        io.dockstore.openapi.client.model.Workflow workflow = hostedApi.createHostedWorkflow(null, "name", io.openapi.model.DescriptorType.CWL.toString(), null, null);
+        try {
+            foundEntry = workflowsApi.getEntryByPath("dockstore.org/DockstoreTestUser2/name");
+            assertEquals(workflow.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the workflow entry with path " + workflow.getFullWorkflowPath());
+        }
+
+        // Try to find a workflow that doesn't exist
+        try {
+            workflowsApi.getEntryByPath("workflow/does/not/exist");
+            fail("Should not be able to find a workflow that doesn't exist.");
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            assertEquals("Entry not found", e.getMessage());
+        }
+
+        // Find a hosted tool -> simple case where the repo-name has no slashes: 'foo', no tool name
+        io.dockstore.openapi.client.model.DockstoreTool tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo",
+                io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        try {
+            foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo");
+            assertEquals(tool.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+        }
+
+        // Find a hosted tool -> repo name: 'foo/bar', no tool name
+        tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        try {
+            foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo/bar");
+            assertEquals(tool.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+        }
+
+        // Find a hosted tool -> repo-name: 'foo/bar', tool name: 'tool-name'
+        tool = hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "tool-name");
+        try {
+            foundEntry = workflowsApi.getEntryByPath("public.ecr.aws/abcd1234/foo/bar/tool-name");
+            assertEquals(tool.getId(), foundEntry.getId());
+        } catch (io.dockstore.openapi.client.ApiException e) {
+            fail("Should be able to find the tool entry with path " + tool.getToolPath());
+        }
+    }
+
+    @Test
     public void testDuplicateHostedWorkflowCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -1437,6 +1491,48 @@ public class WorkflowIT extends BaseIT {
         hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
         thrown.expectMessage("already exists");
         hostedApi.createHostedTool("name", Registry.DOCKER_HUB.getDockerPath(), DescriptorType.CWL.toString(), "namespace", null);
+    }
+
+    @Test
+    public void testAmazonECRHostedToolCreation() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        io.dockstore.openapi.client.api.ContainersApi containersApi = new io.dockstore.openapi.client.api.ContainersApi(webClient);
+
+        // Create a hosted Amazon ECR tool using a private repository
+        io.dockstore.openapi.client.model.DockstoreTool tool = hostedApi.createHostedTool("test.dkr.ecr.us-east-1.amazonaws.com", "foo", io.openapi.model.DescriptorType.CWL.toString(), "namespace", "bar");
+        assertNotNull(containersApi.getContainer(tool.getId(), ""));
+
+        // Create a hosted Amazon ECR tool using a public repository
+        tool = hostedApi.createHostedTool("public.ecr.aws", "foo", io.openapi.model.DescriptorType.CWL.toString(), "namespace", "bar");
+        assertNotNull(containersApi.getContainer(tool.getId(), ""));
+    }
+
+    @Test
+    public void testDuplicateAmazonECRHostedToolCreation() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        String alreadyExistsMessage = "already exists";
+
+        // Simple case: the two tools have the same names and entry names
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        thrown.expectMessage(alreadyExistsMessage);
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+
+        // The two tools have different names and entry names, but the tool paths are the same
+        // Scenario 1:
+        // Tool 1 has name: 'foo/bar' and no entry name
+        // Tool 2 has name: 'foo' and entry name: 'bar'
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", null);
+        thrown.expectMessage(alreadyExistsMessage);
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "abcd1234", "bar");
+
+        // Scenario 2:
+        // Tool 1 has name: 'foo' and entry name: 'bar'
+        // Tool 2 has name: 'foo/bar' and no entry name
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", "bar");
+        thrown.expectMessage(alreadyExistsMessage);
+        hostedApi.createHostedTool(Registry.AMAZON_ECR.getDockerPath(), "foo/bar", io.openapi.model.DescriptorType.CWL.toString(), "wxyz6789", null);
     }
 
     @Test
@@ -2294,6 +2390,50 @@ public class WorkflowIT extends BaseIT {
         sourceFiles = user1WorkflowsOpenApi.getWorkflowVersionsSourcefiles(workflow.getId(), workflowVersion.getId(), null);
         Assert.assertNotNull(sourceFiles);
         Assert.assertEquals(1, sourceFiles.size());
+    }
+
+    /**
+     * This tests that you can get all workflows by path (ignores workflow name)
+     */
+    @Test
+    public void testGetAllWorkflowByPath() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        String path = "github.com/DockstoreTestUser2/nested-wdl";
+
+        io.dockstore.openapi.client.model.Workflow workflow1 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", "workflow1", "wdl", "/test.json");
+        assertEquals(path, workflow1.getPath());
+
+        io.dockstore.openapi.client.model.Workflow workflow2 = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", "workflow2", "wdl", "/test.json");
+        assertEquals(path, workflow2.getPath());
+
+        List<io.dockstore.openapi.client.model.Workflow> foundWorkflows = workflowsApi.getAllWorkflowByPath(path);
+        assertEquals(2, foundWorkflows.size());
+    }
+
+    /**
+     * This tests that you can get a workflows by full workflow path
+     */
+    @Test
+    public void testGetWorkflowByPath() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+
+        // Find a workflow with no workflow name
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", null, "wdl", "/test.json");
+        assertEquals("github.com/DockstoreTestUser2/nested-wdl", workflow.getFullWorkflowPath());
+        io.dockstore.openapi.client.model.Workflow foundWorkflow = workflowsApi.getWorkflowByPath(workflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, "");
+        assertEquals(workflow.getId(), foundWorkflow.getId());
+
+        // Find a workflow with a workflow name
+        workflow = workflowsApi.manualRegister("github", "DockstoreTestUser2/nested-wdl",
+                "/Dockstore.wdl", "foo", "wdl", "/test.json");
+        assertEquals("github.com/DockstoreTestUser2/nested-wdl/foo", workflow.getFullWorkflowPath());
+        foundWorkflow = workflowsApi.getWorkflowByPath(workflow.getFullWorkflowPath(), WorkflowSubClass.BIOWORKFLOW, "");
+        assertEquals(workflow.getId(), foundWorkflow.getId());
     }
 
     /**

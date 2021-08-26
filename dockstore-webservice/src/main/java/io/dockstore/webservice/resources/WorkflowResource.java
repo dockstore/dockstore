@@ -976,7 +976,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}")
-    @Operation(operationId = "getEntryByPath", description = "Get an entry by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getEntryByPath", summary = "Get an entry by path.", description = "Requires full path (including entry name if applicable).",
+            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get an entry by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getEntryByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
@@ -998,7 +999,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/entry/{repository}/published")
-    @Operation(operationId = "getPublishedEntryByPath", description = "Get a published entry by path.")
+    @Operation(operationId = "getPublishedEntryByPath", summary = "Get a published entry by path.", description = "Requires full path (including entry name if applicable).")
     @ApiOperation(nickname = "getPublishedEntryByPath", value = "Get a published entry by path.", notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getPublishedEntryByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, true);
@@ -1015,9 +1016,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
-    @Operation(operationId = "getAllWorkflowByPath", description = "Get a list of workflows by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getAllWorkflowByPath", summary = "Get a list of workflows by path.", description = "Do not include workflow name.",
+            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "getAllWorkflowByPath", value = "Get a list of workflows by path.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require workflow name.", response = Workflow.class, responseContainer = "List")
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Do not include workflow name.", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
@@ -1030,7 +1032,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/workflow/{repository}/published")
-    @Operation(operationId = "getPublishedWorkflowByPath", description = "Get a published workflow by path")
+    @Operation(operationId = "getPublishedWorkflowByPath", summary = "Get a published workflow by path", description = "Does not require workflow name.")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
         @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @ApiParam(value = "Version name", required = false) @QueryParam("versionName") String versionName) {

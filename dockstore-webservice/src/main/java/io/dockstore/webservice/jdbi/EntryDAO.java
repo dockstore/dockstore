@@ -74,6 +74,25 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public MutablePair<String, Entry> findEntryByPath(String path, boolean isPublished) {
+        final int minEntryNamePathLength = 4; // <registry>/<org>/<repo>/<entry-name>
+        final int pathLength = path.split("/").length;
+        // Determine which type of path to look for first: path with an entry name or path without an entry name
+        boolean hasEntryName = pathLength >= minEntryNamePathLength;
+
+        MutablePair<String, Entry> results = findEntryByPath(path, hasEntryName, isPublished);
+
+        if (pathLength >= minEntryNamePathLength && results == null) {
+            // If <repo> contains slashes, there are two scenarios that can form the same entry path. In the following scenarios, assume that <registry> and <org> are the same.
+            // Scenario 1: <repo> = 'foo', <entry-name> = 'bar'
+            // Scenario 2: <repo> = 'foo/bar', <entry-name> = NULL
+            // Need to try the opposite scenario if we couldn't find the entry using the initial scenario (i.e. if we first tried to find a path with an entry name, try to find one without).
+            results = findEntryByPath(path, !hasEntryName, isPublished);
+        }
+
+        return results;
+    }
+
+    public MutablePair<String, Entry> findEntryByPath(String path, boolean hasEntryName, boolean isPublished) {
         String queryString = "Entry.";
         if (isPublished) {
             queryString += "getPublishedEntryByPath";
@@ -82,7 +101,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         }
 
         // split path
-        String[] splitPath = Tool.splitPath(path);
+        String[] splitPath = Tool.splitPath(path, hasEntryName);
 
         // Not a valid path
         if (splitPath == null) {
