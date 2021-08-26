@@ -428,8 +428,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkCanRead(user, workflow);
 
         List<WorkflowVersion> versions = this.workflowVersionDAO.getWorkflowVersionsByWorkflowId(workflow.getId(), VERSION_PAGINATION_LIMIT, 0);
-        SortedSet<WorkflowVersion> setOfVersions = new TreeSet<>(versions);
-        return setOfVersions;
+        return new TreeSet<>(versions);
     }
 
     @PUT
@@ -1797,7 +1796,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getAliases()));
         }
         if (checkIncludes(include, IMAGES)) {
-            workflow.getWorkflowVersions().stream().filter(v -> v.isFrozen()).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
+            workflow.getWorkflowVersions().stream().filter(Version::isFrozen).forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getImages()));
         }
         if (checkIncludes(include, VERSIONS)) {
             Hibernate.initialize(workflow.getWorkflowVersions());
@@ -1996,7 +1995,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
         @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
-        LOG.info("Branch/tag " + gitReference + " pushed to " + repository + "(" + username + ")");
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Branch/tag " + Utilities.cleanForLogging(gitReference) + " pushed to " + Utilities.cleanForLogging(repository) + "(" + Utilities.cleanForLogging(username) + ")");
+        }
         githubWebhookRelease(repository, username, gitReference, installationId);
     }
 
@@ -2013,7 +2014,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Parameter(name = "repositories", description = "Comma-separated repository paths (ex. dockstore/dockstore-ui2) for all repositories installed", required = true) @FormParam("repositories") String repositories,
             @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
             @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
-        LOG.info("GitHub app installed on the repositories " + repositories + "(" + username + ")");
+        if (LOG.isInfoEnabled()) {
+            LOG.info("GitHub app installed on the repositories " + Utilities.cleanForLogging(repositories) + "(" + Utilities.cleanForLogging(username) + ")");
+        }
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
             LambdaEvent lambdaEvent = new LambdaEvent();
@@ -2041,7 +2044,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @QueryParam("username") String username,
             @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
             @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
-        LOG.info("Branch/tag " + gitReference + " deleted from " + repository);
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Branch/tag " + Utilities.cleanForLogging(gitReference) + " deleted from " + Utilities.cleanForLogging(repository));
+        }
         githubWebhookDelete(repository, gitReference, username);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
     }
