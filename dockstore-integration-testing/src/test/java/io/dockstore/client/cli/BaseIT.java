@@ -60,7 +60,7 @@ public class BaseIT {
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     protected static TestingPostgres testingPostgres;
     // This is not an admin
-    static final String OTHER_USERNAME = "OtherUser";
+    public static final String OTHER_USERNAME = "OtherUser";
 
     public static final String SERVICE = WorkflowSubClass.SERVICE.toString();
     public static final String BIOWORKFLOW = WorkflowSubClass.BIOWORKFLOW.toString();

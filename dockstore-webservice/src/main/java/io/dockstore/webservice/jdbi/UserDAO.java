@@ -17,6 +17,7 @@
 package io.dockstore.webservice.jdbi;
 
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.database.UserInfo;
 import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -103,5 +104,12 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
             return false;
         }
         return true;
+    }
+
+    public List<UserInfo> findAllGitHubUserInfo() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.database.UserInfo.findAllGitHubUserInfo"));
+    }
+    public List<UserInfo> findAllGoogleUserInfo() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.database.UserInfo.findAllGoogleUserInfo"));
     }
 }

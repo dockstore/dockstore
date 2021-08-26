@@ -4317,6 +4317,25 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/emails:
+    get:
+      description: Admin-only endpoint. Get the emails of all Dockstore users
+      operationId: getAllUserEmails
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserInfo'
+          description: A list of Dockstore users' emails.
+        "403":
+          description: Forbidden
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/github/events:
     get:
       description: Get all of the GitHub Events for the logged in user.
@@ -8817,6 +8836,17 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/Profile'
         username:
+          type: string
+    UserInfo:
+      type: object
+      properties:
+        dockstoreUsername:
+          type: string
+        thirdPartyEmail:
+          type: string
+        thirdPartyUsername:
+          type: string
+        tokenType:
           type: string
     Validation:
       type: object
