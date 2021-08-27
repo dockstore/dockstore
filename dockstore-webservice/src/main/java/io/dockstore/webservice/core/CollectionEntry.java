@@ -22,6 +22,7 @@ public class CollectionEntry implements Serializable {
     private List<String> descriptorTypes = new ArrayList<String>();
     private boolean verified = false;
     private List<String> labels = new ArrayList<String>();
+    private List<String> categoryNames = new ArrayList<String>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
@@ -119,5 +120,13 @@ public class CollectionEntry implements Serializable {
 
     public void setDescriptorTypes(List<String> descriptorTypes) {
         this.descriptorTypes = descriptorTypes;
+    }
+
+    public List<String> getCategoryNames() {
+        return categoryNames;
+    }
+
+    public void setCategoryNames(List<String> categoryNames) {
+        this.categoryNames = categoryNames;
     }
 }

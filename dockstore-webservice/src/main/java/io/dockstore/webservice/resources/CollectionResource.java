@@ -80,7 +80,7 @@ import org.slf4j.LoggerFactory;
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
 
@@ -211,7 +211,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
-    private void addCollectionEntriesToCollection(Collection collection) {
+    protected void addCollectionEntriesToCollection(Collection collection) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
         List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
@@ -231,6 +231,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
             entry.setLabels(labelStrings);
+            List<String> names = toolDAO.findCategoryNamesByEntryId(entry.getId());
+            entry.setCategoryNames(names);
             if (entry.getEntryType().equals("tool")) {
                 entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
             } else if (entry.getEntryType().equals("workflow")) {
@@ -242,7 +244,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
-    private void throwExceptionForNullCollection(Collection collection) {
+    protected void throwExceptionForNullCollection(Collection collection) {
         if (collection == null) {
             String msg = "Collection not found.";
             LOG.info(msg);

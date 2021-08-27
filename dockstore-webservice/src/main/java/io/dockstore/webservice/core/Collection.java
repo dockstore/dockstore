@@ -60,12 +60,14 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND organizationid = :organizationId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.getSpecialOrganizationId", query = "select id from Organization as o where o.status = 'SPECIAL'")
 })
 
 @NamedNativeQueries({
         // This is a native query since I couldn't figure out how to do a delete with a join in HQL
         @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId", query =
-                "DELETE FROM collection_entry_version WHERE collection_id = :collectionId")
+                "DELETE FROM collection_entry_version WHERE collection_id = :collectionId"),
+        @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.getCategoryNames", query = "select c.name from collection as c join organization as o on o.status = 'SPECIAL' and c.organizationid = o.id join collection_entry_version as cev on cev.collection_id = c.id group by c.name order by count(c.name) desc")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable, Aliasable {
