@@ -6,6 +6,8 @@ import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -28,6 +30,8 @@ import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Category endpoints
@@ -37,17 +41,22 @@ import org.hibernate.SessionFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "categories", description = ResourceConstants.CATEGORIES)
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
-public class CategoryResource extends CollectionResource {
+public class CategoryResource implements AuthenticatedResourceInterface {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CategoryResource.class);
 
     private final SessionFactory sessionFactory;
     private final CategoryDAO categoryDAO;
     private final CollectionDAO collectionDAO;
+    private final ToolDAO toolDAO;
+    private final WorkflowDAO workflowDAO;
 
     public CategoryResource(SessionFactory sessionFactory) {
-        super(sessionFactory);
         this.sessionFactory = sessionFactory;
         this.categoryDAO = new CategoryDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
     }
 
     @GET
@@ -76,9 +85,9 @@ public class CategoryResource extends CollectionResource {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
         Collection collection = collectionDAO.findByNameAndOrg(name, specialId);
-        throwExceptionForNullCollection(collection);
+        CollectionResource.throwExceptionForNullCollection(collection, LOG);
         Hibernate.initialize(collection.getAliases());
-        addCollectionEntriesToCollection(collection);
+        CollectionResource.addCollectionEntriesToCollection(collection, workflowDAO, toolDAO, sessionFactory);
         return collection;
     }
 }

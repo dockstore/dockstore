@@ -211,7 +211,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
-    protected void addCollectionEntriesToCollection(Collection collection) {
+    private void addCollectionEntriesToCollection(Collection collection) {
+        addCollectionEntriesToCollection(collection, workflowDAO, toolDAO, sessionFactory);
+    }
+
+    static void addCollectionEntriesToCollection(Collection collection, WorkflowDAO workflowDAO, ToolDAO toolDAO, SessionFactory sessionFactory) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
         List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
@@ -244,10 +248,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
-    protected void throwExceptionForNullCollection(Collection collection) {
+    private void throwExceptionForNullCollection(Collection collection) {
+        throwExceptionForNullCollection(collection, LOG);
+    }
+
+    static void throwExceptionForNullCollection(Collection collection, Logger log) {
         if (collection == null) {
             String msg = "Collection not found.";
-            LOG.info(msg);
+            log.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
     }
