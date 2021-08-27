@@ -206,6 +206,11 @@ public final class Utilities {
         }
     }
 
+    /**
+     * Cleans input of characters that might break-up logging output
+     * @param input
+     * @return
+     */
     public static String cleanForLogging(String input) {
         return input.replaceAll("[\n\r\t]", "_");
     }

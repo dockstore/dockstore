@@ -1996,7 +1996,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @FormParam("gitReference") String gitReference,
         @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         if (LOG.isInfoEnabled()) {
-            LOG.info("Branch/tag " + Utilities.cleanForLogging(gitReference) + " pushed to " + Utilities.cleanForLogging(repository) + "(" + Utilities.cleanForLogging(username) + ")");
+            LOG.info(String.format("Branch/tag %s pushed to %s(%s)", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), Utilities.cleanForLogging(username)));
         }
         githubWebhookRelease(repository, username, gitReference, installationId);
     }
@@ -2015,7 +2015,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Parameter(name = "username", description = "Username of user on GitHub who triggered action", required = true) @FormParam("username") String username,
             @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @FormParam("installationId") String installationId) {
         if (LOG.isInfoEnabled()) {
-            LOG.info("GitHub app installed on the repositories " + Utilities.cleanForLogging(repositories) + "(" + Utilities.cleanForLogging(username) + ")");
+            LOG.info(String.format("GitHub app installed on the repositories %s(%s)", Utilities.cleanForLogging(repositories), Utilities.cleanForLogging(username)));
         }
         Optional<User> triggerUser = Optional.ofNullable(userDAO.findByGitHubUsername(username));
         Arrays.asList(repositories.split(",")).stream().forEach(repository -> {
@@ -2045,7 +2045,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             @Parameter(name = "gitReference", description = "Full git reference for a GitHub branch/tag. Ex. refs/heads/master or refs/tags/v1.0", required = true) @QueryParam("gitReference") String gitReference,
             @Parameter(name = "installationId", description = "GitHub installation ID", required = true) @QueryParam("installationId") String installationId) {
         if (LOG.isInfoEnabled()) {
-            LOG.info("Branch/tag " + Utilities.cleanForLogging(gitReference) + " deleted from " + Utilities.cleanForLogging(repository));
+            LOG.info(String.format("Branch/tag %s deleted from %s", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository)));
         }
         githubWebhookDelete(repository, gitReference, username);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
