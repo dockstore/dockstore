@@ -1344,7 +1344,7 @@ paths:
     get:
       tags:
       - "categories"
-      summary: "TODO"
+      summary: "Retrieve a category by name."
       description: ""
       operationId: "getCategoryByName"
       produces:

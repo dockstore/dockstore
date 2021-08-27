@@ -73,7 +73,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/names/{name}")
-    @ApiOperation(nickname = "getCategoryByName", value = "TODO", response = Collection.class)
+    @ApiOperation(nickname = "getCategoryByName", value = "Retrieve a category by name.", response = Collection.class)
     @Operation(operationId = "getCategoryByName", summary = "Retrieve a category by name.", description = "Retrieve a category by name.")
     public Collection getCategoryByName(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,

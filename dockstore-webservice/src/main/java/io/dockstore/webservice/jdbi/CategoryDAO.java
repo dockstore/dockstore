@@ -20,7 +20,7 @@ public class CategoryDAO extends AbstractDockstoreDAO<Collection> {
     }
 
     public Long getSpecialOrganizationId() {
-        try { 
+        try {
             return ((Number)currentSession().getNamedQuery("io.dockstore.webservice.core.Collection.getSpecialOrganizationId").getSingleResult()).longValue();
         } catch (NoResultException e) {
             return (null);
