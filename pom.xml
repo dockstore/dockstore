@@ -660,7 +660,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest
+                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest
                 </excludeGroups>
             </properties>
 
