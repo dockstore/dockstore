@@ -117,7 +117,6 @@
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
         <module>reports</module>
-        <module>swagger-java-discourse-client</module>
         <module>swagger-java-zenodo-client</module>
         <module>bom-internal</module>
     </modules>
