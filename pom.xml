@@ -114,7 +114,6 @@
         <module>swagger-java-client</module>
         <module>openapi-java-client</module>
         <module>swagger-java-quay-client</module>
-        <module>swagger-java-bitbucket-client</module>
         <module>swagger-java-sam-client</module>
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
