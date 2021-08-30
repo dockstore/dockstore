@@ -459,8 +459,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
-        } catch (ClassCastException ex) {
-            throw new CustomWebApplicationException("Could not parse workflow array from YML.", LAMBDA_FAILURE);
+        } catch (ClassCastException ex) { // This has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
+            // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
+            // so display a generic one.
+            final String message = "Error processing .dockstore.yml";
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
     }
 
@@ -616,7 +620,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
-            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.", LAMBDA_FAILURE);
+            final String message = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
         Instant endTime = Instant.now();
         long timeElasped = Duration.between(startTime, endTime).toSeconds();
