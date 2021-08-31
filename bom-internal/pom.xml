@@ -84,8 +84,9 @@ POM as their parent.
             <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
         </repository>
         <snapshotRepository>
-            <id>gitlab</id>
-            <url>https://gitlab.com/api/v4/projects/28926799/packages/maven</url>
+            <id>snapshots</id>
+            <name>artifacts.oicr.on.ca-snapshots</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
         </snapshotRepository>
     </distributionManagement>
 
