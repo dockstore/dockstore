@@ -2,6 +2,7 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.CategoryDAO;
@@ -22,6 +23,7 @@ import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -62,9 +64,20 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
+    @Path("")
+    @ApiOperation(nickname = "getCategories", value = "Retrieve all categories.", response = Category.class, responseContainer = "List")
+    @Operation(operationId = "getCategories", summary = "Retrieve all categories.", description = "Retrieve all categories.")
+    public List<Category> getCategories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
+        List<Collection> collections = collectionDAO.findAllByOrg(getSpecialId());
+        return collections.stream().map(c -> new Category(c)).collect(Collectors.toList());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
     @Path("/names")
     @ApiOperation(nickname = "getCategoryNames", value = "Retrieve all categories by name.", response = String.class, responseContainer = "List")
-    @Operation(operationId = "getCategoryNames", summary = "Retrieve all categories by name.", description = "Retrieve all categories by name, sorted by category containing most entries first.")
+    @Operation(operationId = "getCategoryNames", summary = "Retrieve all categories by name.", description = "Retrieve all categories by name, sorted by the category containing the most entries first.")
     public List<String> getCategoryNames(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
         return categoryDAO.getCategoryNames();
     }
@@ -73,21 +86,25 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/names/{name}")
-    @ApiOperation(nickname = "getCategoryByName", value = "Retrieve a category by name.", response = Collection.class)
+    @ApiOperation(nickname = "getCategoryByName", value = "Retrieve a category by name.", response = Category.class)
     @Operation(operationId = "getCategoryByName", summary = "Retrieve a category by name.", description = "Retrieve a category by name.")
-    public Collection getCategoryByName(
+    public Category getCategoryByName(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Category name.", required = true) @Parameter(description = "Category name.", name = "name", in = ParameterIn.PATH, required = true) @PathParam("name") String name) {
+        Collection collection = collectionDAO.findByNameAndOrg(name, getSpecialId());
+        CollectionResource.throwExceptionForNullCollection(collection, LOG);
+        Hibernate.initialize(collection.getAliases());
+        CollectionResource.addCollectionEntriesToCollection(collection, workflowDAO, toolDAO, sessionFactory);
+        return (new Category(collection));
+    }
+
+    private Long getSpecialId() {
         Long specialId = categoryDAO.getSpecialOrganizationId();
         if (specialId == null) {
             String msg = "Category not found.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
-        Collection collection = collectionDAO.findByNameAndOrg(name, specialId);
-        CollectionResource.throwExceptionForNullCollection(collection, LOG);
-        Hibernate.initialize(collection.getAliases());
-        CollectionResource.addCollectionEntriesToCollection(collection, workflowDAO, toolDAO, sessionFactory);
-        return collection;
+        return specialId;
     }
 }

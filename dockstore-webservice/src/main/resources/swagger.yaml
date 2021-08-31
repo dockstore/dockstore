@@ -1323,6 +1323,23 @@ paths:
           description: "Invalid token value"
       security:
       - BEARER: []
+  /categories:
+    get:
+      tags:
+      - "categories"
+      summary: "Retrieve all categories."
+      description: ""
+      operationId: "getCategories"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Category"
   /categories/names:
     get:
       tags:
@@ -1359,7 +1376,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Collection"
+            $ref: "#/definitions/Category"
   /containers/hostedEntry:
     post:
       tags:
@@ -6409,6 +6426,66 @@ definitions:
           format: "int64"
           readOnly: true
       description: "This describes one workflow in the dockstore"
+  Category:
+    type: "object"
+    properties:
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      description:
+        type: "string"
+      displayName:
+        type: "string"
+      entries:
+        type: "array"
+        readOnly: true
+        items:
+          $ref: "#/definitions/CategoryEntry"
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+      toolsLength:
+        type: "integer"
+        format: "int64"
+      topic:
+        type: "string"
+      workflowsLength:
+        type: "integer"
+        format: "int64"
+  CategoryEntry:
+    type: "object"
+    properties:
+      categoryNames:
+        type: "array"
+        items:
+          type: "string"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      descriptorTypes:
+        type: "array"
+        items:
+          type: "string"
+      entryPath:
+        type: "string"
+      entryType:
+        type: "string"
+      id:
+        type: "integer"
+        format: "int64"
+      labels:
+        type: "array"
+        items:
+          type: "string"
+      verified:
+        type: "boolean"
+      versionName:
+        type: "string"
   Checksum:
     type: "object"
     properties:

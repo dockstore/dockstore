@@ -841,10 +841,26 @@ paths:
       - bearer: []
       tags:
       - tokens
+  /categories:
+    get:
+      description: Retrieve all categories.
+      operationId: getCategories
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: default response
+      summary: Retrieve all categories.
+      tags:
+      - categories
   /categories/names:
     get:
-      description: "Retrieve all categories by name, sorted by category containing\
-        \ most entries first."
+      description: "Retrieve all categories by name, sorted by the category containing\
+        \ the most entries first."
       operationId: getCategoryNames
       responses:
         default:
@@ -874,7 +890,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/Category'
           description: default response
       summary: Retrieve a category by name.
       tags:
@@ -7043,6 +7059,65 @@ components:
           parent_id:
             type: integer
             format: int64
+    Category:
+      type: object
+      properties:
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        displayName:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryEntry'
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        toolsLength:
+          type: integer
+          format: int64
+        topic:
+          type: string
+        workflowsLength:
+          type: integer
+          format: int64
+    CategoryEntry:
+      type: object
+      properties:
+        categoryNames:
+          type: array
+          items:
+            type: string
+        dbUpdateDate:
+          type: string
+          format: date-time
+        descriptorTypes:
+          type: array
+          items:
+            type: string
+        entryPath:
+          type: string
+        entryType:
+          type: string
+        id:
+          type: integer
+          format: int64
+        labels:
+          type: array
+          items:
+            type: string
+        verified:
+          type: boolean
+        versionName:
+          type: string
     Checksum:
       type: object
       description: The checksum value and its type
