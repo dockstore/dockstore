@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +71,16 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @Operation(operationId = "getCategories", summary = "Retrieve all categories.", description = "Retrieve all categories.")
     public List<Category> getCategories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
         List<Collection> collections = collectionDAO.findAllByOrg(getSpecialId());
+        // This code is duplicated from
+        // CollectionsResource.getCollectionsFromOrganization
+        // If we like the proof-of-concept, we can refactor appropriately.
+        Session currentSession = sessionFactory.getCurrentSession();
+        collections.forEach(collection -> {
+            currentSession.evict(collection);
+            collection.setEntries(new HashSet<>());
+            collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
+            collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
+        });
         return collections.stream().map(c -> new Category(c)).collect(Collectors.toList());
     }
 
@@ -92,6 +104,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Category name.", required = true) @Parameter(description = "Category name.", name = "name", in = ParameterIn.PATH, required = true) @PathParam("name") String name) {
         Collection collection = collectionDAO.findByNameAndOrg(name, getSpecialId());
+        // See note in getCategories() above.
         CollectionResource.throwExceptionForNullCollection(collection, LOG);
         Hibernate.initialize(collection.getAliases());
         CollectionResource.addCollectionEntriesToCollection(collection, workflowDAO, toolDAO, sessionFactory);
