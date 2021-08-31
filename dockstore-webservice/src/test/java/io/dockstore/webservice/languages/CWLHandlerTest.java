@@ -15,12 +15,9 @@ import io.dockstore.webservice.languages.LanguageHandlerInterface.DockerSpecifie
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -263,38 +260,6 @@ public class CWLHandlerTest {
         Assert.assertEquals("sha256:123456789abc", handler.getSpecifierName("foo@sha256:123456789abc", DockerSpecifier.DIGEST));
         Assert.assertEquals("sha256:123456789abc", handler.getSpecifierName("ghcr.io/foo/bar/test@sha256:123456789abc", DockerSpecifier.DIGEST));
         Assert.assertEquals("sha256:123456789abc", handler.getSpecifierName("ghcr.io/foo/bar/test:1@sha256:123456789abc", DockerSpecifier.DIGEST));
-    }
-
-    /**
-     * Test that the calculated digest matches the actual digest of the image.
-     * @throws URISyntaxException
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    @Test
-    public void testCalculateDockerImageDigest() throws URISyntaxException, IOException, InterruptedException {
-        final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
-        // GHCR image used: ghcr.io/helm/tiller@sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f (associated tag is 'v2.17.0')
-        String repo = "helm/tiller";
-        String digest = "sha256:4c43eb385032945cad047d2350e4945d913b90b3ab43ee61cecb32a495c6df0f";
-        Optional<String> token = handler.getDockerToken(Registry.GITHUB_CONTAINER_REGISTRY, repo);
-        Assert.assertTrue(token.isPresent());
-        Optional<HttpResponse<String>> manifestResponse = handler.getDockerManifest(token.get(), Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath(), repo, digest);
-        Assert.assertEquals(HttpStatus.SC_OK, manifestResponse.get().statusCode());
-        String manifestBody = manifestResponse.get().body();
-        String calculatedDigest = "sha256:" + handler.calculateDockerImageDigest(manifestBody);
-        Assert.assertEquals(digest, calculatedDigest);
-
-        // Amazon ECR image used: public.ecr.aws/nginx/unit:1.24.0-minimal
-        repo = "nginx/unit";
-        digest = "sha256:5711186c4c24cf544c1d6ea1f64de288fc3d1f47bc506cae251a75047b15a89a";
-        token = handler.getDockerToken(Registry.AMAZON_ECR, repo);
-        Assert.assertTrue(token.isPresent());
-        manifestResponse = handler.getDockerManifest(token.get(), Registry.AMAZON_ECR.getDockerPath(), repo, digest);
-        Assert.assertEquals(HttpStatus.SC_OK, manifestResponse.get().statusCode());
-        manifestBody = manifestResponse.get().body();
-        calculatedDigest = "sha256:" + handler.calculateDockerImageDigest(manifestBody);
-        Assert.assertEquals(digest, calculatedDigest);
     }
 
     @Test

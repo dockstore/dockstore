@@ -15,10 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-
 import com.google.common.base.Strings;
-import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
@@ -43,6 +40,7 @@ import io.dockstore.webservice.core.dockerhub.DockerHubTag;
 import io.dockstore.webservice.core.dockerhub.Results;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.DAGHelper;
+import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.swagger.quay.client.ApiClient;
@@ -52,13 +50,8 @@ import io.swagger.quay.client.api.RepositoryApi;
 import io.swagger.quay.client.model.QuayRepo;
 import io.swagger.quay.client.model.QuayTag;
 import java.io.IOException;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.Reader;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,6 +68,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.HttpHeaders;
+import okhttp3.Response;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -90,13 +84,10 @@ import org.yaml.snakeyaml.error.YAMLException;
 public interface LanguageHandlerInterface {
     String QUAY_URL = "https://quay.io/api/v1/";
     String DOCKERHUB_URL = AbstractImageRegistry.DOCKERHUB_URL;
-    String DOCKER_V2_IMAGE_MANIFEST_MEDIA_TYPE = "application/vnd.docker.distribution.manifest.v2+json";
-    String DOCKER_V2_IMAGE_MANIFEST_LIST_MEDIA_TYPE = "application/vnd.docker.distribution.manifest.list.v2+json";
-    String OCI_IMAGE_MANIFEST_MEDIA_TYPE = "application/vnd.oci.image.manifest.v1+json";
-    String OCI_IMAGE_INDEX_MEDIA_TYPE = "application/vnd.oci.image.index.v1+json";
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
     ApiClient API_CLIENT = Configuration.getDefaultApiClient();
+    DockerRegistryAPIHelper DOCKER_REGISTRY_API_HELPER = new DockerRegistryAPIHelper();
     // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
     // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
     Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
@@ -721,31 +712,31 @@ public interface LanguageHandlerInterface {
         String imageNameMessage = String.format("%s image %s specified by %s %s", registry.getFriendlyName(), repo, specifierType, specifierName);
 
         // Get token with pull access to use for subsequent Docker Registry HTTP API V2 calls
-        Optional<String> token = getDockerToken(registry, repo);
+        Optional<String> token = DOCKER_REGISTRY_API_HELPER.getDockerToken(registry.getDockerPath(), repo);
         if (token.isEmpty()) {
             LOG.error("Could not retrieve token for {} repository {}", registry.getFriendlyName(), repo);
             return images;
         }
 
         // Get manifest for image. There are two types of manifests: image manifest and manifest list. Manifest list is used for multi-arch images.
-        Optional<HttpResponse<String>> manifestResponse = getDockerManifest(token.get(), registry.getDockerPath(), repo, specifierName);
+        Optional<Response> manifestResponse = DOCKER_REGISTRY_API_HELPER.getDockerManifest(token.get(), registry.getDockerPath(), repo, specifierName);
         if (manifestResponse.isEmpty()) {
             LOG.error("Could not retrieve manifest for {}", imageNameMessage);
             return images;
         }
 
         // Check what type of manifest was returned and whether the image is multi-arch
-        Optional<String> contentTypeHeader = manifestResponse.get().headers().firstValue(HttpHeaders.CONTENT_TYPE);
-        if (contentTypeHeader.isEmpty()) {
+        String contentTypeHeader = manifestResponse.get().headers().get(HttpHeaders.CONTENT_TYPE);
+        if (contentTypeHeader == null) {
             LOG.error("Could not retrieve Content-Type header from manifest response for {}", imageNameMessage);
             return images;
         }
 
-        String contentType = contentTypeHeader.get();
-        String manifestJson = manifestResponse.get().body();
+        String contentType = contentTypeHeader;
+        Reader manifestJson = manifestResponse.get().body().charStream();
         String digest;
 
-        if (contentType.equals(DOCKER_V2_IMAGE_MANIFEST_MEDIA_TYPE) || contentType.equals(OCI_IMAGE_MANIFEST_MEDIA_TYPE)) {
+        if (contentType.equals(DockerRegistryAPIHelper.DOCKER_V2_IMAGE_MANIFEST_MEDIA_TYPE) || contentType.equals(DockerRegistryAPIHelper.OCI_IMAGE_MANIFEST_MEDIA_TYPE)) {
             DockerImageManifest imageManifest = GSON.fromJson(manifestJson, DockerImageManifest.class);
 
             // Check that the image manifest is using schema version 2 because schema version 1 is deprecated and the JSON response is
@@ -756,12 +747,17 @@ public interface LanguageHandlerInterface {
             }
 
             // The manifest response may include a Docker-Content-Digest header, which is the digest of the image
-            Optional<String> digestHeader = manifestResponse.get().headers().firstValue("docker-content-digest");
-            if (digestHeader.isEmpty()) {
+            String digestHeader = manifestResponse.get().headers().get("docker-content-digest");
+            if (digestHeader == null) {
                 // Manually calculate the digest if not given in the header
-                digest = calculateDockerImageDigest(manifestJson);
+                digest = DOCKER_REGISTRY_API_HELPER.calculateDockerImageDigest(manifestResponse.get());
+
+                if (digest.isEmpty()) {
+                    LOG.error("Could not calculate digest for {}", imageNameMessage);
+                    return images;
+                }
             } else {
-                digest = digestHeader.get().split(":")[1];
+                digest = digestHeader.split(":")[1];
             }
             Checksum checksum = new Checksum("sha256", digest);
             List<Checksum> checksums = Collections.singletonList(checksum);
@@ -772,12 +768,12 @@ public interface LanguageHandlerInterface {
 
             // Download the blob for the config to get architecture and os information
             String configDigest = imageManifest.getConfig().getDigest();
-            Optional<HttpResponse<String>> configBlobResponse = getDockerBlob(token.get(), registry.getDockerPath(), repo, configDigest);
+            Optional<Response> configBlobResponse = DOCKER_REGISTRY_API_HELPER.getDockerBlob(token.get(), registry.getDockerPath(), repo, configDigest);
             if (configBlobResponse.isEmpty()) {
                 LOG.error("Could not retrieve the config blob for {}", imageNameMessage);
                 return images;
             }
-            DockerBlob configBlob = GSON.fromJson(configBlobResponse.get().body(), DockerBlob.class);
+            DockerBlob configBlob = GSON.fromJson(configBlobResponse.get().body().charStream(), DockerBlob.class);
             String arch = configBlob.getArchitecture();
             String os = configBlob.getOs();
 
@@ -804,12 +800,12 @@ public interface LanguageHandlerInterface {
                 List<Checksum> checksums = Collections.singletonList(checksum);
 
                 // Get manifest of each arch image to calculate the image's size. An image's size is the sum of the size of its layers
-                Optional<HttpResponse<String>> archImageManifestResponse = getDockerManifest(token.get(), registry.getDockerPath(), repo, manifestDigest);
+                Optional<Response> archImageManifestResponse = DOCKER_REGISTRY_API_HELPER.getDockerManifest(token.get(), registry.getDockerPath(), repo, manifestDigest);
                 if (archImageManifestResponse.isEmpty()) {
                     LOG.error("Could not get the arch image manifest for {}", imageNameMessage);
                     continue;
                 }
-                DockerImageManifest archImageManifest = GSON.fromJson(archImageManifestResponse.get().body(), DockerImageManifest.class);
+                DockerImageManifest archImageManifest = GSON.fromJson(archImageManifestResponse.get().body().charStream(), DockerImageManifest.class);
                 List<DockerLayer> imageLayers = Arrays.asList(archImageManifest.getLayers());
                 long imageSize = imageLayers.stream().mapToLong(DockerLayer::getSize).sum();
 
@@ -831,180 +827,6 @@ public interface LanguageHandlerInterface {
             }
         }
         return images;
-    }
-
-    /**
-     * Calculates the digest of an image by applying the SHA256 hash on the image's manifest body.
-     * Only use this for Docker V2 Schema 2 image manifests or OCI Schema 2 image manifests.
-     * Docker Schema 1 manifests require pre-processing before applying the SHA256 hash.
-     * Source for manifest calculation: https://docs.docker.com/registry/spec/api/#content-digests
-     *
-     * @param manifestBody Docker Registry V2 Schema 2 image manifest body
-     * @return Docker image digest
-     */
-    default String calculateDockerImageDigest(String manifestBody) {
-        return Hashing.sha256().hashString(manifestBody, StandardCharsets.UTF_8).toString();
-    }
-
-    /**
-     * Get an anonymous token with pull access to make Docker Registry HTTP API V2 calls.
-     * Source for token request specs: https://docs.docker.com/registry/spec/auth/token/#requesting-a-token
-     *
-     * @param registry
-     * @param repo
-     * @return token
-     */
-    default Optional<String> getDockerToken(Registry registry, String repo) {
-        String getTokenURL;
-        if (registry == Registry.AMAZON_ECR) {
-            getTokenURL = String.format("https://%s/token/?scope=repository:%s:pull&service=%s", registry.getDockerPath(), repo, registry.getDockerPath());
-        } else {
-            getTokenURL = String.format("https://%s/token?scope=repository:%s:pull&service=%s", registry.getDockerPath(), repo,
-                    registry.getDockerPath());
-        }
-
-        HttpResponse<String> tokenResponse;
-        try {
-            HttpRequest request = HttpRequest.newBuilder().uri(new URI(getTokenURL)).GET().build();
-            tokenResponse = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
-            LOG.error("Could not send token request GET {}", getTokenURL, ex);
-            return Optional.empty();
-        }
-
-        if (tokenResponse.statusCode() != HttpStatus.SC_OK) {
-            Optional<Map<String, String>> error = getDockerError(tokenResponse);
-            if (error.isPresent()) {
-                LOG.error("Blob response has error code {} '{}' with message '{}'", tokenResponse.statusCode(), error.get().get("code"), error.get().get("message"));
-            }
-            return Optional.empty();
-        }
-
-        Map<String, String> tokenMap = GSON.fromJson(tokenResponse.body(), Map.class);
-        return Optional.of(tokenMap.get("token"));
-    }
-
-    /**
-     * Get a Docker image's manifest by calling the Docker Registry HTTP API V2 endpoint: GET /v2/[repo]/manifests/[tag_or_digest]
-     *
-     * @param token Authentication token with pull access for the image's repository
-     * @param registryDockerPath
-     * @param repo
-     * @param specifierName Value of the specifier. Either a tag or a digest
-     * @return HttpResponse
-     */
-    default Optional<HttpResponse<String>> getDockerManifest(String token, String registryDockerPath, String repo, String specifierName) {
-        // Ex: https://ghcr.io/v2/<repo>/manifests/<tag_or_digest>
-        String getManifestURL = String.format("https://%s/v2/%s/manifests/%s", registryDockerPath, repo, specifierName);
-        String acceptHeader = String.join(",", DOCKER_V2_IMAGE_MANIFEST_MEDIA_TYPE, DOCKER_V2_IMAGE_MANIFEST_LIST_MEDIA_TYPE, OCI_IMAGE_MANIFEST_MEDIA_TYPE, OCI_IMAGE_INDEX_MEDIA_TYPE);
-        int tooManyRequestsCode = 429;
-
-        HttpResponse<String> manifestResponse;
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(getManifestURL))
-                    .header(HttpHeaders.ACCEPT, acceptHeader)
-                    .header(HttpHeaders.AUTHORIZATION, String.join(" ", JWT_SECURITY_DEFINITION_NAME, token))
-                    .GET()
-                    .build();
-
-            // Send request and retry if rate limit exceeded. This seems to happen occasionally for Amazon ECR images
-            boolean success = false;
-            int maxRetries = 3;
-            int retries = 0;
-            do {
-                long waitTime = getWaitTimeExp(retries);
-                if (retries > 0) {
-                    LOG.info("Retrying in {} milliseconds", waitTime);
-                }
-                Thread.sleep(waitTime);
-
-                manifestResponse = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
-                if (manifestResponse.statusCode() == HttpStatus.SC_OK) {
-                    success = true;
-                } else {
-                    Optional<Map<String, String>> error = getDockerError(manifestResponse);
-                    if (error.isPresent()) {
-                        LOG.error("Manifest response has error code {} '{}' with message '{}'", manifestResponse.statusCode(), error.get().get("code"), error.get().get("message"));
-                    }
-                }
-            } while (!success && (retries++ < maxRetries) && (manifestResponse.statusCode() == tooManyRequestsCode));
-            if (!success) {
-                LOG.error("Could not get manifest after retrying for {} times", retries);
-                return Optional.empty();
-            }
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
-            LOG.error("Could not send manifest request GET {}", getManifestURL, ex);
-            return Optional.empty();
-        }
-
-        return Optional.of(manifestResponse);
-    }
-
-    /*
-     * Returns the next wait interval, in milliseconds, using an exponential
-     * backoff algorithm.
-     */
-    default long getWaitTimeExp(int retryCount) {
-        if (0 == retryCount) {
-            return 0;
-        }
-
-        long waitTime = ((long) Math.pow(2, retryCount) * 100L);
-
-        return waitTime;
-    }
-
-    /**
-     * Get a blob specified by digest for a Docker image by calling the Docker Registry HTTP API V2 endpoint: GET /v2/[repo]/blobs/[digest]
-     *
-     * @param token Authentication token with pull access for the image's repository
-     * @param registryDockerPath
-     * @param repo
-     * @param digest SHA256 digest of the blob to download
-     * @return HttpResponse
-     */
-    default Optional<HttpResponse<String>> getDockerBlob(String token, String registryDockerPath, String repo, String digest) {
-        // Ex: https://ghcr.io/v2/<repo>/blobs/<digest>
-        String getBlobURL = String.format("https://%s/v2/%s/blobs/%s", registryDockerPath, repo, digest);
-        HttpResponse<String> blobResponse;
-        try {
-            HttpRequest request = HttpRequest.newBuilder().uri(new URI(getBlobURL)).header(HttpHeaders.AUTHORIZATION, String.join(" ", JWT_SECURITY_DEFINITION_NAME, token)).GET().build();
-            // This endpoint may issue a 307 redirect to another service to download the blob
-            blobResponse = HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.NORMAL) // NORMAL: Always redirect, except from HTTPS URLs to HTTP URLs
-                    .proxy(ProxySelector.getDefault())
-                    .build()
-                    .send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
-            LOG.error("Could not send blob request GET {}", getBlobURL, ex);
-            return Optional.empty();
-        }
-
-        if (blobResponse.statusCode() != HttpStatus.SC_OK) {
-            Optional<Map<String, String>> error = getDockerError(blobResponse);
-            if (error.isPresent()) {
-                LOG.error("Blob response has error code {} '{}' with message '{}'", blobResponse.statusCode(), error.get().get("code"), error.get().get("message"));
-            }
-            return Optional.empty();
-        }
-        return Optional.of(blobResponse);
-    }
-
-    /**
-     * Gets the error map of an unsuccessful Docker Registry HTTP API V2 response
-     * Failures are reported as part of 4xx responses, in a json response body (https://docs.docker.com/registry/spec/api/#errors)
-     *
-     * @param response Docker Registry HTTP API V2 response
-     * @return an error map of the response if it exists
-     */
-    default Optional<Map<String, String>> getDockerError(HttpResponse<String> response) {
-        Map<String, List<Map<String, String>>> errorMap = GSON.fromJson(response.body(), Map.class);
-        List<Map<String, String>> errors = errorMap.get("errors");
-        if (errors != null) {
-            return Optional.of(errors.get(0));
-        }
-        return Optional.empty();
     }
 
     default Set<Image> getImagesFromDockerHub(final String repo, final DockerSpecifier specifierType, final String specifierName) {
