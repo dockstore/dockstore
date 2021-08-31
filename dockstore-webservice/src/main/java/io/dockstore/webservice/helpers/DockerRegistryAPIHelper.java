@@ -20,7 +20,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
-import io.dockstore.common.Registry;
 import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import java.io.IOException;
