@@ -1,13 +1,9 @@
 package io.dockstore.webservice.jdbi;
 
 import io.dockstore.webservice.core.Collection;
-// import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
 import javax.persistence.NoResultException;
-// import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-
-// import org.hibernate.query.Query;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class CategoryDAO extends AbstractDockstoreDAO<Collection> {

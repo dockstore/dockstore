@@ -80,7 +80,7 @@ import org.slf4j.LoggerFactory;
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
 
@@ -211,11 +211,17 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
-    private void addCollectionEntriesToCollection(Collection collection) {
-        addCollectionEntriesToCollection(collection, workflowDAO, toolDAO, sessionFactory);
+    void setSummaryFieldsOfCollection(Collection collection) {
+        Session currentSession = sessionFactory.getCurrentSession();
+        currentSession.evict(collection);
+        // Ensure that entries is empty
+        // This is probably unnecessary
+        collection.setEntries(new HashSet<>());
+        collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
+        collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
     }
 
-    static void addCollectionEntriesToCollection(Collection collection, WorkflowDAO workflowDAO, ToolDAO toolDAO, SessionFactory sessionFactory) {
+    void addCollectionEntriesToCollection(Collection collection) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
         List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
@@ -248,14 +254,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
-    private void throwExceptionForNullCollection(Collection collection) {
-        throwExceptionForNullCollection(collection, LOG);
-    }
-
-    static void throwExceptionForNullCollection(Collection collection, Logger log) {
+    void throwExceptionForNullCollection(Collection collection) {
         if (collection == null) {
             String msg = "Collection not found.";
-            log.info(msg);
+            LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
     }
@@ -433,22 +435,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
 
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
-        Session currentSession = sessionFactory.getCurrentSession();
-        if (checkIncludes(include, "entries")) {
-            collections.forEach(collection -> {
-                currentSession.evict(collection);
+        boolean includeEntries = checkIncludes(include, "entries");
+        collections.forEach(collection -> {
+            if (includeEntries) {
                 addCollectionEntriesToCollection(collection);
-            });
-        } else {
-            // Ensure that entries is empty
-            // This is probably unnecessary
-            collections.forEach(collection -> {
-                currentSession.evict(collection);
-                collection.setEntries(new HashSet<>());
-                collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
-                collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
-            });
-        }
+            } else {
+                setSummaryFieldsOfCollection(collection);
+            }
+        });
         return collections;
     }
 

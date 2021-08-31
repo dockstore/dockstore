@@ -1,10 +1,6 @@
 package io.dockstore.webservice.core;
 
-// import io.dockstore.common.SourceControl;
-// import io.swagger.annotations.ApiModelProperty;
-// import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-// import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Transient;

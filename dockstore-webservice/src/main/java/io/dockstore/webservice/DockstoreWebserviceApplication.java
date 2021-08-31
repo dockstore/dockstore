@@ -382,11 +382,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
-        environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
+
+        CollectionResource collectionResource = new CollectionResource(getHibernate().getSessionFactory());
+        environment.jersey().register(collectionResource);
         environment.jersey().register(new EventResource(eventDAO, userDAO));
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(new CloudInstanceResource(getHibernate().getSessionFactory()));
-        environment.jersey().register(new CategoryResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new CategoryResource(getHibernate().getSessionFactory(), collectionResource));
 
         // disable odd extra endpoints showing up
         final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().prettyPrint(true);
