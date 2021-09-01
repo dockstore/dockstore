@@ -380,7 +380,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             transaction.rollback();
         } else {
             // I don't think this should ever happen
-            LOG.error("Transaction is not active or cannot be rolled back. Active: {0}; Can rollback: {1}", isActive, canRollback);
+            LOG.error("Transaction is not active or cannot be rolled back. Active: {}; Can rollback: {}", isActive, canRollback);
         }
         sessionFactory.getCurrentSession().beginTransaction();
     }
