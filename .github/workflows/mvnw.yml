@@ -23,3 +23,7 @@ jobs:
            ${{ runner.os }}-maven-
       - name: Build with mvnw
         run: ./mvnw clean install -DskipTests
+      - name: Deploy with mvnw
+        run: ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
+        env: 
+          SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.SNAPSHOT_DEPLOY_TOKEN }}
