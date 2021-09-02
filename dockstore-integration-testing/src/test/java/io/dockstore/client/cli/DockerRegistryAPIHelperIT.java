@@ -14,23 +14,43 @@
  *  limitations under the License.
  */
 
-package io.dockstore.webservice.helpers;
+package io.dockstore.client.cli;
 
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.Registry;
-import java.io.IOException;
-import java.net.URISyntaxException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
+import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.Optional;
 import okhttp3.Response;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
-public class DockerRegistryAPIHelperTest {
-    
+@Category(NonConfidentialTest.class)
+public class DockerRegistryAPIHelperIT {
+
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+            DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+
+
+    @Before
+    public void setUp() throws Exception {
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        SUPPORT.getEnvironment().healthChecks().shutdown();
+        SUPPORT.after();
+    }
+
     /**
      * Test that the calculated digest matches the actual digest of the image.
-     * @throws URISyntaxException
-     * @throws IOException
-     * @throws InterruptedException
      */
     @Test
     public void testCalculateDockerImageDigest() {
