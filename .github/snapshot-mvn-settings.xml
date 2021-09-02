@@ -1,16 +1,6 @@
 <settings>
   <servers>
     <server>
-<!--      <id>gitlab</id>-->
-<!--      <configuration>-->
-<!--        <httpHeaders>-->
-<!--          <property>-->
-<!--            <name>Deploy-Token</name>-->
-<!--            <value>${env.SNAPSHOT_DEPLOY_TOKEN}</value>-->
-<!--          </property>-->
-<!--        </httpHeaders>-->
-<!--      </configuration>-->
-
       <id>snapshots</id>
       <username>dockstore-snapshot-bot</username>
       <password>${env.SNAPSHOT_DEPLOY_TOKEN}</password>

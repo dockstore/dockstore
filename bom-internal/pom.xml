@@ -76,7 +76,7 @@ POM as their parent.
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
     </properties>
-    <!-- This section is identical to the root pom.xml -->
+    <!-- This section should be identical to the root pom.xml -->
     <distributionManagement>
         <repository>
             <id>central</id>
