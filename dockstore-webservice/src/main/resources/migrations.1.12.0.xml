@@ -96,4 +96,8 @@
             alter table sourcefile enable row level security;
         </sql>
     </changeSet>
+    <changeSet author="natalieperez (generated)" id="unique_collection_display_names_per_org">
+        <addUniqueConstraint columnNames="organizationid, displayname" constraintName="unique_collection_display_name" tableName="collection"/>
+        <dropUniqueConstraint constraintName="uk_collDisplayName" tableName="collection"/>
+    </changeSet>
 </databaseChangeLog>
