@@ -20,7 +20,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
-import io.dockstore.webservice.CacheHitListener;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response.Status.Family;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -38,21 +38,14 @@ public final class DockerRegistryAPIHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRegistryAPIHelper.class);
     private static final Gson GSON = new Gson();
-    private final OkHttpClient client;
+    private static final OkHttpClient CLIENT = DockstoreWebserviceApplication.getOkHttpClient();
 
     public static final String DOCKER_V2_IMAGE_MANIFEST_MEDIA_TYPE = "application/vnd.docker.distribution.manifest.v2+json";
     public static final String DOCKER_V2_IMAGE_MANIFEST_LIST_MEDIA_TYPE = "application/vnd.docker.distribution.manifest.list.v2+json";
     public static final String OCI_IMAGE_MANIFEST_MEDIA_TYPE = "application/vnd.oci.image.manifest.v1+json";
     public static final String OCI_IMAGE_INDEX_MEDIA_TYPE = "application/vnd.oci.image.index.v1+json";
 
-    public DockerRegistryAPIHelper() {
-        // this code is duplicate from DockstoreWebserviceApplication, except this is a lot faster for unknown reasons ...
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-        builder.eventListener(new CacheHitListener(DockerRegistryAPIHelper.class.getSimpleName(), "Docker Registry HTTP API V2"));
-
-        // use general cache
-        builder.cache(DockstoreWebserviceApplication.getCache(null));
-        this.client = builder.build();
+    private DockerRegistryAPIHelper() {
     }
 
     /**
@@ -63,13 +56,13 @@ public final class DockerRegistryAPIHelper {
      * @param repo
      * @return token
      */
-    public Optional<String> getDockerToken(String registryDockerPath, String repo) {
+    public static Optional<String> getDockerToken(String registryDockerPath, String repo) {
         String getTokenURL = String.format("https://%s/token?scope=repository:%s:pull&service=%s", registryDockerPath, repo, registryDockerPath);
         Request request = new Request.Builder().url(getTokenURL).build();
 
         Response tokenResponse;
         try {
-            tokenResponse = client.newCall(request).execute();
+            tokenResponse = CLIENT.newCall(request).execute();
         } catch (IOException ex) {
             LOG.error("Could not send token request GET {}", getTokenURL, ex);
             return Optional.empty();
@@ -77,12 +70,9 @@ public final class DockerRegistryAPIHelper {
 
         if (tokenResponse.isSuccessful()) {
             Map<String, String> tokenMap = GSON.fromJson(tokenResponse.body().charStream(), Map.class);
-            return Optional.of(tokenMap.get("token"));
+            return Optional.ofNullable(tokenMap.get("token"));
         } else {
-            Optional<Map<String, String>> error = getDockerError(tokenResponse);
-            if (error.isPresent()) {
-                LOG.error("Token response has error code {} '{}' with message '{}'", tokenResponse.code(), error.get().get("code"), error.get().get("message"));
-            }
+            LOG.error(getDockerErrorMessage(tokenResponse));
             return Optional.empty();
         }
     }
@@ -97,7 +87,7 @@ public final class DockerRegistryAPIHelper {
      * @return HttpResponse
      */
     @SuppressWarnings("checkstyle:MagicNumber")
-    public Optional<Response> getDockerManifest(String token, String registryDockerPath, String repo, String specifierName) {
+    public static Optional<Response> getDockerManifest(String token, String registryDockerPath, String repo, String specifierName) {
         // Ex: https://ghcr.io/v2/<repo>/manifests/<tag_or_digest>
         String getManifestURL = String.format("https://%s/v2/%s/manifests/%s", registryDockerPath, repo, specifierName);
         String acceptHeader = String.join(",", DOCKER_V2_IMAGE_MANIFEST_MEDIA_TYPE, DOCKER_V2_IMAGE_MANIFEST_LIST_MEDIA_TYPE, OCI_IMAGE_MANIFEST_MEDIA_TYPE, OCI_IMAGE_INDEX_MEDIA_TYPE);
@@ -122,22 +112,23 @@ public final class DockerRegistryAPIHelper {
                 }
                 Thread.sleep(waitTime);
 
-                manifestResponse = client.newCall(request).execute();
+                manifestResponse = CLIENT.newCall(request).execute();
                 if (manifestResponse.isSuccessful()) {
                     success = true;
                 } else {
-                    Optional<Map<String, String>> error = getDockerError(manifestResponse);
-                    if (error.isPresent()) {
-                        LOG.error("Manifest response has error code {} '{}' with message '{}'", manifestResponse.code(), error.get().get("code"), error.get().get("message"));
-                    }
+                    LOG.error(getDockerErrorMessage(manifestResponse));
                 }
             } while (!success && (retries++ < maxRetries) && (manifestResponse.code() == tooManyRequestsCode));
             if (!success) {
                 LOG.error("Could not get manifest after retrying for {} times", retries);
                 return Optional.empty();
             }
-        } catch (IOException | InterruptedException ex) {
+        } catch (IOException ex) {
             LOG.error("Could not send manifest request GET {}", getManifestURL, ex);
+            return Optional.empty();
+        } catch (InterruptedException ex) {
+            LOG.error("Could not send manifest request GET {}", getManifestURL, ex);
+            Thread.currentThread().interrupt();
             return Optional.empty();
         }
 
@@ -154,9 +145,7 @@ public final class DockerRegistryAPIHelper {
             return 0;
         }
 
-        long waitTime = ((long) Math.pow(2, retryCount) * 100L);
-
-        return waitTime;
+        return ((long) Math.pow(2, retryCount) * 100L);
     }
 
     /**
@@ -168,7 +157,7 @@ public final class DockerRegistryAPIHelper {
      * @param digest SHA256 digest of the blob to download
      * @return HttpResponse
      */
-    public Optional<Response> getDockerBlob(String token, String registryDockerPath, String repo, String digest) {
+    public static Optional<Response> getDockerBlob(String token, String registryDockerPath, String repo, String digest) {
         // Ex: https://ghcr.io/v2/<repo>/blobs/<digest>
         String getBlobURL = String.format("https://%s/v2/%s/blobs/%s", registryDockerPath, repo, digest);
 
@@ -180,7 +169,7 @@ public final class DockerRegistryAPIHelper {
         Response blobResponse;
         try {
             // This endpoint may issue a 307 redirect to another service to download the blob
-            blobResponse = client.newCall(request).execute();
+            blobResponse = CLIENT.newCall(request).execute();
         } catch (IOException ex) {
             LOG.error("Could not send blob request GET {}", getBlobURL, ex);
             return Optional.empty();
@@ -189,28 +178,28 @@ public final class DockerRegistryAPIHelper {
         if (blobResponse.isSuccessful()) {
             return Optional.of(blobResponse);
         } else {
-            Optional<Map<String, String>> error = getDockerError(blobResponse);
-            if (error.isPresent()) {
-                LOG.error("Blob response has error code {} '{}' with message '{}'", blobResponse.code(), error.get().get("code"), error.get().get("message"));
-            }
+            LOG.error(getDockerErrorMessage(blobResponse));
             return Optional.empty();
         }
     }
 
     /**
-     * Gets the error map of an unsuccessful Docker Registry HTTP API V2 response
-     * Failures are reported as part of 4xx responses, in a json response body (https://docs.docker.com/registry/spec/api/#errors)
+     * Returns an error message for an unsuccessful Docker Registry HTTP API V2 response
+     * Actionable failures are reported as part of 4xx responses, in a json response body with the format defined in https://docs.docker.com/registry/spec/api/#errors
      *
      * @param response Docker Registry HTTP API V2 response
-     * @return an error map of the response if it exists
+     * @return an error message for the response
      */
-    public Optional<Map<String, String>> getDockerError(Response response) {
-        Map<String, List<Map<String, String>>> errorMap = GSON.fromJson(response.body().charStream(), Map.class);
-        List<Map<String, String>> errors = errorMap.get("errors");
-        if (errors != null) {
-            return Optional.of(errors.get(0));
+    public static String getDockerErrorMessage(Response response) {
+        // Check if it's a 4xx response because 4xx responses have a defined format for the json response body
+        if (Family.familyOf(response.code()) == Family.CLIENT_ERROR) {
+            Map<String, List<Map<String, String>>> errorMap = GSON.fromJson(response.body().charStream(), Map.class);
+            List<Map<String, String>> errors = errorMap.get("errors");
+            Map<String, String> error = errors.get(0);
+            return String.format("Response has error code %s '%s' with message '%s'", response.code(), error.get("code"), error.get("message"));
+        } else {
+            return "Response has error code " + response.code();
         }
-        return Optional.empty();
     }
 
     /**
@@ -222,7 +211,7 @@ public final class DockerRegistryAPIHelper {
      * @param manifestResponse Docker Registry V2 Schema 2 image manifest response
      * @return Docker image digest
      */
-    public String calculateDockerImageDigest(Response manifestResponse) {
+    public static String calculateDockerImageDigest(Response manifestResponse) {
         String manifestBodyString;
         try {
             manifestBodyString = manifestResponse.body().string();

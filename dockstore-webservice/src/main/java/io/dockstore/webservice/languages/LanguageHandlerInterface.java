@@ -87,7 +87,6 @@ public interface LanguageHandlerInterface {
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
     ApiClient API_CLIENT = Configuration.getDefaultApiClient();
-    DockerRegistryAPIHelper DOCKER_REGISTRY_API_HELPER = new DockerRegistryAPIHelper();
     // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
     // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
     Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
@@ -712,14 +711,14 @@ public interface LanguageHandlerInterface {
         String imageNameMessage = String.format("%s image %s specified by %s %s", registry.getFriendlyName(), repo, specifierType, specifierName);
 
         // Get token with pull access to use for subsequent Docker Registry HTTP API V2 calls
-        Optional<String> token = DOCKER_REGISTRY_API_HELPER.getDockerToken(registry.getDockerPath(), repo);
+        Optional<String> token = DockerRegistryAPIHelper.getDockerToken(registry.getDockerPath(), repo);
         if (token.isEmpty()) {
             LOG.error("Could not retrieve token for {} repository {}", registry.getFriendlyName(), repo);
             return images;
         }
 
         // Get manifest for image. There are two types of manifests: image manifest and manifest list. Manifest list is used for multi-arch images.
-        Optional<Response> manifestResponse = DOCKER_REGISTRY_API_HELPER.getDockerManifest(token.get(), registry.getDockerPath(), repo, specifierName);
+        Optional<Response> manifestResponse = DockerRegistryAPIHelper.getDockerManifest(token.get(), registry.getDockerPath(), repo, specifierName);
         if (manifestResponse.isEmpty()) {
             LOG.error("Could not retrieve manifest for {}", imageNameMessage);
             return images;
@@ -750,7 +749,7 @@ public interface LanguageHandlerInterface {
             String digestHeader = manifestResponse.get().headers().get("docker-content-digest");
             if (digestHeader == null) {
                 // Manually calculate the digest if not given in the header
-                digest = DOCKER_REGISTRY_API_HELPER.calculateDockerImageDigest(manifestResponse.get());
+                digest = DockerRegistryAPIHelper.calculateDockerImageDigest(manifestResponse.get());
 
                 if (digest.isEmpty()) {
                     LOG.error("Could not calculate digest for {}", imageNameMessage);
@@ -768,7 +767,7 @@ public interface LanguageHandlerInterface {
 
             // Download the blob for the config to get architecture and os information
             String configDigest = imageManifest.getConfig().getDigest();
-            Optional<Response> configBlobResponse = DOCKER_REGISTRY_API_HELPER.getDockerBlob(token.get(), registry.getDockerPath(), repo, configDigest);
+            Optional<Response> configBlobResponse = DockerRegistryAPIHelper.getDockerBlob(token.get(), registry.getDockerPath(), repo, configDigest);
             if (configBlobResponse.isEmpty()) {
                 LOG.error("Could not retrieve the config blob for {}", imageNameMessage);
                 return images;
@@ -800,7 +799,7 @@ public interface LanguageHandlerInterface {
                 List<Checksum> checksums = Collections.singletonList(checksum);
 
                 // Get manifest of each arch image to calculate the image's size. An image's size is the sum of the size of its layers
-                Optional<Response> archImageManifestResponse = DOCKER_REGISTRY_API_HELPER.getDockerManifest(token.get(), registry.getDockerPath(), repo, manifestDigest);
+                Optional<Response> archImageManifestResponse = DockerRegistryAPIHelper.getDockerManifest(token.get(), registry.getDockerPath(), repo, manifestDigest);
                 if (archImageManifestResponse.isEmpty()) {
                     LOG.error("Could not get the arch image manifest for {}", imageNameMessage);
                     continue;
