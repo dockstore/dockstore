@@ -61,6 +61,7 @@ import io.swagger.annotations.Api;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.kohsuke.github.GHRateLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -345,7 +346,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
-            sessionFactory.getCurrentSession().clear();
+            rollbackAndBeginNewTransaction();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(errorMessage);
@@ -357,7 +358,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
-            sessionFactory.getCurrentSession().clear();
+            rollbackAndBeginNewTransaction();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(ex.getMessage());
@@ -365,6 +366,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    /**
+     * Rollback current DB transaction then start a new one so we can record a lambda event.
+     * https://github.com/dockstore/dockstore/issues/4434
+     */
+    private void rollbackAndBeginNewTransaction() {
+        final Transaction transaction = sessionFactory.getCurrentSession().getTransaction();
+        final boolean isActive = transaction.isActive();
+        final boolean canRollback = transaction.getStatus().canRollback();
+        if (isActive && canRollback) {
+            transaction.rollback();
+        } else {
+            // I don't think this should ever happen
+            LOG.error("Transaction is not active or cannot be rolled back. Active: {}; Can rollback: {}", isActive, canRollback);
+        }
+        sessionFactory.getCurrentSession().beginTransaction();
     }
 
     /**
