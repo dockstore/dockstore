@@ -1,9 +1,9 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Category;
-import io.dockstore.webservice.core.Collection;
+// import io.dockstore.webservice.CustomWebApplicationException;
+// import io.dockstore.webservice.core.Category;
+// import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
@@ -14,21 +14,21 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
+// import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+// import java.util.stream.Collectors;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+// import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import org.apache.http.HttpStatus;
-import org.hibernate.Hibernate;
+// import org.apache.http.HttpStatus;
+// import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +57,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         this.collectionDAO = new CollectionDAO(sessionFactory);
     }
 
+    /*
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -68,6 +69,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         collections.forEach(collection -> collectionResource.setSummaryFieldsOfCollection(collection));
         return collections.stream().map(c -> new Category(c)).collect(Collectors.toList());
     }
+    */
 
     @GET
     @Timed
@@ -79,6 +81,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         return categoryDAO.getCategoryNames();
     }
 
+    /*
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -104,4 +107,5 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         }
         return specialId;
     }
+    */
 }
