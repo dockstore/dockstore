@@ -105,6 +105,11 @@
             <name>artifacts.oicr.on.ca-releases</name>
             <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
         </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>artifacts.oicr.on.ca-snapshots</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <modules>
@@ -254,6 +259,10 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>2.8.2</version>
+                    <configuration>
+                        <uniqueVersion>false</uniqueVersion>
+                        <deployAtEnd>false</deployAtEnd>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

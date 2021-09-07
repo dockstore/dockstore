@@ -1,0 +1,24 @@
+name: Develop Deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      # Step that does that actual cache save and restore
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+           ${{ runner.os }}-maven-
+      - name: Deploy with mvnw
+        run: ./mvnw --batch-mode deploy -ntp -s .github/snapshot-mvn-settings.xml -DskipTests
+        env: 
+          SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.SNAPSHOT_DEPLOY_TOKEN }}
