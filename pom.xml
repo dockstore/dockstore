@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.11.7</version>
+    <version>1.11.8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -67,7 +67,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.11.7</tag>
+        <tag>1.8.2</tag>
     </scm>
 
     <repositories>
@@ -129,7 +129,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.11.7</version>
+                 <version>1.11.8-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
