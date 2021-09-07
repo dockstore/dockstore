@@ -97,7 +97,11 @@
         </sql>
     </changeSet>
     <changeSet author="natalieperez (generated)" id="unique_collection_display_names_per_org">
-        <addUniqueConstraint columnNames="organizationid, displayname" constraintName="unique_collection_display_name" tableName="collection"/>
+<!--        <addUniqueConstraint columnNames="organizationid, displayname" constraintName="unique_collection_display_name" tableName="collection"/>-->
+<!--        <dropUniqueConstraint constraintName="uk_collDisplayName" tableName="collection"/>-->
         <dropUniqueConstraint constraintName="uk_collDisplayName" tableName="collection"/>
+        <sql dbms="postgresql">
+            create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
+        </sql>
     </changeSet>
 </databaseChangeLog>

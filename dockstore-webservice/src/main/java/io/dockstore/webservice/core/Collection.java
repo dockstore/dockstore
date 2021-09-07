@@ -36,7 +36,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
@@ -52,7 +51,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel("Collection")
 @Schema(name = "Collection", description = "Collection in an organization, collects entries")
 @Entity
-@Table(name = "collection", uniqueConstraints = @UniqueConstraint(name = "unique_collection_display_name", columnNames = {"organizationid", "displayname"}))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId"),
