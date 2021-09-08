@@ -54,3 +54,5 @@ CREATE UNIQUE INDEX one_sign_in_method_by_profile ON user_profile USING btree (o
 ALTER TABLE token DROP CONSTRAINT one_token_link_per_identify;
 CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprofileid, tokensource) WHERE onlineprofileid IS NOT NULL;
 CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;
+
+create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);

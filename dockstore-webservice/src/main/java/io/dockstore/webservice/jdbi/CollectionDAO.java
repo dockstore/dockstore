@@ -43,6 +43,13 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return uniqueResult(query);
     }
 
+    public Collection findByDisplayNameAndOrg(String displayName, long organizationId) {
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg")
+            .setParameter("displayName", displayName)
+            .setParameter("organizationId", organizationId);
+        return uniqueResult(query);
+    }
+
     public void deleteCollectionsByOrgId(long organizationId) {
         Query query = namedQuery("io.dockstore.webservice.core.Collection.deleteByOrgId")
                 .setParameter("organizationId", organizationId);

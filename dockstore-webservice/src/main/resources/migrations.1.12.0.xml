@@ -96,4 +96,10 @@
             alter table sourcefile enable row level security;
         </sql>
     </changeSet>
+    <changeSet author="natalieperez (generated)" id="unique_collection_display_names_per_org">
+        <dropUniqueConstraint constraintName="uk_collDisplayName" tableName="collection"/>
+        <sql dbms="postgresql">
+            create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
+        </sql>
+    </changeSet>
 </databaseChangeLog>
