@@ -159,7 +159,7 @@ public class UserResourceIT extends BaseIT {
         assertFalse(user.getUsername().isEmpty());
 
         UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
-        final Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
+        Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
 
         assertTrue(aBoolean);
 
@@ -169,6 +169,9 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
+
+        aBoolean = adminAdminWebClient.reactivateUser(user.getId());
+        assertTrue(aBoolean);
     }
 
     @Test

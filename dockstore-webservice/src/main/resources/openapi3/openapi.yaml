@@ -4752,6 +4752,31 @@ paths:
       - bearer: []
       tags:
       - users
+    get:
+      description: Reactive a user that has been terminated
+      operationId: reactivateUser
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: boolean
+          description: Successfully reactivated user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/user/{userId}/limits:
     get:
       description: Returns the specified user's limits. ADMIN or CURATOR only

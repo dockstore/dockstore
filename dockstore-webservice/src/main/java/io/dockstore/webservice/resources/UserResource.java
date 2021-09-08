@@ -416,6 +416,22 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
 
     @GET
     @Timed
+    @UnitOfWork
+    @Path("/user/{userId}")
+    @RolesAllowed("admin")
+    @Operation(operationId = "reactivateUser", description = "Reactive a user that has been terminated", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully reactivated user", content = @Content(schema = @Schema(implementation = Boolean.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
+    public boolean reactivateUser(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser, @ApiParam("User to reactivate") @PathParam("userId") long targetUserId) {
+        User targetUser = userDAO.findById(targetUserId);
+        checkUserExists(targetUser);
+        targetUser.setBanned(false);
+        return true;
+    }
+
+    @GET
+    @Timed
     @UnitOfWork(readOnly = true)
     @Path("/checkUser/{username}")
     @ApiOperation(value = "Check if user with some username exists.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
