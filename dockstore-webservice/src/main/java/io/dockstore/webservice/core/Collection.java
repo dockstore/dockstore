@@ -70,7 +70,6 @@ import org.hibernate.annotations.UpdateTimestamp;
         // This is a native query since I couldn't figure out how to do a delete with a join in HQL
         @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId", query =
                 "DELETE FROM collection_entry_version WHERE collection_id = :collectionId"),
-        @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.getCategoryNames", query = "select c.name from collection as c join organization as o on o.status = 'SPECIAL' and c.organizationid = o.id join collection_entry_version as cev on cev.collection_id = c.id group by c.name order by count(c.name) desc")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable, Aliasable {

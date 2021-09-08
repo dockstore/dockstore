@@ -1,7 +1,9 @@
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.persistence.NoResultException;
 import org.hibernate.SessionFactory;
 
@@ -11,8 +13,13 @@ public class CategoryDAO extends AbstractDockstoreDAO<Collection> {
         super(factory);
     }
 
+    public List<Category> getCategories() {
+        return (list(currentSession().getNamedQuery("io.dockstore.webservice.core.Category.getCategories")));
+    }
+
     public List<String> getCategoryNames() {
-        return list(currentSession().getNamedNativeQuery("io.dockstore.webservice.core.Collection.getCategoryNames"));
+        List<Category> categories = getCategories();
+        return (categories.stream().map(c -> c.getName()).collect(Collectors.toList()));
     }
 
     public Long getSpecialOrganizationId() {

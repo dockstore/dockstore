@@ -841,6 +841,22 @@ paths:
       - bearer: []
       tags:
       - tokens
+  /categories:
+    get:
+      description: Retrieve all categories.
+      operationId: getCategories
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: default response
+      summary: Retrieve all categories.
+      tags:
+      - categories
   /categories/names:
     get:
       description: "Retrieve all categories by name, sorted by the category containing\
@@ -856,6 +872,27 @@ paths:
                   type: string
           description: default response
       summary: Retrieve all categories by name.
+      tags:
+      - categories
+  /categories/names/{name}:
+    get:
+      description: Retrieve a category by name.
+      operationId: getCategoryByName
+      parameters:
+      - description: Category name.
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: default response
+      summary: Retrieve a category by name.
       tags:
       - categories
   /cloudInstances:
@@ -2279,7 +2316,29 @@ paths:
       - bearer: []
       tags:
       - entries
-  /entries/{id}/categoryNames:
+  /entries/{id}/categories:
+    get:
+      description: Get the categories that contain the published entry
+      operationId: entryCategories
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: default response
+      tags:
+      - entries
+  /entries/{id}/categories/names:
     get:
       description: Get the names of the categories that contain the published entry
       operationId: entryCategoryNames
@@ -7022,6 +7081,63 @@ components:
           parent_id:
             type: integer
             format: int64
+    Category:
+      type: object
+      description: Category of entries
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: integer
+          format: int64
+        dbUpdateDate:
+          type: integer
+          format: int64
+        description:
+          type: string
+          description: Description of the collection
+        displayName:
+          type: string
+          maxLength: 50
+          minLength: 3
+          pattern: "[\\w ,_\\-&()']*"
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionEntry'
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the collection in this web service
+        name:
+          type: string
+          description: Name of the collection
+          example: Alignment
+          maxLength: 39
+          minLength: 3
+          pattern: "[a-zA-Z][a-zA-Z\\d]*"
+        organizationID:
+          type: integer
+          format: int64
+        organizationName:
+          type: string
+        toolsLength:
+          type: integer
+          format: int64
+          description: Number of tools inside this collection
+        topic:
+          type: string
+          description: Short description of the collection
+          example: A collection of alignment algorithms
+        workflowsLength:
+          type: integer
+          format: int64
+          description: Number of workflows inside this collection
+      required:
+      - name
+      - topic
     Checksum:
       type: object
       description: The checksum value and its type

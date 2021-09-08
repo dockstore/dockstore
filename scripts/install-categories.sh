@@ -16,4 +16,6 @@ do
     $PSQL "INSERT INTO organization_user (organizationid, userid, accepted, role) VALUES ($ORG_ID, $USER_ID, true, 'ADMIN')"
 done
 
-
+echo "Add DTYPE column to collection table"
+$PSQL "ALTER TABLE collection ADD dtype varchar;"
+$PSQL "UPDATE collection SET dtype = 'Collection' WHERE dtype is null;"

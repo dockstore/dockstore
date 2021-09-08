@@ -7,6 +7,7 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
@@ -19,6 +20,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -84,6 +86,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
 
+    private final CategoryDAO categoryDAO;
     private final CollectionDAO collectionDAO;
     private final OrganizationDAO organizationDAO;
     private final WorkflowDAO workflowDAO;
@@ -95,6 +98,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     public CollectionResource(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
+        this.categoryDAO = new CategoryDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -483,6 +487,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Get the organization
         Organization organization = organizationDAO.findById(organizationId);
+
+        if (organization.getId() == categoryDAO.getSpecialOrganizationId()) {
+            collection = new Category(collection);
+        }
 
         // Save the collection
         long id = collectionDAO.create(collection);

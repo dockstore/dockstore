@@ -1323,6 +1323,23 @@ paths:
           description: "Invalid token value"
       security:
       - BEARER: []
+  /categories:
+    get:
+      tags:
+      - "categories"
+      summary: "Retrieve all categories."
+      description: ""
+      operationId: "getCategories"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Category"
   /categories/names:
     get:
       tags:
@@ -1340,6 +1357,26 @@ paths:
             type: "array"
             items:
               type: "string"
+  /categories/names/{name}:
+    get:
+      tags:
+      - "categories"
+      summary: "Retrieve a category by name."
+      description: ""
+      operationId: "getCategoryByName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "name"
+        in: "path"
+        description: "Category name."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Category"
   /containers/hostedEntry:
     post:
       tags:
@@ -2644,7 +2681,30 @@ paths:
             $ref: "#/definitions/Entry"
       security:
       - BEARER: []
-  /entries/{id}/categoryNames:
+  /entries/{id}/categories:
+    get:
+      tags:
+      - "entries"
+      summary: "Get the categories that contain the published entry"
+      description: "Entry must be published"
+      operationId: "entryCategories"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Category"
+  /entries/{id}/categories/names:
     get:
       tags:
       - "entries"
@@ -6389,6 +6449,71 @@ definitions:
           format: "int64"
           readOnly: true
       description: "This describes one workflow in the dockstore"
+  Category:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for collections"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
+      dbCreateDate:
+        type: "integer"
+        format: "int64"
+      dbUpdateDate:
+        type: "integer"
+        format: "int64"
+      entries:
+        type: "array"
+        items:
+          $ref: "#/definitions/CollectionEntry"
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the collection in this web service"
+      organizationID:
+        type: "integer"
+        format: "int64"
+      organizationName:
+        type: "string"
+        description: "The name of the organization the collection belongs to"
+        readOnly: true
+      name:
+        type: "string"
+        example: "Alignment"
+        position: 1
+        description: "Name of the collection."
+        minLength: 3
+        maxLength: 39
+        pattern: "[a-zA-Z][a-zA-Z\\d]*"
+      description:
+        type: "string"
+        position: 2
+        description: "Description of the collection"
+      displayName:
+        type: "string"
+        position: 3
+        description: "Display name for a collection (Ex. Recommended Alignment Algorithms).\
+          \ Not used for links."
+        minLength: 3
+        maxLength: 50
+        pattern: "[\\w ,_\\-&()']*"
+      topic:
+        type: "string"
+        position: 4
+        description: "Short description of the collection"
+      workflowsLength:
+        type: "integer"
+        format: "int64"
+        position: 5
+        description: "Number of workflows inside this collection"
+      toolsLength:
+        type: "integer"
+        format: "int64"
+        position: 6
+        description: "Number of tools inside this collection"
   Checksum:
     type: "object"
     properties:

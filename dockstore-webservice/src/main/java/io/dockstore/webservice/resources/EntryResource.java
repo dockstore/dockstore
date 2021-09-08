@@ -24,6 +24,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
@@ -174,7 +175,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @GET
-    @Path("/{id}/categoryNames")
+    @Path("/{id}/categories/names")
     @Timed
     @UnitOfWork(readOnly = true)
     @Operation(operationId = "entryCategoryNames", description = "Get the names of the categories that contain the published entry")
@@ -182,9 +183,25 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public List<String> entryCategoryNames(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
         if (entry == null || !entry.getIsPublished()) {
+            // TODO add logging?
             throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
         }
         return this.toolDAO.findCategoryNamesByEntryId(entry.getId());
+    }
+
+    @GET
+    @Path("/{id}/categories")
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Operation(operationId = "entryCategories", description = "Get the categories that contain the published entry")
+    @ApiOperation(value = "Get the categories that contain the published entry", notes = "Entry must be published", response = Category.class, responseContainer = "List")
+    public List<Category> entryCategories(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
+        if (entry == null || !entry.getIsPublished()) {
+            // TODO add logging?
+            throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+        return this.toolDAO.findCategoriesByEntryId(entry.getId());
     }
 
     @GET

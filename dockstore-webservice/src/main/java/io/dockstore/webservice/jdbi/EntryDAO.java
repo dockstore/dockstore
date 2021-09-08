@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
@@ -148,6 +149,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<String> findCategoryNamesByEntryId(long entryId) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoryNamesByEntryId").setParameter("entryId", entryId));
+    }
+
+    public List<Category> findCategoriesByEntryId(long entryId) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId").setParameter("entryId", entryId));
     }
 
     public T findPublishedById(long id) {
