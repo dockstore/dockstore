@@ -4,8 +4,9 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.persistence.NoResultException;
+// import javax.persistence.NoResultException;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public class CategoryDAO extends AbstractDockstoreDAO<Collection> {
@@ -22,11 +23,9 @@ public class CategoryDAO extends AbstractDockstoreDAO<Collection> {
         return (categories.stream().map(c -> c.getName()).collect(Collectors.toList()));
     }
 
-    public Long getSpecialOrganizationId() {
-        try {
-            return ((Number)currentSession().getNamedQuery("io.dockstore.webservice.core.Collection.getSpecialOrganizationId").getSingleResult()).longValue();
-        } catch (NoResultException e) {
-            return (null);
-        }
+    public Category findByName(String name) {
+        Query query = namedTypedQuery("io.dockstore.webservice.core.Category.findByName")
+            .setParameter("name", name);
+        return ((Category)uniqueResult(query));
     }
 }

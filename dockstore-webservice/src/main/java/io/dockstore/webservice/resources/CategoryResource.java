@@ -1,9 +1,9 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import io.dockstore.webservice.CustomWebApplicationException;
+// import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Category;
-import io.dockstore.webservice.core.Collection;
+// import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
@@ -27,7 +27,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import org.apache.http.HttpStatus;
+// import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -86,21 +86,10 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     public Category getCategoryByName(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Category name.", required = true) @Parameter(description = "Category name.", name = "name", in = ParameterIn.PATH, required = true) @PathParam("name") String name) {
-        Collection collection = collectionDAO.findByNameAndOrg(name, getSpecialId());
-        collectionResource.throwExceptionForNullCollection(collection);
-        // TODO make sure this is a category rather than regular collection.
-        Hibernate.initialize(collection.getAliases());
-        collectionResource.addCollectionEntriesToCollection(collection);
-        return ((Category)collection);
-    }
-
-    private Long getSpecialId() {
-        Long specialId = categoryDAO.getSpecialOrganizationId();
-        if (specialId == null) {
-            String msg = "Category not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-        return specialId;
+        Category category = categoryDAO.findByName(name);
+        collectionResource.throwExceptionForNullCollection(category);
+        Hibernate.initialize(category.getAliases());
+        collectionResource.addCollectionEntriesToCollection(category);
+        return (category);
     }
 }

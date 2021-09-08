@@ -488,8 +488,16 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Get the organization
         Organization organization = organizationDAO.findById(organizationId);
 
-        if (organization.getId() == categoryDAO.getSpecialOrganizationId()) {
+        // If the organization is SPECIAL, convert the Collection to a Category and make sure there are no category name collissions
+        if (organization != null && organization.getStatus() == Organization.ApplicationState.SPECIAL) {
             collection = new Category(collection);
+            // Check if any other categories exist with that name
+            Category matchingCategory = categoryDAO.findByName(collection.getName());
+            if (matchingCategory != null) {
+                String msg = "A category already exists with the name '" + collection.getName() + "'.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
         }
 
         // Save the collection

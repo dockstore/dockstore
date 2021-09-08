@@ -27,7 +27,8 @@ import javax.persistence.Table;
 @Table(name = "collection")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Category.getCategories", query = "SELECT c from Category c")
+        @NamedQuery(name = "io.dockstore.webservice.core.Category.getCategories", query = "SELECT c FROM Category c"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Category.findByName", query = "SELECT c FROM Category c where lower(c.name) = lower(:name)")
 })
 
 public class Category extends Collection {
