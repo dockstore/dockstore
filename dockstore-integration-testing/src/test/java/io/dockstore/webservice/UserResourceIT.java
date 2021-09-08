@@ -153,8 +153,10 @@ public class UserResourceIT extends BaseIT {
     public void testUserTermination() throws ApiException {
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
         UsersApi userUserWebClient = new UsersApi(userWebClient);
+        io.dockstore.openapi.client.api.UsersApi openApiUserWebClient = new io.dockstore.openapi.client.api.UsersApi(openApiAdminWebClient);
         final User user = userUserWebClient.getUser();
         assertFalse(user.getUsername().isEmpty());
 
@@ -170,7 +172,7 @@ public class UserResourceIT extends BaseIT {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
 
-        aBoolean = adminAdminWebClient.reactivateUser(user.getId());
+        aBoolean = openApiUserWebClient.reactivateUser(user.getId(), "");
         assertTrue(aBoolean);
     }
 

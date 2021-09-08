@@ -414,16 +414,19 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         return true;
     }
 
-    @GET
+    @PATCH
     @Timed
     @UnitOfWork
     @Path("/user/{userId}")
     @RolesAllowed("admin")
-    @Operation(operationId = "reactivateUser", description = "Reactive a user that has been terminated", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "reactivateUser", description = "Reactivate a user that has been terminated", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Reactivate a user that has been terminated", hidden = true)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully reactivated user", content = @Content(schema = @Schema(implementation = Boolean.class)))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
-    public boolean reactivateUser(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser, @ApiParam("User to reactivate") @PathParam("userId") long targetUserId) {
+    public boolean reactivateUser(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User authUser,
+        @Parameter(name = "userId", in = ParameterIn.PATH, required = true) @PathParam("userId") long targetUserId,
+        @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
         User targetUser = userDAO.findById(targetUserId);
         checkUserExists(targetUser);
         targetUser.setBanned(false);
