@@ -3,8 +3,6 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import java.util.List;
-// import java.util.stream.Collectors;
-// import javax.persistence.NoResultException;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
