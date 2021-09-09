@@ -61,6 +61,7 @@ import io.swagger.annotations.Api;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.kohsuke.github.GHRateLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -345,7 +346,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
-            sessionFactory.getCurrentSession().clear();
+            rollbackAndBeginNewTransaction();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(errorMessage);
@@ -357,7 +358,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
             String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
             LOG.error(msg, ex);
-            sessionFactory.getCurrentSession().clear();
+            rollbackAndBeginNewTransaction();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEvent.setSuccess(false);
             lambdaEvent.setMessage(ex.getMessage());
@@ -365,6 +366,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    /**
+     * Rollback current DB transaction then start a new one so we can record a lambda event.
+     * https://github.com/dockstore/dockstore/issues/4434
+     */
+    private void rollbackAndBeginNewTransaction() {
+        final Transaction transaction = sessionFactory.getCurrentSession().getTransaction();
+        final boolean isActive = transaction.isActive();
+        final boolean canRollback = transaction.getStatus().canRollback();
+        if (isActive && canRollback) {
+            transaction.rollback();
+        } else {
+            // I don't think this should ever happen
+            LOG.error("Transaction is not active or cannot be rolled back. Active: {}; Can rollback: {}", isActive, canRollback);
+        }
+        sessionFactory.getCurrentSession().beginTransaction();
     }
 
     /**
@@ -459,8 +477,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 updatedWorkflows.add(workflow);
             }
             return updatedWorkflows;
-        } catch (ClassCastException ex) {
-            throw new CustomWebApplicationException("Could not parse workflow array from YML.", LAMBDA_FAILURE);
+        } catch (ClassCastException ex) { // This has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
+            // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
+            // so display a generic one.
+            final String message = "Error processing .dockstore.yml";
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
     }
 
@@ -616,7 +638,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
-            throw new CustomWebApplicationException("Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.", LAMBDA_FAILURE);
+            final String message = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
         Instant endTime = Instant.now();
         long timeElasped = Duration.between(startTime, endTime).toSeconds();

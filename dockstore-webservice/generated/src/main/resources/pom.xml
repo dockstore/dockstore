@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.dockstore</groupId>
   <artifactId>dockstore-webservice</artifactId>
-  <version>1.11.6-SNAPSHOT</version>
+  <version>1.11.9-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache Software License, Version 2.0</name>
@@ -60,37 +60,37 @@
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-quay-client</artifactId>
-      <version>1.11.6-SNAPSHOT</version>
+      <version>1.11.9-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-sam-client</artifactId>
-      <version>1.11.6-SNAPSHOT</version>
+      <version>1.11.9-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-bitbucket-client</artifactId>
-      <version>1.11.6-SNAPSHOT</version>
+      <version>1.11.9-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-discourse-client</artifactId>
-      <version>1.11.6-SNAPSHOT</version>
+      <version>1.11.9-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-common</artifactId>
-      <version>1.11.6-SNAPSHOT</version>
+      <version>1.11.9-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-language-plugin-parent</artifactId>
-      <version>1.11.6-SNAPSHOT</version>
+      <version>1.11.9-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -102,7 +102,7 @@
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-zenodo-client</artifactId>
-      <version>1.11.6-SNAPSHOT</version>
+      <version>1.11.9-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

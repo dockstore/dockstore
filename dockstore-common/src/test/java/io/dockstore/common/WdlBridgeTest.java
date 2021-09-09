@@ -59,4 +59,17 @@ public class WdlBridgeTest {
         Assert.assertTrue("The metadata from a task should be gotten", metadata.get(0).containsValue("Removes alignment information while retaining recalibrated base qualities and original alignment tags"));
         Assert.assertTrue("The metadata from the main workflow should be gotten", metadata.get(2).containsValue("Takes in an hg38 bam or cram and outputs VCF of SNP/Indel calls on the mitochondria."));
     }
+
+    @Test
+    public void testBooleanMetadata2() throws WdlParser.SyntaxError {
+        WdlBridge wdlBridge = new WdlBridge();
+        File file = new File("src/test/resources/GvsExtractCallset.wdl");
+        String filePath = file.getAbsolutePath();
+        String sourceFilePath = "scripts/variantstore/wdl/GvsExtractCallset.wdl";
+        ArrayList<Map<String, String>> metadata = wdlBridge.getMetadata(filePath, sourceFilePath);
+        // Known number of metadata objects
+        final int knownMetadataObjectSize = 0;
+        assertEquals("There should be 0 sets of string value metadata (all metadata in this WDL is boolean only) ", knownMetadataObjectSize, metadata.size());
+    }
+
 }
