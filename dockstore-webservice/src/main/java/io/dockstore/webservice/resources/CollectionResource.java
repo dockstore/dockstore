@@ -9,10 +9,10 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
-import io.dockstore.webservice.core.CollectionEntry;
+// import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
-import io.dockstore.webservice.core.Label;
+// import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
@@ -45,14 +45,14 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.ArrayList;
+// import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+// import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
+// import java.util.stream.Collectors;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -65,7 +65,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
+// import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,6 +95,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
     private final VersionDAO versionDAO;
+    private final CollectionHelper helper;
 
     public CollectionResource(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
@@ -106,6 +107,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.versionDAO = new VersionDAO(sessionFactory);
+        this.helper = new CollectionHelper(LOG, sessionFactory, toolDAO);
     }
 
     /**
@@ -157,7 +159,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
             Collection approvalForCollection = getApprovalForCollection(collection);
-            addCollectionEntriesToCollection(approvalForCollection);
+            unpersistAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -170,7 +172,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
-            addCollectionEntriesToCollection(collection);
+            unpersistAndAddEntries(collection);
             return collection;
         }
     }
@@ -196,7 +198,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             throwExceptionForNullCollection(collection);
             Collection approvalForCollection = getApprovalForCollection(collection);
-            addCollectionEntriesToCollection(approvalForCollection);
+            unpersistAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -210,60 +212,21 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             Hibernate.initialize(collection.getAliases());
-            addCollectionEntriesToCollection(collection);
+            unpersistAndAddEntries(collection);
             return collection;
         }
     }
 
-    private void setSummaryFieldsOfCollection(Collection collection) {
-        Session currentSession = sessionFactory.getCurrentSession();
-        currentSession.evict(collection);
-        // Ensure that entries is empty
-        // This is probably unnecessary
-        collection.setEntries(new HashSet<>());
-        collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
-        collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
+    private void unpersistAndSummarize(Collection collection) {
+        helper.unpersistAndSummarize(collection);
     }
 
-    private void addCollectionEntriesToCollection(Collection collection) {
-        Session currentSession = sessionFactory.getCurrentSession();
-        currentSession.evict(collection);
-        List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
-        List<CollectionEntry> collectionServices = workflowDAO.getCollectionServices(collection.getId());
-        List<CollectionEntry> collectionTools = workflowDAO.getCollectionTools(collection.getId());
-        List<CollectionEntry> collectionWorkflowsWithVersions = workflowDAO.getCollectionWorkflowsWithVersions(collection.getId());
-        List<CollectionEntry> collectionServicesWithVersions = workflowDAO.getCollectionServicesWithVersions(collection.getId());
-        List<CollectionEntry> collectionToolsWithVersions = workflowDAO.getCollectionToolsWithVersions(collection.getId());
-        List<CollectionEntry> collectionEntries = new ArrayList<>();
-        collectionEntries.addAll(collectionWorkflows);
-        collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);        
-        collectionEntries.addAll(collectionWorkflowsWithVersions);
-        collectionEntries.addAll(collectionServicesWithVersions);
-        collectionEntries.addAll(collectionToolsWithVersions);
-        collectionEntries.forEach(entry -> {
-            List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
-            List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
-            entry.setLabels(labelStrings);
-            List<String> names = toolDAO.findCategoryNamesByEntryId(entry.getId());
-            entry.setCategoryNames(names);
-            if (entry.getEntryType().equals("tool")) {
-                entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
-            } else if (entry.getEntryType().equals("workflow")) {
-                entry.setDescriptorTypes(workflowDAO.getWorkflowsDescriptorTypes(entry.getId()));
-            }
-        });
-        collection.setCollectionEntries(collectionEntries);
-        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
-        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
+    private void unpersistAndAddEntries(Collection collection) {
+        helper.unpersistAndAddEntries(collection);
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
-        if (collection == null) {
-            String msg = "Collection not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
+        helper.throwExceptionForNullCollection(collection);
     }
 
     @POST
@@ -442,9 +405,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         boolean includeEntries = checkIncludes(include, "entries");
         collections.forEach(collection -> {
             if (includeEntries) {
-                addCollectionEntriesToCollection(collection);
+                unpersistAndAddEntries(collection);
             } else {
-                setSummaryFieldsOfCollection(collection);
+                unpersistAndSummarize(collection);
             }
         });
         return collections;
