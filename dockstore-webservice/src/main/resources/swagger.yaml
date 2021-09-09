@@ -1340,23 +1340,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Category"
-  /categories/names:
-    get:
-      tags:
-      - "categories"
-      summary: "Retrieve all categories by name."
-      description: ""
-      operationId: "getCategoryNames"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              type: "string"
   /categories/names/{name}:
     get:
       tags:
@@ -2704,29 +2687,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Category"
-  /entries/{id}/categories/names:
-    get:
-      tags:
-      - "entries"
-      summary: "Get the of the categories that contain the published entry"
-      description: "Entry must be published"
-      operationId: "entryCategoryNames"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "id"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              type: "string"
   /entries/{id}/collections:
     get:
       tags:

@@ -215,7 +215,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
-    void setSummaryFieldsOfCollection(Collection collection) {
+    private void setSummaryFieldsOfCollection(Collection collection) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
         // Ensure that entries is empty
@@ -225,7 +225,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
     }
 
-    void addCollectionEntriesToCollection(Collection collection) {
+    private void addCollectionEntriesToCollection(Collection collection) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
         List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
@@ -258,7 +258,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
-    void throwExceptionForNullCollection(Collection collection) {
+    private void throwExceptionForNullCollection(Collection collection) {
         if (collection == null) {
             String msg = "Collection not found.";
             LOG.info(msg);

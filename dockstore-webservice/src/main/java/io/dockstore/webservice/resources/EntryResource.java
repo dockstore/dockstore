@@ -86,6 +86,7 @@ import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,10 +107,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
+    private final SessionFactory sessionFactory;
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
     private final VersionDAO versionDAO;
     private final UserDAO userDAO;
+    private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
     private final String discourseKey;
     private final String discourseUrl;
@@ -119,12 +122,14 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String hostName;
     private String baseApiURL;
 
-    public EntryResource(TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, UserDAO userDAO,
+    public EntryResource(SessionFactory sessionFactory, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, UserDAO userDAO,
         DockstoreWebserviceConfiguration configuration) {
+        this.sessionFactory = sessionFactory;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;
         this.userDAO = userDAO;
+        this.collectionHelper = new CollectionHelper(LOG, sessionFactory, toolDAO);
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
@@ -175,21 +180,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     @GET
-    @Path("/{id}/categories/names")
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Operation(operationId = "entryCategoryNames", description = "Get the names of the categories that contain the published entry")
-    @ApiOperation(value = "Get the of the categories that contain the published entry", notes = "Entry must be published", response = String.class, responseContainer = "List")
-    public List<String> entryCategoryNames(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
-        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
-        if (entry == null || !entry.getIsPublished()) {
-            // TODO add logging?
-            throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
-        }
-        return this.toolDAO.findCategoryNamesByEntryId(entry.getId());
-    }
-
-    @GET
     @Path("/{id}/categories")
     @Timed
     @UnitOfWork(readOnly = true)
@@ -198,10 +188,13 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public List<Category> entryCategories(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
         if (entry == null || !entry.getIsPublished()) {
-            // TODO add logging?
-            throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
+            String msg = "Published entry does not exist.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-        return this.toolDAO.findCategoriesByEntryId(entry.getId());
+        List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
+        collectionHelper.unpersistAndSummarize(categories);
+        return categories;
     }
 
     @GET

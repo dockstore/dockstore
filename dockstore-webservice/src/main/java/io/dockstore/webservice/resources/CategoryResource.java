@@ -7,6 +7,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -46,15 +47,18 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(CategoryResource.class);
 
     private final SessionFactory sessionFactory;
-    private final CollectionResource collectionResource;
     private final CategoryDAO categoryDAO;
     private final CollectionDAO collectionDAO;
+    private final ToolDAO toolDAO;
+    private final CollectionHelper collectionHelper;
 
-    public CategoryResource(SessionFactory sessionFactory, CollectionResource collectionResource) {
+    public CategoryResource(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
-        this.collectionResource = collectionResource;
         this.categoryDAO = new CategoryDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
+        this.collectionHelper = new CollectionHelper(LOG, sessionFactory, toolDAO);
+
     }
 
     @GET
@@ -64,17 +68,9 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @ApiOperation(nickname = "getCategories", value = "Retrieve all categories.", response = Category.class, responseContainer = "List")
     @Operation(operationId = "getCategories", summary = "Retrieve all categories.", description = "Retrieve all categories.")
     public List<Category> getCategories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
-        return categoryDAO.getCategories();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork(readOnly = true)
-    @Path("/names")
-    @ApiOperation(nickname = "getCategoryNames", value = "Retrieve all categories by name.", response = String.class, responseContainer = "List")
-    @Operation(operationId = "getCategoryNames", summary = "Retrieve all categories by name.", description = "Retrieve all categories by name, sorted by the category containing the most entries first.")
-    public List<String> getCategoryNames(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
-        return categoryDAO.getCategoryNames();
+        List<Category> categories = categoryDAO.getCategories();
+        collectionHelper.unpersistAndSummarize(categories);
+        return categories;
     }
 
     @GET
@@ -87,9 +83,9 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Category name.", required = true) @Parameter(description = "Category name.", name = "name", in = ParameterIn.PATH, required = true) @PathParam("name") String name) {
         Category category = categoryDAO.findByName(name);
-        collectionResource.throwExceptionForNullCollection(category);
+        collectionHelper.throwExceptionForNullCollection(category);
         Hibernate.initialize(category.getAliases());
-        collectionResource.addCollectionEntriesToCollection(category);
+        collectionHelper.unpersistAndAddEntries(category);
         return (category);
     }
 }

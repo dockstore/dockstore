@@ -857,23 +857,6 @@ paths:
       summary: Retrieve all categories.
       tags:
       - categories
-  /categories/names:
-    get:
-      description: "Retrieve all categories by name, sorted by the category containing\
-        \ the most entries first."
-      operationId: getCategoryNames
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-          description: default response
-      summary: Retrieve all categories by name.
-      tags:
-      - categories
   /categories/names/{name}:
     get:
       description: Retrieve a category by name.
@@ -2335,28 +2318,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Category'
-          description: default response
-      tags:
-      - entries
-  /entries/{id}/categories/names:
-    get:
-      description: Get the names of the categories that contain the published entry
-      operationId: entryCategoryNames
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
           description: default response
       tags:
       - entries

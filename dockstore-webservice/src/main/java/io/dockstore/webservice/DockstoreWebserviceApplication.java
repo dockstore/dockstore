@@ -358,7 +358,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(tokenDAO, toolDAO, versionDAO, userDAO, configuration);
+        final EntryResource entryResource = new EntryResource(hibernate.getSessionFactory(), tokenDAO, toolDAO, versionDAO, userDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
@@ -383,13 +383,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new LambdaEventResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new NotificationResource(getHibernate().getSessionFactory()));
-
-        final CollectionResource collectionResource = new CollectionResource(getHibernate().getSessionFactory());
-        environment.jersey().register(collectionResource);
+        environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new EventResource(eventDAO, userDAO));
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(new CloudInstanceResource(getHibernate().getSessionFactory()));
-        environment.jersey().register(new CategoryResource(getHibernate().getSessionFactory(), collectionResource));
+        environment.jersey().register(new CategoryResource(getHibernate().getSessionFactory()));
 
         // disable odd extra endpoints showing up
         final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().prettyPrint(true);
