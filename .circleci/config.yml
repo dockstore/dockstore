@@ -93,6 +93,7 @@ jobs:
       - setup_postgres_docker
       - setup_integration_test
       - save_test_results
+  # I think these tests aren't actually running which is unfortunate
   cwltool-tests:
     executor: machine_integration_test_exec
     environment:
@@ -100,6 +101,7 @@ jobs:
     steps:
       - old_python
       - setup_machine
+      - install-pip
       - setup_test
       - setup_postgres_docker
       - setup_integration_test
@@ -323,7 +325,6 @@ jobs:
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
             docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests
             docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt
-      - install-pip
       - aws-s3/copy:
           from: image-digest.txt
           to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
@@ -407,10 +408,6 @@ commands:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
     steps:
-      - install-pip
-      - run:
-          name: install pip dependencies
-          command: scripts/install-tests.sh
       - run:
           name: decrypt and expand confidential test data
           command: |
