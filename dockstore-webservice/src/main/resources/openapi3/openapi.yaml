@@ -4726,35 +4726,11 @@ paths:
       - bearer: []
       tags:
       - users
-  /users/user/{userId}:
-    delete:
-      description: Terminate user if possible.
-      operationId: terminateUsers
-      parameters:
-      - in: path
-        name: userId
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: boolean
-          description: Successfully deleted user
-        "403":
-          description: Forbidden
-        "404":
-          description: User not found
-      security:
-      - bearer: []
-      tags:
-      - users
+  /users/user/{userId}/bannedStatus:
     patch:
-      description: Reactivate a user that has been terminated
-      operationId: reactivateUser
+      description: Update banned status of user if possible. Removes all tokens for
+        banned users.
+      operationId: banUser
       parameters:
       - in: path
         name: userId
@@ -4766,16 +4742,16 @@ paths:
         content:
           '*/*':
             schema:
-              type: string
-        description: "This is here to appease Swagger. It requires PATCH methods to\
-          \ have a body, even if it is empty. Please leave it empty."
+              type: boolean
       responses:
         "200":
           content:
             application/json:
               schema:
-                type: boolean
-          description: Successfully reactivated user
+                $ref: '#/components/schemas/User'
+          description: Successfully banned user
+        "400":
+          description: This user is already banned/unbanned.
         "403":
           description: Forbidden
         "404":

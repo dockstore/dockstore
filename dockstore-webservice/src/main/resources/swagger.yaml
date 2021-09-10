@@ -4340,13 +4340,14 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
-  /users/user/{userId}:
-    delete:
+  /users/user/{userId}/bannedStatus:
+    patch:
       tags:
       - "users"
-      summary: "Terminate user if possible."
+      summary: "Updated banned status of user if possible. Removes all tokens for\
+        \ banned users."
       description: ""
-      operationId: "terminateUser"
+      operationId: "banUser"
       produces:
       - "application/json"
       parameters:
@@ -4356,11 +4357,17 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - in: "body"
+        name: "body"
+        description: "isBanned"
+        required: false
+        schema:
+          type: "boolean"
       responses:
         200:
           description: "successful operation"
           schema:
-            type: "boolean"
+            $ref: "#/definitions/User"
       security:
       - BEARER: []
   /users/user/{userId}/limits:

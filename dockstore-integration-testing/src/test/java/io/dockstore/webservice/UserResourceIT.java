@@ -161,9 +161,9 @@ public class UserResourceIT extends BaseIT {
         assertFalse(user.getUsername().isEmpty());
 
         UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
-        Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
+        openApiUserWebClient.banUser(user.getId(), true);
 
-        assertTrue(aBoolean);
+        assertTrue(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
 
         try {
             userUserWebClient.getUser();
@@ -172,8 +172,8 @@ public class UserResourceIT extends BaseIT {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
 
-        aBoolean = openApiUserWebClient.reactivateUser(user.getId(), "");
-        assertTrue(aBoolean);
+        openApiUserWebClient.banUser(user.getId(), false);
+        assertFalse(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
     }
 
     @Test
