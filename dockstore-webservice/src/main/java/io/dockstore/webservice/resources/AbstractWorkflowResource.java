@@ -492,7 +492,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     lambdaEventDAO.create(lambdaEvent);
                 }
             }
-            return updatedWorkflows;
         } catch (ClassCastException ex) { // This has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
             // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
             // so display a generic one.
