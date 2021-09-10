@@ -12,6 +12,8 @@ fi
 
 if [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
     pip3 install -r dockstore-webservice/src/main/resources/requirements/1.7.0/requirements3.txt
+elif [ "${TESTING_PROFILE}" == "language-parsing-tests" ]; then
+    pip3 install -r dockstore-webservice/src/main/resources/requirements/1.10.0/requirements3.txt
 else
     pip3 install --user -r dockstore-webservice/src/main/resources/requirements/1.10.0/requirements3.txt
 fi
