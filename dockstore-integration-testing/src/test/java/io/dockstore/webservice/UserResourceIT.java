@@ -151,7 +151,6 @@ public class UserResourceIT extends BaseIT {
 
     @Test
     public void testUserTermination() throws ApiException {
-        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.ApiClient openApiAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
@@ -160,7 +159,6 @@ public class UserResourceIT extends BaseIT {
         final User user = userUserWebClient.getUser();
         assertFalse(user.getUsername().isEmpty());
 
-        UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
         openApiUserWebClient.banUser(user.getId(), true);
 
         assertTrue(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
