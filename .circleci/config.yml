@@ -93,19 +93,6 @@ jobs:
       - setup_postgres_docker
       - setup_integration_test
       - save_test_results
-  # I think these tests aren't actually running which is unfortunate
-  cwltool-tests:
-    executor: machine_integration_test_exec
-    environment:
-      TESTING_PROFILE: require-cwltool-tests
-    steps:
-      - old_python
-      - setup_machine
-      - install-pip
-      - setup_test
-      - setup_postgres_docker
-      - setup_integration_test
-      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -146,6 +133,9 @@ jobs:
       - old_python
       - setup_machine
       - install-pip
+      - run:
+          name: install pip dependencies
+          command: scripts/install-tests.sh
       - run: 
           name: build sam-cli
           command: |

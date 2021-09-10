@@ -19,7 +19,7 @@ import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.RequireCwltoolTest;
+import io.dockstore.common.LanguageParsingTest;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
  * @author gluu
  * @since 02/01/18
  */
-@Category(RequireCwltoolTest.class)
+@Category(LanguageParsingTest.class)
 public class GA4GHV2CwltoolIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH,

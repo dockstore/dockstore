@@ -720,15 +720,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.RequireCwltoolTest, io.dockstore.common.LanguageParsingTest</excludeGroups>
-            </properties>
-        </profile>
-        <profile>
-            <id>require-cwltool-tests</id>
-            <properties>
-                <skipTests>true</skipTests>
-                <skipITs>false</skipITs>
-                <groups>io.dockstore.common.RequireCwltoolTest</groups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest</excludeGroups>
             </properties>
         </profile>
         <profile>
