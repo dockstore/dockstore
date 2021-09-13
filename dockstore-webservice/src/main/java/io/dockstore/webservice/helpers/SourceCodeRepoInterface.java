@@ -435,6 +435,7 @@ public abstract class SourceCodeRepoInterface {
             boolean noDescription = (version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null;
             // Previously, version has a README description
             boolean oldREADMEDescription = (DescriptionSource.README == version.getDescriptionSource());
+            // Checking these conditions to prevent overwriting description from descriptor
             if (noDescription || oldREADMEDescription) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
                 if (StringUtils.isNotBlank(readmeContent)) {
