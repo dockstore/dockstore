@@ -4341,11 +4341,10 @@ paths:
       security:
       - BEARER: []
   /users/user/{userId}/bannedStatus:
-    patch:
+    put:
       tags:
       - "users"
-      summary: "Updated banned status of user if possible. Removes all tokens for\
-        \ banned users."
+      summary: "Updated banned status of user. Removes all tokens for banned users."
       description: ""
       operationId: "banUser"
       produces:
@@ -4364,10 +4363,8 @@ paths:
         schema:
           type: "boolean"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
       security:
       - BEARER: []
   /users/user/{userId}/limits:

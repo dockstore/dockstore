@@ -4727,9 +4727,8 @@ paths:
       tags:
       - users
   /users/user/{userId}/bannedStatus:
-    patch:
-      description: Update banned status of user if possible. Removes all tokens for
-        banned users.
+    put:
+      description: Update banned status of user. Removes all tokens for banned users.
       operationId: banUser
       parameters:
       - in: path
@@ -4744,14 +4743,8 @@ paths:
             schema:
               type: boolean
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: Successfully banned user
-        "400":
-          description: This user is already banned/unbanned.
+        "204":
+          description: Successfully banned/unbanned user
         "403":
           description: Forbidden
         "404":

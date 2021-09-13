@@ -390,18 +390,17 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
-    @PATCH
+    @PUT
     @Timed
     @UnitOfWork
     @Path("/user/{userId}/bannedStatus")
     @RolesAllowed("admin")
-    @Operation(operationId = "banUser", description = "Update banned status of user if possible. Removes all tokens for banned users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully banned user", content = @Content(schema = @Schema(implementation = User.class)))
+    @Operation(operationId = "banUser", description = "Update banned status of user. Removes all tokens for banned users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully banned/unbanned user")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "This user is already banned/unbanned.")
-    @ApiOperation(value = "Updated banned status of user if possible. Removes all tokens for banned users.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, nickname = "banUser")
-    public User banUser(
+    @ApiOperation(value = "Updated banned status of user. Removes all tokens for banned users.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void banUser(
         @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,  @ApiParam("User to terminate") @PathParam("userId") long targetUserId,
         @ApiParam("isBanned") @Parameter(name = "isBanned") boolean isBanned) {
         // note this bans the user but leaves behind a tombstone to prevent re-login
@@ -410,14 +409,10 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         User targetUser = userDAO.findById(targetUserId);
         checkUserExists(targetUser);
 
-        if (isBanned == targetUser.isBanned()) {
-            throw new CustomWebApplicationException("This user is already banned/unbanned.", HttpStatus.SC_BAD_REQUEST);
-        }
         if (isBanned) {
             invalidateTokensForUser(targetUser);
         }
         targetUser.setBanned(isBanned);
-        return targetUser;
     }
 
     @GET
