@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  aws-s3: circleci/aws-s3@1.0.0
+  aws-s3: circleci/aws-s3@3.0.0
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
@@ -93,17 +93,6 @@ jobs:
       - setup_postgres_docker
       - setup_integration_test
       - save_test_results
-  cwltool-tests:
-    executor: machine_integration_test_exec
-    environment:
-      TESTING_PROFILE: require-cwltool-tests
-    steps:
-      - old_python
-      - setup_machine
-      - setup_test
-      - setup_postgres_docker
-      - setup_integration_test
-      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -144,6 +133,9 @@ jobs:
       - old_python
       - setup_machine
       - install-pip
+      - run:
+          name: install pip dependencies
+          command: scripts/install-tests.sh
       - run: 
           name: build sam-cli
           command: |
@@ -323,7 +315,6 @@ jobs:
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
             docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests
             docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt
-      - install-pip
       - aws-s3/copy:
           from: image-digest.txt
           to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
@@ -407,10 +398,6 @@ commands:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
     steps:
-      - install-pip
-      - run:
-          name: install pip dependencies
-          command: scripts/install-tests.sh
       - run:
           name: decrypt and expand confidential test data
           command: |

@@ -17,6 +17,7 @@ package io.dockstore.common;
 
 /**
  * Setting aside tests that requires the external language parsing lambda service.
+ * Also isolating the tests that require Python for now.
  */
 public interface LanguageParsingTest {
 }
