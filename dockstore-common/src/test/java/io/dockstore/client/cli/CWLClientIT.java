@@ -24,6 +24,7 @@ import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -31,6 +32,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author dyuen
  */
+@Ignore
 public class CWLClientIT {
 
     @Test
