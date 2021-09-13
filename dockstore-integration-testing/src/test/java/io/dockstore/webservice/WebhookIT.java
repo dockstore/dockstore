@@ -588,6 +588,7 @@ public class WebhookIT extends BaseIT {
         List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
         assertEquals("There should be 3 successful events", 3, events.stream().filter(LambdaEvent::isSuccess).count());
 
+        final int versionCountBeforeInvalidDockstoreYml = getFoobar1Workflow(client).getWorkflowVersions().size();
         // Push branch with invalid dockstore.yml
         try {
             client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidDockstoreYml", installationId);
@@ -596,6 +597,7 @@ public class WebhookIT extends BaseIT {
             List<LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
             assertEquals("There should be 1 unsuccessful event", 1,
                     failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
+            assertEquals("Number of versions should be the same", versionCountBeforeInvalidDockstoreYml, getFoobar1Workflow(client).getWorkflowVersions().size());
         }
     }
 
