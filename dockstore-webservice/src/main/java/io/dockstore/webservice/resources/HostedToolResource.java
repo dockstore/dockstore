@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
@@ -42,6 +43,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.Date;
 import java.util.HashMap;
@@ -93,6 +97,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
 
     @Override
     @Operation(operationId = "createHostedTool", description = "Create a hosted tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted tool.", content = @Content(schema = @Schema(implementation = Tool.class)))
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
@@ -246,7 +251,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
             if (Objects.equals(registry.toLowerCase(), registryObject.getDockerPath())) {
                 return registry;
             } else if (Objects.equals(registryObject.name(), Registry.AMAZON_ECR.name())) {
-                if (registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+                if (AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(registry).matches()) {
                     return registry;
                 }
             } else if (Objects.equals(registryObject.name(), Registry.SEVEN_BRIDGES.name())) {

@@ -22,7 +22,6 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
@@ -58,7 +57,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -88,7 +86,6 @@ import org.slf4j.LoggerFactory;
 @Api("workflows")
 public abstract class AbstractWorkflowResource<T extends Workflow> implements SourceControlResourceInterface, AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractWorkflowResource.class);
-    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     protected final HttpClient client;
     protected final TokenDAO tokenDAO;
@@ -212,27 +209,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String fileKey = file.getType().toString() + file.getAbsolutePath();
             SourceFile existingFile = existingFileMap.get(fileKey);
             if (existingFileMap.containsKey(fileKey)) {
-                List<Checksum> checksums = new ArrayList<>();
-                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-                if (sha.isPresent()) {
-                    checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                    if (existingFile.getChecksums() == null) {
-                        existingFile.setChecksums(checksums);
-                    } else {
-                        existingFile.getChecksums().clear();
-                        existingFileMap.get(fileKey).getChecksums().addAll(checksums);
-
-                    }
-                }
                 existingFile.setContent(file.getContent());
             } else {
                 final long fileID = fileDAO.create(file);
                 final SourceFile fileFromDB = fileDAO.findById(fileID);
-
-                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-                if (sha.isPresent()) {
-                    fileFromDB.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                }
                 existingVersion.getSourceFiles().add(fileFromDB);
             }
         }

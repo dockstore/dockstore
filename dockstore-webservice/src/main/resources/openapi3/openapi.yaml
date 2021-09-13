@@ -974,8 +974,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
-          description: Successfully created hosted entry
+                $ref: '#/components/schemas/DockstoreTool'
+          description: Successfully created a hosted tool.
       security:
       - bearer: []
       tags:
@@ -1062,7 +1062,7 @@ paths:
       - containers
   /containers/path/tool/{repository}:
     get:
-      description: Get a tool by the specific tool path
+      description: Requires full path (including tool name if applicable).
       operationId: getContainerByToolPath
       parameters:
       - in: path
@@ -1083,11 +1083,12 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a tool by the specific tool path
       tags:
       - containers
   /containers/path/tool/{repository}/published:
     get:
-      description: Get a published tool by the specific tool path.
+      description: Requires full path (including tool name if applicable).
       operationId: getPublishedContainerByToolPath
       parameters:
       - in: path
@@ -1106,6 +1107,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
+      summary: Get a published tool by the specific tool path.
       tags:
       - containers
   /containers/path/{containerId}/tags:
@@ -1135,7 +1137,7 @@ paths:
       - containertags
   /containers/path/{repository}:
     get:
-      description: Get a list of tools by path.
+      description: Do not include tool name.
       operationId: getContainerByPath
       parameters:
       - in: path
@@ -1154,11 +1156,12 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a list of tools by path.
       tags:
       - containers
   /containers/path/{repository}/published:
     get:
-      description: Get a list of published tools by path.
+      description: Do not include tool name.
       operationId: getPublishedContainerByPath
       parameters:
       - in: path
@@ -1177,6 +1180,7 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a list of published tools by path.
       tags:
       - containers
   /containers/published:
@@ -1226,7 +1230,7 @@ paths:
       operationId: registerManual
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -1352,7 +1356,9 @@ paths:
       tags:
       - containers
     put:
-      description: Update the tool with the given tool.
+      description: "Updates default descriptor paths, default Dockerfile paths, default\
+        \ test parameter paths, git url, and default version. Also updates tool maintainer\
+        \ email, and private access for manual tools."
       operationId: updateContainer
       parameters:
       - in: path
@@ -1363,7 +1369,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -1375,6 +1381,7 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Update the tool with the given tool.
       tags:
       - containers
   /containers/{containerId}/descriptor/{relative-path}:
@@ -4371,6 +4378,25 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/emails:
+    get:
+      description: Admin-only endpoint. Get the emails of all Dockstore users
+      operationId: getAllUserEmails
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserInfo'
+          description: A list of Dockstore users' emails.
+        "403":
+          description: Forbidden
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/github/events:
     get:
       description: Get all of the GitHub Events for the logged in user.
@@ -5509,8 +5535,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
-          description: Successfully created hosted entry
+                $ref: '#/components/schemas/Workflow'
+          description: Successfully created a hosted workflow.
       security:
       - bearer: []
       tags:
@@ -5669,7 +5695,7 @@ paths:
       - workflows
   /workflows/path/entry/{repository}:
     get:
-      description: Get an entry by path.
+      description: Requires full path (including entry name if applicable).
       operationId: getEntryByPath
       parameters:
       - in: path
@@ -5686,11 +5712,12 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get an entry by path.
       tags:
       - workflows
   /workflows/path/entry/{repository}/published:
     get:
-      description: Get a published entry by path.
+      description: Requires full path (including entry name if applicable).
       operationId: getPublishedEntryByPath
       parameters:
       - in: path
@@ -5705,6 +5732,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: default response
+      summary: Get a published entry by path.
       tags:
       - workflows
   /workflows/path/workflow/{repository}:
@@ -5875,7 +5903,7 @@ paths:
       - workflows
   /workflows/path/workflow/{repository}/published:
     get:
-      description: Get a published workflow by path
+      description: Does not require workflow name.
       operationId: getPublishedWorkflowByPath
       parameters:
       - in: path
@@ -5903,11 +5931,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
+      summary: Get a published workflow by path
       tags:
       - workflows
   /workflows/path/{repository}:
     get:
-      description: Get a list of workflows by path.
+      description: Do not include workflow name.
       operationId: getAllWorkflowByPath
       parameters:
       - in: path
@@ -5926,6 +5955,7 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a list of workflows by path.
       tags:
       - workflows
   /workflows/published:
@@ -8929,6 +8959,17 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/Profile'
         username:
+          type: string
+    UserInfo:
+      type: object
+      properties:
+        dockstoreUsername:
+          type: string
+        thirdPartyEmail:
+          type: string
+        thirdPartyUsername:
+          type: string
+        tokenType:
           type: string
     Validation:
       type: object

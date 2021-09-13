@@ -105,6 +105,11 @@
             <name>artifacts.oicr.on.ca-releases</name>
             <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
         </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>artifacts.oicr.on.ca-snapshots</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <modules>
@@ -113,14 +118,9 @@
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
         <module>openapi-java-client</module>
-        <module>swagger-java-quay-client</module>
-        <module>swagger-java-bitbucket-client</module>
-        <module>swagger-java-sam-client</module>
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
         <module>reports</module>
-        <module>swagger-java-discourse-client</module>
-        <module>swagger-java-zenodo-client</module>
         <module>bom-internal</module>
     </modules>
 
@@ -259,6 +259,10 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>2.8.2</version>
+                    <configuration>
+                        <uniqueVersion>false</uniqueVersion>
+                        <deployAtEnd>false</deployAtEnd>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -454,7 +458,7 @@
                                     <version>3.5.4</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>11</version>
+                                    <version>[11.0.10,12.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>

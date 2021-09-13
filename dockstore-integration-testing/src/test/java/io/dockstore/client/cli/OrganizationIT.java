@@ -577,7 +577,18 @@ public class OrganizationIT extends BaseIT {
         // Create another collection with a different name but same display name
         stubCollection.setName("testcollection3");
         thrown.expect(ApiException.class);
-        organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+        try {
+            organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+            fail("Should not be able to create a collection with the same display name as an already existing collection in the same organization.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains("A collection already exists with the display name"));
+        }
+
+        // Another organization should be able to use the same name and display name as another org.
+        organisation.setName("org2");
+        organisation.setDisplayName("Org 2");
+        organisation = organisationsApiUser2.createOrganization(organisation);
+        organisationsApiUser2.createCollection(organisation.getId(), collectionTwo);
     }
 
     @Test

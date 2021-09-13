@@ -28,6 +28,7 @@ import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -569,21 +570,21 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     /**
-     * Given a path (A/B/C/D), splits it into parts and returns it
+     * Given a path (A/B/C/D), splits it into parts and returns it.
+     * Need to indicate whether the path has an entry name in order to determine the repo name if there are more than 3 components in the path
      *
      * @param path
-     * @return An array of fields used to identify an entry
+     * @param hasEntryName boolean indicating whether the path has an entry name
+     * @return An array of fields used to identify components of an entry's path
      */
-    public static String[] splitPath(String path) {
-        // Used for accessing index of path
+    public static String[] splitPath(String path, boolean hasEntryName) {
+        // Registry and org indices are deterministic: always the first and second components of the path, respectively
         final int registryIndex = 0;
         final int orgIndex = 1;
-        final int repoIndex = 2;
-        final int entryNameIndex = 3;
+        final int repoIndexStart = 2; // Repo and entry name indices are not deterministic because repo name can have slashes
 
-        // Lengths of paths
-        final int pathNoNameLength = 3;
-        final int pathWithNameLength = 4;
+        // Path must at least have 3 components, i.e. <registry>/<org>/<repo>
+        final int minPathLength = 3;
 
         // Used for storing values at path locations
         String registry;
@@ -593,15 +594,29 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
         // Split path by slash
         String[] splitPath = path.split("/");
+        final int lastIndex = splitPath.length - 1;
 
         // Only split if it is the correct length
-        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
-            // Get remaining positions
+        if (splitPath.length >= minPathLength) {
             registry = splitPath[registryIndex];
             org = splitPath[orgIndex];
-            repo = splitPath[repoIndex];
-            if (splitPath.length == pathWithNameLength) {
-                entryName = splitPath[entryNameIndex];
+
+            if (splitPath.length == minPathLength) { // <registry>/<org>/<repo>
+                repo = splitPath[repoIndexStart];
+            } else {
+                String[] repoNameComponents;
+                if (hasEntryName) {
+                    // Assume that the last component is the entry name: <registry>/<org>/<repo>/<entry-name>
+                    entryName = splitPath[lastIndex];
+
+                    // The repo name is the components between org and entry-name
+                    // Note: repo name may contain slashes, ex: <registry>/<org>/<repo-part-1>/<repo-part-2>/<entry-name>
+                    repoNameComponents = Arrays.copyOfRange(splitPath, repoIndexStart, lastIndex);
+                } else {
+                    // Assume that everything after the registry and org is part of the repository name: <registry>/<org>/<repo-part-1>/<repo-part-2>
+                    repoNameComponents = Arrays.copyOfRange(splitPath, repoIndexStart, lastIndex + 1);
+                }
+                repo = String.join("/", repoNameComponents);
             }
 
             // Return an array of the form [A,B,C,D]

@@ -31,6 +31,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.SourceControlOrganization;
+import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
@@ -338,6 +339,35 @@ public class UserResourceIT extends BaseIT {
         assertTrue(deletedOtherUser);
         userCount = testingPostgres.runSelectStatement("select count(*) from enduser", long.class);
         assertEquals(3, userCount);
+    }
+
+    @Test
+    public void testGettingUserEmails() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
+        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi adminUserApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
+
+        List<UserInfo> userInfo = adminUserApi.getAllUserEmails();
+        assertTrue(userInfo.size() >= 2);
+
+
+        testingPostgres.runUpdateStatement("UPDATE user_profile set email = 'fakeEmail@example.com'");
+        userInfo = adminUserApi.getAllUserEmails();
+        userInfo.stream().forEach(info -> {
+            assertNotNull(info.getDockstoreUsername());
+            assertEquals("fakeEmail@example.com", info.getThirdPartyEmail());
+            assertNotNull(info.getThirdPartyUsername());
+            assertNotNull(info.getTokenType());
+        });
+
+        try {
+            userApi.getAllUserEmails();
+            fail("Should not be able to successfully call endpoint unless the user is an admin.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("User not authorized."));
+        }
+
     }
 
     @Test

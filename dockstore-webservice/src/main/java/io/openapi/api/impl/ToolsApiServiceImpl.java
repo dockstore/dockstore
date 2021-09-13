@@ -88,11 +88,14 @@ import org.slf4j.LoggerFactory;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
     public static final Response BAD_DECODE_RESPONSE = Response.status(getExtendedStatus(Status.BAD_REQUEST, "Could not decode version")).build();
+
+    // Algorithms should come from: https://github.com/ga4gh-discovery/ga4gh-checksum/blob/master/hash-alg.csv
+    public static final String DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS = "sha-256";
+
     private static final String GITHUB_PREFIX = "git@github.com:";
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
     private static final int DEFAULT_PAGE_SIZE = 1000;
-    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
@@ -626,7 +629,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (sourceFile.getChecksums() != null && !sourceFile.getChecksums().isEmpty()) {
             sourceFile.getChecksums().stream().forEach(checksum -> {
                 Checksum trsChecksum = new Checksum();
-                trsChecksum.setType(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS);
+                trsChecksum.setType(DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS);
                 trsChecksum.setChecksum(checksum.getChecksum());
                 trsChecksums.add(trsChecksum);
             });
