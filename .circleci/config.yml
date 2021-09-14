@@ -229,7 +229,7 @@ jobs:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-            /usr/local/jdk-11.0.10/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+            /usr/local/jdk-11.0.11/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             export SKIP_SIGNATURE_CHECK=false
             if [[ -z "${CIRCLE_TAG}" ]]; then
               # If it is a branch, skip the signature check
