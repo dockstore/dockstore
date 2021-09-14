@@ -8079,6 +8079,8 @@ components:
         avatarUrl:
           type: string
           pattern: "([^\\s]+)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
+        categorizer:
+          type: boolean
         collectionsLength:
           type: integer
           format: int64
@@ -8120,7 +8122,7 @@ components:
           - PENDING
           - REJECTED
           - APPROVED
-          - SPECIAL
+          - HIDDEN
         topic:
           type: string
     OrganizationUpdateTime:

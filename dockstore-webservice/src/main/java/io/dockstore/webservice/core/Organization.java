@@ -150,6 +150,10 @@ public class Organization implements Serializable, Aliasable {
     @ApiModelProperty(value = "Logo URL", position = 9)
     private String avatarUrl;
 
+    @Column
+    @ApiModelProperty(value = "Does this organization manage categories?")
+    private boolean categorizer = false;
+
     public Organization() {
         starredUsers = new TreeSet<>();
     }
@@ -309,7 +313,7 @@ public class Organization implements Serializable, Aliasable {
         this.displayName = displayName;
     }
 
-    public enum ApplicationState { PENDING, REJECTED, APPROVED, SPECIAL
+    public enum ApplicationState { PENDING, REJECTED, APPROVED, HIDDEN
     }
 
     public String getAvatarUrl() {
@@ -318,5 +322,13 @@ public class Organization implements Serializable, Aliasable {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public boolean getCategorizer() {
+        return categorizer;
+    }
+
+    public void setCategorizer(boolean categorizer) {
+        this.categorizer = categorizer;
     }
 }

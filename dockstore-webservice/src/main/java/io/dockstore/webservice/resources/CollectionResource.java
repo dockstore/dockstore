@@ -452,8 +452,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Get the organization
         Organization organization = organizationDAO.findById(organizationId);
 
-        // If the organization is SPECIAL, convert the Collection to a Category and make sure there are no category name collissions
-        if (organization != null && organization.getStatus() == Organization.ApplicationState.SPECIAL) {
+        // If the organization exists and is a categorizer, convert the Collection to a Category and make sure there are no category name collisions
+        if (organization != null && organization.getCategorizer()) {
             collection = new Category(collection);
             // Check if any other categories exist with that name
             Category matchingCategory = categoryDAO.findByName(collection.getName());

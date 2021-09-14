@@ -7490,6 +7490,9 @@ definitions:
         description: "aliases can be used as an alternate unique id for organizations"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      categorizer:
+        type: "boolean"
+        description: "Does this organization manage categories?"
       collectionsLength:
         type: "integer"
         format: "int64"
@@ -7537,7 +7540,7 @@ definitions:
         - "PENDING"
         - "REJECTED"
         - "APPROVED"
-        - "SPECIAL"
+        - "HIDDEN"
       users:
         type: "array"
         position: 7

@@ -2,9 +2,12 @@
 
 PSQL="docker exec -it -u postgres -e PGPASSWORD=dockstore postgres1 psql -qAtX -d webservice_test -c"
 
+echo "Add hidden, categorizer to organization table"
+$PSQL "ALTER TABLE organization ADD categorizer BOOLEAN NOT NULL DEFAULT FALSE;"
+
 echo "Adding categories organization"
 
-$PSQL "INSERT INTO organization (name, displayname, description, status) VALUES ('dockstoreCategories', 'Dockstore Categories', 'Categories in Dockstore', 'SPECIAL');"
+$PSQL "INSERT INTO organization (name, displayname, description, status, categorizer) VALUES ('dockstoreCategories', 'Dockstore Categories', 'Categories in Dockstore', 'HIDDEN', true);"
 ORG_ID=$($PSQL "SELECT id FROM organization WHERE name = 'dockstoreCategories'" | tr -d '\r')
 
 echo "Categories organization ID: $ORG_ID"
@@ -17,5 +20,5 @@ do
 done
 
 echo "Add DTYPE column to collection table"
-$PSQL "ALTER TABLE collection ADD dtype varchar;"
-$PSQL "UPDATE collection SET dtype = 'Collection' WHERE dtype is null;"
+$PSQL "ALTER TABLE collection ADD dtype varchar DEFAULT 'Collection';"
+$PSQL "create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';"
