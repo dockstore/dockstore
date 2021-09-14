@@ -1048,8 +1048,20 @@ public class WorkflowIT extends BaseIT {
         assertEquals("There should be two workflows with name altname, there are " + count2, 2, count2);
 
         // Publish github workflow
-        workflowApi.refresh(githubWorkflow.getId(), false);
+        Workflow refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), false);
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
+
+        Optional<WorkflowVersion> testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("testWDL")).findFirst();
+        Assert.assertTrue("A workflow version with a descriptor that does not have a description should fall back to README", testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"));
+
+        // Intentionally mess up description to test if refresh fixes it
+        testingPostgres.runUpdateStatement("update version_metadata set description='bad_potato'");
+
+        refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), true);
+        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+
+        testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("testWDL")).findFirst();
+        Assert.assertTrue("A workflow version that had a README description should get updated", testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"));
 
         // Assert some things
         assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(),
