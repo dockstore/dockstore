@@ -254,7 +254,7 @@ public class WorkflowIT extends BaseIT {
     // CWL workflow with HTTP imports
     // CWL workflow with HTTP imports and local imports and nested
     @Test
-    public void testCDLLanguageParsingInformation() {
+    public void testCWLLanguageParsingInformation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow cwlWorkflow = workflowApi
@@ -1051,7 +1051,10 @@ public class WorkflowIT extends BaseIT {
         Workflow refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), false);
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
-        Optional<WorkflowVersion> testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("testWDL")).findFirst();
+        // Tag with a valid descriptor (but no description) and a recognizable README
+        final String tagName = "1.0.0";
+
+        Optional<WorkflowVersion> testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(tagName)).findFirst();
         Assert.assertTrue("A workflow version with a descriptor that does not have a description should fall back to README", testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"));
 
         // Intentionally mess up description to test if refresh fixes it
@@ -1060,7 +1063,7 @@ public class WorkflowIT extends BaseIT {
         refreshedWorkflow = workflowApi.refresh(githubWorkflow.getId(), true);
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
-        testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals("testWDL")).findFirst();
+        testWDL = refreshedWorkflow.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.getName().equals(tagName)).findFirst();
         Assert.assertTrue("A workflow version that had a README description should get updated", testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"));
 
         // Assert some things
@@ -1070,7 +1073,7 @@ public class WorkflowIT extends BaseIT {
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("One workflow is in full mode", 1, count3);
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid = 't'", long.class);
-        assertEquals("There should be 2 valid version tags, there are " + count4, 2, count4);
+        assertTrue("There should be at least 2 valid version tags, there are " + count4, 2 <= count4);
 
         workflowApi.refresh(bitbucketWorkflow.getId(), false);
         thrown.expect(ApiException.class);
