@@ -102,4 +102,26 @@
             create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
         </sql>
     </changeSet>
+
+    <changeSet author="svonworl" id="categories_new_feature">
+        <addColumn tableName="organization">
+            <column name="categorizer" type="boolean" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="collection">
+            <column name="dtype" type="varchar(255)" defaultValue="Collection">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <sql dbms="postgresql">
+            create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';
+        </sql>
+        <sql dbms="postgresql">
+            insert into organization (name, displayname, description, status, categorizer, dbcreatedate, dbupdatedate) values ('dockstore', 'Dockstore', 'Each of this organization''s Collections is a Category.', 'HIDDEN', true, LOCALTIMESTAMP, LOCALTIMESTAMP)
+        </sql>
+        <sql dbms="postgresql">
+            insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where isadmin;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
