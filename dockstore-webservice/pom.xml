@@ -743,6 +743,10 @@
                     <groupId>org.locationtech.spatial4j</groupId>
                     <artifactId>spatial4j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.elasticsearch</groupId>
+                    <artifactId>elasticsearch-plugin-classloader</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
