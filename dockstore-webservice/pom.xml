@@ -744,6 +744,10 @@
                     <artifactId>spatial4j</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.lz4</groupId>
+                    <artifactId>lz4-java</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.elasticsearch</groupId>
                     <artifactId>elasticsearch-plugin-classloader</artifactId>
                 </exclusion>
