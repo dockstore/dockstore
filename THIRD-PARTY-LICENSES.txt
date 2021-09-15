@@ -1,5 +1,5 @@
 
-Lists of 359 third-party dependencies.
+Lists of 358 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.12:2.5.31 - https://akka.io/)
@@ -139,7 +139,6 @@ Lists of 359 third-party dependencies.
      (Apache License 2.0) Dropwizard Validation Support (io.dropwizard:dropwizard-validation:2.0.24 - http://www.dropwizard.io/2.0.24/dropwizard-bom/dropwizard-dependencies/dropwizard-parent/dropwizard-validation)
      (Apache 2) EasyMock (org.easymock:easymock:4.0.1 - http://easymock.org/easymock)
      (Elastic License 2.0) (Server Side Public License, v 1) elasticsearch-core (org.elasticsearch:elasticsearch-core:7.14.1 - https://github.com/elastic/elasticsearch)
-     (Elastic License 2.0) (Server Side Public License, v 1) elasticsearch-plugin-classloader (org.elasticsearch:elasticsearch-plugin-classloader:7.14.1 - https://github.com/elastic/elasticsearch)
      (Elastic License 2.0) (Server Side Public License, v 1) elasticsearch-x-content (org.elasticsearch:elasticsearch-x-content:7.14.1 - https://github.com/elastic/elasticsearch)
      (Apache 2.0) error-prone annotations (com.google.errorprone:error_prone_annotations:2.8.0 - https://errorprone.info/error_prone_annotations)
      (Dual license consisting of the CDDL v1.1 and GPL v2) Extended StAX API (org.jvnet.staxex:stax-ex:1.8 - http://stax-ex.java.net/)

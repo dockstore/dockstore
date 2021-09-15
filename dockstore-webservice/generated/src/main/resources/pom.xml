@@ -825,6 +825,10 @@
           <artifactId>spatial4j</artifactId>
           <groupId>org.locationtech.spatial4j</groupId>
         </exclusion>
+        <exclusion>
+          <artifactId>elasticsearch-plugin-classloader</artifactId>
+          <groupId>org.elasticsearch</groupId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
