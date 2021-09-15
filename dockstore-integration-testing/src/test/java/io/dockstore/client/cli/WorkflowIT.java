@@ -1056,7 +1056,7 @@ public class WorkflowIT extends BaseIT {
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("One workflow is in full mode", 1, count3);
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid = 't'", long.class);
-        assertEquals("There should be 2 valid version tags, there are " + count4, 2, count4);
+        assertTrue("There should be at least 2 valid version tags, there are " + count4, 2 <= count4);
 
         workflowApi.refresh(bitbucketWorkflow.getId(), false);
         thrown.expect(ApiException.class);
