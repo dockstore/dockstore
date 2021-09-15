@@ -83,16 +83,6 @@ jobs:
       - setup_test
       - setup_integration_test
       - save_test_results
-  cwltool-tests:
-    executor: machine_integration_test_exec
-    environment:
-      TESTING_PROFILE: require-cwltool-tests
-    steps:
-      - old_python
-      - setup_machine
-      - setup_test
-      - setup_integration_test
-      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -341,9 +331,6 @@ commands:
             # For debug purposes, a python3 version was installed in the image, pip is untagged
             python3 --version
             pip3 --version
-      - run:
-          name: install pip dependencies
-          command: scripts/install-tests.sh
       - run:
           name: decrypt and expand confidential test data
           command: |
