@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -250,6 +251,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
     private String orcidPutCode;
+
+    @JsonIgnore
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "collection_entry_version", inverseJoinColumns = @JoinColumn(name = "collection_id", referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "entry_id", referencedColumnName = "id", columnDefinition = "bigint"))
+    @BatchSize(size = 25)
+    private Set<Collection> collections = new LinkedHashSet<>();
 
     public Entry() {
         users = new TreeSet<>();
@@ -665,5 +672,15 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setOrcidPutCode(String orcidPutCode) {
         this.orcidPutCode = orcidPutCode;
+    }
+
+    @JsonIgnore
+    public Set<Category> getCategories() {
+        return (collections.stream().filter(c -> c instanceof Category).map(c -> (Category) c).collect(Collectors.toSet()));
+    }
+
+    @JsonIgnore
+    public Set<String> getCategoryNames() {
+        return (getCategories().stream().map(Category::getName).collect(Collectors.toSet()));
     }
 }

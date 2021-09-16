@@ -18,6 +18,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
@@ -60,6 +61,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -245,7 +247,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
         }
 
-
         // Event for addition
         Organization organization = organizationDAO.findById(organizationId);
 
@@ -265,6 +266,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Event addToCollectionEvent = eventBuild.build();
         eventDAO.create(addToCollectionEvent);
+
+        // If added to a Category, update the Entry in the index
+        if (entryAndCollection.getRight() instanceof Category) {
+            handleIndexUpdate(entryAndCollection.getLeft());
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -318,6 +324,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Event removeFromCollectionEvent = eventBuild.build();
         eventDAO.create(removeFromCollectionEvent);
+
+        // If added to a Category, update the Entry in the index
+        if (entryAndCollection.getRight() instanceof Category) {
+            handleIndexUpdate(entryAndCollection.getLeft());
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -649,5 +660,12 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Hibernate.initialize(byAlias.getAliases());
         return byAlias;
+    }
+
+    private void handleIndexUpdate(Entry entry) {
+        Session currentSession = sessionFactory.getCurrentSession();
+        currentSession.flush();
+        currentSession.refresh(entry);
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
     }
 }

@@ -261,6 +261,7 @@ public class ElasticListener implements StateListenerInterface {
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        ((ObjectNode)jsonNode).put("categoryNames", MAPPER.valueToTree(entry.getCategoryNames()));
         return jsonNode;
     }
 
