@@ -1,10 +1,14 @@
 version: 2.1
+parameters:
+  java-tag:
+    type: string
+    default: "11.0.11"
 orbs:
-  aws-s3: circleci/aws-s3@1.0.0
+  aws-s3: circleci/aws-s3@3.0.0
 executors:
   integration_test_exec:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.10
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
         environment:
           JAVA_TOOL_OPTIONS: -Xmx512m # Nothing to do with surefire plugin, it has its own JVM. The two of these plus ES (1.3 GB) must add up to a bit less than 6GB.
           PGHOST: 127.0.0.1
@@ -93,17 +97,6 @@ jobs:
       - setup_postgres_docker
       - setup_integration_test
       - save_test_results
-  cwltool-tests:
-    executor: machine_integration_test_exec
-    environment:
-      TESTING_PROFILE: require-cwltool-tests
-    steps:
-      - old_python
-      - setup_machine
-      - setup_test
-      - setup_postgres_docker
-      - setup_integration_test
-      - save_test_results
   integration-tests:
     executor: integration_test_exec
     environment:
@@ -144,6 +137,9 @@ jobs:
       - old_python
       - setup_machine
       - install-pip
+      - run:
+          name: install pip dependencies
+          command: scripts/install-tests.sh
       - run: 
           name: build sam-cli
           command: |
@@ -170,7 +166,7 @@ jobs:
       - save_test_results
   build:
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.10
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
     steps: # a collection of executable commands
       - checkout # check out source code to working directory
       - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
@@ -214,7 +210,7 @@ jobs:
         type: string
         default: "${AWS_BUCKET}"
     docker: # run the steps with Docker
-      - image: cimg/openjdk:11.0.10
+      - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
         environment:
           PGHOST: 127.0.0.1
       - image: circleci/postgres:13.3
@@ -237,7 +233,7 @@ jobs:
           name: run the non-confidential integration tests
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-            /usr/local/jdk-11.0.10/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+            /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             export SKIP_SIGNATURE_CHECK=false
             if [[ -z "${CIRCLE_TAG}" ]]; then
               # If it is a branch, skip the signature check
@@ -323,7 +319,6 @@ jobs:
             docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
             docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests
             docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt
-      - install-pip
       - aws-s3/copy:
           from: image-digest.txt
           to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
@@ -407,10 +402,6 @@ commands:
           key: dockstore-web-cache-{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CACHE_SEGMENTED_VERSION }}-segmented
   setup_integration_test:
     steps:
-      - install-pip
-      - run:
-          name: install pip dependencies
-          command: scripts/install-tests.sh
       - run:
           name: decrypt and expand confidential test data
           command: |

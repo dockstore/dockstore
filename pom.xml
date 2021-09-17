@@ -69,7 +69,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.11.6</tag>
+        <tag>1.11.8</tag>
     </scm>
 
     <repositories>
@@ -455,10 +455,10 @@
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
-                                    <version>3.5.4</version>
+                                    <version>3.8.1</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[11.0.2,12.0)</version>
+                                    <version>[11.0.11,12.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
@@ -720,15 +720,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.RequireCwltoolTest</excludeGroups>
-            </properties>
-        </profile>
-        <profile>
-            <id>require-cwltool-tests</id>
-            <properties>
-                <skipTests>true</skipTests>
-                <skipITs>false</skipITs>
-                <groups>io.dockstore.common.RequireCwltoolTest</groups>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest</excludeGroups>
             </properties>
         </profile>
         <profile>

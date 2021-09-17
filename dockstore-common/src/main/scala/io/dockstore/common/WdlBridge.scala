@@ -23,7 +23,7 @@ import wdl.model.draft3.elements.ExpressionElement.StringLiteral
 import wdl.transforms.base.wdlom2wom.expression.WdlomWomExpression
 import wom.ResolvedImportRecord
 import wom.callable.MetaValueElement.MetaValueElementString
-import wom.callable.{CallableTaskDefinition, ExecutableCallable, WorkflowDefinition}
+import wom.callable.{CallableTaskDefinition, ExecutableCallable, MetaValueElement, WorkflowDefinition}
 import wom.executable.WomBundle
 import wom.expression.WomExpression
 import wom.graph._
@@ -94,34 +94,32 @@ class WdlBridge {
   }
 
   /**
-    * Retrieves the metadata object for a given workflow
+    * Retrieves the metadata with string values for a given workflow
     * @param filePath absolute path to file
     * @throws wdl.draft3.parser.WdlParser.SyntaxError
     * @return list of metadata mappings
     */
   @throws(classOf[WdlParser.SyntaxError])
   def getMetadata(filePath: String, sourceFilePath: String) = {
+
+    def getStringValueMetadata(metadata: Map[String, MetaValueElement]): java.util.Map[String, String] = {
+      // Metadata is sometimes not a string (booleans for example), ignoring those
+      val convertedWorkflowMap = metadata.collect{ case (k, v) if v.isInstanceOf[MetaValueElementString] => (k, v.asInstanceOf[MetaValueElementString].value)}
+      JavaConverters.mapAsJavaMap(convertedWorkflowMap)
+    }
+
     val bundle = getBundle(filePath, sourceFilePath)
     val metadataList = new util.ArrayList[util.Map[String, String]]()
     bundle.allCallables.foreach(callable => {
       callable._2 match {
-        case w: WorkflowDefinition => {
-          val workflowCallable = callable._2
-          val workflowInstance = workflowCallable.asInstanceOf[WorkflowDefinition]
-          val workflowMetadata = workflowInstance.meta
-          // Metadata is sometimes not a string (booleans for example), ignoring those
-          val convertedWorkflowMap = workflowMetadata.collect{ case (k, v) if v.isInstanceOf[MetaValueElementString] => (k, v.asInstanceOf[MetaValueElementString].value)}
-          val metadata = JavaConverters.mapAsJavaMap(convertedWorkflowMap)
+        case workflowInstance: WorkflowDefinition => {
+          val metadata = getStringValueMetadata(workflowInstance.meta)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
         }
-        case c: CallableTaskDefinition => {
-          val taskCallable = callable._2
-          val taskInstance = taskCallable.asInstanceOf[CallableTaskDefinition]
-          val taskMetadata = taskInstance.meta
-          val convertedTaskMetadataMap = taskMetadata.map{ case (k, v) => (k, v.asInstanceOf[MetaValueElementString].value)}
-          val metadata = JavaConverters.mapAsJavaMap(convertedTaskMetadataMap)
+        case taskInstance: CallableTaskDefinition => {
+          val metadata = getStringValueMetadata(taskInstance.meta)
           if (!metadata.isEmpty) {
             metadataList.add(metadata)
           }
