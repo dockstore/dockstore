@@ -60,7 +60,7 @@ class CollectionHelper {
         List<CollectionEntry> collectionEntries = new ArrayList<>();
         collectionEntries.addAll(collectionWorkflows);
         collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);        
+        collectionEntries.addAll(collectionTools);
         collectionEntries.addAll(collectionWorkflowsWithVersions);
         collectionEntries.addAll(collectionServicesWithVersions);
         collectionEntries.addAll(collectionToolsWithVersions);
