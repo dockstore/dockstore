@@ -51,6 +51,25 @@
       "author": {
         "type": "keyword"
       },
+      "categories": {
+        "properties": {
+          "description": {
+            "type": "text"
+          },
+          "displayName": {
+            "type": "text"
+          },
+          "id": {
+            "type": "long"
+          },
+          "name": {
+            "type": "text"
+          },
+          "topic": {
+            "type": "text"
+          }
+        }
+      },
       "defaultVersion": {
         "type": "keyword"
       },

@@ -155,7 +155,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
             Collection approvalForCollection = getApprovalForCollection(collection);
-            unpersistAndAddEntries(approvalForCollection);
+            evictAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -168,7 +168,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
-            unpersistAndAddEntries(collection);
+            evictAndAddEntries(collection);
             return collection;
         }
     }
@@ -194,7 +194,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             throwExceptionForNullCollection(collection);
             Collection approvalForCollection = getApprovalForCollection(collection);
-            unpersistAndAddEntries(approvalForCollection);
+            evictAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -208,17 +208,17 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             Hibernate.initialize(collection.getAliases());
-            unpersistAndAddEntries(collection);
+            evictAndAddEntries(collection);
             return collection;
         }
     }
 
-    private void unpersistAndSummarize(Collection collection) {
-        helper.unpersistAndSummarize(collection);
+    private void evictAndSummarize(Collection collection) {
+        helper.evictAndSummarize(collection);
     }
 
-    private void unpersistAndAddEntries(Collection collection) {
-        helper.unpersistAndAddEntries(collection);
+    private void evictAndAddEntries(Collection collection) {
+        helper.evictAndAddEntries(collection);
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
@@ -410,9 +410,9 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         boolean includeEntries = checkIncludes(include, "entries");
         collections.forEach(collection -> {
             if (includeEntries) {
-                unpersistAndAddEntries(collection);
+                evictAndAddEntries(collection);
             } else {
-                unpersistAndSummarize(collection);
+                evictAndSummarize(collection);
             }
         });
         return collections;

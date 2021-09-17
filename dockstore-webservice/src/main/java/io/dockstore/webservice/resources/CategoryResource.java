@@ -65,7 +65,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @Operation(operationId = "getCategories", summary = "Retrieve all categories.", description = "Retrieve all categories.")
     public List<Category> getCategories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
         List<Category> categories = categoryDAO.getCategories();
-        collectionHelper.unpersistAndSummarize(categories);
+        collectionHelper.evictAndSummarize(categories);
         return categories;
     }
 
@@ -81,7 +81,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         Category category = categoryDAO.findByName(name);
         collectionHelper.throwExceptionForNullCollection(category);
         Hibernate.initialize(category.getAliases());
-        collectionHelper.unpersistAndAddEntries(category);
+        collectionHelper.evictAndAddEntries(category);
         return (category);
     }
 }

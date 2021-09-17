@@ -34,7 +34,7 @@ class CollectionHelper {
         }
     }
 
-    public void unpersistAndSummarize(Collection collection) {
+    public void evictAndSummarize(Collection collection) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
         // Ensure that entries is empty
@@ -44,11 +44,11 @@ class CollectionHelper {
         collection.setToolsLength(entryDAO.getToolsLength(collection.getId()));
     }
 
-    public void unpersistAndSummarize(java.util.Collection<? extends Collection> c) {
-        c.forEach(collection -> unpersistAndSummarize(collection));
+    public void evictAndSummarize(java.util.Collection<? extends Collection> c) {
+        c.forEach(collection -> evictAndSummarize(collection));
     }
 
-    public void unpersistAndAddEntries(Collection collection) {
+    public void evictAndAddEntries(Collection collection) {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.evict(collection);
         List<CollectionEntry> collectionWorkflows = entryDAO.getCollectionWorkflows(collection.getId());
@@ -81,7 +81,7 @@ class CollectionHelper {
         collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
     }
 
-    public void unpersistAndAddEntries(java.util.Collection<? extends Collection> c) {
-        c.forEach(collection -> unpersistAndAddEntries(collection));
+    public void evictAndAddEntries(java.util.Collection<? extends Collection> c) {
+        c.forEach(collection -> evictAndAddEntries(collection));
     }
 }

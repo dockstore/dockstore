@@ -516,8 +516,27 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateEmail(organization.getEmail());
         validateLink(organization.getLink());
 
+        if (organization.getCategorizer()) {
+
+            // only a global admin can create a categorizer organization.
+            if (!user.getIsAdmin()) {
+                String msg = "Only an administrator can create a categorizer organization.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+            }
+
+            // Create with either APPROVED or HIDDEN status.
+            if (organization.getStatus() != Organization.ApplicationState.APPROVED) {
+                organization.setStatus(Organization.ApplicationState.HIDDEN);
+            }
+
+        } else {
+
+            // should not be approved by default
+            organization.setStatus(Organization.ApplicationState.PENDING);
+        }
+
         // Save organization
-        organization.setStatus(Organization.ApplicationState.PENDING); // should not be approved by default
         long id = organizationDAO.create(organization);
 
         User foundUser = userDAO.findById(user.getId());
@@ -594,6 +613,12 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             } else {
                 throw new CustomWebApplicationException("Only admin and curators are able to change an approved Organization's name or display name. Contact Dockstore to have it changed.", HttpStatus.SC_UNAUTHORIZED);
             }
+        }
+
+        // If the organization is HIDDEN and the user is a global admin, allow a
+        // transition to any other status.
+        if (oldOrganization.getStatus() == Organization.ApplicationState.HIDDEN && user.getIsAdmin()) {
+            oldOrganization.setStatus(organization.getStatus());
         }
 
         // Update rest of organization

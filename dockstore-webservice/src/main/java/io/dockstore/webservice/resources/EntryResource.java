@@ -193,7 +193,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
         List<Category> categories = this.toolDAO.findCategoriesByEntryId(entry.getId());
-        collectionHelper.unpersistAndSummarize(categories);
+        collectionHelper.evictAndSummarize(categories);
         return categories;
     }
 
