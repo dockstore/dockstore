@@ -159,7 +159,7 @@ public class UserResourceIT extends BaseIT {
         final User user = userUserWebClient.getUser();
         assertFalse(user.getUsername().isEmpty());
 
-        openApiUserWebClient.banUser(user.getId(), true);
+        openApiUserWebClient.banUser(true, user.getId());
 
         assertTrue(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
 
@@ -170,7 +170,7 @@ public class UserResourceIT extends BaseIT {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
 
-        openApiUserWebClient.banUser(user.getId(), false);
+        openApiUserWebClient.banUser(false, user.getId());
         assertFalse(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
     }
 

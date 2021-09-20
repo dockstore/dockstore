@@ -4739,9 +4739,10 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: boolean
+        required: true
       responses:
         "204":
           description: Successfully banned/unbanned user
