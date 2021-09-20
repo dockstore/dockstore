@@ -52,8 +52,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <groupId>com.fasterxml.jackson.jaxrs</groupId>
           <artifactId>jackson-jaxrs-base</artifactId>
+          <groupId>com.fasterxml.jackson.jaxrs</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -64,8 +64,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-annotations</artifactId>
+          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -76,8 +76,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-annotations</artifactId>
+          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -106,8 +106,8 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>*</groupId>
           <artifactId>*</artifactId>
+          <groupId>*</groupId>
         </exclusion>
       </exclusions>
     </dependency>
