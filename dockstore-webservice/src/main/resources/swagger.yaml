@@ -4347,6 +4347,8 @@ paths:
       summary: "Updated banned status of user. Removes all tokens for banned users."
       description: ""
       operationId: "banUser"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4359,7 +4361,7 @@ paths:
       - in: "body"
         name: "body"
         description: "isBanned"
-        required: false
+        required: true
         schema:
           type: "boolean"
       responses:
