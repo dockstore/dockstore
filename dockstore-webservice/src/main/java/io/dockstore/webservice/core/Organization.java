@@ -324,7 +324,7 @@ public class Organization implements Serializable, Aliasable {
         this.avatarUrl = avatarUrl;
     }
 
-    public boolean getCategorizer() {
+    public boolean isCategorizer() {
         return categorizer;
     }
 

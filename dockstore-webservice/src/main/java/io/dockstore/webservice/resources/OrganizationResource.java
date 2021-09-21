@@ -516,7 +516,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateEmail(organization.getEmail());
         validateLink(organization.getLink());
 
-        if (organization.getCategorizer()) {
+        if (organization.isCategorizer()) {
 
             // only a global admin can create a categorizer organization.
             if (!user.getIsAdmin()) {
