@@ -110,7 +110,8 @@
             </column>
         </addColumn>
         <addColumn tableName="collection">
-            <column name="dtype" type="varchar(255)">
+            <column name="dtype" type="varchar(31)">
+                <constraints nullable="false"/>
             </column>
         </addColumn>
         <sql dbms="postgresql">
