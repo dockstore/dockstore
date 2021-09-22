@@ -149,10 +149,6 @@ public class Collection implements Serializable, Aliasable {
     @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
-    @Column(name = "dtype", columnDefinition = "varchar(255) default 'Collection'")
-    @JsonIgnore
-    private String dtype;
-
     @Transient
     private List<CollectionEntry> collectionEntries = new ArrayList<>();
 

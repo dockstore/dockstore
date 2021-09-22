@@ -150,7 +150,7 @@ public class Organization implements Serializable, Aliasable {
     @ApiModelProperty(value = "Logo URL", position = 9)
     private String avatarUrl;
 
-    @Column(columnDefinition = "boolean default 'false'")
+    @Column(columnDefinition = "boolean default 'false'", nullable = false)
     @ApiModelProperty(value = "Does this organization manage categories?")
     private boolean categorizer = false;
 
