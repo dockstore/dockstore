@@ -254,7 +254,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "collection_entry_version", inverseJoinColumns = @JoinColumn(name = "collection_id", referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "entry_id", referencedColumnName = "id", columnDefinition = "bigint"))
+    @JoinTable(name = "collection_entry_version", inverseJoinColumns = @JoinColumn(name = "collection_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "entry_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @BatchSize(size = 25)
     private Set<Collection> collections = new LinkedHashSet<>();
 
