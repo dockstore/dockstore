@@ -16,15 +16,16 @@
 
 package io.dockstore.webservice.helpers;
 
-import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +129,7 @@ public final class SourceCodeRepoFactory {
         Pattern p1 = Pattern.compile("git@([^\\s:/]++):([^\\s:/]++)/([^\\s:/.]++)\\.git");
         Matcher m1 = p1.matcher(url);
         // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
-        Pattern p2 = Pattern.compile("git:/([^\\s:/]++)/([^\\s:/]++)/([^\\s:/.]++)\\.git");
+        Pattern p2 = Pattern.compile("git://([^\\s:/]++)/([^\\s:/]++)/([^\\s:/.]++)\\.git");
         Matcher m2 = p2.matcher(url);
 
         Matcher matcherActual;
