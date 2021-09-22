@@ -118,10 +118,11 @@
             create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';
         </sql>
         <sql dbms="postgresql">
-            insert into organization (name, displayname, description, status, categorizer, link, email, dbcreatedate, dbupdatedate) values ('dockstore', 'Dockstore', 'Each of this organization''s Collections is a Category.', 'HIDDEN', true, 'https://dockstore.org/', 'support@dockstore.org', LOCALTIMESTAMP, LOCALTIMESTAMP)
+            insert into organization (name, displayname, description, status, categorizer, link, email, dbcreatedate, dbupdatedate) values ('dockstore', 'Dockstore', 'Each of this organization''s Collections is a Category.', 'HIDDEN', true, 'https://dockstore.org/', 'support@dockstore.org', LOCALTIMESTAMP, LOCALTIMESTAMP);
         </sql>
+        <!-- Add a handful of key users to the dockstore org, rather than all admins, to avoid inadvertently binding test users to orgs, which interferes with existing integration tests. -->
         <sql dbms="postgresql">
-            insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where isadmin;
+            insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where username in ('dockstore-admin', 'gluu-oicr', 'coverbeck-adm');
         </sql>
     </changeSet>
 </databaseChangeLog>
