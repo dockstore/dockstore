@@ -110,12 +110,9 @@
             </column>
         </addColumn>
         <addColumn tableName="collection">
-            <column name="dtype" type="varchar(31)" defaultValue="Collection">
-                <constraints nullable="false"/>
+            <column name="dtype" type="varchar(31)" value="Collection">
             </column>
         </addColumn>
-    </changeSet>
-    <changeSet author="svonworl" id="categories_new_feature_2">
         <sql dbms="postgresql">
             create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';
         </sql>
