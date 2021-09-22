@@ -790,7 +790,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should exist a role that is not accepted
         final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = false and organizationId = '" + 1 + "' and userId = '" + 2 + "'",
+            "select count(*) from organization_user where accepted = false and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
@@ -815,7 +815,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should exist a role that is accepted
         final long count5 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = true and organizationId = '" + 1 + "' and userId = '" + 2 + "'",
+            "select count(*) from organization_user where accepted = true and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
@@ -1004,7 +1004,7 @@ public class OrganizationIT extends BaseIT {
 
         // There should exist a role that is not accepted
         final long count3 = testingPostgres.runSelectStatement(
-            "select count(*) from organization_user where accepted = false and organizationId = '" + 1 + "' and userId = '" + 2 + "'",
+            "select count(*) from organization_user where accepted = false and organizationId = " + orgId + " and userId = '" + 2 + "'",
             long.class);
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
@@ -1017,7 +1017,7 @@ public class OrganizationIT extends BaseIT {
 
         // Should not have a role
         final long count5 = testingPostgres
-            .runSelectStatement("select count(*) from organization_user where organizationId = '" + 1 + "' and userId = '" + 2 + "'",
+            .runSelectStatement("select count(*) from organization_user where organizationId = " + orgId + " and userId = '" + 2 + "'",
                 long.class);
         assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
 
@@ -1587,7 +1587,7 @@ public class OrganizationIT extends BaseIT {
 
         // approve the org
         testingPostgres.runUpdateStatement(
-                "update organization set status = '" + io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() + "'");
+                "update organization set status = '" + io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() + "' where name ='" + organization.getName() + "'");
 
         // set aliases
         final Collection collectionWithAlias = organizationsApi.addCollectionAliases(collectionId, "test collection, spam");
@@ -2203,6 +2203,10 @@ public class OrganizationIT extends BaseIT {
         return (workflow);
     }
 
+    private void addAdminToDockstoreOrg(String username) {
+        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where username = '" + username + "'");
+    }
+
     private void addToCategory(String name, Workflow workflow) {
 
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
@@ -2232,6 +2236,8 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testAddCategoriesAndAddRemoveEntry() {
+
+        addAdminToDockstoreOrg(ADMIN_USERNAME);
 
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
