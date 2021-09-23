@@ -4726,10 +4726,10 @@ paths:
       - bearer: []
       tags:
       - users
-  /users/user/{userId}:
-    delete:
-      description: Terminate user if possible.
-      operationId: terminateUsers
+  /users/user/{userId}/bannedStatus:
+    put:
+      description: Update banned status of user. Removes all tokens for banned users.
+      operationId: banUser
       parameters:
       - in: path
         name: userId
@@ -4737,13 +4737,15 @@ paths:
         schema:
           type: integer
           format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: boolean
+        required: true
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: boolean
-          description: Successfully deleted user
+        "204":
+          description: Successfully banned/unbanned user
         "403":
           description: Forbidden
         "404":

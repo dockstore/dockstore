@@ -151,17 +151,17 @@ public class UserResourceIT extends BaseIT {
 
     @Test
     public void testUserTermination() throws ApiException {
-        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
         UsersApi userUserWebClient = new UsersApi(userWebClient);
+        io.dockstore.openapi.client.api.UsersApi openApiUserWebClient = new io.dockstore.openapi.client.api.UsersApi(openApiAdminWebClient);
         final User user = userUserWebClient.getUser();
         assertFalse(user.getUsername().isEmpty());
 
-        UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
-        final Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
+        openApiUserWebClient.banUser(true, user.getId());
 
-        assertTrue(aBoolean);
+        assertTrue(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
 
         try {
             userUserWebClient.getUser();
@@ -169,6 +169,9 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
+
+        openApiUserWebClient.banUser(false, user.getId());
+        assertFalse(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
     }
 
     @Test
