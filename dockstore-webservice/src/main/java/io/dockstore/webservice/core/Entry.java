@@ -253,7 +253,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String orcidPutCode;
 
     @JsonIgnore
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "collection_entry_version", inverseJoinColumns = @JoinColumn(name = "collection_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "entry_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @BatchSize(size = 25)
     private Set<Collection> collections = new LinkedHashSet<>();

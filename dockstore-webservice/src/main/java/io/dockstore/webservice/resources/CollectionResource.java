@@ -507,7 +507,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         Organization organization = getOrganizationAndCheckModificationRights(user, existingCollection);
 
         // Check if new name is valid
-        if (!Objects.equals(existingCollection.getName(), collection.getName())) {
+        boolean nameChange = !Objects.equals(existingCollection.getName(), collection.getName());
+        if (nameChange) {
             Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
             if (duplicateName != null) {
                 if (duplicateName.getId() == existingCollection.getId()) {
@@ -535,6 +536,13 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .withType(Event.EventType.MODIFY_COLLECTION)
                 .build();
         eventDAO.create(updateCollectionEvent);
+
+        // If the name of a Category changed, reindex the entries.
+        if (nameChange && existingCollection instanceof Category) {
+            long id = existingCollection.getId();
+            workflowDAO.getCollectionWorkflows(id).forEach(ce -> handleIndexUpdate(workflowDAO.findById(ce.getId())));
+            toolDAO.getCollectionTools(id).forEach(ce -> handleIndexUpdate(toolDAO.findById(ce.getId())));
+        }
 
         return collectionDAO.findById(collectionId);
 
