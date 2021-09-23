@@ -109,10 +109,12 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <!-- the following addColumn+addNotNullConstraint combo is necessary because the JPA-generated db wants the column "collection" to be non-null, but complains if there is an SQL-defined default value. -->
         <addColumn tableName="collection">
             <column name="dtype" type="varchar(31)" value="Collection">
             </column>
         </addColumn>
+        <addNotNullConstraint columnName="dtype" tableName="collection"/>
         <sql dbms="postgresql">
             create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';
         </sql>

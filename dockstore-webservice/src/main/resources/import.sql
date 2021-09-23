@@ -56,3 +56,9 @@ CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprof
 CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;
 
 create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
+
+create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';
+
+-- undo the JPA primary key/constraint changes to table collection_entry_version that are induced by the join to populate field Entry.collections
+alter table collection_entry_version drop constraint collection_entry_version_pkey;
+alter table collection_entry_version add primary key (id);
