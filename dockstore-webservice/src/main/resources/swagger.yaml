@@ -19,7 +19,6 @@ basePath: "/"
 tags:
 - name: "aliases"
   description: "Create, update list aliases for accessing entries"
-- name: "categories"
 - name: "containers"
   description: "List and register entries in the dockstore (pairs of images + metadata\
     \ (CWL and Dockerfile))"
@@ -1323,43 +1322,6 @@ paths:
           description: "Invalid token value"
       security:
       - BEARER: []
-  /categories:
-    get:
-      tags:
-      - "categories"
-      summary: "Retrieve all categories."
-      description: ""
-      operationId: "getCategories"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Category"
-  /categories/names/{name}:
-    get:
-      tags:
-      - "categories"
-      summary: "Retrieve a category by name."
-      description: ""
-      operationId: "getCategoryByName"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "name"
-        in: "path"
-        description: "Category name."
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Category"
   /containers/hostedEntry:
     post:
       tags:

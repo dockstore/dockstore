@@ -8,9 +8,6 @@ import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -34,7 +31,6 @@ import org.slf4j.LoggerFactory;
  * Category endpoints
  */
 @Path("/categories")
-@Api("/categories")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "categories", description = ResourceConstants.CATEGORIES)
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
@@ -61,9 +57,8 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("")
-    @ApiOperation(nickname = "getCategories", value = "Retrieve all categories.", response = Category.class, responseContainer = "List")
     @Operation(operationId = "getCategories", summary = "Retrieve all categories.", description = "Retrieve all categories.")
-    public List<Category> getCategories(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
+    public List<Category> getCategories(@Parameter(hidden = true, name = "user") @Auth Optional<User> user) {
         List<Category> categories = categoryDAO.getCategories();
         collectionHelper.evictAndSummarize(categories);
         return categories;
@@ -73,11 +68,10 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/names/{name}")
-    @ApiOperation(nickname = "getCategoryByName", value = "Retrieve a category by name.", response = Category.class)
     @Operation(operationId = "getCategoryByName", summary = "Retrieve a category by name.", description = "Retrieve a category by name.")
     public Category getCategoryByName(
-        @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
-        @ApiParam(value = "Category name.", required = true) @Parameter(description = "Category name.", name = "name", in = ParameterIn.PATH, required = true) @PathParam("name") String name) {
+        @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @Parameter(description = "Category name.", name = "name", in = ParameterIn.PATH, required = true) @PathParam("name") String name) {
         Category category = categoryDAO.findByName(name);
         collectionHelper.throwExceptionForNullCollection(category);
         Hibernate.initialize(category.getAliases());
