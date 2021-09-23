@@ -605,8 +605,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateLink(organization.getLink());
 
         if (!oldOrganization.getName().equals(organization.getName()) || !oldOrganization.getDisplayName().equals(organization.getDisplayName())) {
-            if (user.getIsAdmin() || user.isCurator() || oldOrganization.getStatus() != Organization.ApplicationState.APPROVED) {
-                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved
+            if (user.getIsAdmin() || user.isCurator() || (oldOrganization.getStatus() != Organization.ApplicationState.APPROVED && oldOrganization.getStatus() != Organization.ApplicationState.HIDDEN)) {
+                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved or hidden
                 // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
                 oldOrganization.setName(organization.getName());
                 oldOrganization.setDisplayName(organization.getDisplayName());
@@ -615,9 +615,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             }
         }
 
-        // If the organization is HIDDEN and the user is a global admin, allow a
-        // transition to any other status.
-        if (oldOrganization.getStatus() == Organization.ApplicationState.HIDDEN && user.getIsAdmin()) {
+        // If the current or target status is HIDDEN and the user is a global admin, allow a transition to/from any other status.
+        if (user.getIsAdmin() && (oldOrganization.getStatus() == Organization.ApplicationState.HIDDEN || organization.getStatus() == Organization.ApplicationState.HIDDEN)) { 
             oldOrganization.setStatus(organization.getStatus());
         }
 
