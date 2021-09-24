@@ -42,9 +42,14 @@ public final class SourceCodeRepoFactory {
     // in https://www.regular-expressions.info/catastrophic.html
     // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
     // format 1 git@github.com:dockstore/dockstore-ui.git
-    private static final Pattern githubRegexPattern1 = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
+
+    //private static final Pattern p1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git\\@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git)");
+    private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://(\\S+)/(\\S+)/(\\S+)\\.git");
+
+    //private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
     // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
-    private static final Pattern githubRegexPattern2 = Pattern.compile("git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git$)");
+    //private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git$)");
 
     private SourceCodeRepoFactory() {
         // hide the constructor for utility classes
@@ -129,19 +134,8 @@ public final class SourceCodeRepoFactory {
      * @return a map with keys: Source, Username, Repository
      */
     public static Map<String, String> parseGitUrl(String url) {
-        // format 1 git@github.com:dockstore/dockstore-ui.git
-        // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
-        // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
-        // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
-        // in https://www.regular-expressions.info/catastrophic.html
-        // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
-        //Pattern p1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
-        Pattern p1 = Pattern.compile("git\\@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git)");
-        Matcher m1 = p1.matcher(url);
-        // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
-        Pattern p2 = Pattern.compile("git://(\\S+)/(\\S+)/(\\S+)\\.git");
-        //Pattern p2 = Pattern.compile("git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git$)");
-        Matcher m2 = p2.matcher(url);
+        Matcher m1 = GITHUB_REGEX_PATTERN_1.matcher(url);
+        Matcher m2 = GITHUB_REGEX_PATTERN_2.matcher(url);
 
         Matcher matcherActual;
         if (m1.find()) {
