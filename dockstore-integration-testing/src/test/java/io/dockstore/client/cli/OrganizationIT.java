@@ -2219,7 +2219,6 @@ public class OrganizationIT extends BaseIT {
 
     private void addCategory(String name, String orgName) {
         // For reasons not yet understood, the openAPI version of this function fails, so we use the swagger API for now.
-        // A strange and possibly-germane irregularity is that the order of the arguments is reversed between the Swagger and openAPI versions of createCollection()
 
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClientAdminUser);
