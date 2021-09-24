@@ -616,7 +616,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
 
         // If the current or target status is HIDDEN and the user is a global admin, allow a transition to/from any other status.
-        if (user.getIsAdmin() && (oldOrganization.getStatus() == Organization.ApplicationState.HIDDEN || organization.getStatus() == Organization.ApplicationState.HIDDEN)) { 
+        if (user.getIsAdmin() && (oldOrganization.getStatus() == Organization.ApplicationState.HIDDEN || organization.getStatus() == Organization.ApplicationState.HIDDEN)) {
             oldOrganization.setStatus(organization.getStatus());
         }
 

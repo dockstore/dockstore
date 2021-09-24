@@ -465,7 +465,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // If the organization exists and is a categorizer, convert the Collection to a Category and make sure there are no category name collisions
         if (organization != null && organization.isCategorizer()) {
-            collection = new Category(collection);
+            collection = createCategory(collection);
             // Check if any other categories exist with that name
             Category matchingCategory = categoryDAO.findByName(collection.getName());
             if (matchingCategory != null) {
@@ -671,9 +671,21 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     }
 
     private void handleIndexUpdate(Entry entry) {
+        // Flush all updates to the database, then refresh the entry to retrieve the latest categories.
+        // Could be beneficial to move this flush/refresh code into the ElasticsearchListener update method to ensure the entries being re-indexed are always the freshest possible.
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.flush();
         currentSession.refresh(entry);
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+    }
+
+    private Category createCategory(Collection collection) {
+        Category category = new Category();
+        category.setName(collection.getName());
+        category.setDescription(collection.getDescription());
+        category.setDisplayName(collection.getDisplayName());
+        category.setTopic(collection.getTopic());
+        category.setOrganization(collection.getOrganization());
+        return category;
     }
 }

@@ -7,8 +7,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 
 /**
- * Describes a Category, which is a curated group of entries.  In this
- * implementation, a Category is a Collection under the hood.
+ * Describes a Category, which is a dockstore-curated group of entries.
+ * In this implementation, a Category is a Collection under the hood.
  */
 
 @ApiModel("Category")
@@ -22,13 +22,5 @@ import javax.persistence.NamedQuery;
 public class Category extends Collection {
 
     public Category() {
-    }
-
-    public Category(Collection c) {
-        setName(c.getName());
-        setDescription(c.getDescription());
-        setDisplayName(c.getDisplayName());
-        setTopic(c.getTopic());
-        setOrganization(c.getOrganization());
     }
 }

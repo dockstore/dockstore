@@ -4,7 +4,6 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.CategoryDAO;
-import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -40,14 +39,12 @@ public class CategoryResource implements AuthenticatedResourceInterface {
 
     private final SessionFactory sessionFactory;
     private final CategoryDAO categoryDAO;
-    private final CollectionDAO collectionDAO;
     private final ToolDAO toolDAO;
     private final CollectionHelper collectionHelper;
 
     public CategoryResource(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
         this.categoryDAO = new CategoryDAO(sessionFactory);
-        this.collectionDAO = new CollectionDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.collectionHelper = new CollectionHelper(LOG, sessionFactory, toolDAO);
 
