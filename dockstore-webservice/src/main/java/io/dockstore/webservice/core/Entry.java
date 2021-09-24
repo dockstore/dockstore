@@ -252,14 +252,14 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
     private String orcidPutCode;
 
+    /**
+     * A set of this Entry's Collections from which we can filter Categories.
+     * Don't try to directly manipulate this field, bad things will happen.
+     */
     @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "collection_entry_version", inverseJoinColumns = @JoinColumn(name = "collection_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "entry_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
     @BatchSize(size = 25)
-    /**
-     * A set of this Entry's Collections from which we can filter Categories.
-     * Don't add/remove Collections to/from this Set, bad things will happen.
-     */
     private Set<Collection> collections = new LinkedHashSet<>();
 
     public Entry() {
