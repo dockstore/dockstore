@@ -2153,34 +2153,44 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
-     * Test that an admin can change an org from any status to HIDDEN, and from HIDDEN to any status.
+     * Test that an admin can change org status from HIDDEN to APPROVED, and vice versa.
      */
     @Test
-    public void testTransitionToHiddenAndBackAsAdmin() {
+    public void testUpdateOrgStatus() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
 
-        for (io.dockstore.openapi.client.model.Organization.StatusEnum status: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
- 
-            io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
-            organization.setName("name" + status);
-            organization.setDisplayName("dname" + status);
+        io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
+        organization.setName("name");
+        organization.setDisplayName("displayname");
+        organization = organizationsApiAdmin.createOrganization(organization);
 
-            organization = organizationsApiAdmin.createOrganization(organization);
-            testingPostgres.runUpdateStatement(
-                "update organization set status = '" + status.toString() + "'");
+        for (io.dockstore.openapi.client.model.Organization.StatusEnum startStatus: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
+            for (io.dockstore.openapi.client.model.Organization.StatusEnum endStatus: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
 
-            organization = organizationsApiAdmin.getOrganizationById(organization.getId());
-            assertEquals(status, organization.getStatus());
+                testingPostgres.runUpdateStatement(
+                    "update organization set status = '" + startStatus.toString() + "'");
 
-            organization.setStatus(io.dockstore.openapi.client.model.Organization.StatusEnum.HIDDEN);
-            organization = organizationsApiAdmin.updateOrganization(organization, organization.getId());
-            assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.HIDDEN, organization.getStatus());
+                organization = organizationsApiAdmin.getOrganizationById(organization.getId());
+                assertEquals(startStatus, organization.getStatus());
 
-            organization.setStatus(status);
-            organization = organizationsApiAdmin.updateOrganization(organization, organization.getId());
-            assertEquals(status, organization.getStatus());
+                organization.setStatus(endStatus);
+                organization = organizationsApiAdmin.updateOrganization(organization, organization.getId());
+
+                io.dockstore.openapi.client.model.Organization.StatusEnum expectedStatus = startStatus;
+
+                // this logic is functionally equivalent, but works slightly differently, than the code we're testing.
+                if (isHiddenOrApproved(startStatus) && isHiddenOrApproved(endStatus)) {
+                    expectedStatus = endStatus;
+                }
+
+                assertEquals(expectedStatus, organization.getStatus());
+            }
         }
+    }
+
+    private boolean isHiddenOrApproved(io.dockstore.openapi.client.model.Organization.StatusEnum status) {
+        return (status == io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED || status == io.dockstore.openapi.client.model.Organization.StatusEnum.HIDDEN);
     }
 
     /**
@@ -2318,7 +2328,7 @@ public class OrganizationIT extends BaseIT {
 
         final Set<String> catNames = new HashSet<>();
 
-        for (int i=0; i<10; i++) {
+        for (int i = 0; i < 10; i++) {
 
             io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
             organization.setName("name" + i);
@@ -2328,7 +2338,7 @@ public class OrganizationIT extends BaseIT {
             organization = organizationsApiAdmin.createOrganization(organization);
             String orgName = organization.getName();
 
-            for (int j=0; j<i; j++) {
+            for (int j = 0; j < i; j++) {
                 String catName = "cat" + i + "x" + j;
                 addCategory(catName, orgName);
                 catNames.add(catName);
