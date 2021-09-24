@@ -1739,7 +1739,7 @@ public class OrganizationIT extends BaseIT {
             fail("Was able to add a duplicate Organization alias.");
         }
     }
-    
+
     /**
      * Test that we are getting the correct descriptor type for workflows
      */
@@ -2108,11 +2108,9 @@ public class OrganizationIT extends BaseIT {
      * Test creation of a categorizer Organization as an admin.
      */
     @Test
-    public void testCreateCategorizerOrganizationAsAdmin() {
-        
+    public void testCreateCategorizerOrgAsAdmin() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
-
 
         for (io.dockstore.openapi.client.model.Organization.StatusEnum status: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
             io.dockstore.openapi.client.model.Organization categorizer = openApiStubOrgObject();
@@ -2138,10 +2136,9 @@ public class OrganizationIT extends BaseIT {
      * Test creation of a categorizer Organization as a non-admin.
      */
     @Test
-    public void testCreateCategorizerOrganizationAsNonadmin() {
- 
-        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+    public void testCreateCategorizerOrgAsNonadmin() {
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
         io.dockstore.openapi.client.model.Organization categorizer = openApiStubOrgObject();
         categorizer.setCategorizer(true);
@@ -2151,6 +2148,38 @@ public class OrganizationIT extends BaseIT {
             fail("a non-admin user should not be able to create a categorizer organization");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // this is the expected behavior
+            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+    }
+
+    /**
+     * Test that an admin can change an org from any status to HIDDEN, and from HIDDEN to any status.
+     */
+    @Test
+    public void testTransitionToHiddenAndBackAsAdmin() {
+        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+
+        for (io.dockstore.openapi.client.model.Organization.StatusEnum status: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
+ 
+            io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
+            organization.setName("name" + status);
+            organization.setDisplayName("dname" + status);
+
+            organization = organizationsApiAdmin.createOrganization(organization);
+            testingPostgres.runUpdateStatement(
+                "update organization set status = '" + status.toString() + "'");
+
+            organization = organizationsApiAdmin.getOrganizationById(organization.getId());
+            assertEquals(status, organization.getStatus());
+
+            organization.setStatus(io.dockstore.openapi.client.model.Organization.StatusEnum.HIDDEN);
+            organization = organizationsApiAdmin.updateOrganization(organization, organization.getId());
+            assertEquals(io.dockstore.openapi.client.model.Organization.StatusEnum.HIDDEN, organization.getStatus());
+
+            organization.setStatus(status);
+            organization = organizationsApiAdmin.updateOrganization(organization, organization.getId());
+            assertEquals(status, organization.getStatus());
         }
     }
 
@@ -2158,12 +2187,11 @@ public class OrganizationIT extends BaseIT {
      * Test that categories are empty initially.
      */
     @Test
-    public void testCategoriesEmptyInitially() {
-        
+    public void testCategoriesStartEmpty() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
 
-        assertEquals(java.util.Collections.emptyList(), categoriesApi.getCategories());
+        assertEquals(0, categoriesApi.getCategories().size());
     }
 
     /**
@@ -2179,15 +2207,14 @@ public class OrganizationIT extends BaseIT {
         assertTrue(organization.isCategorizer());
     }
 
-    private void addCategory(String name) {
-  
+    private void addCategory(String name, String orgName) {
         // For reasons not yet understood, the openAPI version of this function fails, so we use the swagger API for now.
         // A strange and possibly-germane irregularity is that the order of the arguments is reversed between the Swagger and openAPI versions of createCollection()
 
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClientAdminUser);
-        Organization organization = organizationsApi.getOrganizationByName("dockstore");
-             
+        Organization organization = organizationsApi.getOrganizationByName(orgName);
+
         Collection category = stubCollectionObject();
         category.setName(name);
         category.setDisplayName("display" + name);
@@ -2195,33 +2222,30 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.createCollection(organization.getId(), category);
     }
 
-    private Workflow createWorkflow() {
-
-        testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = 2");
+    private Workflow createWorkflow(long id) {
+        testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = " + id);
         Workflow workflow = new Workflow();
-        workflow.setId(2L);
+        workflow.setId(id);
         return (workflow);
     }
 
-    private void addAdminToDockstoreOrg(String username) {
-        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where username = '" + username + "'");
+    private void addAdminToOrg(String username, String orgName) {
+        testingPostgres.runUpdateStatement("insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = '" + orgName + "'), id, true, 'ADMIN' from enduser where username = '" + username + "'");
     }
 
-    private void addToCategory(String name, Workflow workflow) {
-
+    private void addToCategory(String name, String orgName, Workflow workflow) {
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClientAdminUser);
-        Organization organization = organizationsApi.getOrganizationByName("dockstore");
+        Organization organization = organizationsApi.getOrganizationByName(orgName);
 
         Collection collection = organizationsApi.getCollectionByName(organization.getName(), name);
         organizationsApi.addEntryToCollection(organization.getId(), collection.getId(), workflow.getId(), null);
     }
 
-    private void removeFromCategory(String name, Workflow workflow) {
-
+    private void removeFromCategory(String name, String orgName, Workflow workflow) {
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClientAdminUser);
-        Organization organization = organizationsApi.getOrganizationByName("dockstore");
+        Organization organization = organizationsApi.getOrganizationByName(orgName);
 
         Collection collection = organizationsApi.getCollectionByName(organization.getName(), name);
         organizationsApi.deleteEntryFromCollection(organization.getId(), collection.getId(), workflow.getId(), null);
@@ -2232,47 +2256,47 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
-     * Test addition of categories and addition/removal of an entry within.
+     * Test addition of categories and addition/removal of category entries.
      */
     @Test
     public void testAddCategoriesAndAddRemoveEntry() {
-
-        addAdminToDockstoreOrg(ADMIN_USERNAME);
+        addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
 
         List<String> categoryNames = Arrays.asList("cat1", "cat2", "foo", "bar");
-    
-        // add the categories one-by-one and make sure they've "registered", also testing additions with duplicate names
+
+        // add the categories one-by-one and make sure we can retrieve them, while also testing additions with duplicate names
 
         Set<String> expectedNames = new HashSet<>();
 
         for (String name: categoryNames) {
 
-            addCategory(name);
+            addCategory(name, "dockstore");
             expectedNames.add(name);
             assertEquals(expectedNames, extractNames(categoriesApi.getCategories()));
-           
+
             try {
-                addCategory(name);
+                addCategory(name, "dockstore");
                 fail("adding a category with the same name as another category should fail");
             } catch (ApiException ex) {
                 // this is the expected behavior
+                Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
             }
         }
 
         // create workflow.
 
-        Workflow workflow = createWorkflow();
+        Workflow workflow = createWorkflow(2);
 
         // add workflow to each category and check category names.
 
         expectedNames = new HashSet<>();
 
         for (String name: categoryNames) {
-            addToCategory(name, workflow);
+            addToCategory(name, "dockstore", workflow);
             expectedNames.add(name);
             assertEquals(expectedNames, extractNames(entriesApi.entryCategories(workflow.getId())));
         }
@@ -2280,9 +2304,57 @@ public class OrganizationIT extends BaseIT {
         // remove workflow from each category and check category names.
 
         for (String name: categoryNames) {
-            removeFromCategory(name, workflow);
+            removeFromCategory(name, "dockstore", workflow);
             expectedNames.remove(name);
             assertEquals(expectedNames, extractNames(entriesApi.entryCategories(workflow.getId())));
+        }
+    }
+
+    @Test
+    public void testMultipleCategorizerOrgs() {
+        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+        final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
+
+        final Set<String> catNames = new HashSet<>();
+
+        for (int i=0; i<10; i++) {
+
+            io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
+            organization.setName("name" + i);
+            organization.setDisplayName("display" + i);
+            organization.setCategorizer(true);
+
+            organization = organizationsApiAdmin.createOrganization(organization);
+            String orgName = organization.getName();
+
+            for (int j=0; j<i; j++) {
+                String catName = "cat" + i + "x" + j;
+                addCategory(catName, orgName);
+                catNames.add(catName);
+            }
+        }
+
+        assertEquals(catNames, extractNames(categoriesApi.getCategories()));
+    }
+
+    @Test
+    public void testGetCategoryByName() {
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
+
+        addAdminToOrg(ADMIN_USERNAME, "dockstore");
+        final String catName = "testcat";
+        addCategory(catName, "dockstore");
+
+        assertEquals(catName, categoriesApi.getCategoryByName(catName).getName());
+     
+        try {
+            categoriesApi.getCategoryByName("bogus");
+            fail("retrieving a nonexisting category by name should fail");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // this is the expected behavior
+            Assert.assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
         }
     }
 }
