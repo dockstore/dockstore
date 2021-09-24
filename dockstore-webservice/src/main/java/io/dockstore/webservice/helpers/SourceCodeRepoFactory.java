@@ -43,8 +43,8 @@ public final class SourceCodeRepoFactory {
     // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
     // format 1 git@github.com:dockstore/dockstore-ui.git
 
-    //private static final Pattern p1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
-    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git\\@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git)");
+    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+    //private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git\\@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git)");
     private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://(\\S+)/(\\S+)/(\\S+)\\.git");
 
     //private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
