@@ -41,15 +41,16 @@ public final class SourceCodeRepoFactory {
     // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
     // in https://www.regular-expressions.info/catastrophic.html
     // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
+    // Can test regex at https://regex101.com/
     // format 1 git@github.com:dockstore/dockstore-ui.git
 
-    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+    //private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
     //private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git\\@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git)");
-    private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://(\\S+)/(\\S+)/(\\S+)\\.git");
+    //private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://(\\S+)/(\\S+)/(\\S+)\\.git");
 
-    //private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
+    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
     // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
-    //private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git$)");
+    private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git$)");
 
     private SourceCodeRepoFactory() {
         // hide the constructor for utility classes
