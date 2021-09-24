@@ -857,7 +857,7 @@ paths:
       summary: Retrieve all categories.
       tags:
       - categories
-  /categories/names/{name}:
+  /categories/name/{name}:
     get:
       description: Retrieve a category by name.
       operationId: getCategoryByName

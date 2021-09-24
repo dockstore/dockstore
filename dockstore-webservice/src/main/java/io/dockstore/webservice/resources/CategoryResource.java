@@ -64,7 +64,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("/names/{name}")
+    @Path("/name/{name}")
     @Operation(operationId = "getCategoryByName", summary = "Retrieve a category by name.", description = "Retrieve a category by name.")
     public Category getCategoryByName(
         @Parameter(hidden = true, name = "user") @Auth Optional<User> user,

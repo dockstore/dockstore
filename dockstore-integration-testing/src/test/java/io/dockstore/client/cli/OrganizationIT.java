@@ -2358,7 +2358,7 @@ public class OrganizationIT extends BaseIT {
         addCategory(catName, "dockstore");
 
         assertEquals(catName, categoriesApi.getCategoryByName(catName).getName());
-     
+
         try {
             categoriesApi.getCategoryByName("bogus");
             fail("retrieving a nonexisting category by name should fail");
