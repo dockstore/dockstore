@@ -2137,7 +2137,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCreateCategorizerOrgAsNonadmin() {
-        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
         io.dockstore.openapi.client.model.Organization categorizer = openApiStubOrgObject();
@@ -2198,7 +2198,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     public void testCategoriesStartEmpty() {
-        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
 
         assertEquals(0, categoriesApi.getCategories().size());
@@ -2271,7 +2271,7 @@ public class OrganizationIT extends BaseIT {
     public void testAddCategoriesAndAddRemoveEntry() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
-        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
 
@@ -2349,7 +2349,7 @@ public class OrganizationIT extends BaseIT {
 
     @Test
     public void testGetCategoryByName() {
-        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(USER_1_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientUser);
 
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
