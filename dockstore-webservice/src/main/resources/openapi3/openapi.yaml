@@ -846,14 +846,14 @@ paths:
       description: Retrieve all categories.
       operationId: getCategories
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Category'
-          description: default response
+          description: Successfully retrieved categories
       summary: Retrieve all categories.
       tags:
       - categories
@@ -869,12 +869,14 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Category'
-          description: default response
+          description: Successfully retrieved category
+        "404":
+          description: Category not found
       summary: Retrieve a category by name.
       tags:
       - categories
@@ -2311,21 +2313,24 @@ paths:
       description: Get the categories that contain the published entry
       operationId: entryCategories
       parameters:
-      - in: path
+      - description: Entry ID
+        in: path
         name: id
         required: true
         schema:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Category'
-          description: default response
+          description: Successfully retrieved categories
+        "400":
+          description: Entry must be published
       tags:
       - entries
   /entries/{id}/collections:

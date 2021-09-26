@@ -103,7 +103,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.versionDAO = new VersionDAO(sessionFactory);
-        this.helper = new CollectionHelper(LOG, sessionFactory, toolDAO);
+        this.helper = new CollectionHelper(sessionFactory, toolDAO);
     }
 
     /**

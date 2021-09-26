@@ -13,15 +13,15 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class CollectionHelper {
 
-    private final Logger log;
+    private static final Logger LOG = LoggerFactory.getLogger(CollectionHelper.class);
     private final SessionFactory sessionFactory;
     private final EntryDAO entryDAO;
 
-    CollectionHelper(Logger log, SessionFactory sessionFactory, EntryDAO entryDAO) {
-        this.log = log;
+    CollectionHelper(SessionFactory sessionFactory, EntryDAO entryDAO) {
         this.sessionFactory = sessionFactory;
         this.entryDAO = entryDAO;
     }
@@ -29,7 +29,7 @@ class CollectionHelper {
     public void throwExceptionForNullCollection(Collection collection) {
         if (collection == null) {
             String msg = "Collection not found.";
-            log.info(msg);
+            LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
     }

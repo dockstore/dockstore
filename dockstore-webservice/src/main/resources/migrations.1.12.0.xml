@@ -109,7 +109,7 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
-        <!-- the following addColumn+addNotNullConstraint combo is necessary because the JPA-generated db wants the column "collection" to be non-null, but complains if there is an SQL-defined default value. -->
+        <!-- the following addColumn+addNotNullConstraint combo is necessary because the JPA-generated db defines the discriminator column "dtype" as NOT NULL and also without an SQL-defined DEFAULT value. See https://stackoverflow.com/questions/3997966/can-i-add-a-not-null-column-without-default-value -->
         <addColumn tableName="collection">
             <column name="dtype" type="varchar(31)" value="Collection">
             </column>
@@ -121,9 +121,9 @@
         <sql dbms="postgresql">
             insert into organization (name, displayname, description, status, categorizer, link, email, dbcreatedate, dbupdatedate) values ('dockstore', 'Dockstore', 'Each of this organization''s Collections is a Category.', 'HIDDEN', true, 'https://dockstore.org/', 'support@dockstore.org', LOCALTIMESTAMP, LOCALTIMESTAMP);
         </sql>
-        <!-- Add a handful of key users to the dockstore org, rather than all admins, to avoid inadvertently binding test users to orgs, which interferes with existing integration tests. -->
+        <!-- Add all existing admins, except for the integration test admin user, to the "dockstore" org. -->
         <sql dbms="postgresql">
-            insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where username in ('dockstore-admin', 'gluu-oicr', 'coverbeck-adm');
+            insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where isadmin and username != 'admin@admin.com';
         </sql>
     </changeSet>
 </databaseChangeLog>
