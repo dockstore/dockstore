@@ -2154,37 +2154,48 @@ public class OrganizationIT extends BaseIT {
 
     /**
      * Test that an admin can change org status from HIDDEN to APPROVED, and vice versa.
+     * All other status transitions should not be allowed.
      */
     @Test
     public void testUpdateOrgStatus() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
 
-        io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
-        organization.setName("name");
-        organization.setDisplayName("displayname");
-        organization = organizationsApiAdmin.createOrganization(organization);
+        io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.createOrganization(openApiStubOrgObject());
 
-        for (io.dockstore.openapi.client.model.Organization.StatusEnum startStatus: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
-            for (io.dockstore.openapi.client.model.Organization.StatusEnum endStatus: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
+        for (String username: Arrays.asList(ADMIN_USERNAME, OTHER_USERNAME)) {
 
-                testingPostgres.runUpdateStatement(
-                    "update organization set status = '" + startStatus.toString() + "'");
+            final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(username, testingPostgres);
+            final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
-                organization = organizationsApiAdmin.getOrganizationById(organization.getId());
-                assertEquals(startStatus, organization.getStatus());
+            for (io.dockstore.openapi.client.model.Organization.StatusEnum startStatus: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
+                for (io.dockstore.openapi.client.model.Organization.StatusEnum endStatus: io.dockstore.openapi.client.model.Organization.StatusEnum.values()) {
 
-                organization.setStatus(endStatus);
-                organization = organizationsApiAdmin.updateOrganization(organization, organization.getId());
+                    final boolean isAdmin = username.equals(ADMIN_USERNAME);
 
-                io.dockstore.openapi.client.model.Organization.StatusEnum expectedStatus = startStatus;
+                    testingPostgres.runUpdateStatement(
+                        "update organization set status = '" + startStatus + "'");
 
-                // this logic is functionally equivalent, but works slightly differently, than the code we're testing.
-                if (isHiddenOrApproved(startStatus) && isHiddenOrApproved(endStatus)) {
-                    expectedStatus = endStatus;
+                    organization = organizationsApiAdmin.getOrganizationById(organization.getId());
+                    assertEquals(startStatus, organization.getStatus());
+
+                    organization.setStatus(endStatus);
+
+                    try {
+                        organization = organizationsApi.updateOrganization(organization, organization.getId());
+                        assertTrue(startStatus == endStatus || (isAdmin && isHiddenOrApproved(startStatus) && isHiddenOrApproved(endStatus)));
+                        assertEquals(endStatus, organization.getStatus());
+                    } catch (io.dockstore.openapi.client.ApiException ex) {
+                        final int expectedCode;
+                        if (isAdmin) {
+                            expectedCode = HttpStatus.SC_BAD_REQUEST;
+                        } else {
+                            expectedCode = startStatus == io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED
+                                ? HttpStatus.SC_UNAUTHORIZED : HttpStatus.SC_NOT_FOUND;
+                        }
+                        assertEquals(expectedCode, ex.getCode());
+                    }
                 }
-
-                assertEquals(expectedStatus, organization.getStatus());
             }
         }
     }
@@ -2292,7 +2303,7 @@ public class OrganizationIT extends BaseIT {
                 fail("adding a category with the same name as another category should fail");
             } catch (ApiException ex) {
                 // this is the expected behavior
-                Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+                assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
             }
         }
 
@@ -2363,7 +2374,7 @@ public class OrganizationIT extends BaseIT {
             fail("retrieving a nonexisting category by name should fail");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // this is the expected behavior
-            Assert.assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
         }
     }
 }

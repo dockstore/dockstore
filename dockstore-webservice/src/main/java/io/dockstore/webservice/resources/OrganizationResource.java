@@ -615,14 +615,23 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             }
         }
 
-        // If user is a global admin, allow a transition between HIDDEN and APPROVED statuses.
-        if (user.getIsAdmin()) {
-            Organization.ApplicationState oldState = oldOrganization.getStatus();
-            Organization.ApplicationState newState = organization.getStatus();
+        // If a state change is desired, check priveleges and if the particular transition is allowed
+        Organization.ApplicationState oldState = oldOrganization.getStatus();
+        Organization.ApplicationState newState = organization.getStatus();
+        if (oldState != newState) {
+            if (!user.getIsAdmin()) {
+                String msg = "Must be an admin to change organization status.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+            }
             boolean hiddenToApproved = (oldState == Organization.ApplicationState.HIDDEN && newState == Organization.ApplicationState.APPROVED);
             boolean approvedToHidden = (oldState == Organization.ApplicationState.APPROVED && newState == Organization.ApplicationState.HIDDEN);
             if (hiddenToApproved || approvedToHidden) {
                 oldOrganization.setStatus(organization.getStatus());
+            } else {
+                String msg = "Cannot change organization status from " + oldState + " to " + newState;
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
             }
         }
 
