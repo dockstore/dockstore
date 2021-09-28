@@ -390,6 +390,12 @@ public final class CommonTestUtilities {
         return publishRequest;
     }
 
+    public static io.dockstore.openapi.client.model.PublishRequest createOpenAPIPublishRequest(Boolean bool) {
+        io.dockstore.openapi.client.model.PublishRequest publishRequest = new io.dockstore.openapi.client.model.PublishRequest();
+        publishRequest.setPublish(bool);
+        return publishRequest;
+    }
+
     public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
         return client
                 .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
