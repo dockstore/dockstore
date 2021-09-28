@@ -516,6 +516,33 @@ public class OrganizationIT extends BaseIT {
         organisationsApiUser2.createOrganization(organisation);
     }
 
+    @Test
+    public void testUpdateOrgNoName() {
+        // create admin user
+        final io.dockstore.openapi.client.ApiClient webClientOpenApiUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientOpenApiUser);
+
+        // create organization
+        io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
+        organization = organizationsApiAdmin.createOrganization(organization);
+
+        // attempt to update organization with valid name
+        io.dockstore.openapi.client.model.Organization newOrganization = new io.dockstore.openapi.client.model.Organization();
+        newOrganization.setDisplayName(organization.getDisplayName());
+        newOrganization.setName(organization.getName());
+        organizationsApiAdmin.updateOrganization(newOrganization, organization.getId());
+
+        // attempt to update organization with no name
+        newOrganization = new io.dockstore.openapi.client.model.Organization();
+        newOrganization.setDisplayName(organization.getDisplayName());
+        try {
+            organizationsApiAdmin.updateOrganization(newOrganization, organization.getId());
+            fail("Organization successfully updated with no name specified");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
+    }
+
     /**
      * This tests that you cannot add an organization with a duplicate display name
      */
