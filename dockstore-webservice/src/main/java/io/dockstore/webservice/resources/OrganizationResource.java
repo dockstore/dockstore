@@ -612,16 +612,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Validate email string. null/empty is valid since it's optional.
+     * Validate email string.
      * @param email The email to validate
      */
     private void validateEmail(String email) {
-        if (StringUtils.isEmpty(email)) {
-            return;
-        }
         EmailValidator emailValidator = EmailValidator.getInstance();
-        if (!emailValidator.isValid(email)) {
-            String msg = "Email is invalid: " + email;
+        if (StringUtils.isEmpty(email) || !emailValidator.isValid(email)) {
+            String msg = "You must enter a valid email address: " + email;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
