@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -291,11 +292,15 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
+
+        OrcidPutCode userPutCode;
         if (optionalVersion.isPresent()) {
-            putCode = optionalVersion.get().getVersionMetadata().getOrcidPutCode();
+            userPutCode = optionalVersion.get().getVersionMetadata().getUserIdToOrcidPutCode().get(user.getId());
         } else {
-            putCode = entry.getOrcidPutCode();
+            userPutCode = entry.getUserIdToOrcidPutCode().get(user.getId());
         }
+        putCode = (userPutCode == null) ? null : userPutCode.orcidPutCode;
+
         String orcidWorkString;
         String orcidId = nonCachedUser.getOrcid();
         if (orcidId == null) {
@@ -304,15 +309,15 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         try {
             orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
             if (putCode == null) {
-                createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId);
+                createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId, user.getId());
             } else {
                 boolean success = updateOrcidWork(orcidId, orcidWorkString, orcidByUserId, putCode);
                 if (!success) {
                     LOG.error("Could not find ORCID work based on put code: " + putCode);
                     // This is almost going to be redundant because it's going to attempt to create a new work
-                    setPutCode(optionalVersion, entry, null);
+                    setPutCode(optionalVersion, entry, null, user.getId());
                     orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
-                    createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId);
+                    createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId, user.getId());
                 }
             }
         } catch (IOException | URISyntaxException | JAXBException | DatatypeConfigurationException e) {
@@ -323,22 +328,23 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
     }
 
-    private void setPutCode(Optional<Version> optionalVersion, Entry entry, String putCode) {
+    private void setPutCode(Optional<Version> optionalVersion, Entry entry, String putCode, long userId) {
+        OrcidPutCode orcidPutCode = new OrcidPutCode(putCode);
         if (optionalVersion.isPresent()) {
-            optionalVersion.get().getVersionMetadata().setOrcidPutCode(putCode);
+            optionalVersion.get().getVersionMetadata().getUserIdToOrcidPutCode().put(userId, orcidPutCode);
         } else {
-            entry.setOrcidPutCode(putCode);
+            entry.getUserIdToOrcidPutCode().put(userId, orcidPutCode);
         }
     }
 
     private void createOrcidWork(Optional<Version> optionalVersion, Entry entry, String orcidId, String orcidWorkString,
-        List<Token> orcidTokens)
+        List<Token> orcidTokens, long userId)
             throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
                 .postWorkString(baseApiURL, orcidId, orcidWorkString, orcidTokens.get(0).getToken());
         switch (response.statusCode()) {
         case HttpStatus.SC_CREATED:
-            setPutCode(optionalVersion, entry, getPutCodeFromLocation(response));
+            setPutCode(optionalVersion, entry, getPutCodeFromLocation(response), userId);
             break;
         case HttpStatus.SC_CONFLICT:
             // User has an ORCID work with the same DOI URL. Rather than link the Dockstore entry to ORCID work, just throw error.

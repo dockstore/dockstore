@@ -7357,8 +7357,6 @@ components:
           type: string
         namespace:
           type: string
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7398,6 +7396,10 @@ components:
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
         users:
           type: array
           items:
@@ -7468,8 +7470,6 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7483,6 +7483,10 @@ components:
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
         users:
           type: array
           items:
@@ -7554,8 +7558,6 @@ components:
           writeOnly: true
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7569,6 +7571,10 @@ components:
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
         users:
           type: array
           items:
@@ -7946,6 +7952,11 @@ components:
       type: object
       properties:
         orcid:
+          type: string
+    OrcidPutCode:
+      type: object
+      properties:
+        orcidPutCode:
           type: string
     Organization:
       type: object
@@ -9000,14 +9011,16 @@ components:
         id:
           type: integer
           format: int64
-        orcidPutCode:
-          type: string
         parsedInformationSet:
           type: array
           items:
             $ref: '#/components/schemas/ParsedInformation'
         publicAccessibleTestParameterFile:
           type: boolean
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
     VersionTypeValidation:
       type: object
       properties:
@@ -9129,8 +9142,6 @@ components:
           - STUB
           - HOSTED
           - DOCKSTORE_YML
-        orcidPutCode:
-          type: string
         organization:
           type: string
         output_file_formats:
@@ -9163,6 +9174,10 @@ components:
           format: int64
         type:
           type: string
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
         users:
           type: array
           items:

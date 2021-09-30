@@ -2,7 +2,7 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.Hoverfly.BAD_PUT_CODE;
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
-import static io.dockstore.common.Hoverfly.PUT_CODE;
+import static io.dockstore.common.Hoverfly.PUT_CODE_1;
 import static org.junit.Assert.fail;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -18,6 +18,7 @@ import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.TokenScope;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.resources.EntryResource;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
@@ -139,14 +140,14 @@ public class EntryResourceIT extends BaseIT {
             hoverfly.resetState();
             // Manually change it to the wrong put code
             testingPostgres.runUpdateStatement(
-                    String.format("update workflow set orcidputcode='%s'where orcidputcode='%s'", BAD_PUT_CODE, PUT_CODE));
+                    String.format("update entry_orcidputcode set orcidputcode='%s' where orcidputcode='%s'", BAD_PUT_CODE, PUT_CODE_1));
             // Dockstore should be able to recover from having the wrong put code for whatever reason
             entriesApi.exportToORCID(workflowId, null);
 
             // Clear DB
-            testingPostgres.runUpdateStatement("update workflow set orcidputcode=null");
+            testingPostgres.runUpdateStatement("update entry_orcidputcode set orcidputcode=null");
             Map<String, String> createdState = new HashMap<>();
-            createdState.put("Work", "Created");
+            createdState.put("Work1", "Created");
             hoverfly.setState(createdState);
 
             try {
@@ -156,6 +157,77 @@ public class EntryResourceIT extends BaseIT {
                 Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
                 Assert.assertTrue(e.getMessage().contains("Could not export to ORCID. There exists another ORCID work with the same DOI URL."));
             }
+        }
+    }
+
+    @Test
+    public void testMultipleUsersOrcidExport() {
+        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(userClient);
+        UsersApi usersApi = new UsersApi(userClient);
+        User user = usersApi.getUser();
+        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+
+        ApiClient otherUserClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        EntriesApi otherEntriesApi = new EntriesApi(otherUserClient);
+        UsersApi otherUsersApi = new UsersApi(otherUserClient);
+        User otherUser = otherUsersApi.getUser();
+
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getShortName(), "");
+        Long workflowId = workflow.getId();
+        workflowsApi.refresh1(workflowId, false);
+        workflow = workflowsApi.getWorkflow(workflowId, null);
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        Long workflowVersionId = workflowVersions.get(0).getId();
+
+        // Give otherUser access to the workflow to mimic being part of the same GitHub organization as the first user
+        Assert.assertEquals("Other user should have no workflows", 0, otherUsersApi.userWorkflows(otherUser.getId()).size());
+        testingPostgres.runUpdateStatement(String.format("insert into user_entry (userid, entryid) values (%s, %s)", otherUser.getId(), workflowId));
+        List<Workflow> workflows = otherUsersApi.userWorkflows(otherUser.getId());
+        Assert.assertEquals("Other user should have one workflow", 1, workflows.size());
+
+        // Give user 1 a fake ORCID token
+        testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+                + "(9001, 'fakeToken1', 'fakeRefreshToken1', 'orcid.org', 1, 'Potato', '" + TokenScope.ACTIVITIES_UPDATE.name() + "')");
+        testingPostgres.runUpdateStatement(String.format("update enduser set orcid='0000-0001-8365-0487' where id=%s", user.getId()));
+
+        // Give other user a fake ORCID token
+        testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+                + "(9002, 'fakeToken2', 'fakeRefreshToken2', 'orcid.org', 2, 'Tomato', '" + TokenScope.ACTIVITIES_UPDATE.name() + "')");
+        testingPostgres.runUpdateStatement(String.format("update enduser set orcid='0000-0002-8365-0487' where id=%s", otherUser.getId()));
+
+        // Give the workflow a concept DOI
+        testingPostgres.runUpdateStatement(String.format("update workflow set conceptDOI='dummy' where id=%s", workflowId));
+
+        // Give the workflow version a DOI url
+        testingPostgres.runUpdateStatement(String.format("update version_metadata set doistatus='%s' where id=%s", Version.DOIStatus.CREATED.name(), workflowVersionId));
+        testingPostgres.runUpdateStatement(String.format("update version_metadata set doiurl='dummyurl' where id=%s", workflowVersionId));
+
+        // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
+        try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
+            hoverfly.start();
+            hoverfly.simulate(ORCID_SIMULATION_SOURCE);
+            // User 1 should be able to export to ORCID
+            entriesApi.exportToORCID(workflowId, null);
+            // Exporting twice should work because it's an update
+            entriesApi.exportToORCID(workflowId, null);
+
+            // User 2 should also be able to export the same workflow to ORCID
+            otherEntriesApi.exportToORCID(workflowId, null);
+            // Exporting twice should work because it's an update
+            otherEntriesApi.exportToORCID(workflowId, null);
+
+            // Test workflow version ORCID export
+            hoverfly.resetState();
+
+            // User 1 should be able to export workflow version to ORCID
+            entriesApi.exportToORCID(workflowId, workflowVersionId);
+            entriesApi.exportToORCID(workflowId, workflowVersionId); // Should be able to export twice to update
+
+            // User 2 should be able to export the same workflow version to ORCID
+            otherEntriesApi.exportToORCID(workflowId, workflowVersionId);
+            otherEntriesApi.exportToORCID(workflowId, workflowVersionId); // Should be able to export twice to update
         }
     }
 

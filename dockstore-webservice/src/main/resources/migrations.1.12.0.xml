@@ -102,4 +102,40 @@
             create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addMultipleOrcidPutCodesForVersionMetadata">
+        <createTable tableName="version_metadata_orcidputcode">
+            <column name="version_metadata_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_orcidputcode_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="orcidputcode" type="TEXT"/>
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_orcidputcode_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="version_metadata_id" baseTableName="version_metadata_orcidputcode" constraintName="fk_version_metadata_id_version_metadata_orcidputcode" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
+        <addUniqueConstraint columnNames="version_metadata_id, userid, orcidputcode" constraintName="unique_version_metadata_user_orcidputcode" tableName="version_metadata_orcidputcode"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addMultipleOrcidPutCodesForEntry">
+        <createTable tableName="entry_orcidputcode">
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_orcidputcode_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="orcidputcode" type="TEXT"/>
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_orcidputcode_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="entry_id, userid, orcidputcode" constraintName="unique_entry_user_orcidputcode" tableName="entry_orcidputcode"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="removeOldOrcidPutCodeColumn">
+        <dropColumn columnName="orcidputcode" tableName="apptool"/>
+        <dropColumn columnName="orcidputcode" tableName="service"/>
+        <dropColumn columnName="orcidputcode" tableName="tool"/>
+        <dropColumn columnName="orcidputcode" tableName="version_metadata"/>
+        <dropColumn columnName="orcidputcode" tableName="workflow"/>
+    </changeSet>
 </databaseChangeLog>

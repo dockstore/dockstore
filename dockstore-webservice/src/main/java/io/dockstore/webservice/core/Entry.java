@@ -245,9 +245,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
 
-    @Column
-    @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
-    private String orcidPutCode;
+    @ElementCollection(targetClass = OrcidPutCode.class)
+    @JoinTable(name = "entry_orcidputcode", joinColumns = @JoinColumn(name = "entry_id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_user_orcidputcode", columnNames = { "entry_id", "userid", "orcidputcode" }))
+    @MapKeyColumn(name = "userid", columnDefinition = "bigint")
+    @ApiModelProperty(value = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
+    @BatchSize(size = 25)
+    private Map<Long, OrcidPutCode> userIdToOrcidPutCode = new HashMap<>();
 
     public Entry() {
         users = new TreeSet<>();
@@ -657,11 +660,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.blacklistedVersionNames = blacklistedVersionNames;
     }
 
-    public String getOrcidPutCode() {
-        return orcidPutCode;
+    public Map<Long, OrcidPutCode> getUserIdToOrcidPutCode() {
+        return userIdToOrcidPutCode;
     }
 
-    public void setOrcidPutCode(String orcidPutCode) {
-        this.orcidPutCode = orcidPutCode;
+    public void setUserIdToOrcidPutCode(Map<Long, OrcidPutCode> userIdToOrcidPutCode) {
+        this.userIdToOrcidPutCode = userIdToOrcidPutCode;
     }
 }
