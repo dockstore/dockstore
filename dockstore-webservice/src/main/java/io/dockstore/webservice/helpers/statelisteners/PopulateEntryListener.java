@@ -36,13 +36,13 @@ public class PopulateEntryListener implements StateListenerInterface {
     public PopulateEntryListener(EntryDAO entryDAO) {
         this.entryDAO = entryDAO;
     }
-  
+
     private void populate(List<Entry> entries) {
         List<Long> entryIds = entries.stream().map(Entry::getId).collect(Collectors.toList());
         Map<Entry, List<Category>> entryToCategories = entryDAO.findCategoriesByEntryIds(entryIds);
         entries.forEach(entry -> entry.setCategories(entryToCategories.getOrDefault(entry, Collections.emptyList())));
     }
-    
+
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         populate(Arrays.asList(entry));
