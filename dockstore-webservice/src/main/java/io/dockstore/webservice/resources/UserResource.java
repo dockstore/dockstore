@@ -390,28 +390,30 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         lambdaEventDAO.findByUser(user).stream().forEach(lambdaEvent -> lambdaEvent.setUser(null));
     }
 
-    @DELETE
+    @PUT
     @Timed
     @UnitOfWork
-    @Path("/user/{userId}")
+    @Path("/user/{userId}/bannedStatus")
     @RolesAllowed("admin")
-    @Operation(operationId = "terminateUsers", description = "Terminate user if possible.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted user", content = @Content(schema = @Schema(implementation = Boolean.class)))
+    @Consumes("application/json")
+    @Operation(operationId = "banUser", description = "Update banned status of user. Removes all tokens for banned users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully banned/unbanned user")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
-    @ApiOperation(value = "Terminate user if possible.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class, nickname = "terminateUser")
-    public boolean terminateUser(
-        @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,  @ApiParam("User to terminate") @PathParam("userId") long targetUserId) {
-        // note this terminates the user but leaves behind a tombstone to prevent re-login
+    @ApiOperation(value = "Updated banned status of user. Removes all tokens for banned users.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void banUser(
+        @ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser, @ApiParam(value = "User to terminate", required = true) @Parameter(name = "userId", required = true) @PathParam("userId") long targetUserId,
+        @ApiParam(value = "isBanned", required = true) @Parameter(name = "isBanned", required = true) Boolean isBanned) {
+        // note this bans the user but leaves behind a tombstone to prevent re-login
         checkUser(authUser, authUser.getId());
 
         User targetUser = userDAO.findById(targetUserId);
         checkUserExists(targetUser);
 
-        invalidateTokensForUser(targetUser);
-
-        targetUser.setBanned(true);
-        return true;
+        if (isBanned) {
+            invalidateTokensForUser(targetUser);
+        }
+        targetUser.setBanned(isBanned);
     }
 
     @GET
