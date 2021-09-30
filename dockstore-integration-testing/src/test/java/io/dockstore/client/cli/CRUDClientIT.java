@@ -123,6 +123,8 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setUserIdToOrcidPutCode(null);
+        container.setAliases(null);
         assertEquals(container, hostedTool);
         assertNull(container.getUsers());
     }
@@ -222,6 +224,8 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setUserIdToOrcidPutCode(null);
+        container.setUserIdToOrcidPutCode(null);
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
         assertEquals(container, hostedTool);
