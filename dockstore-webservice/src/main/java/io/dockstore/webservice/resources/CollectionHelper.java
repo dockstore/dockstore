@@ -1,6 +1,7 @@
 package io.dockstore.webservice.resources;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Label;
@@ -68,8 +69,8 @@ class CollectionHelper {
             List<Label> labels = entryDAO.getLabelByEntryId(entry.getId());
             List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
             entry.setLabels(labelStrings);
-            List<String> names = entryDAO.findCategoryNamesByEntryId(entry.getId());
-            entry.setCategoryNames(names);
+            List<CategorySummary> summaries = entryDAO.findCategorySummariesByEntryId(entry.getId());
+            entry.setCategorySummaries(summaries);
             if (entry.getEntryType().equals("tool")) {
                 entry.setDescriptorTypes(entryDAO.getToolsDescriptorTypes(entry.getId()));
             } else if (entry.getEntryType().equals("workflow")) {

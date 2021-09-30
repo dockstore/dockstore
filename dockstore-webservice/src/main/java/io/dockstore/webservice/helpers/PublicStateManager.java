@@ -59,6 +59,11 @@ public final class PublicStateManager {
         listener.setConfig(config);
     }
 
+    public void prependListener(StateListenerInterface listener) {
+        getListeners().add(0, listener);
+        listener.setConfig(config);
+    }
+
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
         for (StateListenerInterface listener : getListeners()) {
             listener.handleIndexUpdate(entry, command);

@@ -28,16 +28,18 @@ import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
+// import java.util.stream.Collectors;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -62,6 +64,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 import org.apache.http.HttpStatus;
@@ -82,8 +85,9 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "Entry.getGenericEntryById", query = "SELECT e from Entry e WHERE :id = e.id"),
         @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoryNamesByEntryId", query = "select cat.name from Category cat join cat.entries as entry where entry.entry.id = :entryId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", query = "select new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.displayName, cat.topic) from Category cat join cat.entries as entry where entry.entry.id = :entryId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoriesByEntryId", query = "select cat from Category cat join cat.entries as entry where entry.entry.id = :entryId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoriesByEntryIds", query = "select entry.entry, cat from Category cat join cat.entries as entry where entry.entry.id in (:entryIds)"),
         @NamedQuery(name = "Entry.getCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getWorkflowsLength", query = "SELECT COUNT(w.id) FROM BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName) from Service w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
@@ -252,15 +256,9 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
     private String orcidPutCode;
 
-    /**
-     * A set of this Entry's Collections from which we can filter Categories.
-     * Don't try to directly manipulate this field, bad things will happen.
-     */
+    @Transient
     @JsonIgnore
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "collection_entry_version", inverseJoinColumns = @JoinColumn(name = "collection_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"), joinColumns = @JoinColumn(name = "entry_id", nullable = false, updatable = false, referencedColumnName = "id", columnDefinition = "bigint"))
-    @BatchSize(size = 25)
-    private Set<Collection> collections = new LinkedHashSet<>();
+    private List<Category> categories = new ArrayList<>();
 
     public Entry() {
         users = new TreeSet<>();
@@ -678,13 +676,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.orcidPutCode = orcidPutCode;
     }
 
-    @JsonIgnore
-    public Set<Category> getCategories() {
-        return (collections.stream().filter(c -> c instanceof Category).map(c -> (Category) c).collect(Collectors.toSet()));
+    public List<Category> getCategories() {
+        return (categories);
     }
 
-    @JsonIgnore
-    public Set<String> getCategoryNames() {
-        return (getCategories().stream().map(Category::getName).collect(Collectors.toSet()));
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
     }
 }

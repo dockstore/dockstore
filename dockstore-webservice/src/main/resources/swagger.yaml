@@ -6354,6 +6354,20 @@ definitions:
           format: "int64"
           readOnly: true
       description: "This describes one workflow in the dockstore"
+  CategorySummary:
+    type: "object"
+    properties:
+      description:
+        type: "string"
+      displayName:
+        type: "string"
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+      topic:
+        type: "string"
   Checksum:
     type: "object"
     properties:
@@ -6433,10 +6447,10 @@ definitions:
   CollectionEntry:
     type: "object"
     properties:
-      categoryNames:
+      categories:
         type: "array"
         items:
-          type: "string"
+          $ref: "#/definitions/CategorySummary"
       dbUpdateDate:
         type: "integer"
         format: "int64"

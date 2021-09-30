@@ -61,7 +61,6 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -325,7 +324,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         Event removeFromCollectionEvent = eventBuild.build();
         eventDAO.create(removeFromCollectionEvent);
 
-        // If added to a Category, update the Entry in the index
+        // If deleted from a Category, update the Entry in the index
         if (entryAndCollection.getRight() instanceof Category) {
             handleIndexUpdate(entryAndCollection.getLeft());
         }
@@ -507,15 +506,20 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         Organization organization = getOrganizationAndCheckModificationRights(user, existingCollection);
 
         // Check if new name is valid
-        boolean nameChange = !Objects.equals(existingCollection.getName(), collection.getName());
-        if (nameChange) {
-            Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
+        if (!Objects.equals(existingCollection.getName(), collection.getName())) {
+            boolean isCategory = existingCollection instanceof Category;
+            Collection duplicateName;
+            if (isCategory) {
+                duplicateName = categoryDAO.findByName(collection.getName());
+            } else {
+                duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
+            }
             if (duplicateName != null) {
                 if (duplicateName.getId() == existingCollection.getId()) {
                     // do nothing
                     LOG.debug("this appears to be a case change");
                 } else {
-                    String msg = "A collection already exists with the name '" + collection.getName() + "', please try another one.";
+                    String msg = "A " + (isCategory ? "category" : "collection") + " already exists with the name '" + collection.getName() + "', please try another one.";
                     LOG.info(msg);
                     throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
                 }
@@ -537,15 +541,19 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .build();
         eventDAO.create(updateCollectionEvent);
 
-        // If the name of a Category changed, reindex the entries.
-        if (nameChange && existingCollection instanceof Category) {
-            long id = existingCollection.getId();
-            workflowDAO.getCollectionWorkflows(id).forEach(ce -> handleIndexUpdate(workflowDAO.findById(ce.getId())));
-            toolDAO.getCollectionTools(id).forEach(ce -> handleIndexUpdate(toolDAO.findById(ce.getId())));
+        // If we are updating a Category, assume a property has changed and reindex the Entries.
+        if (existingCollection instanceof Category) {
+            reindexEntries(existingCollection);
         }
 
         return collectionDAO.findById(collectionId);
 
+    }
+
+    private void reindexEntries(Collection collection) {
+        long id = collection.getId();
+        workflowDAO.getCollectionWorkflows(id).forEach(w -> handleIndexUpdate(workflowDAO.findById(w.getId())));
+        toolDAO.getCollectionTools(id).forEach(t -> handleIndexUpdate(toolDAO.findById(t.getId())));
     }
 
     @PUT
@@ -572,6 +580,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .withType(Event.EventType.MODIFY_ORG)
                 .build();
         eventDAO.create(updateCollectionEvent);
+
+        if (oldCollection instanceof Category) {
+            reindexEntries(oldCollection);
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -671,11 +683,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     }
 
     private void handleIndexUpdate(Entry entry) {
-        // Flush all updates to the database, then refresh the entry to retrieve the latest categories.
-        // Could be beneficial to move this flush/refresh code into the ElasticsearchListener update method to ensure the entries being re-indexed are always the freshest possible.
-        Session currentSession = sessionFactory.getCurrentSession();
-        currentSession.flush();
-        currentSession.refresh(entry);
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
     }
 

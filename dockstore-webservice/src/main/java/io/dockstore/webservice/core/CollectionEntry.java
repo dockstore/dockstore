@@ -1,5 +1,6 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,7 +23,8 @@ public class CollectionEntry implements Serializable {
     private List<String> descriptorTypes = new ArrayList<String>();
     private boolean verified = false;
     private List<String> labels = new ArrayList<String>();
-    private List<String> categoryNames = new ArrayList<String>();
+    @JsonProperty("categories")
+    private List<CategorySummary> categorySummaries = new ArrayList<>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
@@ -122,11 +124,11 @@ public class CollectionEntry implements Serializable {
         this.descriptorTypes = descriptorTypes;
     }
 
-    public List<String> getCategoryNames() {
-        return categoryNames;
+    public List<CategorySummary> getCategorySummaries() {
+        return categorySummaries;
     }
 
-    public void setCategoryNames(List<String> categoryNames) {
-        this.categoryNames = categoryNames;
+    public void setCategorySummaries(List<CategorySummary> categorySummaries) {
+        this.categorySummaries = categorySummaries;
     }
 }

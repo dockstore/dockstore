@@ -277,9 +277,9 @@ public class ElasticListener implements StateListenerInterface {
             Map<String, Object> value = new LinkedHashMap<>();
             value.put("id", category.getId());
             value.put("name", category.getName());
-            value.put("topic", category.getTopic());
             value.put("description", category.getDescription());
             value.put("displayName", category.getDisplayName());
+            value.put("topic", category.getTopic());
             values.add(value);
         }
 
