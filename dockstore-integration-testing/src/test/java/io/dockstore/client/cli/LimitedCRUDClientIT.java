@@ -148,6 +148,8 @@ public class LimitedCRUDClientIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setUserIdToOrcidPutCode(null);
+        container.setUserIdToOrcidPutCode(null);
         assertEquals(container, hostedTool);
         assertNull(container.getUsers());
 
