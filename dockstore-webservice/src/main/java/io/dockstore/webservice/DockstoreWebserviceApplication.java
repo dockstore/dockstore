@@ -342,7 +342,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
 
-        publicStateManager.prependListener(new PopulateEntryListener(toolDAO));
+        // publicStateManager.prependListener(new PopulateEntryListener(toolDAO));
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
