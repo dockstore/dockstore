@@ -22,7 +22,6 @@ import io.dockstore.webservice.helpers.statelisteners.RSSListener;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -35,11 +34,20 @@ public final class PublicStateManager {
     private final SitemapListener sitemapListener = new SitemapListener();
     private final RSSListener rssListener = new RSSListener();
     private final ElasticListener elasticListener = new ElasticListener();
-    private final List<StateListenerInterface> listeners = new ArrayList<>(Arrays.asList(sitemapListener, rssListener, elasticListener));
+    private final List<StateListenerInterface> listeners = new ArrayList<>();
     private DockstoreWebserviceConfiguration config;
 
     private PublicStateManager() {
         // inaccessible on purpose
+        reset();
+    }
+
+    public void reset() {
+        config = null;
+        listeners.clear();
+        listeners.add(sitemapListener);
+        listeners.add(rssListener);
+        listeners.add(elasticListener);
     }
 
     public SitemapListener getSitemapListener() {
@@ -48,6 +56,10 @@ public final class PublicStateManager {
 
     public RSSListener getRSSListener() {
         return rssListener;
+    }
+
+    public ElasticListener getElasticListener() {
+        return elasticListener;
     }
 
     public static PublicStateManager getInstance() {
@@ -59,8 +71,9 @@ public final class PublicStateManager {
         listener.setConfig(config);
     }
 
-    public void prependListener(StateListenerInterface listener) {
-        getListeners().add(0, listener);
+    public void insertListener(StateListenerInterface listener, StateListenerInterface subsequent) {
+        int index = getListeners().indexOf(subsequent);
+        getListeners().add(index >= 0 ? index : 0, listener);
         listener.setConfig(config);
     }
 
