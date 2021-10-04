@@ -61,6 +61,7 @@ public class PublicStateManagerIT {
         config.getEsConfiguration().setHostname("localhost");
         config.getEsConfiguration().setPort(9200);
         PublicStateManagerIT.manager = PublicStateManager.getInstance();
+        manager.reset();
         manager.setConfig(config);
     }
 
