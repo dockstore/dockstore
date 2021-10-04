@@ -17,6 +17,7 @@ import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.ParamHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.jdbi.CategoryDAO;
@@ -44,7 +45,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -406,7 +406,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
 
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
-        boolean includeEntries = checkIncludes(include, "entries");
+        boolean includeEntries = ParamHelper.csvIncludesField(include, "entries");
         collections.forEach(collection -> {
             if (includeEntries) {
                 evictAndAddEntries(collection);
@@ -634,18 +634,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
 
         return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO, userDAO);
-    }
-
-    /**
-     * Checks if the include string (csv) includes some field
-     * @param include CSV string where each field is of the form [a-zA-Z]+
-     * @param field Field to query for
-     * @return True if include has the given field, false otherwise
-     */
-    private boolean checkIncludes(String include, String field) {
-        String includeString = (include == null ? "" : include);
-        List<String> includeSplit = Arrays.asList(includeString.split(","));
-        return includeSplit.contains(field);
     }
 
     @Override

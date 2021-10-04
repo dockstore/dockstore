@@ -845,6 +845,17 @@ paths:
     get:
       description: Retrieve all categories.
       operationId: getCategories
+      parameters:
+      - description: Name of category to retrieve
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Included fields
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -857,17 +868,18 @@ paths:
       summary: Retrieve all categories.
       tags:
       - categories
-  /categories/name/{name}:
+  /categories/{id}:
     get:
-      description: Retrieve a category by name.
-      operationId: getCategoryByName
+      description: Retrieve a category by ID.
+      operationId: getCategoryById
       parameters:
-      - description: Category name.
+      - description: Category ID.
         in: path
-        name: name
+        name: id
         required: true
         schema:
-          type: string
+          type: integer
+          format: int64
       responses:
         "200":
           content:
@@ -877,7 +889,7 @@ paths:
           description: Successfully retrieved category
         "404":
           description: Category not found
-      summary: Retrieve a category by name.
+      summary: Retrieve a category by ID.
       tags:
       - categories
   /cloudInstances:

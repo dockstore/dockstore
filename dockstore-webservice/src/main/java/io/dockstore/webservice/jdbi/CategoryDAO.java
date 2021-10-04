@@ -10,11 +10,15 @@ public class CategoryDAO extends AbstractDockstoreDAO<Category> {
         super(factory);
     }
 
-    public List<Category> getCategories() {
-        return list(namedTypedQuery("io.dockstore.webservice.core.Category.getCategories"));
+    public Category findById(Long id) {
+        return get(id);
     }
 
     public Category findByName(String name) {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Category.findByName").setParameter("name", name));
+    }
+
+    public List<Category> getCategories() {
+        return list(namedTypedQuery("io.dockstore.webservice.core.Category.getCategories"));
     }
 }
