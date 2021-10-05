@@ -3525,7 +3525,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Collection'
         description: Collection to register.
@@ -3594,7 +3594,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Collection'
         description: Collection to register.

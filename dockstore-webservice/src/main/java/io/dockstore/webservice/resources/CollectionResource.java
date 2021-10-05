@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -428,6 +429,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Create a collection in the given organization.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
@@ -494,6 +496,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @PUT
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name, display name, description, and topic can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     @Operation(operationId = "updateCollection", summary = "Update a collection.", description = "Update a collection. Currently only name, display name, description, and topic can be updated.", security = @SecurityRequirement(name = "bearer"))
