@@ -27,19 +27,37 @@ public class SourceCodeRepoFactoryTest {
 
     @Test
     public void parseGitUrl() {
+        // https://stackoverflow.com/questions/59081778/rules-for-special-characters-in-github-repository-name
         // test format 1
-        final Map<String, String> stringStringMap1 = SourceCodeRepoFactory.parseGitUrl("git@github.com:dockstore/dockstore-ui.git");
+        final Map<String, String> stringStringMap1 = SourceCodeRepoFactory
+                .parseGitUrl("git@github.com:dockstore/dockstore-ui.git");
         Assert.assertNotNull(stringStringMap1);
-        Assert.assertTrue("values not found",
-                stringStringMap1.containsKey("Source") && stringStringMap1.containsKey("Username") && stringStringMap1
-                        .containsKey("Repository"));
+        Assert.assertEquals("github.com", stringStringMap1.get("Source"));
+        Assert.assertEquals("dockstore", stringStringMap1.get("Username"));
+        Assert.assertEquals("dockstore-ui", stringStringMap1.get("Repository"));
+
+        final Map<String, String> repoMapWithPeriodAndHyphen = SourceCodeRepoFactory
+                .parseGitUrl("git@github.com:DockstoreTestUser2/wdl-1.0-work_flow.git");
+        Assert.assertNotNull(repoMapWithPeriodAndHyphen);
+        Assert.assertEquals("github.com", repoMapWithPeriodAndHyphen.get("Source"));
+        Assert.assertEquals("DockstoreTestUser2", repoMapWithPeriodAndHyphen.get("Username"));
+        Assert.assertEquals("wdl-1.0-work_flow", repoMapWithPeriodAndHyphen.get("Repository"));
+
         // test format 2
         final Map<String, String> stringStringMap2 = SourceCodeRepoFactory
                 .parseGitUrl("git://github.com/denis-yuen/dockstore-whalesay.git");
         Assert.assertNotNull(stringStringMap2);
-        Assert.assertTrue("values not found",
-                stringStringMap2.containsKey("Source") && stringStringMap2.containsKey("Username") && stringStringMap2
-                        .containsKey("Repository"));
+        Assert.assertEquals("github.com", stringStringMap2.get("Source"));
+        Assert.assertEquals("denis-yuen", stringStringMap2.get("Username"));
+        Assert.assertEquals("dockstore-whalesay", stringStringMap2.get("Repository"));
+
+        final Map<String, String> repoMapWithPeriodAndHyphen2 = SourceCodeRepoFactory
+                .parseGitUrl("git://github.com/DockstoreTestUser2/wdl-1.0-work_flow.git");
+        Assert.assertNotNull(repoMapWithPeriodAndHyphen2);
+        Assert.assertEquals("github.com", repoMapWithPeriodAndHyphen2.get("Source"));
+        Assert.assertEquals("DockstoreTestUser2", repoMapWithPeriodAndHyphen2.get("Username"));
+        Assert.assertEquals("wdl-1.0-work_flow", repoMapWithPeriodAndHyphen2.get("Repository"));
+
         // test garbage
         final Map<String, String> stringStringMap3 = SourceCodeRepoFactory.parseGitUrl("mostly harmless");
         Assert.assertNull("should be null", stringStringMap3);

@@ -460,10 +460,10 @@
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
-                                    <version>3.5.4</version>
+                                    <version>3.8.1</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[11.0.10,17.0)</version>
+                                    <version>[11.0.11,17.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
@@ -669,7 +669,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest
+                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest
                 </excludeGroups>
             </properties>
 
