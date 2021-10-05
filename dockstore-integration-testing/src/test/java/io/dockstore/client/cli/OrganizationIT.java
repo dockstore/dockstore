@@ -25,7 +25,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.CollectionOrganization;
-import io.swagger.client.model.Entry;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.Organization.StatusEnum;
@@ -33,7 +32,6 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
-import io.swagger.client.model.Tool;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -1783,6 +1781,36 @@ public class OrganizationIT extends BaseIT {
         assertEquals(DescriptorLanguage.CWL.toString(), addedCollection.getEntries().get(0).getDescriptorTypes().get(0));
     }
 
+    private Workflow createWorkflow1() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        //manually register and then publish the first workflow
+        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
+                "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", BIOWORKFLOW, null);
+        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
+        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+        Assert.assertEquals(2, workflow.getWorkflowVersions().size());
+
+        return (workflow);
+    }
+
+    private Workflow createWorkflow2() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        //manually register and then publish the second workflow
+        Workflow workflow2 = workflowApi
+                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
+                        "");
+        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", BIOWORKFLOW, null);
+        workflowApi.refresh(workflowByPathGithub2.getId(), false);
+        workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
+
+        return (workflow2);
+    }
+    
     /**
      * Tests that we are getting the number of workflows correctly
      */
@@ -1796,23 +1824,11 @@ public class OrganizationIT extends BaseIT {
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         OrganizationsApi organizationsApiAdmin = new OrganizationsApi(webClientAdminUser);
 
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
         //manually register and then publish the first workflow
-        workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", DescriptorLanguage.CWL.getShortName(),
-                "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath("github.com/DockstoreTestUser2/gdc-dnaseq-cwl", BIOWORKFLOW, null);
-        Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), true);
-        workflow = workflowApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-        Assert.assertEquals(2, workflow.getWorkflowVersions().size());
+        Workflow workflow = createWorkflow1();
 
         //manually register and then publish the second workflow
-        Workflow workflow2 = workflowApi
-                .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/viral-pipelines", "/pipes/WDL/workflows/multi_sample_assemble_kraken.wdl", "",  DescriptorLanguage.WDL.getShortName(),
-                        "");
-        final Workflow workflowByPathGithub2 = workflowApi.getWorkflowByPath("github.com/dockstore-testing/viral-pipelines", BIOWORKFLOW, null);
-        workflowApi.refresh(workflowByPathGithub2.getId(), false);
-        workflowApi.publish(workflow2.getId(), CommonTestUtilities.createPublishRequest(true));
+        Workflow workflow2 = createWorkflow2();
 
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
@@ -2230,8 +2246,6 @@ public class OrganizationIT extends BaseIT {
     }
 
     private Collection addCollection(String name, String orgName) {
-        // For reasons not yet understood, the openAPI version of this function fails, so we use the swagger API for now.
-
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME, testingPostgres);
         final OrganizationsApi organizationsApi = new OrganizationsApi(webClientAdminUser);
         Organization organization = organizationsApi.getOrganizationByName(orgName);
@@ -2241,13 +2255,6 @@ public class OrganizationIT extends BaseIT {
         category.setDisplayName(name);
 
         return organizationsApi.createCollection(organization.getId(), category);
-    }
-
-    private Workflow createWorkflow(long id) {
-        testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = " + id);
-        Workflow workflow = new Workflow();
-        workflow.setId(id);
-        return (workflow);
     }
 
     private void addAdminToOrg(String username, String orgName) {
@@ -2312,7 +2319,7 @@ public class OrganizationIT extends BaseIT {
         }
 
         // Create workflow.
-        Workflow workflow = createWorkflow(2);
+        Workflow workflow = createWorkflow1();
 
         // Add workflow to each category and check category names.
         expectedNames = new HashSet<>();
@@ -2330,6 +2337,11 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
+    /**
+     * Test that Categories are aggregated across multiple organizations,
+     * and that unique Category names are enforced during creation and update,
+     * even when Categories with the same name would belong to different orgs.
+     */
     @Test
     public void testMultipleCategorizerOrgsAndUniqueNames() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
@@ -2394,6 +2406,9 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
+    /**
+     * Test retrieving Categories by valid and invalid names and IDs.
+     */
     @Test
     public void testGetCategoryByNameAndId() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
@@ -2420,6 +2435,9 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
+    /**
+     * Test that a new Category contains the correct information.
+     */
     @Test
     public void testNewCategoryFieldsAreCorrect() {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
@@ -2438,6 +2456,9 @@ public class OrganizationIT extends BaseIT {
         assertEquals(collection.getTopic(), category.getTopic());
     }
 
+    /**
+     * Test that category info populates Category entry fields correctly.
+     */
     @Test
     public void testCategoryEntryFields() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -2447,40 +2468,56 @@ public class OrganizationIT extends BaseIT {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
         addCollection("test", "dockstore");
 
-        final long WORKFLOW_COUNT = 1;
-        long id = 2;
-        for (int i = 0; i < WORKFLOW_COUNT; i++) {
-            addToCollection("test", "dockstore", createWorkflow(id++));
-        }
+        final long workflowCount = 2;
+        addToCollection("test", "dockstore", createWorkflow1());
+        addToCollection("test", "dockstore", createWorkflow2());
 
         io.dockstore.openapi.client.model.Category category = categoriesApi.getCategories(null, null).get(0);
 
-        assertEquals(WORKFLOW_COUNT, category.getToolsLength().longValue());
+        assertEquals(workflowCount, category.getWorkflowsLength().longValue());
         assertEquals(0, category.getEntries().size());
 
+        // Make sure the category looks right.
         category = categoriesApi.getCategories(null, "entries").get(0);
+        assertEquals(workflowCount, category.getWorkflowsLength().longValue());
+        assertEquals(workflowCount, category.getEntries().size());
 
-        assertEquals(WORKFLOW_COUNT, category.getToolsLength().longValue());
-        assertEquals(WORKFLOW_COUNT, category.getEntries().size());
+        // Make sure the category summaries in the category entries look right.
+        for (int i = 0; i < workflowCount; i++) {
+            assertEquals(1, category.getEntries().get(i).getCategories().size());
+            assertEquals("test", category.getEntries().get(i).getCategories().get(0).getName());
+        }
     }
 
+    /**
+     * Test that duplicate categories don't show up when multiple versions
+     * of the same entry are added to a category.
+     */
     @Test
     public void testCategoryWithMultipleVersionsOfEntry() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+        final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
 
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
         addCollection("test", "dockstore");
 
-        Workflow workflow = createWorkflow(2);
-        for (int i=0; i<3; i++) {
-            assertEquals(1, categoriesApi.getCategories(null, null).size());
-            assertEquals(i, categoriesApi.getCategories(null, "entries").get(0).getEntries().size());
-            addToCollection("test", "dockstore", workflow, (long)i);
-        }
+        // Add two versions of a workflow, and confirm the correct number of categories and entries within
+        Workflow workflow = createWorkflow1();
+        long id = workflow.getId();
+        assertEquals(0, entriesApi.entryCategories(id).size());
+        addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
+        assertEquals(1, entriesApi.entryCategories(id).size());
+        assertEquals(1, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
+        addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(1).getId());
+        assertEquals(1, entriesApi.entryCategories(id).size());
+        assertEquals(2, categoriesApi.getCategories("test", "entries").get(0).getEntries().size());
     }
 
+    /**
+     * Tests that a normal collection does not interfere with Categories.
+     */
     @Test
     public void testCategoryCollectionCrossover() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
@@ -2494,15 +2531,22 @@ public class OrganizationIT extends BaseIT {
 
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
-        // Create a category and a normal collection with the same name
-        addCollection("test", "dockstore");
+        // Create some normal collections
         addCollection("test", "normal");
+        addCollection("test2", "normal");
+
+        // There should be no categories
+        assertEquals(0, categoriesApi.getCategories(null, null).size());
+        assertEquals(0, categoriesApi.getCategories("test", null).size());
+
+        // Create a category with the same name
+        addCollection("test", "dockstore");
 
         // There should only be one category
         assertEquals(1, categoriesApi.getCategories(null, null).size());
         assertEquals(1, categoriesApi.getCategories("test", null).size());
 
-        // The category and the normal collection should have different ids
-        assertNotEquals(organizationsApiAdmin.getCollectionByName("dockstore", "test").getId(),organizationsApiAdmin.getCollectionByName("normal", "test").getId());
+        // The category and the normal collection with the same name should have different ids
+        assertNotEquals(organizationsApiAdmin.getCollectionByName("dockstore", "test").getId(), organizationsApiAdmin.getCollectionByName("normal", "test").getId());
     }
 }
