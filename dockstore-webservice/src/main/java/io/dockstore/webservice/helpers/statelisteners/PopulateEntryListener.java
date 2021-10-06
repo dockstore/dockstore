@@ -39,8 +39,11 @@ public class PopulateEntryListener implements StateListenerInterface {
     }
 
     private void populate(List<Entry> entries) {
+        // Run a query to determine the Categories containing each specified Entry.
         List<Long> entryIds = entries.stream().map(Entry::getId).collect(Collectors.toList());
         Map<Entry, List<Category>> entryToCategories = entryDAO.findCategoriesByEntryIds(entryIds);
+
+        // Set the Categories property of each Entry, accordingly.
         entries.forEach(entry -> entry.setCategories(entryToCategories.getOrDefault(entry, Collections.emptyList())));
     }
 

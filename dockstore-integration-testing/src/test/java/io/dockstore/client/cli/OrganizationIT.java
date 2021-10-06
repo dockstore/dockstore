@@ -1810,7 +1810,7 @@ public class OrganizationIT extends BaseIT {
 
         return (workflow2);
     }
-    
+
     /**
      * Tests that we are getting the number of workflows correctly
      */
@@ -2464,7 +2464,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
-        
+
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
         addCollection("test", "dockstore");
 
@@ -2523,7 +2523,7 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
-        
+
         io.dockstore.openapi.client.model.Organization organization = openApiStubOrgObject();
         organization.setName("normal");
         organization.setDisplayName("normal");

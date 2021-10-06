@@ -71,9 +71,16 @@ public final class PublicStateManager {
         listener.setConfig(config);
     }
 
-    public void insertListener(StateListenerInterface listener, StateListenerInterface subsequent) {
-        int index = getListeners().indexOf(subsequent);
-        getListeners().add(index >= 0 ? index : 0, listener);
+    /**
+     * Add a listener so it is invoked directly before the target listener.
+     * If the target listener is not currently managed, the listener is added
+     * so that it is invoked before all other listeners.
+     * @param listener the listener to insert
+     * @param target the target listener
+     */
+    public void insertListener(StateListenerInterface listener, StateListenerInterface target) {
+        int index = getListeners().indexOf(target);
+        getListeners().add(Math.max(index, 0), listener);
         listener.setConfig(config);
     }
 
