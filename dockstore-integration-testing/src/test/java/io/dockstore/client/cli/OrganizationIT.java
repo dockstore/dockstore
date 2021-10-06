@@ -2165,13 +2165,13 @@ public class OrganizationIT extends BaseIT {
             fail("a non-admin user should not be able to create a categorizer organization");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // this is the expected behavior
-            Assert.assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
         }
     }
 
     /**
-     * Test that an admin can change org status from HIDDEN to APPROVED, and vice versa.
-     * All other status transitions are not allowed.
+     * Test that status changes through the organization update endpoint are either rejected
+     * because they're unauthorized or silently ignored.
      */
     @Test
     public void testUpdateOrgStatus() {
@@ -2196,29 +2196,21 @@ public class OrganizationIT extends BaseIT {
                     organization = organizationsApiAdmin.getOrganizationById(organization.getId());
                     assertEquals(startStatus, organization.getStatus());
 
-                    organization.setStatus(endStatus);
-
                     try {
+                        organization.setStatus(endStatus);
                         organization = organizationsApi.updateOrganization(organization, organization.getId());
-                        assertTrue(startStatus == endStatus || (isAdmin && isHiddenOrApproved(startStatus) && isHiddenOrApproved(endStatus)));
-                        assertEquals(endStatus, organization.getStatus());
+                        assertTrue(isAdmin);
                     } catch (io.dockstore.openapi.client.ApiException ex) {
-                        final int expectedCode;
-                        if (isAdmin) {
-                            expectedCode = HttpStatus.SC_BAD_REQUEST;
-                        } else {
-                            expectedCode = startStatus == io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED
-                                ? HttpStatus.SC_UNAUTHORIZED : HttpStatus.SC_NOT_FOUND;
-                        }
-                        assertEquals(expectedCode, ex.getCode());
+                        // If the user wasn't an admin, the update should fail.
+                        assertFalse(isAdmin);
                     }
+                   
+                    // Status should not have changed.
+                    organization = organizationsApiAdmin.getOrganizationById(organization.getId());
+                    assertEquals(startStatus, organization.getStatus());
                 }
             }
         }
-    }
-
-    private boolean isHiddenOrApproved(io.dockstore.openapi.client.model.Organization.StatusEnum status) {
-        return (status == io.dockstore.openapi.client.model.Organization.StatusEnum.APPROVED || status == io.dockstore.openapi.client.model.Organization.StatusEnum.HIDDEN);
     }
 
     /**
