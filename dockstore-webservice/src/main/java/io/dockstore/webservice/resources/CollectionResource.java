@@ -466,9 +466,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Get the organization
         Organization organization = organizationDAO.findById(organizationId);
+        if (organization == null) {
+            String msg = "Organization not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
 
-        // If the organization exists and is a categorizer, convert the Collection to a Category and make sure there are no category name collisions
-        if (organization != null && organization.isCategorizer()) {
+        // If the organization is a categorizer, convert the Collection to a Category and make sure there are no category name collisions
+        if (organization.isCategorizer()) {
             collection = createCategory(collection);
             // Check if any other categories exist with that name
             Category matchingCategory = categoryDAO.findByName(collection.getName());
