@@ -18,6 +18,15 @@ package io.dockstore.webservice.core;
 
 import java.io.Serializable;
 
+/**
+ * Contains summary information about a Category.
+ * This class is currently a property of CollectionEntry, and the method
+ * EntryDAO.findCategorySummariesByEntryId returns a list of CategorySummaries,
+ * allowing us to precisely control the Category information returned
+ * with each Entry and eliminating the need to instantiate a full Category
+ * object, avoiding any possibility of incurring overhead due to populating
+ * unnecessary properties, etc, and any possibly cyclical relationships.
+ */
 public class CategorySummary implements Serializable {
     private long id;
     private String name;
@@ -71,19 +80,5 @@ public class CategorySummary implements Serializable {
 
     public void setTopic(String topic) {
         this.topic = topic;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof CategorySummary) {
-            CategorySummary other = (CategorySummary) o;
-            return (id == other.id);
-        }
-        return (false);
-    }
-
-    @Override
-    public int hashCode() {
-        return (int)id;
     }
 }

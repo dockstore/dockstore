@@ -39,18 +39,4 @@ public class CollectionOrganization {
         this.organizationName = organizationName;
         this.organizationDisplayName = organizationDisplayName;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof CollectionOrganization) {
-            CollectionOrganization other = (CollectionOrganization) o;
-            return (collectionId == other.collectionId);
-        }
-        return (false);
-    }
-
-    @Override
-    public int hashCode() {
-        return (int)collectionId;
-    }
 }

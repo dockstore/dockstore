@@ -9,6 +9,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
@@ -45,6 +46,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -555,8 +558,20 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     private void reindexEntries(Collection collection) {
         long id = collection.getId();
-        workflowDAO.getCollectionWorkflows(id).forEach(w -> handleIndexUpdate(workflowDAO.findById(w.getId())));
-        toolDAO.getCollectionTools(id).forEach(t -> handleIndexUpdate(toolDAO.findById(t.getId())));
+
+        // Accumulate the entry,version combos, there can be multiple different versions per entry.
+        List<CollectionEntry> collectionEntries = new ArrayList<>();
+        collectionEntries.addAll(toolDAO.getCollectionWorkflows(id));
+        collectionEntries.addAll(toolDAO.getCollectionWorkflowsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getCollectionTools(id));
+        collectionEntries.addAll(toolDAO.getCollectionToolsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getCollectionServices(id));
+        collectionEntries.addAll(toolDAO.getCollectionServicesWithVersions(id));
+
+        // Reduce to a set of entries and index.
+        Set<Entry> entries = new HashSet<>();
+        collectionEntries.forEach(collectionEntry -> entries.add(toolDAO.getGenericEntryById(collectionEntry.getId())));
+        entries.forEach(this::handleIndexUpdate);
     }
 
     @PUT

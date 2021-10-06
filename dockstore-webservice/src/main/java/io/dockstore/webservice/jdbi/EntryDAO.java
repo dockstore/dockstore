@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -166,22 +165,23 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
     }
 
-    private <T> List<T> deduplicate(List<T> values) {
-        return new ArrayList<T>(new LinkedHashSet<T>(values));
-    }
-
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
-        return deduplicate(list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId)));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId));
     }
 
     public List<CategorySummary> findCategorySummariesByEntryId(long entryId) {
-        return deduplicate(list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId").setParameter("entryId", entryId)));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId").setParameter("entryId", entryId));
     }
 
     public List<Category> findCategoriesByEntryId(long entryId) {
-        return deduplicate(list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId").setParameter("entryId", entryId)));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId").setParameter("entryId", entryId));
     }
 
+    /**
+     * Retrieve the list of categories containing each of the specified Entries.
+     * @param entryIds a list of Entry IDs
+     * @return a map of each Entry contained by one-or-more Categories to a list of all Categories that contain it, any Entry contained by zero Categories is not included in the map
+     */
     public Map<Entry, List<Category>> findCategoriesByEntryIds(List<Long> entryIds) {
         List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryIds").setParameterList("entryIds", entryIds));
 
@@ -192,8 +192,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             Category category = (Category)result[1];
             entryToCategories.computeIfAbsent(entry, k -> new ArrayList<>()).add(category);
         });
-
-        entryToCategories.replaceAll((entry, categories) -> deduplicate(categories));
 
         return (entryToCategories);
     }
