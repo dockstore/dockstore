@@ -460,7 +460,7 @@
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
-                                    <version>3.8.1</version>
+                                    <version>3.8.2</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>[11.0.11,17.0)</version>
@@ -517,7 +517,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <release>16</release>
+                    <!-- toggle this when we want the jar to only support Java 17, unless we read up on multi-release jars -->
+                    <release>11</release>
+                  <source>15</source>
+                  <target>15</target>
                 </configuration>
             </plugin>
             <plugin>
