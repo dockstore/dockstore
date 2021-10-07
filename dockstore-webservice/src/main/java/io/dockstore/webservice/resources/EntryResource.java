@@ -324,7 +324,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                         updateSuccess = updateOrcidWork(orcidId, orcidWorkString, orcidByUserId, existingPutCodeString);
                         if (!updateSuccess) {
                             // Shouldn't really get here because we know the work with the put code exists
-                            LOG.error("Could not find ORCID work based on put code: " + existingPutCodeString);
+                            LOG.error("Could not find ORCID work based on put code: {}", existingPutCodeString);
                         }
                     } else {
                         throw new CustomWebApplicationException("Could not export to ORCID: unable to find the put code for the existing ORCID work with DOI URL " + doiUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -333,7 +333,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             } else {
                 updateSuccess = updateOrcidWork(orcidId, orcidWorkString, orcidByUserId, putCode);
                 if (!updateSuccess) {
-                    LOG.error("Could not find ORCID work based on put code: " + putCode);
+                    LOG.error("Could not find ORCID work based on put code: {} ", putCode);
                     // This is almost going to be redundant because it's going to attempt to create a new work
                     setPutCode(optionalVersion, entry, null, user.getId());
                     orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
@@ -358,7 +358,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     }
 
     private int createOrcidWork(Optional<Version> optionalVersion, Entry entry, String orcidId, String orcidWorkString,
-        List<Token> orcidTokens, long userId) throws IOException, URISyntaxException, InterruptedException, JAXBException {
+        List<Token> orcidTokens, long userId) throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
                 .postWorkString(baseApiURL, orcidId, orcidWorkString, orcidTokens.get(0).getToken());
         switch (response.statusCode()) {

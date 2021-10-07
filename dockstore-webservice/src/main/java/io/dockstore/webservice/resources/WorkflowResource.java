@@ -163,7 +163,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
-    private static final String ORCID_PUT_CODES = "orcidputcodes";
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -399,7 +398,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(nickname = "getWorkflow", value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include) {
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES + ", " + AUTHORS) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkCanRead(user, workflow);
@@ -1786,6 +1785,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * If include contains validations field, initialize the workflows validations for all of its workflow versions
      * If include contains aliases field, initialize the aliases for all of its workflow versions
      * If include contains images field, initialize the images for all of its workflow versions
+     * If include contains authors field, initialize the authors for all of its workflow versions
      * @param include
      * @param workflow
      */
@@ -1804,9 +1804,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, AUTHORS)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getOrcidAuthors()));
-        }
-        if (checkIncludes(include, ORCID_PUT_CODES)) {
-            workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getVersionMetadata().getUserIdToOrcidPutCode()));
         }
     }
 

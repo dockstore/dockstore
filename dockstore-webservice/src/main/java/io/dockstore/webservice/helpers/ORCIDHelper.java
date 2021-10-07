@@ -1,5 +1,6 @@
 package io.dockstore.webservice.helpers;
 
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -45,6 +46,8 @@ import org.orcid.jaxb.model.v3.release.record.summary.Works;
 
 // Swagger-ui available here: https://api.orcid.org/v3.0/#!/Development_Member_API_v3.0/
 public final class ORCIDHelper {
+    private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
+
     private ORCIDHelper() {
     }
 
@@ -111,7 +114,7 @@ public final class ORCIDHelper {
 
     public static HttpResponse<String> postWorkString(String baseURL, String id, String workString, String token)
             throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work")).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).POST(ofString(workString)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).POST(ofString(workString)).build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -122,7 +125,7 @@ public final class ORCIDHelper {
      */
     public static HttpResponse<String> putWorkString(String baseURL, String id, String workString, String token, String putCode)
             throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).PUT(ofString(workString)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).PUT(ofString(workString)).build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -163,8 +166,7 @@ public final class ORCIDHelper {
         // Get user's ORCID works
         HttpResponse<String> response = getAllWorks(baseURL, id, orcidTokens.get(0).getToken());
 
-        switch (response.statusCode()) {
-        case HttpStatus.SC_OK:
+        if (response.statusCode() == HttpStatus.SC_OK) {
             Works works = transformXmlToWorks(response.body());
             // Find the ORCID work with the DOI URL and get its put code
             for (WorkGroup work : works.getWorkGroup()) {
@@ -176,8 +178,8 @@ public final class ORCIDHelper {
                 }
             }
             return Optional.empty();
-        default:
-            throw new CustomWebApplicationException("Could not export to ORCID: " + response.body(), response.statusCode());
+        } else {
+            throw new CustomWebApplicationException("Could not get all ORCID works to find put code for the existing ORCID work: " + response.body(), response.statusCode());
         }
     }
 
@@ -185,7 +187,7 @@ public final class ORCIDHelper {
      * This gets all works belonging to the orcid author with the provided orcid ID.
      */
     public static HttpResponse<String> getAllWorks(String baseURL, String id, String token) throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/works")).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).GET().build();
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/works")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -193,7 +195,6 @@ public final class ORCIDHelper {
     private static Works transformXmlToWorks(String worksXml) throws JAXBException {
         JAXBContext context = JAXBContext.newInstance(Works.class);
         Unmarshaller unmarshaller = context.createUnmarshaller();
-        Works works = (Works) unmarshaller.unmarshal(new StringReader(worksXml));
-        return works;
+        return (Works) unmarshaller.unmarshal(new StringReader(worksXml));
     }
 }

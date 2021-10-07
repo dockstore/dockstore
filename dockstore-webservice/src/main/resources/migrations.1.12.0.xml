@@ -137,17 +137,17 @@
 
             insert into entry_orcidputcode(entry_id, orcidputcode, userid)
             with exported_workflow_orcid_users as (
-            select workflow.id, workflow.orcidputcode, user_entry.userid
-            from workflow
-            inner join user_entry on workflow.id = user_entry.entryid
-            inner join enduser on user_entry.userid = enduser.id
-            where workflow.orcidputcode is not null and enduser.orcid is not null
+                select workflow.id, workflow.orcidputcode, user_entry.userid
+                from workflow
+                inner join user_entry on workflow.id = user_entry.entryid
+                inner join enduser on user_entry.userid = enduser.id
+                where workflow.orcidputcode is not null and enduser.orcid is not null
             ),
             exported_workflow_one_orcid_user as (
-            select id, count(userid)
-            from exported_workflow_orcid_users
-            group by id
-            having count(userid) = 1
+                select id, count(userid)
+                from exported_workflow_orcid_users
+                group by id
+                having count(userid) = 1
             )
             select exported_workflow_one_orcid_user.id, orcidputcode, userid
             from exported_workflow_one_orcid_user

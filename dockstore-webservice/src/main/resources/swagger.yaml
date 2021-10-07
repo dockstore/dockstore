@@ -5578,7 +5578,8 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ authors"
         required: false
         type: "string"
       responses:

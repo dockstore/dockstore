@@ -28,6 +28,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -97,7 +98,7 @@ public class VersionMetadata {
     )
     protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
 
-    @ElementCollection(targetClass = OrcidPutCode.class)
+    @ElementCollection(targetClass = OrcidPutCode.class, fetch = FetchType.EAGER)
     @JoinTable(name = "version_metadata_orcidputcode", joinColumns = @JoinColumn(name = "version_metadata_id"),
             uniqueConstraints = @UniqueConstraint(name = "unique_version_metadata_user_orcidputcode", columnNames = { "version_metadata_id", "userid", "orcidputcode" }))
     @MapKeyColumn(name = "userid", columnDefinition = "bigint")

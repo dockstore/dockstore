@@ -170,9 +170,6 @@ public final class Hoverfly {
                     .put(String.format("/v3.0/%s/work/%s", ORCID_USER_2, BAD_PUT_CODE)).body(contains(BAD_PUT_CODE)).willReturn(notFound())
     );
 
-
-
-
     public static final SimulationSource CHECK_URL_SOURCE =
         dsl(service("http://fakecheckurllambdabaseurl:3000")
             .get("/lambda").withState("status", "good").anyBody().anyQueryParams().willReturn(response().status(HttpStatus.SC_OK).body(

@@ -148,8 +148,7 @@ public class LimitedCRUDClientIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
-        hostedTool.setUserIdToOrcidPutCode(null);
-        container.setUserIdToOrcidPutCode(null);
+        hostedTool.setUserIdToOrcidPutCode(null); // Setting it to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
         assertEquals(container, hostedTool);
         assertNull(container.getUsers());
 
