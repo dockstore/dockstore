@@ -613,8 +613,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
+            WorkflowVersion updatedWorkflowVersion;
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
+                if (Objects.equals(existingWorkflowVersion.getCommitID(), remoteWorkflowVersion.getCommitID())) {
+                    return;
+                }
                 // Copy over workflow version level information
                 existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
@@ -627,31 +631,28 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
+                updatedWorkflowVersion = existingWorkflowVersion;
             } else {
                 if (checkUrlLambdaUrl != null) {
                     publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl);
                 }
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
+                updatedWorkflowVersion = remoteWorkflowVersion;
             }
-
-            WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
-            if (addedVersion != null) {
-                gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
-                if (workflow.getLastModified() == null || (addedVersion.getLastModified() != null && workflow.getLastModifiedDate().before(addedVersion.getLastModified()))) {
-                    workflow.setLastModified(addedVersion.getLastModified());
-                }
-                // Update file formats for the version and then the entry.
-                // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
-                Set<WorkflowVersion> workflowVersions = new HashSet<>();
-                workflowVersions.add(addedVersion);
-                FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
-                boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
-                                .before(addedVersion.getLastModified());
-                if (latestTagAsDefault && Version.ReferenceType.TAG.equals(addedVersion.getReferenceType()) && addedVersionIsNewer) {
-                    workflow.setActualDefaultVersion(addedVersion);
-                }
+            gitHubSourceCodeRepo.updateVersionMetadata(updatedWorkflowVersion.getWorkflowPath(), updatedWorkflowVersion, workflow.getDescriptorType(), repository);
+            if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
+                workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
-
+            // Update file formats for the version and then the entry.
+            // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
+            Set<WorkflowVersion> workflowVersions = new HashSet<>();
+            workflowVersions.add(updatedWorkflowVersion);
+            FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
+            boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
+                            .before(updatedWorkflowVersion.getLastModified());
+            if (latestTagAsDefault && Version.ReferenceType.TAG.equals(updatedWorkflowVersion.getReferenceType()) && addedVersionIsNewer) {
+                workflow.setActualDefaultVersion(updatedWorkflowVersion);
+            }
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
         } catch (IOException ex) {
             final String message = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
