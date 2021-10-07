@@ -224,6 +224,13 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        Tag actualDefaultVersion = tool.getActualDefaultVersion();
+        if (actualDefaultVersion != null && actualDefaultVersion.getId() == tag.getId()) {
+            String msg = "Cannot delete the default version tag.";
+            LOG.error(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         Set<Tag> listOfTags = tool.getWorkflowVersions();
 
         if (listOfTags.contains(tag)) {

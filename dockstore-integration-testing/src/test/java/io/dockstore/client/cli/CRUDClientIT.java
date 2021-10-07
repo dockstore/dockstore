@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -36,6 +37,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
@@ -477,6 +479,7 @@ public class CRUDClientIT extends BaseIT {
     public void testUpdatingDefaultVersionHostedTool() throws IOException {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
+        ContainertagsApi containertagsApi = new ContainertagsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
 
         // Add a tool with a version
@@ -498,11 +501,24 @@ public class CRUDClientIT extends BaseIT {
             .max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
         assertEquals("correct number of source files", 2, fileDAO.findSourceFilesByVersion(first.get().getId()).size());
+
         // Update the default version of the tool
-        containersApi.updateToolDefaultVersion(hostedTool.getId(), first.get().getName());
+        Tag defaultTag = first.get();
+        containersApi.updateToolDefaultVersion(hostedTool.getId(), defaultTag.getName());
+
+        // test deletion of default version tag, should fail gracefully
+        // fixed in #4406 (DOCK-1880)
+        try {
+            containertagsApi.deleteTags(hostedTool.getId(), defaultTag.getId());
+            fail("Successfully deleted default version tag");
+        } catch (ApiException ex) {
+            // This is the expected behavior.
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
 
         // test deletion of hosted tool for #3171
         containersApi.deleteContainer(hostedTool.getId());
+
     }
 
     /**
