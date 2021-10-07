@@ -40,7 +40,8 @@ import org.slf4j.LoggerFactory;
 
 public final class NextflowUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(NextflowUtilities.class);
-    private static final String DEFAULT_NEXTFLOW_VERSION = "20.07.1";
+    //TODO upgrade to stable release when possible
+    private static final String DEFAULT_NEXTFLOW_VERSION = "21.08.0-edge";
     private static final long TIMEOUT_MILLISECONDS = 15000;  // based on webservice logs, usually <6 seconds is needed
 
     private NextflowUtilities() {
@@ -96,7 +97,7 @@ public final class NextflowUtilities {
     public static Configuration grabConfig(File content) {
         try {
             final List<String> strings =
-                Arrays.asList("java", "-jar", getNextflowTargetFile().getAbsolutePath(), "config", "-properties");
+                Arrays.asList("java", "--illegal-access=permit", "-jar", getNextflowTargetFile().getAbsolutePath(), "config", "-properties");
             final String join = Joiner.on(" ").join(strings);
             LOG.info("running: " + join);
             final ImmutablePair<String, String> execute = executeNextflowConfig(content, join);
