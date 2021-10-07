@@ -5,6 +5,9 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '11', '17' ]
 
     steps:
       - name: install git secrets
@@ -14,10 +17,10 @@ jobs:
             cd git-secrets-1.3.0
             sudo make install   
       - uses: actions/checkout@v2
-      - name: Set up JDK 16
+      - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '16'
+          java-version: ${{ matrix.java }}
           distribution: 'adopt'
       # Step that does that actual cache save and restore
       - uses: actions/cache@v1
