@@ -102,6 +102,9 @@
             create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
         </sql>
     </changeSet>
+    <changeSet id="deleteVersion" author="gluu">
+        <delete tableName="collection_entry_version"><where>version_id not in (SELECT id from workflowversion union select id from tag) and version_id is not null</where></delete>
+    </changeSet>
     <changeSet author="ktran (generated)" id="addMultipleOrcidPutCodesForVersionMetadata">
         <createTable tableName="version_metadata_orcidputcode">
             <column name="version_metadata_id" type="BIGINT">

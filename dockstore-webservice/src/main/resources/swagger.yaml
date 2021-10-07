@@ -5795,6 +5795,8 @@ paths:
       summary: "Publish or unpublish a workflow."
       description: "Publish/publish a workflow (public or private)."
       operationId: "publish"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
