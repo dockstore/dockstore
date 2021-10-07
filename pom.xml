@@ -463,7 +463,7 @@
                                     <version>3.8.2</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[11.0.11,17.0)</version>
+                                    <version>[11.0.11,18.0)</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
