@@ -208,6 +208,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
+    private Set<EntryVersion> entryVersions = new HashSet<>();
+
     public Version() {
         sourceFiles = new TreeSet<>();
         validations = new TreeSet<>();

@@ -13,12 +13,17 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.EventsApi;
+import io.dockstore.openapi.client.api.HostedApi;
+import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.openapi.client.model.SourceFile.TypeEnum;
+import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.OrganizationsApi;
 import io.swagger.client.api.UsersApi;
@@ -32,6 +37,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1308,7 +1314,7 @@ public class OrganizationIT extends BaseIT {
      */
     @Test
     @SuppressWarnings("checkstyle:MethodLength")
-    public void testBasicCollections() {
+    public void testBasicCollections() throws IOException {
         // Setup postgres
 
         // Setup user who creates Organization and collection
@@ -1540,8 +1546,46 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.deleteEntryFromCollection(organizationID, collectionId, entryId, null);
 
         collectionById = organizationsApi.getCollectionById(organizationID, collectionId);
-        assertEquals("Two entry remains in collection", 1, collectionById.getEntries().size());
+        assertEquals(1, collectionById.getEntries().size());
 
+        testVersionRemoval(organizationsApi, organization, collectionId, entryId, versionId, webClientUser2);
+    }
+
+    /**
+     * Tests that removing a version will remove it from collection_entry_version
+     */
+    private void testVersionRemoval(OrganizationsApi organizationsApi, Organization organization, Long collectionId, Long entryId, Long versionId, ApiClient webClientUser2) {
+        io.dockstore.openapi.client.ApiClient openAPIWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.EntriesApi entriesApi1 = new io.dockstore.openapi.client.api.EntriesApi(openAPIWebClient);
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, entryId, versionId);
+        List<io.dockstore.openapi.client.model.CollectionOrganization> collectionOrganizations1 = entriesApi1.entryCollections(entryId);
+        assertEquals(1L, collectionOrganizations1.size());
+        ContainertagsApi containertagsApi = new ContainertagsApi(webClientUser2);
+        testingPostgres.runUpdateStatement("update tool set mode='MANUAL_IMAGE_PATH'");
+        containertagsApi.deleteTags(entryId, versionId);
+        collectionOrganizations1 = entriesApi1.entryCollections(entryId);
+        assertEquals(0L, collectionOrganizations1.size());
+        HostedApi hostedApi = new HostedApi(openAPIWebClient);
+        io.dockstore.openapi.client.model.Workflow hostedWorkflow = hostedApi.createHostedWorkflow("potato", "potato", DescriptorLanguage.CWL.toString(), "potato", "potato");
+        List<SourceFile> sourcefiles = new ArrayList<>();
+        SourceFile sourceFile = new SourceFile();
+        sourceFile.setAbsolutePath("/Dockstore.cwl");
+        sourceFile.setContent("class: Workflow\ncwlVersion: v1.0");
+        sourceFile.setPath("/Dockstore.cwl");
+        sourceFile.setType(TypeEnum.DOCKSTORE_CWL);
+        sourcefiles.add(sourceFile);
+        io.dockstore.openapi.client.model.Workflow workflow = hostedApi.editHostedWorkflow(sourcefiles, hostedWorkflow.getId());
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(openAPIWebClient);
+        workflowsApi.publish1(hostedWorkflow.getId(), CommonTestUtilities.createOpenAPIPublishRequest(true));
+        List<WorkflowVersion> workflowVersions = workflowsApi.getWorkflowVersions(workflow.getId());
+        Long idToAddAndDelete = workflowVersions.get(0).getId();
+        String idToAddAndDeleteString = workflowVersions.get(0).getName();
+        organizationsApi.addEntryToCollection(organization.getId(), collectionId, workflow.getId(), idToAddAndDelete);
+        collectionOrganizations1 = entriesApi1.entryCollections(workflow.getId());
+        assertEquals(1L, collectionOrganizations1.size());
+        hostedApi.deleteHostedWorkflowVersion(workflow.getId(), idToAddAndDeleteString);
+        collectionOrganizations1 = entriesApi1.entryCollections(workflow.getId());
+        assertEquals(0L, collectionOrganizations1.size());
     }
 
     /**
