@@ -616,9 +616,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion updatedWorkflowVersion;
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
-                if (Objects.equals(existingWorkflowVersion.getCommitID(), remoteWorkflowVersion.getCommitID())) {
-                    return;
-                }
                 // Copy over workflow version level information
                 existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
