@@ -103,6 +103,7 @@ public class VersionMetadata {
             uniqueConstraints = @UniqueConstraint(name = "unique_version_metadata_user_orcidputcode", columnNames = { "version_metadata_id", "userid", "orcidputcode" }))
     @MapKeyColumn(name = "userid", columnDefinition = "bigint")
     @ApiModelProperty(value = "The presence of the put code for a userid indicates the version was exported to ORCID for the corresponding Dockstore user.")
+    @Schema(description = "The presence of the put code for a userid indicates the version was exported to ORCID for the corresponding Dockstore user.")
     protected Map<Long, OrcidPutCode> userIdToOrcidPutCode = new HashMap<>();
 
     @Id

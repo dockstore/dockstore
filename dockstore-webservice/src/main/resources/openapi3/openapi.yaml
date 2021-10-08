@@ -7402,6 +7402,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7489,6 +7491,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7577,6 +7581,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7957,6 +7963,7 @@ components:
           type: string
     OrcidPutCode:
       type: object
+      description: An ORCID put code uniquely identifies a work on ORCID
       properties:
         orcidPutCode:
           type: string
@@ -9023,6 +9030,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the version
+            was exported to ORCID for the corresponding Dockstore user.
     VersionTypeValidation:
       type: object
       properties:
@@ -9180,6 +9189,8 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
