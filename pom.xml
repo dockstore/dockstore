@@ -161,7 +161,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
                     <configuration>
-                        <release>16</release>
+                        <release>11</release>
                         <showDeprecation>true</showDeprecation>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     </configuration>
@@ -519,8 +519,6 @@
                 <configuration>
                     <!-- toggle this when we want the jar to only support Java 17, unless we read up on multi-release jars -->
                     <release>11</release>
-                  <source>15</source>
-                  <target>15</target>
                 </configuration>
             </plugin>
             <plugin>
