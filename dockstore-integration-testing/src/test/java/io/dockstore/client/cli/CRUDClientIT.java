@@ -473,7 +473,9 @@ public class CRUDClientIT extends BaseIT {
     }
 
     /**
-     * Ensures that hosted tools can have their default path updated
+     * Ensures that hosted tools can have their default path updated,
+     * that deletion of the default version tag will fail gracefully,
+     * and that a hosted tool can be deleted.
      */
     @Test
     public void testUpdatingDefaultVersionHostedTool() throws IOException {
@@ -507,12 +509,12 @@ public class CRUDClientIT extends BaseIT {
         containersApi.updateToolDefaultVersion(hostedTool.getId(), defaultTag.getName());
 
         // test deletion of default version tag, should fail gracefully
-        // fixed in #4406 (DOCK-1880)
+        // fix for #4406 (DOCK-1880)
         try {
             containertagsApi.deleteTags(hostedTool.getId(), defaultTag.getId());
-            fail("Successfully deleted default version tag");
+            fail("Should not be able to delete a default version tag");
         } catch (ApiException ex) {
-            // This is the expected behavior.
+            // This is the expected behavior
             assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
         }
 
