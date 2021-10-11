@@ -103,6 +103,10 @@
         </sql>
     </changeSet>
 
+    <changeSet id="deleteVersion" author="gluu">
+        <delete tableName="collection_entry_version"><where>version_id not in (SELECT id from workflowversion union select id from tag) and version_id is not null</where></delete>
+    </changeSet>
+
     <changeSet author="svonworl" id="categories_new_feature">
         <addColumn tableName="organization">
             <column name="categorizer" type="boolean" defaultValue="false">
