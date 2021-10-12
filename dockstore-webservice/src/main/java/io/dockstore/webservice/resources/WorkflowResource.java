@@ -163,6 +163,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
+    public static final String INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + VERSIONS + ", " + AUTHORS;
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -398,7 +399,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @ApiOperation(nickname = "getWorkflow", value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES + ", " + AUTHORS) @QueryParam("include") String include) {
+            @Parameter(name = "workflowId", required = true, in = ParameterIn.PATH) @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId,
+            @Parameter(name = "include", description = INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = INCLUDE_MESSAGE) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkCanRead(user, workflow);
@@ -688,7 +690,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/published/{workflowId}")
     @Operation(operationId = "getPublishedWorkflow", description = "Get a published workflow.")
     @ApiOperation(value = "Get a published workflow.", notes = "Hidden versions will not be visible. NO authentication", response = Workflow.class)
-    public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include) {
+    public Workflow getPublishedWorkflow(
+            @Parameter(name = "workflowId", required = true, in = ParameterIn.PATH) @ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId,
+            @Parameter(name = "include", description = INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = INCLUDE_MESSAGE) @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
         initializeAdditionalFields(include, workflow);
@@ -797,7 +801,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-            @Parameter(name = "include", description = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES, in = ParameterIn.QUERY) @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
+            @Parameter(name = "include", description = INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = INCLUDE_MESSAGE) @QueryParam("include") String include,
             @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
             @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
         final Class<? extends Workflow> targetClass;
@@ -1033,8 +1037,10 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/path/workflow/{repository}/published")
     @Operation(operationId = "getPublishedWorkflowByPath", summary = "Get a published workflow by path", description = "Does not require workflow name.")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
-    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES) @QueryParam("include") String include,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services, @ApiParam(value = "Version name", required = false) @QueryParam("versionName") String versionName) {
+    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @Parameter(name = "include", description = INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = INCLUDE_MESSAGE) @QueryParam("include") String include,
+            @Parameter(name = "services", in = ParameterIn.QUERY) @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services,
+            @Parameter(name = "versionName", in = ParameterIn.QUERY) @ApiParam(value = "Version name") @QueryParam("versionName") String versionName) {
         final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
@@ -1786,6 +1792,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
      * If include contains validations field, initialize the workflows validations for all of its workflow versions
      * If include contains aliases field, initialize the aliases for all of its workflow versions
      * If include contains images field, initialize the images for all of its workflow versions
+     * If include contains versions field, initialize the versions for the workflow
      * If include contains authors field, initialize the authors for all of its workflow versions
      * @param include
      * @param workflow

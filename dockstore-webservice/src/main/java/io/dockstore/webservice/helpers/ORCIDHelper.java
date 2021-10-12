@@ -192,6 +192,9 @@ public final class ORCIDHelper {
                 HttpResponse.BodyHandlers.ofString());
     }
 
+    /**
+     * Transforms the ORCID XML response from a get all works call to a Works object. Assumes that the XML from Orcid is safe.
+     */
     private static Works transformXmlToWorks(String worksXml) throws JAXBException {
         JAXBContext context = JAXBContext.newInstance(Works.class);
         Unmarshaller unmarshaller = context.createUnmarshaller();
