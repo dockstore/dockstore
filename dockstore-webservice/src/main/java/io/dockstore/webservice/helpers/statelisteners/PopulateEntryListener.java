@@ -32,9 +32,9 @@ import java.util.stream.Collectors;
  */
 public class PopulateEntryListener implements StateListenerInterface {
 
-    private final EntryDAO entryDAO;
+    private final EntryDAO<?> entryDAO;
 
-    public PopulateEntryListener(EntryDAO entryDAO) {
+    public PopulateEntryListener(EntryDAO<?> entryDAO) {
         this.entryDAO = entryDAO;
     }
 

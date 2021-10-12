@@ -81,6 +81,7 @@ import org.slf4j.LoggerFactory;
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
+    private static final String ORGANIZATION_NOT_FOUND_MESSAGE = "Organization not found.";
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
@@ -92,12 +93,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     private final ToolDAO toolDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
-    private final SessionFactory sessionFactory;
     private final VersionDAO versionDAO;
     private final CollectionHelper helper;
 
     public CollectionResource(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
         this.categoryDAO = new CategoryDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
@@ -403,7 +402,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         } else {
             boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO, userDAO);
             if (!doesOrgExist) {
-                String msg = "Organization not found.";
+                String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
@@ -423,7 +422,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     private void throwExceptionForNullOrganization(Organization organization) {
         if (organization == null) {
-            String msg = "Organization not found";
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -444,7 +443,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // First check if the organization exists and that the user is an admin or maintainer
         boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organizationId, user.getId(), organizationDAO);
         if (!isUserAdminOrMaintainer) {
-            String msg = "Organization not found.";
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -452,7 +451,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Get the organization
         Organization organization = organizationDAO.findById(organizationId);
         if (organization == null) {
-            String msg = "Organization not found.";
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }

@@ -110,7 +110,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
-    private final VersionDAO versionDAO;
+    private final VersionDAO<?> versionDAO;
     private final UserDAO userDAO;
     private final CollectionHelper collectionHelper;
     private final TopicsApi topicsApi;
@@ -122,7 +122,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String hostName;
     private String baseApiURL;
 
-    public EntryResource(SessionFactory sessionFactory, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, UserDAO userDAO,
+    public EntryResource(SessionFactory sessionFactory, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         DockstoreWebserviceConfiguration configuration) {
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;

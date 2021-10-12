@@ -37,7 +37,6 @@ import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -269,11 +268,11 @@ public class ElasticListener implements StateListenerInterface {
         return jsonNode;
     }
 
-    private static void addCategoriesJson(JsonNode node, Entry entry) {
+    private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
 
         List<Map<String, Object>> values = new ArrayList<>();
 
-        for (Category category: (Collection<Category>)entry.getCategories()) {
+        for (Category category: entry.getCategories()) {
             Map<String, Object> value = new LinkedHashMap<>();
             value.put("id", category.getId());
             value.put("name", category.getName());

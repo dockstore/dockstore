@@ -36,9 +36,9 @@ class CollectionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(CollectionHelper.class);
     private final SessionFactory sessionFactory;
-    private final EntryDAO entryDAO;
+    private final EntryDAO<?> entryDAO;
 
-    CollectionHelper(SessionFactory sessionFactory, EntryDAO entryDAO) {
+    CollectionHelper(SessionFactory sessionFactory, EntryDAO<?> entryDAO) {
         this.sessionFactory = sessionFactory;
         this.entryDAO = entryDAO;
     }
