@@ -285,7 +285,7 @@ public abstract class SourceCodeRepoInterface {
             if (versionName.isEmpty() || !existingDefaults.containsKey(versionName.get()) || (existingDefaults.containsKey(versionName.get()) && !existingDefaults.get(versionName.get()).isLegacyVersion())) {
                 String msg = "Cannot refresh .dockstore.yml workflows";
                 LOG.error(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_MODIFIED);
             }
         }
 
