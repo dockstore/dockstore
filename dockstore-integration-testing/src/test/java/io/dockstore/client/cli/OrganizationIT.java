@@ -147,19 +147,6 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
-     * Creates an openAPI version of a stub Collection object
-     *
-     * @return openAPI Collection object
-     */
-    private io.dockstore.openapi.client.model.Collection openApiStubCollectionObject() {
-        io.dockstore.openapi.client.model.Collection collection = new io.dockstore.openapi.client.model.Collection();
-        collection.setName("testname");
-        collection.setDisplayName("testdisplayname");
-        collection.setDescription("A test description.");
-        return collection;
-    }
-
-    /**
      * Creates and registers an Organization
      *
      * @param organizationsApi
@@ -2412,8 +2399,9 @@ public class OrganizationIT extends BaseIT {
         // Check that unique category names are enforced on creation
         // Try to add categories with existing category names
         for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null)) {
+            String categoryName = category.getName();
             try {
-                addCollection(category.getName(), "dockstore");
+                addCollection(categoryName, "dockstore");
                 fail("Creating with a duplicate category name should fail.");
             } catch (ApiException ex) {
                 // this is the expected behavior
@@ -2426,14 +2414,16 @@ public class OrganizationIT extends BaseIT {
         addCollection("catdockstore", "dockstore");
 
         for (io.dockstore.openapi.client.model.Category category: categoriesApi.getCategories(null, null)) {
+            io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
+            io.dockstore.openapi.client.model.Collection collection = organizationsApiAdmin.getCollectionByName("dockstore", "catdockstore");
+            if (category.getName().equals("catdockstore")) {
+                continue;
+            }
+            collection.setName(category.getName());
+            long organizationId = organization.getId();
+            long collectionId = collection.getId();
             try {
-                io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
-                io.dockstore.openapi.client.model.Collection collection = organizationsApiAdmin.getCollectionByName("dockstore", "catdockstore");
-                if (category.getName().equals("catdockstore")) {
-                    continue;
-                }
-                collection.setName(category.getName());
-                organizationsApiAdmin.updateCollection(collection, organization.getId(), collection.getId());
+                organizationsApiAdmin.updateCollection(collection, organizationId, collectionId);
                 fail("Changing to a duplicate category name should fail.");
             } catch (io.dockstore.openapi.client.ApiException ex) {
                 // this is the expected behavior
@@ -2479,7 +2469,6 @@ public class OrganizationIT extends BaseIT {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
 
         Collection collection = addCollection("test", "dockstore");

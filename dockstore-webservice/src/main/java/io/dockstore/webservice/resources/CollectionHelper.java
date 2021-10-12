@@ -62,7 +62,7 @@ class CollectionHelper {
     }
 
     public void evictAndSummarize(java.util.Collection<? extends Collection> c) {
-        c.forEach(collection -> evictAndSummarize(collection));
+        c.forEach(this::evictAndSummarize);
     }
 
     public void evictAndAddEntries(Collection collection) {
@@ -94,11 +94,11 @@ class CollectionHelper {
             }
         });
         collection.setCollectionEntries(collectionEntries);
-        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
-        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
+        collection.setWorkflowsLength(collectionWorkflows.size() + (long)collectionWorkflowsWithVersions.size());
+        collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size());
     }
 
     public void evictAndAddEntries(java.util.Collection<? extends Collection> c) {
-        c.forEach(collection -> evictAndAddEntries(collection));
+        c.forEach(this::evictAndAddEntries);
     }
 }

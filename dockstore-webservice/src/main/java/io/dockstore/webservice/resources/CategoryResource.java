@@ -30,8 +30,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -42,8 +42,6 @@ import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Category endpoints
@@ -53,18 +51,12 @@ import org.slf4j.LoggerFactory;
 @Tag(name = "categories", description = ResourceConstants.CATEGORIES)
 public class CategoryResource implements AuthenticatedResourceInterface {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CategoryResource.class);
-
-    private final SessionFactory sessionFactory;
     private final CategoryDAO categoryDAO;
-    private final ToolDAO toolDAO;
     private final CollectionHelper collectionHelper;
 
     public CategoryResource(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
         this.categoryDAO = new CategoryDAO(sessionFactory);
-        this.toolDAO = new ToolDAO(sessionFactory);
-        this.collectionHelper = new CollectionHelper(sessionFactory, toolDAO);
+        this.collectionHelper = new CollectionHelper(sessionFactory, new ToolDAO(sessionFactory));
 
     }
 
@@ -76,11 +68,11 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     public List<Category> getCategories(
         @Parameter(description = "Name of category to retrieve", name = "name", in = ParameterIn.QUERY, required = false) @QueryParam("name") String name,
-        @Parameter(description = "Included fields", name = "include", in = ParameterIn.QUERY, required = false) @QueryParam("include") String include) {
+        @Parameter(description = "Comma-delimited list of fields to include: entries", name = "include", in = ParameterIn.QUERY, required = false) @QueryParam("include") String include) {
         List<Category> categories;
         if (name != null) {
             Category category = categoryDAO.findByName(name);
-            categories = (category != null) ? Arrays.asList(category) : new ArrayList<>();
+            categories = (category != null) ? Arrays.asList(category) : Collections.emptyList();
         } else {
             categories = categoryDAO.getCategories();
         }

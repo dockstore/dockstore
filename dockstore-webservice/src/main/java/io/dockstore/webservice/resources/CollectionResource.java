@@ -449,6 +449,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
+        // Get the organization
+        Organization organization = organizationDAO.findById(organizationId);
+        if (organization == null) {
+            String msg = "Organization not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
         // Check if any other collections in the organization exist with that name
         Collection matchingCollection = collectionDAO.findByNameAndOrg(collection.getName(), organizationId);
         if (matchingCollection != null) {
@@ -464,17 +472,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Get the organization
-        Organization organization = organizationDAO.findById(organizationId);
-        if (organization == null) {
-            String msg = "Organization not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-
-        // If the organization is a categorizer, convert the Collection to a Category and make sure there are no category name collisions
+        // If the organization is a categorizer, make sure there are no category name collisions and convert the Collection to a Category
         if (organization.isCategorizer()) {
-            collection = createCategory(collection);
             // Check if any other categories exist with that name
             Category matchingCategory = categoryDAO.findByName(collection.getName());
             if (matchingCategory != null) {
@@ -482,6 +481,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
             }
+            // Convert the Collection to a Category
+            collection = constructCategory(collection);
         }
 
         // Save the collection
@@ -519,14 +520,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Check if new name is valid
         if (!Objects.equals(existingCollection.getName(), collection.getName())) {
             boolean isCategory = existingCollection instanceof Category;
-            Collection duplicateName;
+            Collection duplicateCollection;
             if (isCategory) {
-                duplicateName = categoryDAO.findByName(collection.getName());
+                duplicateCollection = categoryDAO.findByName(collection.getName());
             } else {
-                duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
+                duplicateCollection = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
             }
-            if (duplicateName != null) {
-                if (duplicateName.getId() == existingCollection.getId()) {
+            if (duplicateCollection != null) {
+                if (duplicateCollection.getId() == existingCollection.getId()) {
                     // do nothing
                     LOG.debug("this appears to be a case change");
                 } else {
@@ -697,7 +698,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
     }
 
-    private Category createCategory(Collection collection) {
+    private Category constructCategory(Collection collection) {
         Category category = new Category();
         category.setName(collection.getName());
         category.setDescription(collection.getDescription());

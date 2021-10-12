@@ -108,7 +108,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     public static final String VERSION_NO_DOI_ERROR_MESSAGE = "Version does not have a DOI url associated with it";
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
 
-    private final SessionFactory sessionFactory;
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
     private final VersionDAO versionDAO;
@@ -125,7 +124,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
     public EntryResource(SessionFactory sessionFactory, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO versionDAO, UserDAO userDAO,
         DockstoreWebserviceConfiguration configuration) {
-        this.sessionFactory = sessionFactory;
         this.toolDAO = toolDAO;
         this.versionDAO = versionDAO;
         this.tokenDAO = tokenDAO;

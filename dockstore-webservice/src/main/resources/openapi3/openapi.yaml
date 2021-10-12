@@ -851,7 +851,7 @@ paths:
         name: name
         schema:
           type: string
-      - description: Included fields
+      - description: "Comma-delimited list of fields to include: entries"
         in: query
         name: include
         schema:
