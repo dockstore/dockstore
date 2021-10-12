@@ -44,6 +44,7 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiResponse;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.LambdaEvent;
@@ -134,12 +135,8 @@ public class WebhookIT extends BaseIT {
         assertTrue("One version should be not legacy", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> !workflowVersion.isLegacyVersion()));
 
         // Refresh should now no longer work
-        try {
-            workflowApi.refresh(workflow.getId(), false);
-            fail("Should fail on refresh and not reach this point");
-        } catch (ApiException ex) {
-            assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
-        }
+        ApiResponse<Workflow> workflowApiResponse = workflowApi.refreshWithHttpInfo(workflow.getId(), false);
+        assertEquals(HttpStatus.SC_NOT_MODIFIED, workflowApiResponse.getStatusCode());
 
         // Should be able to refresh a legacy version
         workflow = workflowApi.refreshVersion(workflow.getId(), "0.2", false);
@@ -149,7 +146,7 @@ public class WebhookIT extends BaseIT {
             workflowApi.refreshVersion(workflow.getId(), "0.1", false);
             fail("Should not be able to refresh");
         } catch (ApiException ex) {
-            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+            assertEquals(HttpStatus.SC_NOT_MODIFIED, ex.getCode());
         }
 
         // Refresh a version that doesn't already exist
@@ -430,12 +427,8 @@ public class WebhookIT extends BaseIT {
         assertFalse("Workflow should not have any legacy refresh versions.", hasLegacyVersion);
 
         // Refresh
-        try {
-            client.refresh(workflow.getId(), false);
-            fail("Should fail on refresh and not reach this point");
-        } catch (ApiException ex) {
-            assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_BAD_REQUEST, ex.getCode());
-        }
+        ApiResponse<Workflow> workflowApiResponse = client.refreshWithHttpInfo(workflow.getId(), false);
+        assertEquals("Should not be able to refresh a dockstore.yml workflow.", HttpStatus.SC_NOT_MODIFIED, workflowApiResponse.getStatusCode());
     }
 
     /**
