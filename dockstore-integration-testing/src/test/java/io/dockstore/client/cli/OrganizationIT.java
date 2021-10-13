@@ -1994,7 +1994,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testDeletingCollection() {
+    public void testDeleteCollection() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
@@ -2030,6 +2030,12 @@ public class OrganizationIT extends BaseIT {
         io.dockstore.openapi.client.model.Organization deletedFromOrganization = organizationsApi.deleteCollection(organizationId, collectionId);
         assertFalse(existsCollection(organizationId, collectionId));
         assertEquals(organizationId, deletedFromOrganization.getId().longValue());
+
+        // If/when we implement soft delete, a commonly-used pattern is to mark a record "deleted" and leave it in the db table.
+        // To make this approach work for collections, the "unique name" db constraints must be adjusted to consider only non-deleted records.
+        // Test adding a collection with the same attributes as the previously-deleted collection, to make sure there's no interference from "ghosts".
+        io.dockstore.openapi.client.model.Collection identicalCollection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
+        assertTrue(existsCollection(organizationId, identicalCollection.getId()));
     }
 
     @Test
