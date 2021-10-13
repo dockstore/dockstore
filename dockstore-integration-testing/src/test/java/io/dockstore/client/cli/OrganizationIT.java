@@ -2033,9 +2033,11 @@ public class OrganizationIT extends BaseIT {
 
         // If/when we implement soft delete, a commonly-used pattern is to mark a record "deleted" and leave it in the db table.
         // To make this approach work for collections, the "unique name" db constraints must be adjusted to consider only non-deleted records.
-        // Test adding a collection with the same attributes as the previously-deleted collection, to make sure there's no interference from "ghosts".
-        io.dockstore.openapi.client.model.Collection identicalCollection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
-        assertTrue(existsCollection(organizationId, identicalCollection.getId()));
+        // Test adding a collection with the same properties as the previously-deleted collection, to make sure there's no interference from "ghosts".
+        io.dockstore.openapi.client.model.Collection matchingCollection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
+        long matchingCollectionId = matchingCollection.getId();
+        assertTrue(existsCollection(organizationId, matchingCollectionId));
+        assertNotEquals(collectionId, matchingCollectionId);
     }
 
     @Test
