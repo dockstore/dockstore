@@ -123,6 +123,14 @@ public class EventDAO extends AbstractDAO<Event> {
         currentSession().flush();
     }
 
+    public void deleteEventByCollectionID(long collectionId) {
+        Query query = namedQuery("io.dockstore.webservice.core.Event.deleteByCollectionId");
+        query.setParameter("collectionId", collectionId);
+        query.executeUpdate();
+        // Flush db, see explanation in deleteEventByOrganizationID
+        currentSession().flush();
+    }
+
     public void createAddTagToEntryEvent(User user, Entry entry, Version version) {
         if (version.getReferenceType() == Version.ReferenceType.TAG) {
             Event event = entry.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).withVersion(version).build();

@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -453,6 +454,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Create a collection in the given organization.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
@@ -507,6 +509,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @PUT
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name, display name, description, and topic can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     @Operation(operationId = "updateCollection", summary = "Update a collection.", description = "Update a collection. Currently only name, display name, description, and topic can be updated.", security = @SecurityRequirement(name = "bearer"))
@@ -550,6 +553,32 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         return collectionDAO.findById(collectionId);
 
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("{organizationId}/collections/{collectionId}")
+    @ApiOperation(value = "Delete a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, hidden = true)
+    @Operation(operationId = "deleteCollection", summary = "Delete a collection.", description = "Delete a collection.", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted the collection", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Organization.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    public Organization deleteCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
+        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
+        // Ensure collection exists to the user
+        Collection existingCollection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
+        Organization organization = getOrganizationAndCheckModificationRights(user, existingCollection);
+
+        // Remove the events that refer to this collection
+        eventDAO.deleteEventByCollectionID(existingCollection.getId());
+
+        // Delete the collection
+        collectionDAO.delete(existingCollection);
+
+        // Return the organization
+        return organizationDAO.findById(organizationId);
     }
 
     @PUT

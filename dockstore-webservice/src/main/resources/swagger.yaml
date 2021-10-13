@@ -3239,6 +3239,8 @@ paths:
       summary: "Create a collection in the given organization."
       description: ""
       operationId: "createCollection"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3298,6 +3300,8 @@ paths:
       description: "Currently only name, display name, description, and topic can\
         \ be updated."
       operationId: "updateCollection"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:

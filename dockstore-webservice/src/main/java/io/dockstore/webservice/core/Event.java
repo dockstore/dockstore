@@ -36,6 +36,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryIds", query = "SELECT e FROM Event e where (e.tool.id in :entryIDs) OR (e.workflow.id in :entryIDs) ORDER by id desc"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE Event e where e.tool.id = :entryId OR e.workflow.id = :entryId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE Event e WHERE e.organization.id = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByCollectionId", query = "DELETE Event e WHERE e.collection.id = :collectionId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByUserId", query = "SELECT e FROM Event e where e.user.id = :userId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryId", query = "SELECT e FROM Event e where e.workflow.id = :entryId OR e.tool.id = :entryId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganization", query = "SELECT eve FROM Event eve WHERE eve.organization.id = :organizationId ORDER BY id DESC"),
