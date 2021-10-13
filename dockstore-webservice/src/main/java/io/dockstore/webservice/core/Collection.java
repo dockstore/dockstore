@@ -41,7 +41,9 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.Where;
 
 /**
  * This describes a Dockstore collection that can be associated with an organization.
@@ -51,6 +53,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel("Collection")
 @Schema(name = "Collection", description = "Collection in an organization, collects entries")
 @Entity
+@SQLDelete(sql = "update collection set deleted = true where id = ?")
+@Where(clause = "deleted <> true")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId"),
@@ -146,6 +150,10 @@ public class Collection implements Serializable, Aliasable {
 
     @Transient
     private List<CollectionEntry> collectionEntries = new ArrayList<>();
+
+    @JsonIgnore
+    @Column()
+    private boolean deleted = false;
 
     @JsonProperty("organizationName")
     @ApiModelProperty(value = "The name of the organization the collection belongs to")
@@ -268,5 +276,9 @@ public class Collection implements Serializable, Aliasable {
 
     public void setCollectionEntries(List<CollectionEntry> collectionEntries) {
         this.collectionEntries = collectionEntries;
+    }
+
+    public boolean isDeleted() {
+        return (deleted);
     }
 }

@@ -105,4 +105,9 @@
     <changeSet id="deleteVersion" author="gluu">
         <delete tableName="collection_entry_version"><where>version_id not in (SELECT id from workflowversion union select id from tag) and version_id is not null</where></delete>
     </changeSet>
+    <changeSet id="deleteCollection" author="svonworl">
+        <addColumn tableName="collection">
+            <column name="deleted" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>
