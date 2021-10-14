@@ -2124,8 +2124,12 @@ paths:
           type: integer
           format: int64
       responses:
-        "204":
-          description: No Content
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully exported entry to ORCID
         "400":
           description: Bad Request
         "404":

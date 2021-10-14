@@ -92,7 +92,6 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
         @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId")
-
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -245,7 +244,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
 
-    @ElementCollection(targetClass = OrcidPutCode.class)
+    @ElementCollection(targetClass = OrcidPutCode.class, fetch = FetchType.EAGER)
     @JoinTable(name = "entry_orcidputcode", joinColumns = @JoinColumn(name = "entry_id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_user_orcidputcode", columnNames = { "entry_id", "userid", "orcidputcode" }))
     @MapKeyColumn(name = "userid", columnDefinition = "bigint")
     @ApiModelProperty(value = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
