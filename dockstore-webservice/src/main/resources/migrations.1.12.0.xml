@@ -107,7 +107,7 @@
     </changeSet>
     <changeSet id="deleteCollection" author="svonworl">
         <addColumn tableName="collection">
-            <column name="deleted" type="boolean" defaultValueBoolean="false"/>
+            <column name="deleted" type="boolean" value="false"/>
         </addColumn>
         <sql dbms="postgresql">
             drop index collection_name_index;
