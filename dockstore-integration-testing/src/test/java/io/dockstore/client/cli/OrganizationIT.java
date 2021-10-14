@@ -2031,9 +2031,18 @@ public class OrganizationIT extends BaseIT {
         assertFalse(existsCollection(organizationId, collectionId));
         assertEquals(organizationId, deletedFromOrganization.getId().longValue());
 
-        // If/when we implement soft delete, a commonly-used pattern is to mark a record "deleted" and leave it in the db table.
-        // To make this approach work for collections, the "unique name" db constraints must be adjusted to consider only non-deleted records.
-        // Test adding a collection with the same properties as the previously-deleted collection, to make sure there's no interference from "ghosts".
+        // We've soft-deleted the collection, by marking it as "deleted" but keeping it in the db table.
+        // Perform a couple of additional operations to make sure the collection is no longer visible.
+        assertEquals(0L, organizationsApi.getCollectionsFromOrganization(organizationId, "").size());
+        try {
+            organizationsApi.getCollectionByName(openApiStubOrgObject().getName(), openApiStubCollectionObject().getName());
+            fail("Should fail because the collection was deleted.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Check that we've correctly adjusted the "unique name" db constraints to consider only non-deleted records.
+        // Add a collection with the same properties as the previously-deleted collection to ensure there's no interference from "ghosts".
         io.dockstore.openapi.client.model.Collection matchingCollection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
         long matchingCollectionId = matchingCollection.getId();
         assertTrue(existsCollection(organizationId, matchingCollectionId));

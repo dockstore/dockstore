@@ -64,4 +64,19 @@ public class CollectionDAO extends AbstractDAO<Collection> {
     public Collection getByAlias(String alias) {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Collection.getByAlias").setParameter("alias", alias));
     }
+
+    public List<Collection> getDeletedCollections() {
+        Query query = currentSession().createSQLQuery("select * from collection where deleted").addEntity(Collection.class);
+        return (list(query));
+    }
+
+    public Collection getDeletedCollectionById(long collectionId) {
+        Query query = currentSession().createSQLQuery("select * from collection where id = :id and deleted").setParameter("id", collectionId).addEntity(Collection.class);
+        return (uniqueResult(query));
+    }
+
+    public void removeDeletedCollectionById(long collectionId) {
+        Query query = currentSession().createSQLQuery("delete from collection where id = :id and deleted").setParameter("id", collectionId);
+        query.executeUpdate();
+    }
 }
