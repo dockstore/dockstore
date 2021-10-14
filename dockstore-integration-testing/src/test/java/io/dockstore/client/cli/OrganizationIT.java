@@ -40,6 +40,7 @@ import io.swagger.client.model.Workflow;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -2027,9 +2028,8 @@ public class OrganizationIT extends BaseIT {
         assertTrue(existsCollection(organizationId, collectionId));
 
         // An org admin should be able to delete the collection
-        io.dockstore.openapi.client.model.Organization deletedFromOrganization = organizationsApi.deleteCollection(organizationId, collectionId);
+        organizationsApi.deleteCollection(organizationId, collectionId);
         assertFalse(existsCollection(organizationId, collectionId));
-        assertEquals(organizationId, deletedFromOrganization.getId().longValue());
 
         // We've soft-deleted the collection, by marking it as "deleted" but keeping it in the db table.
         // Perform a couple of additional operations to make sure the collection is no longer visible.
@@ -2041,12 +2041,59 @@ public class OrganizationIT extends BaseIT {
             assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
         }
 
-        // Check that we've correctly adjusted the "unique name" db constraints to consider only non-deleted records.
         // Add a collection with the same properties as the previously-deleted collection to ensure there's no interference from "ghosts".
         io.dockstore.openapi.client.model.Collection matchingCollection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
         long matchingCollectionId = matchingCollection.getId();
         assertTrue(existsCollection(organizationId, matchingCollectionId));
         assertNotEquals(collectionId, matchingCollectionId);
+    }
+
+    @Test
+    public void testRetrievingAndRemovingSoftDeletedCollections() {
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
+
+        // Create an organization
+        io.dockstore.openapi.client.model.Organization organization = organizationsApi.createOrganization(openApiStubOrgObject());
+        long organizationId = organization.getId();
+
+        // Create a collection and make sure it is visible
+        io.dockstore.openapi.client.model.Collection collection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
+        long collectionId = collection.getId();
+        assertTrue(existsCollection(organizationId, collectionId));
+
+        organizationsApi.deleteCollection(organizationId, collectionId);
+
+        try {
+            organizationsApi.getDeletedCollectionIds();
+            fail("A regular user should not be authorized to get the deleted collection IDs.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // This is the expected behavior
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        try {
+            organizationsApi.removeDeletedCollection(collectionId);
+            fail("A regular user should not be authorized to remove a deleted collection.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // This is the expected behavior
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        final io.dockstore.openapi.client.ApiClient webClientUserAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUserAdmin);
+
+        assertEquals(Arrays.asList(collectionId), organizationsApiAdmin.getDeletedCollectionIds());
+        organizationsApiAdmin.removeDeletedCollection(collectionId);
+        assertEquals(Collections.emptyList(), organizationsApiAdmin.getDeletedCollectionIds());
+
+        try {
+            organizationsApiAdmin.removeDeletedCollection(collectionId);
+            fail("No collection to remove.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // This is the expected behavior
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
     }
 
     @Test

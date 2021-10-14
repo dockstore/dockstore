@@ -561,26 +561,24 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork
     @Path("{organizationId}/collections/{collectionId}")
-    @ApiOperation(value = "Delete a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class, hidden = true)
+    @ApiOperation(value = "Delete a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, hidden = true)
     @Operation(operationId = "deleteCollection", summary = "Delete a collection.", description = "Delete a collection.", security = @SecurityRequirement(name = "bearer"))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully deleted the collection", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Organization.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully deleted the collection")
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
-    public Organization deleteCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+    public void deleteCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
         // Ensure collection exists to the user
-        Collection existingCollection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
-        Organization organization = getOrganizationAndCheckModificationRights(user, existingCollection);
+        Collection collection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
+        Organization organization = getOrganizationAndCheckModificationRights(user, collection);
 
         // Remove the events that refer to this collection
-        eventDAO.deleteEventByCollectionID(existingCollection.getId());
+        eventDAO.deleteEventByCollectionID(collection.getId());
 
-        // Delete the collection
-        collectionDAO.delete(existingCollection);
-
-        // Return the organization
-        return organizationDAO.findById(organizationId);
+        // Soft-delete the collection
+        // See the @SQLDelete annotation on core.Collection
+        collectionDAO.delete(collection);
     }
 
     @PUT
@@ -638,7 +636,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
     private void throwExceptionIfNotAdmin(User user) {
         if (!user.getIsAdmin()) {
-            String msg = "Must be an admin to perform this operation.";
+            String msg = "Not authorized to perform this operation.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
@@ -663,15 +661,15 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("/collections/deleteds/{collectionId}")
     @ApiOperation(hidden = true, value = "Permanently remove a soft-deleted collection from the database.")
     @Operation(operationId = "removeDeletedCollection", summary = "Permanently remove a soft-deleted collection from the database.", description = "Permanently remove a soft-deleted collection from the database.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully removed the specified collection.", content = @Content(schema = @Schema(implementation = Void.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully removed the specified collection.")
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Deleted collection not found")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
     public void removedDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
         throwExceptionIfNotAdmin(user);
         boolean removed = collectionDAO.removeDeletedCollectionById(collectionId);
         if (!removed) {
-            String msg = "Deleted collection not found";
+            String msg = "Collection not found";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
