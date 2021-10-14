@@ -647,14 +647,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @GET
     @Timed
     @UnitOfWork
-    @Path("/collections/deleteds")
-    @ApiOperation(hidden = true, value = "List the soft-deleted collections.")
-    @Operation(operationId = "getDeletedCollections", summary = "List the soft-deleted collections.", description = "List the soft-deleted collections.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved list of soft-deleted collections.", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
+    @Path("/collections/deleteds/ids")
+    @ApiOperation(hidden = true, value = "Retrieve the IDs of the soft-deleted collections.")
+    @Operation(operationId = "getDeletedCollectionIds", summary = "Retrieve the IDs of the soft-deleted collections.", description = "Retrieve the IDs of the soft-deleted collections.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved list of soft-deleted collection IDs.", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Long.class))))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
-    public List<Collection> getDeletedCollections(@Parameter(hidden = true, name = "user") @Auth User user) {
+    public List<Long> getDeletedCollectionIds(@Parameter(hidden = true, name = "user") @Auth User user) {
         throwExceptionIfNotAdmin(user);
-        return collectionDAO.getDeletedCollections();
+        return collectionDAO.getDeletedCollectionIds();
     }
 
     @DELETE
@@ -663,16 +663,18 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Path("/collections/deleteds/{collectionId}")
     @ApiOperation(hidden = true, value = "Permanently remove a soft-deleted collection from the database.")
     @Operation(operationId = "removeDeletedCollection", summary = "Permanently remove a soft-deleted collection from the database.", description = "Permanently remove a soft-deleted collection from the database.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully removed the specified collection.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully removed the specified collection.", content = @Content(schema = @Schema(implementation = Void.class)))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
-    public Collection removedDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Deleted collection not found")
+    public void removedDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
         throwExceptionIfNotAdmin(user);
-        Collection collection = collectionDAO.getDeletedCollectionById(collectionId);
-        throwExceptionForNullCollection(collection);
-        collectionDAO.removeDeletedCollectionById(collectionId);
-        return collection;
+        boolean removed = collectionDAO.removeDeletedCollectionById(collectionId);
+        if (!removed) {
+            String msg = "Deleted collection not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
     }
 
     /**

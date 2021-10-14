@@ -6,6 +6,7 @@ import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.hibernate.type.StandardBasicTypes;
 
 public class CollectionDAO extends AbstractDAO<Collection> {
     public CollectionDAO(SessionFactory factory) {
@@ -65,18 +66,13 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Collection.getByAlias").setParameter("alias", alias));
     }
 
-    public List<Collection> getDeletedCollections() {
-        Query query = currentSession().createSQLQuery("select * from collection_deleted").addEntity(Collection.class);
-        return (list(query));
+    public List<Long> getDeletedCollectionIds() {
+        Query query = currentSession().createSQLQuery("select id from collection_deleted").addScalar("id", StandardBasicTypes.LONG);
+        return list(query);
     }
 
-    public Collection getDeletedCollectionById(long collectionId) {
-        Query query = currentSession().createSQLQuery("select * from collection_deleted where id = :id").setParameter("id", collectionId).addEntity(Collection.class);
-        return (uniqueResult(query));
-    }
-
-    public void removeDeletedCollectionById(long collectionId) {
+    public boolean removeDeletedCollectionById(long collectionId) {
         Query query = currentSession().createSQLQuery("delete from collection_deleted where id = :id").setParameter("id", collectionId);
-        query.executeUpdate();
+        return query.executeUpdate() > 0;
     }
 }
