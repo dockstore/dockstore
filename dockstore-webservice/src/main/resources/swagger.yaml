@@ -5100,7 +5100,8 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors"
         required: false
         type: "string"
       - name: "subclass"
@@ -5280,7 +5281,8 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors"
         required: false
         type: "string"
       - name: "services"
@@ -5401,7 +5403,8 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors"
         required: false
         type: "string"
       responses:
@@ -5578,7 +5581,8 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors"
         required: false
         type: "string"
       responses:
@@ -6630,10 +6634,6 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      orcidPutCode:
-        type: "string"
-        description: "The presence of the put code indicates the entry was exported\
-          \ to ORCID."
       tags:
         type: "array"
         uniqueItems: true
@@ -6643,6 +6643,12 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the entry\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
       author:
         type: "string"
         position: 1
@@ -6877,14 +6883,16 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      orcidPutCode:
-        type: "string"
-        description: "The presence of the put code indicates the entry was exported\
-          \ to ORCID."
       topicId:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the entry\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
       workflowVersions:
         type: "array"
         uniqueItems: true
@@ -7356,6 +7364,11 @@ definitions:
         position: 1
         description: "ORCID id of the author"
     description: "This describes an ORCID-author of a version in Dockstore"
+  OrcidPutCode:
+    type: "object"
+    properties:
+      orcidPutCode:
+        type: "string"
   Organization:
     type: "object"
     required:
@@ -8515,16 +8528,18 @@ definitions:
       id:
         type: "integer"
         format: "int64"
-      orcidPutCode:
-        type: "string"
-        description: "The presence of the put code indicates the version was exported\
-          \ to ORCID."
       parsedInformationSet:
         type: "array"
         items:
           $ref: "#/definitions/ParsedInformation"
       publicAccessibleTestParameterFile:
         type: "boolean"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the version\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
   Workflow:
     type: "object"
     required:
@@ -8570,16 +8585,18 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      orcidPutCode:
-        type: "string"
-        description: "The presence of the put code indicates the entry was exported\
-          \ to ORCID."
       parentEntry:
         $ref: "#/definitions/Entry"
       topicId:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the entry\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
       author:
         type: "string"
         position: 1
