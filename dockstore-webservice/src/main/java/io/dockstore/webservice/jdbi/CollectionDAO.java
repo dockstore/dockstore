@@ -66,17 +66,17 @@ public class CollectionDAO extends AbstractDAO<Collection> {
     }
 
     public List<Collection> getDeletedCollections() {
-        Query query = currentSession().createSQLQuery("select * from collection where deleted").addEntity(Collection.class);
+        Query query = currentSession().createSQLQuery("select * from collection_deleted").addEntity(Collection.class);
         return (list(query));
     }
 
     public Collection getDeletedCollectionById(long collectionId) {
-        Query query = currentSession().createSQLQuery("select * from collection where id = :id and deleted").setParameter("id", collectionId).addEntity(Collection.class);
+        Query query = currentSession().createSQLQuery("select * from collection_deleted where id = :id").setParameter("id", collectionId).addEntity(Collection.class);
         return (uniqueResult(query));
     }
 
     public void removeDeletedCollectionById(long collectionId) {
-        Query query = currentSession().createSQLQuery("delete from collection where id = :id and deleted").setParameter("id", collectionId);
+        Query query = currentSession().createSQLQuery("delete from collection_deleted where id = :id").setParameter("id", collectionId);
         query.executeUpdate();
     }
 }
