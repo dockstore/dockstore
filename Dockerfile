@@ -1,5 +1,7 @@
 FROM openjdk:11.0.12-jdk
 
+# wipe them out, all of them, to reduce CVEs
+RUN apt purge -y python3 python3-minimal python3.9 python3.9-minimal
 # Update the APT cache
 # prepare for Java download
 RUN apt-get update \
