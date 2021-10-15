@@ -105,6 +105,85 @@
     <changeSet id="deleteVersion" author="gluu">
         <delete tableName="collection_entry_version"><where>version_id not in (SELECT id from workflowversion union select id from tag) and version_id is not null</where></delete>
     </changeSet>
+    <changeSet author="ktran (generated)" id="addMultipleOrcidPutCodesForVersionMetadata">
+        <createTable tableName="version_metadata_orcidputcode">
+            <column name="version_metadata_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_orcidputcode_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="orcidputcode" type="TEXT"/>
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_orcidputcode_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="version_metadata_id" baseTableName="version_metadata_orcidputcode" constraintName="fk_version_metadata_id_version_metadata_orcidputcode" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
+        <addUniqueConstraint columnNames="version_metadata_id, userid, orcidputcode" constraintName="unique_version_metadata_user_orcidputcode" tableName="version_metadata_orcidputcode"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addMultipleOrcidPutCodesForEntry">
+        <createTable tableName="entry_orcidputcode">
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_orcidputcode_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="orcidputcode" type="TEXT"/>
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_orcidputcode_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="entry_id, userid, orcidputcode" constraintName="unique_entry_user_orcidputcode" tableName="entry_orcidputcode"/>
+    </changeSet>
+    <changeSet author="ktran" id="migrateOldOrcidPutCode">
+        <sql dbms="postgresql">
+            <comment>Migrate old orcidputcode if we can tell who exported it, e.g. the workflow entry/version has an orcidputcode and only one user has an orcid id</comment>
+
+            insert into entry_orcidputcode(entry_id, orcidputcode, userid)
+            with exported_workflow_orcid_users as (
+                select workflow.id, workflow.orcidputcode, user_entry.userid
+                from workflow
+                inner join user_entry on workflow.id = user_entry.entryid
+                inner join enduser on user_entry.userid = enduser.id
+                where workflow.orcidputcode is not null and enduser.orcid is not null
+            ),
+            exported_workflow_one_orcid_user as (
+                select id, count(userid)
+                from exported_workflow_orcid_users
+                group by id
+                having count(userid) = 1
+            )
+            select exported_workflow_one_orcid_user.id, orcidputcode, userid
+            from exported_workflow_one_orcid_user
+            inner join exported_workflow_orcid_users on exported_workflow_one_orcid_user.id = exported_workflow_orcid_users.id;
+
+            insert into version_metadata_orcidputcode(version_metadata_id, orcidputcode, userid)
+            with exported_version_orcid_users as (
+                select version_metadata.id, version_metadata.orcidputcode, user_entry.userid
+                from version_metadata
+                inner join workflowversion on version_metadata.id = workflowversion.id
+                inner join workflow on workflowversion.parentid = workflow.id
+                inner join user_entry on workflow.id = user_entry.entryid
+                inner join enduser on user_entry.userid = enduser.id
+                where version_metadata.orcidputcode is not null and enduser.orcid is not null
+            ),
+            exported_version_one_orcid_user as (
+                select id, count(userid)
+                from exported_version_orcid_users
+                group by id
+                having count(userid) = 1
+            )
+            select exported_version_one_orcid_user.id, orcidputcode, userid
+            from exported_version_one_orcid_user
+            inner join exported_version_orcid_users on exported_version_one_orcid_user.id = exported_version_orcid_users.id;
+        </sql>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="removeOldOrcidPutCodeColumn">
+        <dropColumn columnName="orcidputcode" tableName="apptool"/>
+        <dropColumn columnName="orcidputcode" tableName="service"/>
+        <dropColumn columnName="orcidputcode" tableName="tool"/>
+        <dropColumn columnName="orcidputcode" tableName="version_metadata"/>
+        <dropColumn columnName="orcidputcode" tableName="workflow"/>
+    </changeSet>
     <changeSet id="deleteCollection" author="svonworl">
         <sql dbms="postgresql">
             create table collection_deleted (like collection);

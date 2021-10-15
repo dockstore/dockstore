@@ -66,5 +66,7 @@ public class ORCIDHelperTest {
         response = ORCIDHelper.putWorkString(BASE_URL, id, orcidWorkString, token, putCode);
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
         Assert.assertTrue(response.body().contains("work:work put-code=\"" + putCode + "\" "));
+        response = ORCIDHelper.getAllWorks(BASE_URL, id, token);
+        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
     }
 }

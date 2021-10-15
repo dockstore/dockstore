@@ -1104,7 +1104,7 @@ public class WorkflowIT extends BaseIT {
         // Test that an image referenced by digest is grabbed correctly
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "ghcrImages");
-        assertEquals(7, version.getImages().size());
+        assertTrue("Should have at least 7 images. There are " + version.getImages().size(), version.getImages().size() >= 7);
         verifyImageChecksumsAreSaved(version);
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow");
@@ -1122,7 +1122,7 @@ public class WorkflowIT extends BaseIT {
         // Test that an image referenced by digest is grabbed correctly
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "ecrImages");
-        assertEquals(6, version.getImages().size());
+        assertTrue("Should have at least 6 images. There are " + version.getImages().size(), version.getImages().size() >= 6);
         verifyImageChecksumsAreSaved(version);
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow");
@@ -1301,7 +1301,7 @@ public class WorkflowIT extends BaseIT {
         for (ToolVersion trsVersion : versions) {
             if (trsVersion.getName().equals(snapShottedVersionName)) {
                 assertTrue(trsVersion.isIsProduction());
-                assertEquals("There should be" + numImages + "image(s) in this workflow", numImages, trsVersion.getImages().size());
+                assertTrue(String.format("There should be at least %s image(s) in this workflow. There are %s.", numImages, trsVersion.getImages().size()), trsVersion.getImages().size() >= numImages);
                 snapshotInList = true;
                 assertFalse(trsVersion.getImages().isEmpty());
                 for (ImageData imageData :trsVersion.getImages()) {

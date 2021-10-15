@@ -474,11 +474,17 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void setAuthors(final Set<Author> authors) {
-        this.authors = authors;
+        this.authors.clear();
+        if (authors != null) {
+            this.authors.addAll(authors);
+        }
     }
 
     public void setOrcidAuthors(final Set<OrcidAuthor> orcidAuthors) {
-        this.orcidAuthors = orcidAuthors;
+        this.getOrcidAuthors().clear();
+        if (orcidAuthors != null) {
+            this.orcidAuthors.addAll(orcidAuthors);
+        }
     }
 
     public ReferenceType getReferenceType() {

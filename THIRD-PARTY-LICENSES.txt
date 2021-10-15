@@ -157,7 +157,7 @@ Lists of 357 third-party dependencies.
      (The Apache Software License, Version 2.0) Google OAuth Client Library for Java (com.google.oauth-client:google-oauth-client:1.31.4 - https://github.com/googleapis/google-oauth-java-client/google-oauth-client)
      (The Apache Software License, Version 2.0) Google OAuth2 API v2-rev151-1.25.0 (com.google.apis:google-api-services-oauth2:v2-rev151-1.25.0 - http://nexus.sonatype.org/oss-repository-hosting.html/google-api-services-oauth2)
      (The Apache Software License, Version 2.0) Graph Core (org.scala-graph:graph-core_2.12:1.13.1 - http://scala-graph.org)
-     (Apache 2.0) Gson (com.google.code.gson:gson:2.8.6 - https://github.com/google/gson/gson)
+     (Apache 2.0) Gson (com.google.code.gson:gson:2.8.8 - https://github.com/google/gson/gson)
      (The Apache Software License, Version 2.0) GSON extensions to the Google HTTP Client Library for Java. (com.google.http-client:google-http-client-gson:1.38.1 - https://github.com/googleapis/google-http-java-client/google-http-client-gson)
      (The Apache Software License, Version 2.0) Guava InternalFutureFailureAccess and InternalFutures (com.google.guava:failureaccess:1.0.1 - https://github.com/google/guava/failureaccess)
      (The Apache Software License, Version 2.0) Guava ListenableFuture only (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava - https://github.com/google/guava/listenablefuture)

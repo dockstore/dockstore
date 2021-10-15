@@ -119,6 +119,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      */
     public static final JsonFactory JSON_FACTORY = new JacksonFactory();
     public static final String ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE = "Admins and curators may not login with Google";
+    public static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -659,10 +660,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     private Token createDockstoreToken(long userID, String githubLogin) {
         Token dockstoreToken;
-        final SecureRandom random = new SecureRandom();
         final int bufferLength = 1024;
         final byte[] buffer = new byte[bufferLength];
-        random.nextBytes(buffer);
+        SECURE_RANDOM.nextBytes(buffer);
         String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
         final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
 
