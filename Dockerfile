@@ -1,7 +1,7 @@
 FROM openjdk:11.0.12-jdk
 
 # wipe them out, all of them, to reduce CVEs
-RUN apt-get purge -y *python*  && apt-get -y autoremove
+RUN apt-get purge -y -- *python*  && apt-get -y autoremove
 # Update the APT cache
 # prepare for Java download
 RUN apt-get update \
