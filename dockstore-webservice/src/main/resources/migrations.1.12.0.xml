@@ -185,8 +185,14 @@
         <dropColumn columnName="orcidputcode" tableName="workflow"/>
     </changeSet>
     <changeSet id="deleteCollection" author="svonworl">
+        <addColumn tableName="collection">
+            <column name="deleted" type="boolean" value="false"/>
+        </addColumn>
         <sql dbms="postgresql">
-            create table collection_deleted (like collection);
+            drop index collection_name_index;
+            create unique index collection_name_index on collection (LOWER(name), organizationid) where not deleted;
+            drop index collection_displayname_index;
+            create unique index collection_displayname_index on collection (LOWER(displayname), organizationid) where not deleted;
         </sql>
     </changeSet>
 </databaseChangeLog>

@@ -3171,10 +3171,10 @@ paths:
       summary: List all organizations.
       tags:
       - organizations
-  /organizations/collections/deleteds/ids:
+  /organizations/collections/deleteds:
     get:
-      description: Retrieve the IDs of the soft-deleted collections.
-      operationId: getDeletedCollectionIds
+      description: Retrieve the soft-deleted collections.
+      operationId: getDeletedCollections
       responses:
         "200":
           content:
@@ -3182,20 +3182,19 @@ paths:
               schema:
                 type: array
                 items:
-                  type: integer
-                  format: int64
-          description: Successfully retrieved list of soft-deleted collection IDs.
+                  $ref: '#/components/schemas/Collection'
+          description: Successfully retrieved list of soft-deleted collections.
         "401":
           description: Unauthorized
       security:
       - bearer: []
-      summary: Retrieve the IDs of the soft-deleted collections.
+      summary: Retrieve the soft-deleted collections.
       tags:
       - organizations
   /organizations/collections/deleteds/{collectionId}:
     delete:
-      description: Permanently remove a soft-deleted collection from the database.
-      operationId: removeDeletedCollection
+      description: Permanently erase a collection from the database.
+      operationId: eraseDeletedCollection
       parameters:
       - description: Collection ID.
         in: path
@@ -3213,7 +3212,7 @@ paths:
           description: Collection not found
       security:
       - bearer: []
-      summary: Permanently remove a soft-deleted collection from the database.
+      summary: Permanently erase a collection from the database.
       tags:
       - organizations
   /organizations/collections/{alias}/aliases:

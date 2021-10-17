@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -2065,7 +2066,7 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.deleteCollection(organizationId, collectionId);
 
         try {
-            organizationsApi.getDeletedCollectionIds();
+            organizationsApi.getDeletedCollections();
             fail("A regular user should not be authorized to get the deleted collection IDs.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
@@ -2073,7 +2074,7 @@ public class OrganizationIT extends BaseIT {
         }
 
         try {
-            organizationsApi.removeDeletedCollection(collectionId);
+            organizationsApi.eraseDeletedCollection(collectionId);
             fail("A regular user should not be authorized to remove a deleted collection.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
@@ -2083,12 +2084,12 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient webClientUserAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUserAdmin);
 
-        assertEquals(Arrays.asList(collectionId), organizationsApiAdmin.getDeletedCollectionIds());
-        organizationsApiAdmin.removeDeletedCollection(collectionId);
-        assertEquals(Collections.emptyList(), organizationsApiAdmin.getDeletedCollectionIds());
+        assertEquals(Arrays.asList(collectionId), organizationsApiAdmin.getDeletedCollections().stream().map(io.dockstore.openapi.client.model.Collection::getId).collect(Collectors.toList()));
+        organizationsApiAdmin.eraseDeletedCollection(collectionId);
+        assertEquals(Collections.emptyList(), organizationsApiAdmin.getDeletedCollections());
 
         try {
-            organizationsApiAdmin.removeDeletedCollection(collectionId);
+            organizationsApiAdmin.eraseDeletedCollection(collectionId);
             fail("No collection to remove.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
