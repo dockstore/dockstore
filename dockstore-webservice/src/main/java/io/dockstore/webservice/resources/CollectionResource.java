@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -655,7 +656,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork
     @Path("/collections/deleteds/{collectionId}")
-    @ApiOperation(hidden = true, value = "Permanently erase a collection from the database.")
+    @ApiOperation(hidden = true, value = "Permanently erase a soft-deleted collection from the database.")
     @Operation(operationId = "eraseDeletedCollection", summary = "Permanently erase a collection from the database.", description = "Permanently erase a collection from the database.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully removed the specified collection.")
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
@@ -665,7 +666,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         throwExceptionIfNotAdmin(user);
 
         // Find the collection.
-        Collection collection = collectionDAO.findByIdAll(collectionId);
+        Collection collection = collectionDAO.findByIdDeleted(collectionId);
         throwExceptionForNullCollection(collection);
 
         // Remove the events that refer to this collection
@@ -673,6 +674,43 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Hard-delete the collection.
         collectionDAO.delete(collection);
+    }
+
+    @PATCH
+    @Timed
+    @UnitOfWork
+    @Path("/collections/deleteds/{collectionId}")
+    @ApiOperation(hidden = true, value = "Modify a soft-deleted collection.")
+    @Operation(operationId = "modifyDeletedCollection", summary = "Modify a soft-deleted collection.", description = "Modify a soft-deleted collection.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully modified the collection.")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
+    public void modifyDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
+        @Parameter(description = "Operation.", name = "op", in = ParameterIn.QUERY, required = true) @QueryParam("op") String op) {
+        throwExceptionIfNotAdmin(user);
+
+        // Find the collection.
+        Collection collection = collectionDAO.findByIdDeleted(collectionId);
+        throwExceptionForNullCollection(collection);
+
+        // Perform the operation.
+        if (Objects.equals(op, "undelete")) {
+            // Make sure there will be no name collisions when we undelete.
+            long organizationId = collection.getOrganization().getId();
+            if (collectionDAO.findByNameAndOrg(collection.getName(), organizationId) != null || collectionDAO.findByDisplayNameAndOrg(collection.getDisplayName(), organizationId) != null) {
+                String msg = "Another collection has the same name or display name.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+            // Undelete
+            collection.setDeleted(false);
+        } else {
+            String msg = "Unknown operation.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     /**

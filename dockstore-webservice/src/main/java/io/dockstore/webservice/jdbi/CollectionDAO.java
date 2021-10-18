@@ -20,8 +20,12 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return (collection);
     }
 
-    public Collection findByIdAll(Long id) {
-        return get(id);
+    public Collection findByIdDeleted(Long id) {
+        Collection collection = get(id);
+        if (collection != null && !collection.isDeleted()) {
+            return (null);
+        }
+        return (collection);
     }
 
     public long create(Collection collection) {

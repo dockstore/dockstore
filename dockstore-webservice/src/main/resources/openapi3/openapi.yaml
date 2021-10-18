@@ -3215,6 +3215,37 @@ paths:
       summary: Permanently erase a collection from the database.
       tags:
       - organizations
+    patch:
+      description: Modify a soft-deleted collection.
+      operationId: modifyDeletedCollection
+      parameters:
+      - description: Collection ID.
+        in: path
+        name: collectionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Operation.
+        in: query
+        name: op
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Successfully modified the collection.
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Collection not found
+      security:
+      - bearer: []
+      summary: Modify a soft-deleted collection.
+      tags:
+      - organizations
   /organizations/collections/{alias}/aliases:
     get:
       description: Retrieve a collection by alias.
