@@ -2012,10 +2012,12 @@ public class OrganizationIT extends BaseIT {
 
         // Add a tool to the collection.
         long entryId = 2;
-        ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
+        ContainersApi containersApi = new ContainersApi(getWebClient(USER_2_USERNAME, testingPostgres));
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null);
 
+        // Make sure the tool is in the collection.
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
         assertEquals(1, entriesApi.entryCollections(entryId).size());
 
