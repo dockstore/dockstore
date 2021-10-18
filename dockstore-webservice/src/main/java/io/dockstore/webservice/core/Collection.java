@@ -275,7 +275,7 @@ public class Collection implements Serializable, Aliasable {
         this.collectionEntries = collectionEntries;
     }
 
-    public boolean isDeleted() { 
+    public boolean isDeleted() {
         return (deleted);
     }
 
