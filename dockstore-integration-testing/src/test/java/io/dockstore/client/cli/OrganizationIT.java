@@ -2010,6 +2010,15 @@ public class OrganizationIT extends BaseIT {
         long collectionId = collection.getId();
         assertTrue(existsCollection(organizationId, collectionId));
 
+        // Add a tool to the collection.
+        long entryId = 2;
+        ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME, testingPostgres));
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        containersApi.publish(entryId, publishRequest);
+
+        final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
+        assertEquals(1, entriesApi.entryCollections(entryId).size());
+
         // Test various combos of nonexistent IDs
         testDeleteCollectionFail(organizationsApi, NONEXISTENT_ID, NONEXISTENT_ID, HttpStatus.SC_NOT_FOUND);
         assertTrue(existsCollection(organizationId, collectionId));
@@ -2034,7 +2043,8 @@ public class OrganizationIT extends BaseIT {
 
         // We've soft-deleted the collection, by marking it as "deleted" but keeping it in the db table.
         // Perform a couple of additional operations to make sure the collection is no longer visible.
-        assertEquals(0L, organizationsApi.getCollectionsFromOrganization(organizationId, "").size());
+        assertEquals(0, organizationsApi.getCollectionsFromOrganization(organizationId, "").size());
+        assertEquals(0, entriesApi.entryCollections(entryId).size());
         try {
             organizationsApi.getCollectionByName(openApiStubOrgObject().getName(), openApiStubCollectionObject().getName());
             fail("Should fail because the collection was deleted.");
