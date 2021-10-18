@@ -3232,6 +3232,13 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+        description: "This is here to appease Swagger. It requires PATCH methods to\
+          \ have a body, even if it is empty. Please leave it empty."
       responses:
         "204":
           description: Successfully modified the collection.

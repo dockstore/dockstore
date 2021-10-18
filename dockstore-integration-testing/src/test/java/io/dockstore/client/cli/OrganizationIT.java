@@ -2050,7 +2050,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     @Test
-    public void testRetrievingAndRemovingSoftDeletedCollections() {
+    public void testManipulatingSoftDeletedCollections() {
         final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
 
@@ -2063,11 +2063,13 @@ public class OrganizationIT extends BaseIT {
         long collectionId = collection.getId();
         assertTrue(existsCollection(organizationId, collectionId));
 
+        // Soft-delete the collection
         organizationsApi.deleteCollection(organizationId, collectionId);
 
+        // Verify that non-admins can't manipulate soft-deleted collections.
         try {
             organizationsApi.getDeletedCollections();
-            fail("A regular user should not be authorized to get the deleted collection IDs.");
+            fail("A non-admin user should not be authorized to get the deleted collection IDs.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
             assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
@@ -2075,7 +2077,14 @@ public class OrganizationIT extends BaseIT {
 
         try {
             organizationsApi.eraseDeletedCollection(collectionId);
-            fail("A regular user should not be authorized to remove a deleted collection.");
+            fail("A non-admin user should not be authorized to remove a deleted collection.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // This is the expected behavior
+            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+        }
+
+        try {
+            organizationsApi.modifyDeletedCollection("undelete", collectionId, "");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
             assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
@@ -2084,10 +2093,26 @@ public class OrganizationIT extends BaseIT {
         final io.dockstore.openapi.client.ApiClient webClientUserAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUserAdmin);
 
+        // Try to undelete a non-existent collection.
+        try {
+            organizationsApiAdmin.modifyDeletedCollection("undelete", NONEXISTENT_ID, "");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // This is the expected behavior
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Undelete then delete the collection.
+        organizationsApiAdmin.modifyDeletedCollection("undelete", collectionId, "");
+        assertEquals(Collections.emptyList(), organizationsApiAdmin.getDeletedCollections());
+        assertNotEquals(null, organizationsApiAdmin.getCollectionById(organizationId, collectionId));
+        organizationsApi.deleteCollection(organizationId, collectionId);
+
+        // Erase deleted collection.
         assertEquals(Arrays.asList(collectionId), organizationsApiAdmin.getDeletedCollections().stream().map(io.dockstore.openapi.client.model.Collection::getId).collect(Collectors.toList()));
         organizationsApiAdmin.eraseDeletedCollection(collectionId);
         assertEquals(Collections.emptyList(), organizationsApiAdmin.getDeletedCollections());
 
+        // Try to erase the collection again.
         try {
             organizationsApiAdmin.eraseDeletedCollection(collectionId);
             fail("No collection to remove.");

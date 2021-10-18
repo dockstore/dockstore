@@ -1,6 +1,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -688,7 +689,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
     public void modifyDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
-        @Parameter(description = "Operation.", name = "op", in = ParameterIn.QUERY, required = true) @QueryParam("op") String op) {
+        @Parameter(description = "Operation.", name = "op", in = ParameterIn.QUERY, required = true) @QueryParam("op") String op,
+        @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
         throwExceptionIfNotAdmin(user);
 
         // Find the collection.
