@@ -79,7 +79,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
     private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
-    private static final int SEARCH_TERM_LIMIT = 500;
+    private static final int SEARCH_TERM_LIMIT = 300;
     private static final int TOO_MANY_REQUESTS_429 = 429;
     private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
 
