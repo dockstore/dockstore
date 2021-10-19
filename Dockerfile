@@ -19,6 +19,5 @@ COPY dockstore-webservice/target/dockstore-webservice*[^s].jar /home
 
 RUN mkdir /dockstore_logs && chmod a+rx /dockstore_logs
 
-# Waiting for postgres service
 CMD ["/home/init_webservice.sh"]
 
