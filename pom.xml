@@ -461,6 +461,9 @@
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
                                     <version>3.8.1</version>
+			            <!-- flip this when there is something newer than https://discuss.circleci.com/t/linux-machine-executor-images-2021-july-q3-update/40772
+                                    <version>3.8.2</version>
+				    -->
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>[11.0.11,18.0)</version>
