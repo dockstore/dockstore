@@ -62,6 +62,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -233,22 +234,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         try {
             if (!config.getEsConfiguration().getHostname().isEmpty()) {
-                // Performing a search on the UI sends multiple POST requests. When the search term ("include" key in request payload) is large,
-                // one of these POST requests will fail, but the others will continue to pass.
-                if (query != null) {
-                    JSONObject json = new JSONObject(query);
-                    try {
-                        String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
-                        if (include.length() > SEARCH_TERM_LIMIT) {
-                            throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
-                        }
-
-                    } catch (JSONException ex) {
-                        // The request bodies all look pretty different, so it's okay for the exception to get thrown.
-                        LOG.debug("Couldn't parse search payload request.");
-                    }
-                }
-
+                checkSearchTermLimit(query);
                 try {
                     RestClient restClient = ElasticSearchHelper.restClient();
                     Map<String, String> parameters = new HashMap<>();
@@ -290,6 +276,51 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             return Response.ok().entity(0).build();
         } finally {
             elasticSearchConcurrencyLimit.release(1);
+        }
+    }
+
+    /**
+     * Performing a search on the UI sends multiple POST requests. When the search term ("value" key of a wildcard or "include" key in request payload) is large,
+     * the POST requests containing these keys will fail.
+     * @param query
+     */
+    private void checkSearchTermLimit(String query) {
+        if (query != null) {
+            JSONObject json = new JSONObject(query);
+
+            try {
+                String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+                if (include.length() > SEARCH_TERM_LIMIT) {
+                    throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
+                }
+            } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
+                LOG.debug("Couldn't parse search payload request.");
+            }
+
+            try {
+                JSONArray should = json.getJSONObject("query").getJSONObject("bool").getJSONObject("filter").getJSONObject("bool").getJSONArray("should");
+                for (int i = 0; i < should.length(); i++) {
+                    JSONObject wildcard = should.getJSONObject(i).optJSONObject("wildcard");
+
+                    if (wildcard != null) {
+                        JSONObject pathKeyword = null;
+                        if (wildcard.has("full_workflow_path.keyword")) {
+                            pathKeyword = wildcard.getJSONObject("full_workflow_path.keyword");
+                        } else if (wildcard.has("tool_path.keyword")) {
+                            pathKeyword = wildcard.getJSONObject("tool_path.keyword");
+                        }
+
+                        if (pathKeyword != null) {
+                            String value = pathKeyword.optString("value");
+                            if (value.length() > SEARCH_TERM_LIMIT) {
+                                throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
+                            }
+                        }
+                    }
+                }
+            } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
+                LOG.debug("Couldn't parse search payload request.");
+            }
         }
     }
 
