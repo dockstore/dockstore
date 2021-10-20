@@ -6,9 +6,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 
+/**
+ * Maps database constraints to 409s to avoid dropwizard returning 500s
+ */
 public class ConstraintExceptionMapper implements ExceptionMapper<PersistenceException> {
 
-    public ConstraintExceptionMapper() {
+    protected ConstraintExceptionMapper() {
+        // make this only usable by the DockstoreWebserviceApplication
     }
 
     @Override

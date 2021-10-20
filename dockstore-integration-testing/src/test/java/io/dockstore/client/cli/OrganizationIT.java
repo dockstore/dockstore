@@ -466,7 +466,7 @@ public class OrganizationIT extends BaseIT {
             organisationsApiUser2.getCollectionByName("testname", "foo2");
             fail("should error out since it doesn't exist");
         } catch (ApiException ex) {
-            assertEquals(ex.getCode(), HttpStatus.SC_NOT_FOUND);
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
         }
     }
 
@@ -1318,7 +1318,7 @@ public class OrganizationIT extends BaseIT {
             organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
             fail("should not be able to do this");
         } catch (ApiException ex) {
-            Assert.assertEquals(HttpStatus.SC_CONFLICT, ex.getCode());
+            assertEquals(HttpStatus.SC_CONFLICT, ex.getCode());
         }
 
         organizationsOpenApi.deleteRejectedOrPendingOrganization(organization.getId());
