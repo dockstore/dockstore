@@ -205,6 +205,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
+            throwExceptionForNullCollection(collection);
+
             Hibernate.initialize(collection.getAliases());
             addCollectionEntriesToCollection(collection);
             return collection;

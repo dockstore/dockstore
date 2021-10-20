@@ -400,7 +400,7 @@ public class OrganizationIT extends BaseIT {
     private void testEmptyLink(OrganizationsApi organizationsApi, Organization organization) {
         organization.setLink("");
         Organization updatedOrganization = organizationsApi.updateOrganization(organization, organization.getId());
-        assertEquals(null, updatedOrganization.getLink());
+        assertNull(updatedOrganization.getLink());
     }
 
     /**
@@ -454,6 +454,22 @@ public class OrganizationIT extends BaseIT {
         organisation.setName(organisation.getName().toUpperCase());
         organisationsApiUser2.createOrganization(organisation);
     }
+
+    // for DOCK-1948
+    @Test()
+    public void testGetMissingCollectionByName() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+        createOrg(organisationsApiUser2);
+        try {
+            organisationsApiUser2.getCollectionByName("testname", "foo2");
+            fail("should error out since it doesn't exist");
+        } catch (ApiException ex) {
+            assertEquals(ex.getCode(), HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
 
     @Test
     public void createOrgInvalidEmail() {
@@ -1297,6 +1313,13 @@ public class OrganizationIT extends BaseIT {
         organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
         long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
         assertEquals(1, collectionCount);
+
+        try {
+            organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
+            fail("should not be able to do this");
+        } catch (ApiException ex) {
+            Assert.assertEquals(HttpStatus.SC_CONFLICT, ex.getCode());
+        }
 
         organizationsOpenApi.deleteRejectedOrPendingOrganization(organization.getId());
 

@@ -351,6 +351,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
+        environment.jersey().register(new ConstraintExceptionMapper());
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
