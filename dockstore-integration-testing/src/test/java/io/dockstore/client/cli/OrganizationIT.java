@@ -1306,22 +1306,23 @@ public class OrganizationIT extends BaseIT {
 
         Organization organization = createOrg(organizationsApi);
         Collection stubCollection = stubCollectionObject();
-        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        final Long id = organization.getId();
+        Collection collection = organizationsApi.createCollection(id, stubCollection);
         long collectionId = collection.getId();
         testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = 2");
 
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
+        organizationsApi.addEntryToCollection(id, collectionId, 2L, 8L);
         long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
         assertEquals(1, collectionCount);
 
         try {
-            organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
+            organizationsApi.addEntryToCollection(id, collectionId, 2L, 8L);
             fail("should not be able to do this");
         } catch (ApiException ex) {
             assertEquals(HttpStatus.SC_CONFLICT, ex.getCode());
         }
 
-        organizationsOpenApi.deleteRejectedOrPendingOrganization(organization.getId());
+        organizationsOpenApi.deleteRejectedOrPendingOrganization(id);
 
         // Test collection is gone
         collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);

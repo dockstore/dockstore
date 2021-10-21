@@ -1,6 +1,5 @@
 package io.dockstore.webservice;
 
-import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dropwizard.jersey.errors.ErrorMessage;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -16,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ConstraintExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PersistenceExceptionMapper.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConstraintExceptionMapper.class);
 
     protected ConstraintExceptionMapper() {
         // make this only usable by the DockstoreWebserviceApplication
