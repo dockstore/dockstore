@@ -141,7 +141,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
-        checkHostedEntryName(entryName); // Check if the entry name is valid
+        checkEntryName(entryName); // Check if the entry name is valid
         // Only check type for workflows
         String convertedRegistry = checkRegistry(registry);
         T entry = getEntry(user, convertedRegistry, name, descriptorLanguage, namespace, entryName);
@@ -370,13 +370,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @return
      */
     protected abstract String checkRegistry(String registry);
-
-    /**
-     * Check that the entry name is valid
-     * @param name
-     * @return
-     */
-    protected abstract void checkHostedEntryName(String name);
 
     /**
      * Create new version of a workflow or tag of a tool

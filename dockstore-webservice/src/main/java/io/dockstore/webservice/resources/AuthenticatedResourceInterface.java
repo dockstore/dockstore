@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
-    Pattern ENTRY_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*"); // Used to validate tool and workflow names
+    Pattern ENTRY_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*+"); // Used to validate tool and workflow names
     int ENTRY_NAME_LENGTH_LIMIT = 256;
 
     /**
@@ -279,12 +279,10 @@ public interface AuthenticatedResourceInterface {
     }
 
     default void checkEntryName(String name) {
-        if (name != null && !name.isEmpty()) {
-            if (!ENTRY_NAME_PATTERN.matcher(name).matches() || name.length() > ENTRY_NAME_LENGTH_LIMIT) {
-                throw new CustomWebApplicationException("Invalid entry name. Entry name may not exceed " + ENTRY_NAME_LENGTH_LIMIT
-                        + " characters and may only consist of alphanumeric characters, internal underscores, and internal hyphens.",
-                        HttpStatus.SC_BAD_REQUEST);
-            }
+        if (name != null && !name.isEmpty() && (!ENTRY_NAME_PATTERN.matcher(name).matches() || name.length() > ENTRY_NAME_LENGTH_LIMIT)) {
+            throw new CustomWebApplicationException("Invalid entry name. Entry name may not exceed " + ENTRY_NAME_LENGTH_LIMIT
+                    + " characters and may only consist of alphanumeric characters, internal underscores, and internal hyphens.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
     }
 

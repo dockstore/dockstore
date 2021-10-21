@@ -263,9 +263,4 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
 
         throw new CustomWebApplicationException(registry + " is not a valid registry type", HttpStatus.SC_BAD_REQUEST);
     }
-
-    @Override
-    protected void checkHostedEntryName(String name) {
-        checkEntryName(name);
-    }
 }
