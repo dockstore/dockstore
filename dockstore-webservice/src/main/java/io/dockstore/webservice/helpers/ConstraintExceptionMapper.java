@@ -1,6 +1,7 @@
-package io.dockstore.webservice;
+package io.dockstore.webservice.helpers;
 
 import io.dropwizard.jersey.errors.ErrorMessage;
+import java.text.MessageFormat;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -11,15 +12,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Maps database constraints to 409s to avoid dropwizard returning 500s.
- * Inspired by https://github.com/ramsrib/dropwizard-exception-mapper-example
  */
 public class ConstraintExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConstraintExceptionMapper.class);
-
-    protected ConstraintExceptionMapper() {
-        // make this only usable by the DockstoreWebserviceApplication
-    }
 
     @Override
     public Response toResponse(ConstraintViolationException exception) {
@@ -28,23 +24,11 @@ public class ConstraintExceptionMapper implements ExceptionMapper<ConstraintViol
     }
 
     protected static Response getResponse(ConstraintViolationException exception) {
-        if (exception.getCause() instanceof ConstraintViolationException) {
-            final String details =
-                "Violated "
-                    + ((ConstraintViolationException) exception.getCause()).getConstraintName()
-                    + " constraint.";
-            return
-                Response.status(Status.CONFLICT)
-                    .type(MediaType.APPLICATION_JSON_TYPE)
-                    .entity(
-                        new ErrorMessage(
-                            Status.CONFLICT.getStatusCode(), "Constraint violation failure", details))
-                    .build();
-        } else if ("23505".equals(exception.getSQLState())) {
+        if ("23505".equals(exception.getSQLState())) {
             // https://stackoverflow.com/questions/39557914/how-to-get-uniqueviolationexception-instead-of-org-postgresql-util-psqlexception
             return Response.status(Status.CONFLICT)
                 .entity(new ErrorMessage(Status.CONFLICT.getStatusCode(),
-                    "Your request has been blocked by a database constraint. Please change your request and try again"))
+                    MessageFormat.format("Your request has been blocked by a database constraint \"{0}\". Please change your request and try again", exception.getConstraintName())))
                 .build();
         } else {
             return
