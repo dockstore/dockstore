@@ -2159,7 +2159,6 @@ public class WorkflowIT extends BaseIT {
         // Should not be able to create a topic for the same workflow
         try {
             curatorEntriesApi.setDiscourseTopic(workflow.getId());
-            curatorEntriesApi.setDiscourseTopic(workflow.getId());
             fail("Should still not be able to set discourse topic.");
         } catch (ApiException ignored) {
             assertTrue(true);
