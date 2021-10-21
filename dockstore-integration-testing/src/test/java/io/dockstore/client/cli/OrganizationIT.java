@@ -2086,7 +2086,7 @@ public class OrganizationIT extends BaseIT {
             fail("A non-admin user should not be authorized to get the deleted collection IDs.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
         }
 
         try {
@@ -2094,14 +2094,14 @@ public class OrganizationIT extends BaseIT {
             fail("A non-admin user should not be authorized to remove a deleted collection.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
         }
 
         try {
             organizationsApi.modifyDeletedCollection("undelete", collectionId, "");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             // This is the expected behavior
-            assertEquals(HttpStatus.SC_UNAUTHORIZED, ex.getCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
         }
 
         final io.dockstore.openapi.client.ApiClient webClientUserAdmin = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);

@@ -3184,8 +3184,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/Collection'
           description: Successfully retrieved list of soft-deleted collections.
-        "401":
-          description: Unauthorized
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       summary: Retrieve the soft-deleted collections.
@@ -3206,8 +3206,8 @@ paths:
       responses:
         "204":
           description: Successfully removed the specified collection.
-        "401":
-          description: Unauthorized
+        "403":
+          description: Forbidden
         "404":
           description: Collection not found
       security:
@@ -3244,8 +3244,8 @@ paths:
           description: Successfully modified the collection.
         "400":
           description: Bad request
-        "401":
-          description: Unauthorized
+        "403":
+          description: Forbidden
         "404":
           description: Collection not found
       security:
