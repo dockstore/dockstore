@@ -244,7 +244,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
 
-    @ElementCollection(targetClass = OrcidPutCode.class, fetch = FetchType.EAGER)
+    @ElementCollection(targetClass = OrcidPutCode.class)
     @JoinTable(name = "entry_orcidputcode", joinColumns = @JoinColumn(name = "entry_id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_user_orcidputcode", columnNames = { "entry_id", "userid", "orcidputcode" }))
     @MapKeyColumn(name = "userid", columnDefinition = "bigint")
     @ApiModelProperty(value = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")

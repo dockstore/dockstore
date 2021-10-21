@@ -5692,7 +5692,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
@@ -5858,7 +5858,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
@@ -5964,7 +5964,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
@@ -6169,7 +6169,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
