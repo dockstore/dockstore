@@ -53,6 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -574,7 +575,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
         // Ensure collection exists to the user
         Collection collection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
-        Organization organization = getOrganizationAndCheckModificationRights(user, collection);
+        getOrganizationAndCheckModificationRights(user, collection);
 
         collection.setDeleted(true);
     }
@@ -632,24 +633,16 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         return organization;
     }
 
-    private void throwExceptionIfNotAdmin(User user) {
-        if (!user.getIsAdmin()) {
-            String msg = "Not authorized to perform this operation.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
-        }
-    }
-
     @GET
     @Timed
     @UnitOfWork
     @Path("/collections/deleteds")
+    @RolesAllowed({"admin"})
     @ApiOperation(hidden = true, value = "Retrieve the soft-deleted collections.")
     @Operation(operationId = "getDeletedCollections", summary = "Retrieve the soft-deleted collections.", description = "Retrieve the soft-deleted collections.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved list of soft-deleted collections.", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
     public List<Collection> getDeletedCollections(@Parameter(hidden = true, name = "user") @Auth User user) {
-        throwExceptionIfNotAdmin(user);
         return collectionDAO.getDeleteds();
     }
 
@@ -657,6 +650,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork
     @Path("/collections/deleteds/{collectionId}")
+    @RolesAllowed({"admin"})
     @ApiOperation(hidden = true, value = "Permanently erase a soft-deleted collection from the database.")
     @Operation(operationId = "eraseDeletedCollection", summary = "Permanently erase a collection from the database.", description = "Permanently erase a collection from the database.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully removed the specified collection.")
@@ -664,8 +658,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
     public void eraseDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
-        throwExceptionIfNotAdmin(user);
-
         // Find the collection.
         Collection collection = collectionDAO.findByIdDeleted(collectionId);
         throwExceptionForNullCollection(collection);
@@ -681,6 +673,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Timed
     @UnitOfWork
     @Path("/collections/deleteds/{collectionId}")
+    @RolesAllowed({"admin"})
     @ApiOperation(hidden = true, value = "Modify a soft-deleted collection.")
     @Operation(operationId = "modifyDeletedCollection", summary = "Modify a soft-deleted collection.", description = "Modify a soft-deleted collection.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully modified the collection.")
@@ -691,8 +684,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
         @Parameter(description = "Operation.", name = "op", in = ParameterIn.QUERY, required = true) @QueryParam("op") String op,
         @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
-        throwExceptionIfNotAdmin(user);
-
         // Find the collection.
         Collection collection = collectionDAO.findByIdDeleted(collectionId);
         throwExceptionForNullCollection(collection);

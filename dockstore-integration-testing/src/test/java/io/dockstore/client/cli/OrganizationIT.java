@@ -2047,8 +2047,10 @@ public class OrganizationIT extends BaseIT {
         // Perform a couple of additional operations to make sure the collection is no longer visible.
         assertEquals(0, organizationsApi.getCollectionsFromOrganization(organizationId, "").size());
         assertEquals(0, entriesApi.entryCollections(entryId).size());
+        String sameOrganizationName = openApiStubOrgObject().getName();
+        String sameCollectionName = openApiStubCollectionObject().getName();
         try {
-            organizationsApi.getCollectionByName(openApiStubOrgObject().getName(), openApiStubCollectionObject().getName());
+            organizationsApi.getCollectionByName(sameOrganizationName, sameCollectionName);
             fail("Should fail because the collection was deleted.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
