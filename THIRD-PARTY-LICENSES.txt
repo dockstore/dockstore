@@ -1,5 +1,5 @@
 
-Lists of 357 third-party dependencies.
+Lists of 356 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.12:2.5.31 - https://akka.io/)
@@ -210,7 +210,6 @@ Lists of 357 third-party dependencies.
      (Apache License, Version 2.0) Java Annotation Indexer (org.jboss:jandex:2.2.3.Final - http://www.jboss.org/jandex)
      (The MIT License (MIT)) java jwt (com.auth0:java-jwt:3.8.1 - https://github.com/auth0/java-jwt)
      (Apache License v2.0) (LGPL, version 2.1) Java Native Access (net.java.dev.jna:jna:5.8.0 - https://github.com/java-native-access/jna)
-     (Eclipse Distribution License (EDL), Version 1.0) (Eclipse Public License (EPL), Version 1.0) Java Persistence API, Version 2.1 (org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final - http://hibernate.org)
      (The MIT License) Java SemVer (com.github.zafarkhaja:java-semver:0.9.0 - https://github.com/zafarkhaja/jsemver)
      (Common Development and Distribution License) (GNU General Public License, Version 2 with the Classpath Exception) Java Transaction API (org.jboss.spec.javax.transaction:jboss-transaction-api_1.2_spec:1.1.1.Final - http://www.jboss.org/jboss-transaction-api_1.2_spec)
      (CDDL/GPLv2+CE) JavaBeans Activation Framework (com.sun.activation:javax.activation:1.2.0 - http://java.net/all/javax.activation/)
