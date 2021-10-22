@@ -65,6 +65,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
@@ -351,6 +352,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
+        environment.jersey().register(new ConstraintExceptionMapper());
+
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
