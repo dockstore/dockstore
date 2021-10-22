@@ -284,7 +284,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
      * the POST requests containing these keys will fail.
      * @param query
      */
-    private void checkSearchTermLimit(String query) {
+    public static void checkSearchTermLimit(String query) {
         if (query != null) {
             JSONObject json = new JSONObject(query);
 
