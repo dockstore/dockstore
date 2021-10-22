@@ -5101,7 +5101,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         required: false
         type: "string"
       - name: "subclass"
@@ -5282,7 +5282,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         required: false
         type: "string"
       - name: "services"
@@ -5404,7 +5404,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         required: false
         type: "string"
       responses:
@@ -5582,7 +5582,7 @@ paths:
       - name: "include"
         in: "query"
         description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         required: false
         type: "string"
       responses:

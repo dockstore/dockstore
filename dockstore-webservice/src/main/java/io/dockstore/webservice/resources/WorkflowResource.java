@@ -163,7 +163,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     private static final String IMAGES = "images";
     private static final String VERSIONS = "versions";
     private static final String AUTHORS = "authors";
-    public static final String INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + VERSIONS + ", " + AUTHORS;
+    private static final String ORCID_PUT_CODES = "orcidputcodes";
+    private static final String INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + VALIDATIONS + ", " + ALIASES + ", " + IMAGES + ", " + VERSIONS + ", " + AUTHORS + ", " + ORCID_PUT_CODES;
     private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     private final ToolDAO toolDAO;
@@ -1812,6 +1813,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         if (checkIncludes(include, AUTHORS)) {
             workflow.getWorkflowVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getOrcidAuthors()));
+        }
+        if (checkIncludes(include, ORCID_PUT_CODES)) {
+            Hibernate.initialize(workflow.getUserIdToOrcidPutCode());
         }
     }
 
