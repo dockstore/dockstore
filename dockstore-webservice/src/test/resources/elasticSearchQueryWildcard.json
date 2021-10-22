@@ -1,0 +1,188 @@
+{
+  "_source": false,
+  "aggs": {
+    "author": {
+      "terms": {
+        "field": "author",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "descriptorType": {
+      "terms": {
+        "field": "descriptorType",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "has_checker": {
+      "terms": {
+        "field": "has_checker",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "input_file_formats.value.keyword": {
+      "terms": {
+        "field": "input_file_formats.value.keyword",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "labels.value.keyword": {
+      "terms": {
+        "field": "labels.value.keyword",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "namespace": {
+      "terms": {
+        "field": "namespace",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "organization": {
+      "terms": {
+        "field": "organization",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "output_file_formats.value.keyword": {
+      "terms": {
+        "field": "output_file_formats.value.keyword",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "private_access": {
+      "terms": {
+        "field": "private_access",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "registry": {
+      "terms": {
+        "field": "registry",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "source_control_provider.keyword": {
+      "terms": {
+        "field": "source_control_provider.keyword",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "verified": {
+      "terms": {
+        "field": "verified",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "verified_platforms.keyword": {
+      "terms": {
+        "field": "verified_platforms.keyword",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    },
+    "workflowVersions.verifiedSources.keyword": {
+      "terms": {
+        "field": "workflowVersions.verifiedSources.keyword",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 10000
+      }
+    }
+  },
+  "query": {
+    "bool": {
+      "filter": {
+        "bool": {
+          "should": [
+            {
+              "wildcard": {
+                "full_workflow_path.keyword": {
+                  "case_insensitive": true,
+                  "value": "*This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string*"
+                }
+              }
+            },
+            {
+              "wildcard": {
+                "tool_path.keyword": {
+                  "case_insensitive": true,
+                  "value": "*This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string*"
+                }
+              }
+            },
+            {
+              "match_phrase": {
+                "workflowVersions.sourceFiles.content": "This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string"
+              }
+            },
+            {
+              "match_phrase": {
+                "tags.sourceFiles.content": "This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string"
+              }
+            },
+            {
+              "match_phrase": {
+                "description": "This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string"
+              }
+            },
+            {
+              "match_phrase": {
+                "labels": "This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string"
+              }
+            },
+            {
+              "match_phrase": {
+                "author": "This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string"
+              }
+            }
+          ]
+        }
+      },
+      "must": {
+        "match": {
+          "_index": "workflows"
+        }
+      }
+    }
+  },
+  "size": 201
+}
