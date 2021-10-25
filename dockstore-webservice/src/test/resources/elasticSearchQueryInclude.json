@@ -1,0 +1,15 @@
+{
+  "aggs": {
+    "autocomplete": {
+      "terms": {
+        "field": "description",
+        "include": "This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string This is a long string.*",
+        "order": {
+          "_count": "desc"
+        },
+        "size": 4
+      }
+    }
+  },
+  "size": 0
+}

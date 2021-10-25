@@ -461,6 +461,9 @@
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
                                     <version>3.8.1</version>
+			            <!-- flip this when there is something newer than https://discuss.circleci.com/t/linux-machine-executor-images-2021-july-q3-update/40772
+                                    <version>3.8.2</version>
+				    -->
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>[11.0.11,18.0)</version>
@@ -483,6 +486,8 @@
                                         <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
                                         <!-- should be using v2 api -->
                                         <exclude>com.amazonaws:*</exclude>
+                                        <!-- we should be using jpa 2.2 -->
+                                        <exclude>org.hibernate.javax.persistence:hibernate-jpa-2.1-api</exclude>
                                     </excludes>
                                     <includes>
                                         <!-- exempt encryption library which hasn't moved to new namespace -->

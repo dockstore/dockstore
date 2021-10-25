@@ -415,7 +415,7 @@ public class OrganizationIT extends BaseIT {
     private void testEmptyLink(OrganizationsApi organizationsApi, Organization organization) {
         organization.setLink("");
         Organization updatedOrganization = organizationsApi.updateOrganization(organization, organization.getId());
-        assertEquals(null, updatedOrganization.getLink());
+        assertNull(updatedOrganization.getLink());
     }
 
     /**
@@ -469,6 +469,22 @@ public class OrganizationIT extends BaseIT {
         organisation.setName(organisation.getName().toUpperCase());
         organisationsApiUser2.createOrganization(organisation);
     }
+
+    // for DOCK-1948
+    @Test()
+    public void testGetMissingCollectionByName() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+        createOrg(organisationsApiUser2);
+        try {
+            organisationsApiUser2.getCollectionByName("testname", "foo2");
+            fail("should error out since it doesn't exist");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+    }
+
 
     @Test
     public void createOrgInvalidEmail() {
@@ -1305,15 +1321,23 @@ public class OrganizationIT extends BaseIT {
 
         Organization organization = createOrg(organizationsApi);
         Collection stubCollection = stubCollectionObject();
-        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        final Long id = organization.getId();
+        Collection collection = organizationsApi.createCollection(id, stubCollection);
         long collectionId = collection.getId();
         testingPostgres.runUpdateStatement("UPDATE tool set ispublished = true WHERE id = 2");
 
-        organizationsApi.addEntryToCollection(organization.getId(), collectionId, 2L, 8L);
+        organizationsApi.addEntryToCollection(id, collectionId, 2L, 8L);
         long collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);
         assertEquals(1, collectionCount);
 
-        organizationsOpenApi.deleteRejectedOrPendingOrganization(organization.getId());
+        try {
+            organizationsApi.addEntryToCollection(id, collectionId, 2L, 8L);
+            fail("should not be able to do this");
+        } catch (ApiException ex) {
+            assertEquals(HttpStatus.SC_CONFLICT, ex.getCode());
+        }
+
+        organizationsOpenApi.deleteRejectedOrPendingOrganization(id);
 
         // Test collection is gone
         collectionCount = testingPostgres.runSelectStatement("select count(*) from collection", long.class);

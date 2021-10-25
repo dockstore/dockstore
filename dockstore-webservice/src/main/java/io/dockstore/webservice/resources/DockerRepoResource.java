@@ -535,6 +535,9 @@ public class DockerRepoResource
                 + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 
+        // Check if the tool has a valid tool name
+        checkEntryName(toolParam.getToolname());
+
         final Set<Tag> workflowVersionsFromParam = Sets.newHashSet(toolParam.getWorkflowVersions());
         toolParam.setWorkflowVersions(Sets.newHashSet());
         // cannot create tool with a transient version hanging on it

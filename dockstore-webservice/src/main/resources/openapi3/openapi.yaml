@@ -2124,8 +2124,12 @@ paths:
           type: integer
           format: int64
       responses:
-        "204":
-          description: No Content
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully exported entry to ORCID
         "400":
           description: Bad Request
         "404":
@@ -5718,7 +5722,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
@@ -5884,7 +5888,7 @@ paths:
         schema:
           type: string
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
@@ -5990,7 +5994,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
@@ -6195,7 +6199,7 @@ paths:
           type: integer
           format: int64
       - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors"
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:

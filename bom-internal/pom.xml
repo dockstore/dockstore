@@ -46,7 +46,7 @@ POM as their parent.
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <dropwizard.version>2.0.24</dropwizard.version>
+        <dropwizard.version>2.0.25</dropwizard.version>
         <dropwizard-annotations.version>4.1.25</dropwizard-annotations.version>
         <elasticsearch-version>7.10.2</elasticsearch-version>
         <swagger-annotations-version>1.6.2</swagger-annotations-version>
@@ -57,7 +57,7 @@ POM as their parent.
         <aws.version>2.16.103</aws.version>
         <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.2.23</postgresql.version>
-        <mockito.version>3.11.2</mockito.version>
+        <mockito.version>3.12.4</mockito.version>
         <cwlavro.version>2.0.4.6</cwlavro.version>
         <okhttp.version>4.7.0</okhttp.version>
         <slf4j.version>1.7.32</slf4j.version>
@@ -442,7 +442,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.16.0</version>
+                <version>3.17.0</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.annotation</groupId>
@@ -640,13 +640,13 @@ POM as their parent.
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
-                <version>1.11.3</version>
+                <version>1.11.14</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.11.3</version>
+                <version>1.11.14</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
@@ -1107,11 +1107,6 @@ POM as their parent.
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-jdbi3</artifactId>
                 <version>${dropwizard.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.1-api</artifactId>
-                <version>1.0.0.Final</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.servlet</groupId>

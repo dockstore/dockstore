@@ -82,9 +82,7 @@ public class CloudInstanceIT extends BaseIT {
             adminCloudInstancesApi.postCloudInstance(newCloudInstance);
             Assert.fail("Cannot create a new global launch with partner with the same URL even if slightly different");
         } catch (ApiException e) {
-            Assert.assertTrue(e.getMessage().contains("constraint"));
-            //TODO: catch and return a proper error code
-            //Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+            Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
         }
 
         adminCloudInstances = adminCloudInstancesApi.getCloudInstances();
