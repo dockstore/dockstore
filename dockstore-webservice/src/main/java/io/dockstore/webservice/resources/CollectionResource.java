@@ -1,7 +1,6 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -37,7 +36,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,11 +51,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -575,9 +571,20 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
         // Ensure collection exists to the user
         Collection collection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
-        getOrganizationAndCheckModificationRights(user, collection);
+        Organization organization = getOrganizationAndCheckModificationRights(user, collection);
 
+        // Soft delete the collection
         collection.setDeleted(true);
+
+        // Create the delete collection event.
+        Event.Builder eventBuild = new Event.Builder()
+                .withOrganization(organization)
+                .withCollection(collection)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.DELETE_COLLECTION);
+
+        Event deleteCollectionEvent = eventBuild.build();
+        eventDAO.create(deleteCollectionEvent);
     }
 
     @PUT
@@ -631,79 +638,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
         return organization;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/collections/deleteds")
-    @RolesAllowed({"admin"})
-    @ApiOperation(hidden = true, value = "Retrieve the soft-deleted collections.")
-    @Operation(operationId = "getDeletedCollections", summary = "Retrieve the soft-deleted collections.", description = "Retrieve the soft-deleted collections.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved list of soft-deleted collections.", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    public List<Collection> getDeletedCollections(@Parameter(hidden = true, name = "user") @Auth User user) {
-        return collectionDAO.getDeleteds();
-    }
-
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/collections/deleteds/{collectionId}")
-    @RolesAllowed({"admin"})
-    @ApiOperation(hidden = true, value = "Permanently erase a soft-deleted collection from the database.")
-    @Operation(operationId = "eraseDeletedCollection", summary = "Permanently erase a collection from the database.", description = "Permanently erase a collection from the database.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully removed the specified collection.")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
-    public void eraseDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
-        // Find the collection.
-        Collection collection = collectionDAO.findByIdDeleted(collectionId);
-        throwExceptionForNullCollection(collection);
-
-        // Remove the events that refer to this collection
-        eventDAO.deleteEventByCollectionID(collection.getId());
-
-        // Hard-delete the collection.
-        collectionDAO.delete(collection);
-    }
-
-    @PATCH
-    @Timed
-    @UnitOfWork
-    @Path("/collections/deleteds/{collectionId}")
-    @RolesAllowed({"admin"})
-    @ApiOperation(hidden = true, value = "Modify a soft-deleted collection.")
-    @Operation(operationId = "modifyDeletedCollection", summary = "Modify a soft-deleted collection.", description = "Modify a soft-deleted collection.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully modified the collection.")
-    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
-    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
-    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad request")
-    public void modifyDeletedCollection(@Parameter(hidden = true, name = "user") @Auth User user,
-        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId,
-        @Parameter(description = "Operation.", name = "op", in = ParameterIn.QUERY, required = true) @QueryParam("op") String op,
-        @ApiParam(name = "emptyBody", value = APPEASE_SWAGGER_PATCH) @Parameter(description = APPEASE_SWAGGER_PATCH, name = "emptyBody") String emptyBody) {
-        // Find the collection.
-        Collection collection = collectionDAO.findByIdDeleted(collectionId);
-        throwExceptionForNullCollection(collection);
-
-        // Perform the operation.
-        if (Objects.equals(op, "undelete")) {
-            // Make sure there will be no name collisions when we undelete.
-            long organizationId = collection.getOrganization().getId();
-            if (collectionDAO.findByNameAndOrg(collection.getName(), organizationId) != null || collectionDAO.findByDisplayNameAndOrg(collection.getDisplayName(), organizationId) != null) {
-                String msg = "Another collection has the same name or display name.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-            }
-            // Undelete
-            collection.setDeleted(false);
-        } else {
-            String msg = "Unknown operation.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
     }
 
     /**
