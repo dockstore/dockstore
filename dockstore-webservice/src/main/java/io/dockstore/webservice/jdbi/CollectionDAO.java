@@ -20,14 +20,6 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return (collection);
     }
 
-    public Collection findByIdDeleted(Long id) {
-        Collection collection = get(id);
-        if (collection != null && !collection.isDeleted()) {
-            return (null);
-        }
-        return (collection);
-    }
-
     public long create(Collection collection) {
         return persist(collection).getId();
     }
@@ -75,10 +67,5 @@ public class CollectionDAO extends AbstractDAO<Collection> {
 
     public Collection getByAlias(String alias) {
         return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Collection.getByAlias").setParameter("alias", alias));
-    }
-
-    public List<Collection> getDeleteds() {
-        Query query = namedTypedQuery("io.dockstore.webservice.core.Collection.findDeleteds");
-        return list(query);
     }
 }
