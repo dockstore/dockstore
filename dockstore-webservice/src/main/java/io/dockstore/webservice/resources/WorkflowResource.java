@@ -1256,6 +1256,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        // Validate the workflow name
+        checkEntryName(workflowName);
+
         String registryURLPrefix = sourceControlEnum.get().toString();
         String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
