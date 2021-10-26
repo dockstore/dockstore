@@ -27,6 +27,7 @@ import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.WdlBridge;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.ParsedInformation;
 import io.dockstore.webservice.core.SourceFile;
@@ -45,11 +46,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -128,8 +131,9 @@ public class WDLHandler implements LanguageHandlerInterface {
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(content);
             try {
                 List<Map<String, String>> metadata = wdlBridge.getMetadata(tempMainDescriptor.getAbsolutePath(), filepath);
-                Set<String> authors = new HashSet<>();
-                Set<String> emails = new HashSet<>();
+                Queue<String> authors = new LinkedList<>();
+                Queue<String> emails = new LinkedList<>();
+                Set<Author> newAuthors = new HashSet<>();
                 final String[] mainDescription = { null };
 
                 metadata.forEach(metaBlock -> {
@@ -149,18 +153,37 @@ public class WDLHandler implements LanguageHandlerInterface {
                         }
                     }
 
+                    if (!authors.isEmpty()) {
+                        // Only set emails for authors if every author has an email.
+                        // Otherwise, ignore emails because we don't know which email belongs to which author
+                        if (authors.size() == emails.size()) {
+                            while (!authors.isEmpty()) {
+                                Author newAuthor = new Author(authors.remove());
+                                newAuthor.setEmail(emails.remove());
+                                newAuthors.add(newAuthor);
+                            }
+                        } else {
+                            while (!authors.isEmpty()) {
+                                Author newAuthor = new Author(authors.remove());
+                                newAuthors.add(newAuthor);
+                            }
+                            emails.clear();
+                        }
+                    }
+
                     String description = metaBlock.get("description");
                     if (description != null && !description.isBlank()) {
                         mainDescription[0] = description;
                     }
                 });
 
-                if (!authors.isEmpty()) {
-                    version.setAuthor(String.join(", ", authors));
+                // Add authors from descriptor if there are no .dockstore.yml authors
+                if (!newAuthors.isEmpty() && version.getAuthors().isEmpty()) {
+                    for (Author author: newAuthors) {
+                        version.addAuthor(author);
+                    }
                 }
-                if (!emails.isEmpty()) {
-                    version.setEmail(String.join(", ", emails));
-                }
+
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {
                     version.setDescriptionAndDescriptionSource(mainDescription[0], DescriptionSource.DESCRIPTOR);
                 }
@@ -171,9 +194,9 @@ public class WDLHandler implements LanguageHandlerInterface {
                 errorMessage = getUnsupportedWDLVersionErrorString(tempMainDescriptor.getAbsolutePath()).orElse(errorMessage);
                 validationMessageObject.put(filepath, errorMessage);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_WDL, false, validationMessageObject));
-                version.setAuthor(null);
                 version.setDescriptionAndDescriptionSource(null, null);
-                version.setEmail(null);
+                version.getAuthors().clear();
+                version.getOrcidAuthors().clear();
                 return version;
             }
         } catch (IOException e) {

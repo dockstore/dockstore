@@ -26,6 +26,7 @@ import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Validation;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import org.apache.commons.io.FileUtils;
@@ -74,8 +76,11 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertNull("incorrect email", entry.getEmail());
+        Set<Author> authors = entry.getAuthors();
+        assertEquals(3, authors.size());
+        for (Author author : authors) {
+            assertNull(author.getEmail());
+        }
     }
 
     @Test
@@ -84,8 +89,13 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
+        Set<Author> authors = entry.getAuthors();
+        assertEquals(3, authors.size());
+        Optional<Author> authorWithEmail = authors.stream().filter(author -> author.getName().equals("Mr. Foo")).findFirst();
+        assertTrue(authorWithEmail.isPresent());
+        assertEquals("foo@foo.com", authorWithEmail.get().getEmail());
+        authors.stream().filter(author -> !author.getName().equals("Mr. Foo")).forEach(authorWithoutEmail -> assertNull(authorWithoutEmail.getEmail()));
+        assertEquals("incorrect description", "This is a cool workflow", entry.getDescription());
     }
 
     @Test

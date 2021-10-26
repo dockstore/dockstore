@@ -53,22 +53,22 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.12.0-alpha.1-SNAPSHOT</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.12.0-alpha.1-SNAPSHOT</version>
+            <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.12.0-alpha.1-SNAPSHOT</version>
+            <version>2.0.2</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-discourse-client</artifactId>
-            <version>1.12.0-alpha.1-SNAPSHOT</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-zenodo-client</artifactId>
-            <version>1.12.0-alpha.1-SNAPSHOT</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
@@ -392,11 +392,6 @@
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>hibernate-jpa-2.1-api</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -856,13 +851,20 @@
         </dependency>
 
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <scope>compile</scope>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>sqs</artifactId>
+            <artifactId>s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sdk-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>aws-core</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -1137,7 +1139,6 @@
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
                                 <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
                                 <usedDependency>jakarta.activation:jakarta.activation-api</usedDependency>
-                                <usedDependency>javax.persistence:javax.persistence-api</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
@@ -1204,6 +1205,7 @@
                     <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
                     <logging>info</logging>
                     <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
+                    <diffExcludeObjects>column:sha256</diffExcludeObjects>
                 </configuration>
                 <dependencies>
                     <dependency>

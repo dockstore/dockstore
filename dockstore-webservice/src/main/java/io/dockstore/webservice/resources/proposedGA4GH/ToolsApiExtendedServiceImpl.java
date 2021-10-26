@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -61,6 +62,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -78,13 +80,16 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static final String TOOLS_INDEX = ElasticListener.TOOLS_INDEX;
     private static final String WORKFLOWS_INDEX = ElasticListener.WORKFLOWS_INDEX;
     private static final String ALL_INDICES = ElasticListener.ALL_INDICES;
-    private static final int SEARCH_TERM_LIMIT = 500;
+    private static final int SEARCH_TERM_LIMIT = 256;
+    private static final int TOO_MANY_REQUESTS_429 = 429;
+    private static final int ELASTICSEARCH_DEFAULT_LIMIT = 15;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static AppToolDAO appToolDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
     private static PublicStateManager publicStateManager = null;
+    private static Semaphore elasticSearchConcurrencyLimit = null;
 
     public static void setStateManager(PublicStateManager manager) {
         ToolsApiExtendedServiceImpl.publicStateManager = manager;
@@ -104,6 +109,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiExtendedServiceImpl.config = config;
+        if (config.getEsConfiguration().getMaxConcurrentSessions() == null) {
+            ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(ELASTICSEARCH_DEFAULT_LIMIT);
+        } else {
+            ToolsApiExtendedServiceImpl.elasticSearchConcurrencyLimit = new Semaphore(config.getEsConfiguration().getMaxConcurrentSessions());
+        }
     }
 
     /**
@@ -217,62 +227,101 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
-        if (!config.getEsConfiguration().getHostname().isEmpty()) {
-            // Performing a search on the UI sends multiple POST requests. When the search term ("include" key in request payload) is large,
-            // one of these POST requests will fail, but the others will continue to pass.
-            if (query != null) {
-                JSONObject json = new JSONObject(query);
+        String unableToUseESMsg = "Could not use Elasticsearch search";
+        if (!elasticSearchConcurrencyLimit.tryAcquire(1)) {
+            LOG.error(unableToUseESMsg + ": too many concurrent Elasticsearch requests.");
+            throw new CustomWebApplicationException(unableToUseESMsg, TOO_MANY_REQUESTS_429);
+        }
+        try {
+            if (!config.getEsConfiguration().getHostname().isEmpty()) {
+                checkSearchTermLimit(query);
                 try {
-                    String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
-                    if (include.length() > SEARCH_TERM_LIMIT) {
-                        throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
+                    RestClient restClient = ElasticSearchHelper.restClient();
+                    Map<String, String> parameters = new HashMap<>();
+                    // TODO: note that this is lossy if there are repeated parameters
+                    // but it looks like the elastic search http client classes don't handle it
+                    if (queryParameters != null) {
+                        queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
                     }
-
-                } catch (JSONException ex) {
-                    // The request bodies all look pretty different, so it's okay for the exception to get thrown.
-                    LOG.debug("Couldn't parse search payload request.");
+                    // This should be using the high-level Elasticsearch client instead
+                    Request request = new Request("GET", "/" + ALL_INDICES + "/_search");
+                    if (query != null) {
+                        request.setJsonEntity(query);
+                    }
+                    request.addParameters(parameters);
+                    org.elasticsearch.client.Response get = restClient.performRequest(request);
+                    if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                        throw new CustomWebApplicationException("Could not search " + ALL_INDICES + "index",
+                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    }
+                    return Response.ok().entity(get.getEntity().getContent()).build();
+                } catch (ResponseException e) {
+                    // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
+                    int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
+                    int statusCode = e.getResponse().getStatusLine().getStatusCode();
+                    LOG.error(unableToUseESMsg, e);
+                    // Provide a minimal amount of error information in the browser console as outlined by
+                    // https://ucsc-cgl.atlassian.net/browse/SEAB-2128
+                    String reasonPhrase = e.getResponse().getStatusLine().getReasonPhrase();
+                    if (ArrayUtils.contains(codesToResurface, statusCode)) {
+                        throw new CustomWebApplicationException(reasonPhrase, statusCode);
+                    } else {
+                        throw new CustomWebApplicationException(reasonPhrase, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    }
+                } catch (IOException e2) {
+                    LOG.error(unableToUseESMsg, e2);
+                    throw new CustomWebApplicationException("Search failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
+            }
+            return Response.ok().entity(0).build();
+        } finally {
+            elasticSearchConcurrencyLimit.release(1);
+        }
+    }
+
+    /**
+     * Performing a search on the UI sends multiple POST requests. When the search term ("value" key of a wildcard or "include" key in request payload) is large,
+     * the POST requests containing these keys will fail.
+     * @param query
+     */
+    protected static void checkSearchTermLimit(String query) {
+        if (query != null) {
+            JSONObject json = new JSONObject(query);
+
+            try {
+                String include = json.getJSONObject("aggs").getJSONObject("autocomplete").getJSONObject("terms").getString("include");
+                if (include.length() > SEARCH_TERM_LIMIT) {
+                    throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
+                }
+            } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
+                LOG.debug("Couldn't parse search payload request.");
             }
 
             try {
-                RestClient restClient = ElasticSearchHelper.restClient();
-                Map<String, String> parameters = new HashMap<>();
-                // TODO: note that this is lossy if there are repeated parameters
-                // but it looks like the elastic search http client classes don't handle it
-                if (queryParameters != null) {
-                    queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
+                JSONArray should = json.getJSONObject("query").getJSONObject("bool").getJSONObject("filter").getJSONObject("bool").getJSONArray("should");
+                for (int i = 0; i < should.length(); i++) {
+                    JSONObject wildcard = should.getJSONObject(i).optJSONObject("wildcard");
+
+                    if (wildcard != null) {
+                        JSONObject pathKeyword = null;
+                        if (wildcard.has("full_workflow_path.keyword")) {
+                            pathKeyword = wildcard.getJSONObject("full_workflow_path.keyword");
+                        } else if (wildcard.has("tool_path.keyword")) {
+                            pathKeyword = wildcard.getJSONObject("tool_path.keyword");
+                        }
+
+                        if (pathKeyword != null) {
+                            String value = pathKeyword.optString("value");
+                            if (value.length() > SEARCH_TERM_LIMIT) {
+                                throw new CustomWebApplicationException("Search request exceeds limit", HttpStatus.SC_REQUEST_TOO_LONG);
+                            }
+                        }
+                    }
                 }
-                // This should be using the high-level Elasticsearch client instead
-                Request request = new Request("GET", "/" + ALL_INDICES + "/_search");
-                if (query != null) {
-                    request.setJsonEntity(query);
-                }
-                request.addParameters(parameters);
-                org.elasticsearch.client.Response get = restClient.performRequest(request);
-                if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                    throw new CustomWebApplicationException("Could not search " + ALL_INDICES + "index",
-                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
-                return Response.ok().entity(get.getEntity().getContent()).build();
-            } catch (ResponseException e) {
-                // Only surface these codes to the user, everything else is not entirely obvious so returning 500 instead.
-                int[] codesToResurface = {HttpStatus.SC_BAD_REQUEST};
-                int statusCode = e.getResponse().getStatusLine().getStatusCode();
-                LOG.error("Could not use Elasticsearch search", e);
-                // Provide a minimal amount of error information in the browser console as outlined by
-                // https://ucsc-cgl.atlassian.net/browse/SEAB-2128
-                String reasonPhrase = e.getResponse().getStatusLine().getReasonPhrase();
-                if (ArrayUtils.contains(codesToResurface, statusCode)) {
-                    throw new CustomWebApplicationException(reasonPhrase, statusCode);
-                } else {
-                    throw new CustomWebApplicationException(reasonPhrase, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
-            } catch (IOException e2) {
-                LOG.error("Could not use Elasticsearch search", e2);
-                throw new CustomWebApplicationException("Search failed", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } catch (JSONException ex) { // The request bodies all look pretty different, so it's okay for the exception to get thrown.
+                LOG.debug("Couldn't parse search payload request.");
             }
         }
-        return Response.ok().entity(0).build();
     }
 
     @SuppressWarnings("checkstyle:parameternumber")

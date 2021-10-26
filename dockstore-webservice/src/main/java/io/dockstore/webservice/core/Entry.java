@@ -28,6 +28,7 @@ import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -91,7 +92,6 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
         @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId")
-
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -218,6 +218,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column(name = "path", nullable = false, columnDefinition = "text")
     @MapKeyColumn(name = "filetype")
     @CollectionTable(uniqueConstraints = @UniqueConstraint(name = "unique_paths", columnNames = { "entry_id", "filetype", "path" }))
+    @BatchSize(size = 25)
     private Map<DescriptorLanguage.FileType, String> defaultPaths = new HashMap<>();
 
     @Column
@@ -243,9 +244,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
 
-    @Column
-    @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
-    private String orcidPutCode;
+    @ElementCollection(targetClass = OrcidPutCode.class)
+    @JoinTable(name = "entry_orcidputcode", joinColumns = @JoinColumn(name = "entry_id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_user_orcidputcode", columnNames = { "entry_id", "userid", "orcidputcode" }))
+    @MapKeyColumn(name = "userid", columnDefinition = "bigint")
+    @ApiModelProperty(value = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
+    @Schema(description = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
+    @BatchSize(size = 25)
+    private Map<Long, OrcidPutCode> userIdToOrcidPutCode = new HashMap<>();
 
     public Entry() {
         users = new TreeSet<>();
@@ -566,21 +571,21 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     /**
-     * Given a path (A/B/C/D), splits it into parts and returns it
+     * Given a path (A/B/C/D), splits it into parts and returns it.
+     * Need to indicate whether the path has an entry name in order to determine the repo name if there are more than 3 components in the path
      *
      * @param path
-     * @return An array of fields used to identify an entry
+     * @param hasEntryName boolean indicating whether the path has an entry name
+     * @return An array of fields used to identify components of an entry's path
      */
-    public static String[] splitPath(String path) {
-        // Used for accessing index of path
+    public static String[] splitPath(String path, boolean hasEntryName) {
+        // Registry and org indices are deterministic: always the first and second components of the path, respectively
         final int registryIndex = 0;
         final int orgIndex = 1;
-        final int repoIndex = 2;
-        final int entryNameIndex = 3;
+        final int repoIndexStart = 2; // Repo and entry name indices are not deterministic because repo name can have slashes
 
-        // Lengths of paths
-        final int pathNoNameLength = 3;
-        final int pathWithNameLength = 4;
+        // Path must at least have 3 components, i.e. <registry>/<org>/<repo>
+        final int minPathLength = 3;
 
         // Used for storing values at path locations
         String registry;
@@ -590,15 +595,29 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
         // Split path by slash
         String[] splitPath = path.split("/");
+        final int lastIndex = splitPath.length - 1;
 
         // Only split if it is the correct length
-        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
-            // Get remaining positions
+        if (splitPath.length >= minPathLength) {
             registry = splitPath[registryIndex];
             org = splitPath[orgIndex];
-            repo = splitPath[repoIndex];
-            if (splitPath.length == pathWithNameLength) {
-                entryName = splitPath[entryNameIndex];
+
+            if (splitPath.length == minPathLength) { // <registry>/<org>/<repo>
+                repo = splitPath[repoIndexStart];
+            } else {
+                String[] repoNameComponents;
+                if (hasEntryName) {
+                    // Assume that the last component is the entry name: <registry>/<org>/<repo>/<entry-name>
+                    entryName = splitPath[lastIndex];
+
+                    // The repo name is the components between org and entry-name
+                    // Note: repo name may contain slashes, ex: <registry>/<org>/<repo-part-1>/<repo-part-2>/<entry-name>
+                    repoNameComponents = Arrays.copyOfRange(splitPath, repoIndexStart, lastIndex);
+                } else {
+                    // Assume that everything after the registry and org is part of the repository name: <registry>/<org>/<repo-part-1>/<repo-part-2>
+                    repoNameComponents = Arrays.copyOfRange(splitPath, repoIndexStart, lastIndex + 1);
+                }
+                repo = String.join("/", repoNameComponents);
             }
 
             // Return an array of the form [A,B,C,D]
@@ -641,11 +660,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.blacklistedVersionNames = blacklistedVersionNames;
     }
 
-    public String getOrcidPutCode() {
-        return orcidPutCode;
+    public Map<Long, OrcidPutCode> getUserIdToOrcidPutCode() {
+        return userIdToOrcidPutCode;
     }
 
-    public void setOrcidPutCode(String orcidPutCode) {
-        this.orcidPutCode = orcidPutCode;
+    public void setUserIdToOrcidPutCode(Map<Long, OrcidPutCode> userIdToOrcidPutCode) {
+        this.userIdToOrcidPutCode = userIdToOrcidPutCode;
     }
 }

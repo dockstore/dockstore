@@ -31,6 +31,7 @@ import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.model.SourceFile;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.resources.EventSearchType;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -197,7 +198,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", BIOWORKFLOW);
+                .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
         workflow = workflowsApi.refresh(workflow.getId(), false);
         assertFalse(workflow.getWorkflowVersions().isEmpty());
     }
@@ -238,7 +239,7 @@ public class BasicIT extends BaseIT {
 
         // refresh a specific workflow
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", "", BIOWORKFLOW);
+            .getWorkflowByPath(SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl", BIOWORKFLOW, "");
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // artificially create an invalid version
@@ -1259,33 +1260,314 @@ public class BasicIT extends BaseIT {
     }
 
     /**
-     * This tests that you can manually publish a private only registry (Amazon ECR), but you can't change the tool to public
+     * This tests that you can't manually publish:
+     * - A public Amazon ECR image (has a "public.ecr.aws" path) as a private tool
+     * - A private Amazon ECR image (has a "*.dkr.ecr.*.amazonaws.com" path) as a public tool
      */
     @Test
-    public void testManualPublishPrivateOnlyRegistry() {
+    public void testManualPublishPrivateAccessAmazonECR() {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         ContainersApi toolsApi = new ContainersApi(client);
 
-        // Manual publish
-        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
-            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-            DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
-            "test.dkr.ecr.test.amazonaws.com");
+        try {
+            // Try to manual publish a public Amazon ECR tool using a private Amazon ECR image
+            manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                    "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                    DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, false, null, "test.dkr.ecr.us-east-1.amazonaws.com");
+            fail("Should not be able to register a public tool using a private Amazon ECR image.");
+        } catch (ApiException e) {
+            assertEquals("The private Amazon ECR tool cannot be set to public.", e.getMessage());
+        }
 
-        // Check that tool is published and has correct values
-        final long count = testingPostgres.runSelectStatement(
-            "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.test.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
-            long.class);
-        Assert.assertEquals("one tool should be private, published and from amazon, there are " + count, 1, count);
+        try {
+            // Try to manual publish a private Amazon ECR tool using a public Amazon ECR image
+            manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                    "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                    DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "public.ecr.aws/ubuntu/ubuntu");
+            fail("Should not be able to register a private tool using a public Amazon ECR image.");
+        } catch (ApiException e) {
+            assertEquals("The public Amazon ECR tool cannot be set to private.", e.getMessage());
+        }
+    }
+
+    /**
+     * This tests that you can manually publish:
+     * - A public Amazon ECR tool, but you can't change the tool to private.
+     * - A private Amazon ECR tool, but you can't change the tool to public.
+     *
+     * Public and private Amazon ECR repositories have different docker paths, and an Amazon ECR repository cannot change its visibility once it's created.
+     */
+    @Test
+    public void testManualPublishPrivateAccessUpdateAmazonECR() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Manual publish a private Amazon ECR tool
+        DockstoreTool privateTool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com",
+                "test.dkr.ecr.us-east-1.amazonaws.com");
+
+        // Check that the tool is published and has correct values
+        final long privateCount = testingPostgres.runSelectStatement(
+                "select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test.dkr.ecr.us-east-1.amazonaws.com' and namespace = 'notarealnamespace' and name = 'notarealname'",
+                long.class);
+        assertEquals("There should be one published, private Amazon ECR tool. There are " + privateCount, 1, privateCount);
 
         // Update tool to public (shouldn't work)
-        tool.setPrivateAccess(false);
+        privateTool.setPrivateAccess(false);
         try {
-            toolsApi.updateContainer(tool.getId(), tool);
-            fail("Should not be able to update tool to public");
+            toolsApi.updateContainer(privateTool.getId(), privateTool);
+            fail("Should not be able to update private Amazon ECR tool to public");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("The registry Amazon ECR is private only, cannot set tool to public"));
+            assertTrue(e.getMessage().contains("The private Amazon ECR tool cannot be set to public."));
         }
+
+        // Manual publish a public Amazon ECR tool
+        DockstoreTool publicTool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+
+        // Check that tool is published and has correct values
+        final long publicCount = testingPostgres.runSelectStatement(
+                "select count(*) from tool where ispublished='true' and privateaccess='false'", long.class);
+        assertEquals("There should be one published, public Amazon ECR tool. There are " + publicCount, 1, publicCount);
+
+        // Update tool to private (shouldn't work)
+        publicTool.setPrivateAccess(true);
+        publicTool.setToolMaintainerEmail("testemail@domain.com");
+        try {
+            toolsApi.updateContainer(publicTool.getId(), publicTool);
+            fail("Should not be able to update public Amazon ECR tool to private");
+        } catch (ApiException e) {
+            assertEquals("The public Amazon ECR tool cannot be set to private.", e.getMessage());
+        }
+    }
+
+    /**
+     * This tests that you can't create public Amazon ECR tools with the same tool paths.
+     * Amazon ECR allows slashes in the repository names, so this can lead to duplicate tool paths where two tools may have different names and tool names,
+     * but end up with the same tool paths.
+     */
+    @Test
+    public void testManualPublishDuplicatePublicAmazonECR() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Scenario 1:
+        // First tool has tool path '<registry>/<namespace>/<repo-name-part-1>/<repo-name-part-2>' -> public.ecr.aws/abcd1234/foo/bar
+        // Second tool has tool path '<registry>/<namespace>/<repo-name>/<tool-name>' -> public.ecr.aws/abcd1234/foo/bar
+        DockstoreTool publicTool = manualRegisterAndPublish(toolsApi, "abcd1234", "foo/bar", null,
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+
+        try {
+            manualRegisterAndPublish(toolsApi, "abcd1234", "foo", "bar", "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
+                    "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+            fail("Should not have been able to register a public Amazon ECR tool with the same tool path.");
+        } catch (ApiException e) {
+            assertEquals("Tool " + publicTool.getToolPath() + " already exists.", e.getMessage());
+        }
+
+        // Scenario 2:
+        // First tool has tool path '<registry>/<namespace>/<repo-name>/<tool-name>' -> public.ecr.aws/wxyz6789/potato/tomato
+        // Second tool has tool path '<registry>/<namespace>/<repo-name-part-1>/<repo-name-part-2>' -> public.ecr.aws/wxyz6789/potato/tomato
+        publicTool = manualRegisterAndPublish(toolsApi, "abcd1234", "potato", "tomato",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+
+        try {
+            // Manual publish a public Amazon ECR tool using an image of the following format: public.ecr.aws/abcd1234/foo/bar and no tool name
+            manualRegisterAndPublish(toolsApi, "abcd1234", "potato/tomato", null, "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
+                    "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+            fail("Should not have been able to register a public Amazon ECR tool with the same tool path.");
+        } catch (ApiException e) {
+            assertEquals("Tool " + publicTool.getToolPath() + " already exists.", e.getMessage());
+        }
+    }
+
+    /**
+     * This tests that you can't create private Amazon ECR tools with the same tool paths.
+     * Amazon ECR allows slashes in the repository names, so this can lead to duplicate tool paths where two tools may have different names and tool names,
+     * but end up with the same tool paths.
+     */
+    @Test
+    public void testManualPublishDuplicatePrivateAmazonECR() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Scenario 1:
+        // First tool has tool path '<registry>/<namespace>/<repo-name-part-1>/<repo-name-part-2>' -> public.ecr.aws/abcd1234/foo/bar
+        // Second tool has tool path '<registry>/<namespace>/<repo-name>/<tool-name>' -> public.ecr.aws/abcd1234/foo/bar
+        DockstoreTool privateTool = manualRegisterAndPublish(toolsApi, "abcd1234", "foo/bar", null,
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "test.dkr.ecr.us-east-1.amazonaws.com");
+
+        try {
+            manualRegisterAndPublish(toolsApi, "abcd1234", "foo", "bar", "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
+                    "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true,
+                    true, "test@gmail.com", "test.dkr.ecr.us-east-1.amazonaws.com");
+            fail("Should not have been able to register a private Amazon ECR tool with the same tool path.");
+        } catch (ApiException e) {
+            assertEquals("Tool " + privateTool.getToolPath() + " already exists.", e.getMessage());
+        }
+
+        // Scenario 2:
+        // First tool has tool path '<registry>/<namespace>/<repo-name>/<tool-name>' -> public.ecr.aws/wxyz6789/potato/tomato
+        // Second tool has tool path '<registry>/<namespace>/<repo-name-part-1>/<repo-name-part-2>' -> public.ecr.aws/wxyz6789/potato/tomato
+        privateTool = manualRegisterAndPublish(toolsApi, "abcd1234", "potato", "tomato",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "test@gmail.com", "test.dkr.ecr.us-east-1.amazonaws.com");
+
+        try {
+            // Manual publish a public Amazon ECR tool using an image of the following format: public.ecr.aws/abcd1234/foo/bar and no tool name
+            manualRegisterAndPublish(toolsApi, "abcd1234", "potato/tomato", null, "git@github.com:DockstoreTestUser/dockstore-whalesay.git",
+                    "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile", DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true,
+                    true, "test@gmail.com", "test.dkr.ecr.us-east-1.amazonaws.com");
+            fail("Should not have been able to register a private Amazon ECR tool with the same tool path.");
+        } catch (ApiException e) {
+            assertEquals("Tool " + privateTool.getToolPath() + " already exists.", e.getMessage());
+        }
+    }
+
+    /**
+     * This tests that you can get an Amazon ECR tool by tool path and you can get a list of Amazon ECR tools by path (published and unpublished).
+     * Specifically testing this because Amazon ECR supports slashes in its repository names.
+     */
+    @Test
+    public void testGetContainerByPathsAmazonECR() {
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+        ContainersApi toolsApi = new ContainersApi(client);
+        DockstoreTool tool;
+        DockstoreTool foundTool;
+
+        // Manual publish a public Amazon ECR tool that has a repo name without slashes
+        tool = manualRegisterAndPublish(toolsApi, "abcd1234", "foo", null,
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+
+        try {
+            foundTool = toolsApi.getContainerByToolPath(tool.getToolPath(), "");
+            assertEquals(tool.getId(), foundTool.getId());
+        } catch (ApiException e) {
+            fail("Should have been able to get the Amazon ECR tool by tool path.");
+        }
+
+        try {
+            foundTool = toolsApi.getPublishedContainerByToolPath(tool.getToolPath(), "");
+            assertEquals(tool.getId(), foundTool.getId());
+        } catch (ApiException e) {
+            fail("Should have been able to get the published Amazon ECR tool by tool path.");
+        }
+
+        // Manual publish a public Amazon ECR tool that has a repo name with slashes
+        tool = manualRegisterAndPublish(toolsApi, "abcd1234", "foo/bar", null,
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+
+        try {
+            foundTool = toolsApi.getContainerByToolPath(tool.getToolPath(), "");
+            assertEquals(tool.getId(), foundTool.getId());
+        } catch (ApiException e) {
+            fail("Should have been able to get the Amazon ECR tool by tool path.");
+        }
+
+        try {
+            foundTool = toolsApi.getPublishedContainerByToolPath(tool.getToolPath(), "");
+            assertEquals(tool.getId(), foundTool.getId());
+        } catch (ApiException e) {
+            fail("Should have been able to get the published Amazon ECR tool by tool path.");
+        }
+
+        // Manual publish a public Amazon ECR tool that has a repo name with slashes and a tool name
+        tool = manualRegisterAndPublish(toolsApi, "abcd1234", "foo/bar", "test-tool-name",
+                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true);
+
+        try {
+            foundTool = toolsApi.getContainerByToolPath(tool.getToolPath(), "");
+            assertEquals(tool.getId(), foundTool.getId());
+        } catch (ApiException e) {
+            fail("Should have been able to get the Amazon ECR tool by tool path.");
+        }
+
+        try {
+            foundTool = toolsApi.getPublishedContainerByToolPath(tool.getToolPath(), "");
+            assertEquals(tool.getId(), foundTool.getId());
+        } catch (ApiException e) {
+            fail("Should have been able to get the published Amazon ECR tool by tool path.");
+        }
+
+        try {
+            List<DockstoreTool> foundTools = toolsApi.getContainerByPath(tool.getPath());
+            assertEquals("Should have two tools with the path 'public.ecr.aws/abcd1234/foo/bar'.", 2, foundTools.size());
+        } catch (ApiException e) {
+            fail("Should have been able to get the Amazon ECR tools by path.");
+        }
+
+        try {
+            List<DockstoreTool> foundTools = toolsApi.getPublishedContainerByPath(tool.getPath());
+            assertEquals("Should have two published tools with the path 'public.ecr.aws/abcd1234/foo/bar'.", 2, foundTools.size());
+        } catch (ApiException e) {
+            fail("Should have been able to get the published Amazon ECR tools by path.");
+        }
+    }
+
+    /**
+     * This tests that entry paths are split into their registry, org, repo, and entry name components correctly.
+     */
+    @Test
+    public void testSplitPath() {
+        final int registryIndex = 0;
+        final int orgIndex = 1;
+        final int repoIndex = 2;
+        final int entryNameIndex = 3;
+
+        // Test splitting paths with no entry names
+        String[] pathComponents = Entry.splitPath("registry/org/repo", false);
+        assertEquals("registry", pathComponents[registryIndex]);
+        assertEquals("org", pathComponents[orgIndex]);
+        assertEquals("repo", pathComponents[repoIndex]);
+        assertNull(pathComponents[entryNameIndex]);
+
+        pathComponents = Entry.splitPath("registry/org/repo-part-1/repo-part-2", false);
+        assertEquals("registry", pathComponents[registryIndex]);
+        assertEquals("org", pathComponents[orgIndex]);
+        assertEquals("repo-part-1/repo-part-2", pathComponents[repoIndex]);
+        assertNull(pathComponents[entryNameIndex]);
+
+        // Test a 3 part repo name. Amazon ECR registry allows repository names with more than 1 slash
+        pathComponents = Entry.splitPath("registry/org/repo-part-1/repo-part-2/repo-part-3", false);
+        assertEquals("registry", pathComponents[registryIndex]);
+        assertEquals("org", pathComponents[orgIndex]);
+        assertEquals("repo-part-1/repo-part-2/repo-part-3", pathComponents[repoIndex]);
+        assertNull(pathComponents[entryNameIndex]);
+
+        // Test splitting paths with entry name
+        // Shouldn't really be setting hasEntryName to true if it doesn't have one, but it shouldn't affect the result for a path that contains a repo name with NO slashes
+        pathComponents = Entry.splitPath("registry/org/repo", true);
+        assertEquals("registry", pathComponents[registryIndex]);
+        assertEquals("org", pathComponents[orgIndex]);
+        assertEquals("repo", pathComponents[repoIndex]);
+        assertNull(pathComponents[entryNameIndex]);
+
+        pathComponents = Entry.splitPath("registry/org/repo/entry-name", true);
+        assertEquals("registry", pathComponents[registryIndex]);
+        assertEquals("org", pathComponents[orgIndex]);
+        assertEquals("repo", pathComponents[repoIndex]);
+        assertEquals("entry-name", pathComponents[entryNameIndex]);
+
+        pathComponents = Entry.splitPath("registry/org/repo-part-1/repo-part-2/entry-name", true);
+        assertEquals("registry", pathComponents[registryIndex]);
+        assertEquals("org", pathComponents[orgIndex]);
+        assertEquals("repo-part-1/repo-part-2", pathComponents[repoIndex]);
+        assertEquals("entry-name", pathComponents[entryNameIndex]);
+
+        pathComponents = Entry.splitPath("registry/org/repo-part-1/repo-part-2/repo-part-3/entry-name", true);
+        assertEquals("registry", pathComponents[registryIndex]);
+        assertEquals("org", pathComponents[orgIndex]);
+        assertEquals("repo-part-1/repo-part-2/repo-part-3", pathComponents[repoIndex]);
+        assertEquals("entry-name", pathComponents[entryNameIndex]);
     }
 
     /**
@@ -1360,12 +1642,12 @@ public class BasicIT extends BaseIT {
 
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
-                "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, false, "duncan.andrew.g@gmail.com",
-                "test.dkr.ecr.test.amazonaws.com");
+                    "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+                    DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, false, "duncan.andrew.g@gmail.com",
+                    "images.sbgenomics.com");
             fail("Should fail since it is a private only registry with a public tool");
         } catch (ApiException e) {
-            assertTrue(e.getMessage().contains("The registry Amazon ECR is a private only registry"));
+            assertTrue(e.getMessage().contains("The registry Seven Bridges is a private only registry"));
         }
     }
 
@@ -1381,7 +1663,7 @@ public class BasicIT extends BaseIT {
         try {
             DockstoreTool tool = manualRegisterAndPublish(toolsApi, "notarealnamespace", "notarealname", "alternate",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
-                DockstoreTool.RegistryEnum.AMAZON_ECR, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
+                DockstoreTool.RegistryEnum.SEVEN_BRIDGES, "master", "latest", true, true, "duncan.andrew.g@gmail.com", null);
             fail("Should fail due to no custom docker path");
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("The provided registry is not valid"));
@@ -1413,7 +1695,7 @@ public class BasicIT extends BaseIT {
         ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         try {
-            workflowsApi.getWorkflowByPath("potato", "potato", BIOWORKFLOW);
+            workflowsApi.getWorkflowByPath("potato", BIOWORKFLOW, "potato");
             Assert.fail("Should've not been able to get an entry that does not exist");
         } catch (ApiException e) {
             Assert.assertEquals("Entry not found", e.getMessage());

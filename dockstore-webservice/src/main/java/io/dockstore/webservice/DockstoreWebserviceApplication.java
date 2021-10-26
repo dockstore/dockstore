@@ -66,6 +66,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
@@ -178,6 +179,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
     private static final int CACHE_IN_MB = 100;
     private static Cache cache = null;
+
+    static {
+        // https://ucsc-cgl.atlassian.net/browse/SEAB-3122, see org.jboss.logging.LoggerProviders.java:29
+        System.setProperty("org.jboss.logging.provider", "slf4j");
+    }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<>(Token.class, Tool.class, User.class,
             Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
@@ -348,12 +354,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
+        environment.jersey().register(new ConstraintExceptionMapper());
+
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(tokenDAO, toolDAO, versionDAO, configuration);
+        final EntryResource entryResource = new EntryResource(tokenDAO, toolDAO, versionDAO, userDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
@@ -368,7 +376,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO, versionDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, deletedUsernameDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
+        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
 
         MetadataResourceHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));

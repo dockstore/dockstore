@@ -115,9 +115,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted workflow.", content = @Content(schema = @Schema(implementation = Workflow.class)))
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+    public Workflow createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Workflow workflow = super.createHosted(user, registry, name, descriptorType, namespace, entryName);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;
@@ -294,18 +295,13 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected DescriptorLanguage checkType(String descriptorType) {
-        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
-            if (Objects.equals(descriptorLanguage.toString().toLowerCase(), descriptorType.toLowerCase())) {
-                return descriptorLanguage;
-            }
-        }
-        throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
-    }
-
-    @Override
     protected String checkRegistry(String registry) {
         // Registry does not matter for workflows
         return null;
+    }
+
+    @Override
+    public void checkEntryName(String name) {
+        return; // Don't need to check anything because hosted workflows don't have entry names
     }
 }

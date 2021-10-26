@@ -54,6 +54,7 @@ public class CWLHandlerTest {
         Assert.assertTrue("Should be empty for no version being included", cwlHandler.determineImageRegistry("knowengdev/data_cleanup_pipeline").isEmpty());
         Assert.assertTrue("Should be empty for no version being included", cwlHandler.determineImageRegistry("python:").isEmpty());
         Assert.assertEquals("Should be Amazon", Registry.AMAZON_ECR, cwlHandler.determineImageRegistry("137112412989.dkr.ecr.us-east-1.amazonaws.com/amazonlinux:latest").get());
+        Assert.assertEquals("Should be Amazon", Registry.AMAZON_ECR, cwlHandler.determineImageRegistry("public.ecr.aws/ubuntu/ubuntu:latest").get());
         Assert.assertTrue("Should be empty, Google not supported yet", cwlHandler.determineImageRegistry("gcr.io/project-id/image:tag").isEmpty());
         Assert.assertEquals("Should be Quay", Registry.QUAY_IO, cwlHandler.determineImageRegistry("quay.io/ucsc_cgl/verifybamid:1.30.0").get());
     }
@@ -138,6 +139,13 @@ public class CWLHandlerTest {
                 handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo@sha256:123456789abc", toolDAO,
                         DockerSpecifier.DIGEST));
 
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
+
         // When toolDAO.findAllByPath() returns null/empty
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
         Assert.assertEquals("https://quay.io/repository/foo/bar",
@@ -161,6 +169,16 @@ public class CWLHandlerTest {
         Assert.assertEquals("https://012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
                 handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo@sha256:123456789abc", toolDAO,
                         DockerSpecifier.DIGEST));
+
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
+        // A specific architecture image is referenced by digest but it may also include a tag from the multi-arch image
+        Assert.assertEquals("https://ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar:1@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
 
         // When toolDAO.findAllByPath() returns non-empty List<Tool>
         when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(Tool.class)));
@@ -187,6 +205,61 @@ public class CWLHandlerTest {
         Assert.assertEquals("https://www.dockstore.org/containers/012345678912.dkr.ecr.us-east-1.amazonaws.com/foo",
                 handler.getURLFromEntry("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo@sha256:123456789", toolDAO,
                         DockerSpecifier.DIGEST));
+
+        Assert.assertEquals("https://www.dockstore.org/containers/ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar", toolDAO, DockerSpecifier.NO_TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar:1", toolDAO, DockerSpecifier.TAG));
+        Assert.assertEquals("https://www.dockstore.org/containers/ghcr.io/foo/bar",
+                handler.getURLFromEntry("ghcr.io/foo/bar@sha256:123456789abc", toolDAO, DockerSpecifier.DIGEST));
+    }
+
+    @Test
+    public void testGetImageNameWithoutSpecifier() {
+        final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
+
+        Assert.assertEquals("foo/bar", handler.getImageNameWithoutSpecifier("foo/bar", DockerSpecifier.NO_TAG));
+        Assert.assertEquals("foo/bar", handler.getImageNameWithoutSpecifier("foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar", handler.getImageNameWithoutSpecifier("foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("quay.io/foo/bar", handler.getImageNameWithoutSpecifier("quay.io/foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("ghcr.io/foo/bar", handler.getImageNameWithoutSpecifier("ghcr.io/foo/bar:1@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("public.ecr.aws/foo/bar", handler.getImageNameWithoutSpecifier("public.ecr.aws/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+    }
+
+    @Test
+    public void testGetRepositoryName() {
+        final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
+
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.QUAY_IO, "quay.io/foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.QUAY_IO, "quay.io/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+
+        Assert.assertEquals("library/foo", handler.getRepositoryName(Registry.DOCKER_HUB, "foo:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.DOCKER_HUB, "foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.DOCKER_HUB, "foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.GITHUB_CONTAINER_REGISTRY, "ghcr.io/foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar/test", handler.getRepositoryName(Registry.GITHUB_CONTAINER_REGISTRY, "ghcr.io/foo/bar/test:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.GITHUB_CONTAINER_REGISTRY, "ghcr.io/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.GITHUB_CONTAINER_REGISTRY, "ghcr.io/foo/bar:1@sha256:123456789abc", DockerSpecifier.DIGEST));
+
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.AMAZON_ECR, "public.ecr.aws/foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar/test", handler.getRepositoryName(Registry.AMAZON_ECR, "public.ecr.aws/foo/bar/test:1", DockerSpecifier.TAG));
+        Assert.assertEquals("foo/bar", handler.getRepositoryName(Registry.AMAZON_ECR, "public.ecr.aws/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar",
+                handler.getRepositoryName(Registry.AMAZON_ECR, "012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar",
+                handler.getRepositoryName(Registry.AMAZON_ECR, "012345678912.dkr.ecr.us-east-1.amazonaws.com/foo/bar@sha256:123456789abc", DockerSpecifier.DIGEST));
+    }
+
+    @Test
+    public void testGetSpecifierName() {
+        final LanguageHandlerInterface handler = Mockito.mock(LanguageHandlerInterface.class, Mockito.CALLS_REAL_METHODS);
+
+        Assert.assertEquals("", handler.getSpecifierName("foo/bar", DockerSpecifier.NO_TAG));
+        Assert.assertEquals("1", handler.getSpecifierName("foo/bar:1", DockerSpecifier.TAG));
+        Assert.assertEquals("sha256:123456789abc", handler.getSpecifierName("foo@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("sha256:123456789abc", handler.getSpecifierName("ghcr.io/foo/bar/test@sha256:123456789abc", DockerSpecifier.DIGEST));
+        Assert.assertEquals("sha256:123456789abc", handler.getSpecifierName("ghcr.io/foo/bar/test:1@sha256:123456789abc", DockerSpecifier.DIGEST));
     }
 
     @Test

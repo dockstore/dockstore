@@ -20,9 +20,11 @@ import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import javax.ws.rs.container.ContainerRequestContext;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -34,6 +36,8 @@ import org.slf4j.LoggerFactory;
 public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
+    Pattern ENTRY_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9]+([-_][a-zA-Z0-9]+)*+"); // Used to validate tool and workflow names
+    int ENTRY_NAME_LENGTH_LIMIT = 256;
 
     /**
      * Check if admin or if container belongs to user
@@ -107,6 +111,17 @@ public interface AuthenticatedResourceInterface {
     default void checkUser(User user, long id) {
         if (!user.getIsAdmin() && user.getId() != id) {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
+        }
+    }
+
+    /**
+     * Check if user is null
+     *
+     * @param user user to check if null
+     */
+    default void checkUserExists(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -234,6 +249,17 @@ public interface AuthenticatedResourceInterface {
         }
     }
 
+    /**
+     * Check if token is null
+     *
+     * @param token token to check if null
+     */
+    default void checkTokenExists(Token token) {
+        if (token == null) {
+            throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
     default void mutateBasedOnUserAgent(Entry entry, ManipulateEntry m, ContainerRequestContext containerContext) {
         try {
             final List<String> strings = containerContext.getHeaders().getOrDefault("User-Agent", Lists.newArrayList());
@@ -249,6 +275,14 @@ public interface AuthenticatedResourceInterface {
             });
         } catch (Exception e) {
             LOG.debug("encountered a user agent that we could not parse, meh", e);
+        }
+    }
+
+    default void checkEntryName(String name) {
+        if (name != null && !name.isEmpty() && (!ENTRY_NAME_PATTERN.matcher(name).matches() || name.length() > ENTRY_NAME_LENGTH_LIMIT)) {
+            throw new CustomWebApplicationException("Invalid entry name. Entry name may not exceed " + ENTRY_NAME_LENGTH_LIMIT
+                    + " characters and may only consist of alphanumeric characters, internal underscores, and internal hyphens.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
     }
 

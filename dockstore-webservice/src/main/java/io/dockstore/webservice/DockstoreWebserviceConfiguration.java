@@ -146,6 +146,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private UIConfig uiConfig;
 
+    private String checkUrlLambdaUrl;
+
     @JsonProperty("toolTesterBucket")
     public String getToolTesterBucket() {
         return toolTesterBucket;
@@ -535,6 +537,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.languagePluginLocation = languagePluginLocation;
     }
 
+    public String getCheckUrlLambdaUrl() {
+        return checkUrlLambdaUrl;
+    }
+
+    public void setCheckUrlLambdaUrl(String checkUrlLambdaUrl) {
+        this.checkUrlLambdaUrl = checkUrlLambdaUrl;
+    }
+
     /**
      * This config defines values that define the webservice from the outside world.
      * Most notably, for swagger. But also to configure generated RSS paths and TRS paths
@@ -599,6 +609,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String protocol;
         private String user;
         private String password;
+        private Integer maxConcurrentSessions;
 
         public String getProtocol() {
             return protocol;
@@ -638,6 +649,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setPort(int port) {
             this.port = port;
+        }
+
+        public void setMaxConcurrentSessions(Integer maxConcurrentSessions) {
+            this.maxConcurrentSessions = maxConcurrentSessions;
+        }
+        public Integer getMaxConcurrentSessions() {
+            return this.maxConcurrentSessions;
         }
     }
 

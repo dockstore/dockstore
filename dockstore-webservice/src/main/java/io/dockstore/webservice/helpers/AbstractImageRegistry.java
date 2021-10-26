@@ -229,15 +229,25 @@ public abstract class AbstractImageRegistry {
         // Update db tools by copying over from api tools
         List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
 
+        List<String> exceptionMessages = new ArrayList<>();
+
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
-            logToolRefresh(dashboardPrefix, tool);
+            try {
+                logToolRefresh(dashboardPrefix, tool);
 
-            List<Tag> toolTags = getTags(tool);
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
-                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
-            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+                List<Tag> toolTags = getTags(tool);
+                final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                    .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
+                updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+            } catch (Exception e) {
+                LOG.info(String.format("Refreshing %s error: %s", tool.getPath(), e));
+                exceptionMessages.add(String.format("Refreshing %s error: %s", tool.getPath(), e.getMessage()));
+            }
+        }
+        if (!exceptionMessages.isEmpty()) {
+            throw new CustomWebApplicationException(String.join(System.lineSeparator(), exceptionMessages), HttpStatus.SC_EXPECTATION_FAILED);
         }
     }
 
@@ -695,17 +705,6 @@ public abstract class AbstractImageRegistry {
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
-
-                    Optional<String> sha = FileFormatHelper.calcSHA1(oldFile.getContent());
-                    if (sha.isPresent()) {
-                        checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                        if (oldFile.getChecksums() == null) {
-                            oldFile.setChecksums(checksums);
-                        } else {
-                            oldFile.getChecksums().clear();
-                            oldFile.getChecksums().addAll(checksums);
-                        }
-                    }
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -721,10 +720,6 @@ public abstract class AbstractImageRegistry {
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
-            Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-            if (sha.isPresent()) {
-                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-            }
             tag.addSourceFile(file);
         }
 

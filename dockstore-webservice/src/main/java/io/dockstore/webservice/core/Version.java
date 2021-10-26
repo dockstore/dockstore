@@ -186,11 +186,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinColumn(name = "versionid", referencedColumnName = "id", nullable = false)
     @ApiModelProperty(value = "Non-ORCID Authors for each version.")
+    @BatchSize(size = 25)
     private Set<Author> authors = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "version_orcidauthor", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id", columnDefinition = "bigint"), inverseJoinColumns = @JoinColumn(name = "orcidauthorid", referencedColumnName = "id", columnDefinition = "bigint"))
     @ApiModelProperty(value = "ORCID Authors for versions.")
+    @BatchSize(size = 25)
     private Set<OrcidAuthor> orcidAuthors = new HashSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
@@ -205,6 +207,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "The images that belong to this version", position = 15)
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
+    private Set<EntryVersion> entryVersions = new HashSet<>();
 
     public Version() {
         sourceFiles = new TreeSet<>();
@@ -450,30 +456,35 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
     }
 
+    // remove this method when author is removed from VersionMetadata
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
-        authors.clear();
-        if (newAuthor != null) {
-            authors.add(new Author(newAuthor));
-        }
+        this.getVersionMetadata().author = newAuthor;
     }
 
+    // remove this method when author is removed from VersionMetadata
     public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
-        if (authors.size() == 1) {
-            Optional<Author> author = authors.stream().findFirst();
-            if (author.isPresent() && author.get().getEmail() == null) {
-                author.get().setEmail(newEmail);
-            }
+        this.getVersionMetadata().email = newEmail;
+    }
+
+    public void addAuthor(final Author author) {
+        boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
+        if (isNewAuthor) {
+            this.authors.add(author);
         }
     }
 
     public void setAuthors(final Set<Author> authors) {
-        this.authors = authors;
+        this.authors.clear();
+        if (authors != null) {
+            this.authors.addAll(authors);
+        }
     }
 
     public void setOrcidAuthors(final Set<OrcidAuthor> orcidAuthors) {
-        this.orcidAuthors = orcidAuthors;
+        this.getOrcidAuthors().clear();
+        if (orcidAuthors != null) {
+            this.orcidAuthors.addAll(orcidAuthors);
+        }
     }
 
     public ReferenceType getReferenceType() {

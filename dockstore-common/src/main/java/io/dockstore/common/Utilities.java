@@ -54,6 +54,7 @@ public final class Utilities {
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
     private static final long DEFAULT_TIMEOUT_MILLISECONDS = 0;  // if 0, do not set timeout at all
+    public static final String PROBLEMS_RUNNING_COMMAND = "problems running command: {}";
 
     private Utilities() {
         // hide the default constructor for a utility class
@@ -183,12 +184,12 @@ public final class Utilities {
                 }
                 // not sure why commons-exec does not throw an exception
                 if (resultHandler.getExitValue() != 0) {
-                    resultHandler.getException().printStackTrace();
-                    throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
+                    LOG.error(PROBLEMS_RUNNING_COMMAND, command, resultHandler.getException());
+                    throw new ExecuteException(PROBLEMS_RUNNING_COMMAND + command, resultHandler.getExitValue());
                 }
                 return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
             } catch (InterruptedException | IOException e) {
-                throw new RuntimeException("problems running command: " + command, e);
+                throw new IllegalStateException(PROBLEMS_RUNNING_COMMAND + command, e);
             } finally {
                 if (dumpOutput) {
                     LOG.info("exit code: " + resultHandler.getExitValue());
@@ -203,5 +204,14 @@ public final class Utilities {
         } catch (IOException e) {
             throw new RuntimeException("could not close output streams", e);
         }
+    }
+
+    /**
+     * Cleans input of characters that might break-up logging output
+     * @param input
+     * @return
+     */
+    public static String cleanForLogging(String input) {
+        return input.replaceAll("[\n\r\t]", "_");
     }
 }

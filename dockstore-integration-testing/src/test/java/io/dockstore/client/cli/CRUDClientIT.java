@@ -18,12 +18,14 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
+import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.ENTRY_NAME_LENGTH_LIMIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -36,6 +38,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
@@ -54,6 +57,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -122,6 +126,7 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setUserIdToOrcidPutCode(null); // Setting to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
         assertEquals(container, hostedTool);
         assertNull(container.getUsers());
     }
@@ -221,6 +226,7 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setUserIdToOrcidPutCode(null); // Setting it to null to compare with the getWorkflow endpoint since that one doesn't return orcid put codes
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
         assertEquals(container, hostedTool);
@@ -363,6 +369,7 @@ public class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.cwl");
         file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        // Workflow only has one author (who also has an email)
         assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
     }
 
@@ -378,7 +385,8 @@ public class CRUDClientIT extends BaseIT {
         file.setPath("/Dockstore.wdl");
         file.setAbsolutePath("/Dockstore.wdl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
-        assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
+        // Workflow has multiple authors, but only one author has an email. The author returned may be one of the authors without an email.
+        assertTrue(!dockstoreWorkflow.getAuthor().isEmpty());
     }
 
     @Test
@@ -427,7 +435,12 @@ public class CRUDClientIT extends BaseIT {
             "anotherName");
 
         // Invalid descriptor type does not matter for tools
-        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), "cwll", "coolNamespace", null);
+        try {
+            api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), "cwll", "coolNamespace", null);
+        } catch (ApiException e) {
+            assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.getDockerPath().toLowerCase(), null, "coolNamespace", null);
     }
 
     /**
@@ -463,12 +476,15 @@ public class CRUDClientIT extends BaseIT {
     }
 
     /**
-     * Ensures that hosted tools can have their default path updated
+     * Ensures that hosted tools can have their default path updated,
+     * that deletion of the default version tag will fail gracefully,
+     * and that a hosted tool can be deleted.
      */
     @Test
     public void testUpdatingDefaultVersionHostedTool() throws IOException {
         ApiClient webClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
+        ContainertagsApi containertagsApi = new ContainertagsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
 
         // Add a tool with a version
@@ -490,11 +506,24 @@ public class CRUDClientIT extends BaseIT {
             .max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
         assertEquals("correct number of source files", 2, fileDAO.findSourceFilesByVersion(first.get().getId()).size());
+
         // Update the default version of the tool
-        containersApi.updateToolDefaultVersion(hostedTool.getId(), first.get().getName());
+        Tag defaultTag = first.get();
+        containersApi.updateToolDefaultVersion(hostedTool.getId(), defaultTag.getName());
+
+        // test deletion of default version tag, should fail gracefully
+        // fix for #4406 (DOCK-1880)
+        try {
+            containertagsApi.deleteTags(hostedTool.getId(), defaultTag.getId());
+            fail("Should not be able to delete a default version tag");
+        } catch (ApiException ex) {
+            // This is the expected behavior
+            assertEquals(HttpStatus.SC_BAD_REQUEST, ex.getCode());
+        }
 
         // test deletion of hosted tool for #3171
         containersApi.deleteContainer(hostedTool.getId());
+
     }
 
     /**
@@ -650,5 +679,57 @@ public class CRUDClientIT extends BaseIT {
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
         workflowApi.deleteTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "1");
+    }
+
+    /**
+     * Tests that the tool name is validated when registering a hosted tool.
+     */
+    @Test
+    public void testHostedToolNameValidation() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        final String invalidEntryNameMessage = "Invalid entry name";
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "<foo!>/<$bar>");
+            fail("Should not be able to register a hosted tool with a tool name containing special characters that are not underscores or hyphens.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "-foo-");
+            fail("Should not be able to register a hosted tool with a tool name that has external hyphens.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "_foo_");
+            fail("Should not be able to register a hosted tool with a tool name that has external underscores.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            String longToolName = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-"
+                    + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn"; // 257 characters
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", longToolName);
+            fail("Should not be able to register a hosted tool with a tool name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "foo");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            fail("Should be able to register a hosted tool with a tool name containing only alphanumeric characters.");
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "foo-bar_1");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            fail("Should be able to register a hosted tool with a tool name containing alphanumeric characters, internal hyphens, and internal underscores.");
+        }
     }
 }

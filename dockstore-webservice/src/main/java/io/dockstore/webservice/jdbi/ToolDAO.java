@@ -59,7 +59,7 @@ public class ToolDAO extends EntryDAO<Tool> {
      * @return A list of tools with the given path
      */
     public List<Tool> findAllByPath(String path, boolean findPublished) {
-        String[] splitPath = Tool.splitPath(path);
+        String[] splitPath = Tool.splitPath(path, false);
 
         // Not a valid path
         if (splitPath == null) {
@@ -98,7 +98,35 @@ public class ToolDAO extends EntryDAO<Tool> {
      * @return Tool matching the path
      */
     public Tool findByPath(String path, boolean findPublished) {
-        String[] splitPath = Tool.splitPath(path);
+        final int minToolNamePathLength = 4; // <registry>/<org>/<repo>/<toolname>
+        final int pathLength = path.split("/").length;
+        // Determine which type of path to look for first: path with a tool name or path without a tool name
+        boolean hasToolName = pathLength >= minToolNamePathLength;
+
+        Tool result = findByPath(path, hasToolName, findPublished);
+        if (pathLength >= minToolNamePathLength && result == null) {
+            // If <repo> contains slashes, there are two scenarios that can form the same tool path. In the following scenarios, assume that <registry> and <org> are the same.
+            // Scenario 1: <repo> = 'foo', <toolname> = 'bar'
+            // Scenario 2: <repo> = 'foo/bar', <toolname> = NULL
+            // Need to try the opposite scenario if we couldn't find the tool using the initial scenario (i.e. if we first tried to find a path with a toolname, try to find one without).
+            result = findByPath(path, !hasToolName, findPublished);
+        }
+
+        return result;
+    }
+
+    /**
+     * Finds the tool matching the given tool path
+     * When findPublished is true, will only look at published tools
+     * When hasToolName is true, will assume that the path contains a tool name when splitting the path
+     *
+     * @param path
+     * @param hasToolName Boolean indicating whether the path contains a tool name. This is used when splitting the path.
+     * @param findPublished
+     * @return Tool matching the path
+     */
+    public Tool findByPath(String path, boolean hasToolName, boolean findPublished) {
+        String[] splitPath = Tool.splitPath(path, hasToolName);
 
         // Not a valid path
         if (splitPath == null) {

@@ -24,6 +24,7 @@ import io.dockstore.common.DockerParameter;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Validation;
@@ -78,8 +79,13 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 version.setDescriptionAndDescriptionSource(configuration.getString("manifest.description"), DescriptionSource.DESCRIPTOR);
                 descriptionInProgress = version.getDescription();
             }
-            if (configuration.containsKey("manifest.author")) {
-                version.setAuthor(configuration.getString("manifest.author"));
+            // Add authors from descriptor if there are no .dockstore.yml authors
+            if (configuration.containsKey("manifest.author") && version.getAuthors().isEmpty()) {
+                String[] authors = configuration.getString("manifest.author").split(",");
+                for (String author : authors) {
+                    Author newAuthor = new Author(author.trim());
+                    version.addAuthor(newAuthor);
+                }
             }
             // look for extended help message from nf-core workflows when it is available
             String mainScriptPath = "main.nf";

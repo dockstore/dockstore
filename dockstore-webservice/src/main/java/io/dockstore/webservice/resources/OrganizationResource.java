@@ -3,6 +3,7 @@ package io.dockstore.webservice.resources;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Collection;
@@ -412,10 +413,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throwExceptionForNullOrganization(organization);
             return organization;
         } else {
-            // User is given, check if organization is either approved or the user has access
-            // Admins and curators should be able to see unapproved organizations
             boolean doesOrgExist =
-                doesOrganizationExistToUserResourceDAO(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+                doesOrganizationExistToUserResourceDAO(orgId, user.get().getId());
             if (!doesOrgExist) {
                 String msg = "Organization not found";
                 LOG.info(msg);
@@ -613,16 +612,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Validate email string. null/empty is valid since it's optional.
+     * Validate email string.
      * @param email The email to validate
      */
     private void validateEmail(String email) {
-        if (StringUtils.isEmpty(email)) {
-            return;
-        }
         EmailValidator emailValidator = EmailValidator.getInstance();
-        if (!emailValidator.isValid(email)) {
-            String msg = "Email is invalid: " + email;
+        if (StringUtils.isEmpty(email) || !emailValidator.isValid(email)) {
+            String msg = "You must enter a valid email address: " + email;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -658,7 +654,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         User userToAdd = userDAO.findByUsername(username);
         if (userToAdd == null) {
-            String msg = "No user exists with the username '" + username + "'.";
+            String msg = "No user exists with the username '" + Utilities.cleanForLogging(username) + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -860,7 +856,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     private boolean doesOrganizationExistToUserResourceDAO(Long organizationId, Long userId) {
-        return doesOrganizationExistToUser(organizationId, userId, organizationDAO);
+        return doesOrganizationExistToUser(organizationId, userId, organizationDAO, userDAO);
     }
 
     /**
@@ -871,10 +867,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * @param userId
      * @return True if organization exists to user, false otherwise
      */
-    static boolean doesOrganizationExistToUser(Long organizationId, Long userId, OrganizationDAO organizationDAO) {
+    static boolean doesOrganizationExistToUser(Long organizationId, Long userId, OrganizationDAO organizationDAO, UserDAO userDAO) {
         Organization organization = organizationDAO.findById(organizationId);
         if (organization == null) {
             return false;
+        }
+        // Admins and curators should be able to see unapproved organizations
+        User user = userDAO.findById(userId);
+        if (user != null && (user.getIsAdmin() || user.isCurator())) {
+            return true;
         }
         OrganizationUser organizationUser = getUserOrgRole(organization, userId);
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
@@ -893,10 +894,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             return false;
         }
 
-        if (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) {
-            return true;
-        }
-        return false;
+        return organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER;
     }
 
     static boolean isUserAdminOrMaintainer(Long organizationId, Long userId, OrganizationDAO organizationDAO) {

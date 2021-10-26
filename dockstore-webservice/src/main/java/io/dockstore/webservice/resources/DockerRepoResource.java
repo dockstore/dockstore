@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
@@ -26,6 +27,7 @@ import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
 import io.dockstore.common.Registry;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.PublishRequest;
@@ -81,6 +83,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -320,10 +323,14 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @Operation(operationId = "updateContainer", description = "Update the tool with the given tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "updateContainer", summary = "Update the tool with the given tool.",
+            description = "Updates default descriptor paths, default Dockerfile paths, default test parameter paths, git url,"
+            + " and default version. Also updates tool maintainer email, and private access for manual tools.",
+            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tool with the given tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class,
-        notes = "Updates default descriptor paths, default Docker paths, default test parameter paths, git url,"
+        notes = "Updates default descriptor paths, default Dockerfile paths, default test parameter paths, git url,"
                 + " and default version. Also updates tool maintainer email, and private access for manual tools.")
     public Tool updateContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
@@ -333,12 +340,7 @@ public class DockerRepoResource
         checkNotHosted(foundTool);
         checkUserOwnsEntry(user, foundTool);
 
-        Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
-
-        if (duplicate != null && duplicate.getId() != containerId) {
-            LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
-            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
-        }
+        // Don't need to check for duplicate tool because the tool path can't be updated
 
         Registry registry = foundTool.getRegistryProvider();
         if (registry.isPrivateOnly() && !tool.isPrivateAccess()) {
@@ -351,6 +353,11 @@ public class DockerRepoResource
 
         if (!foundTool.isPrivateAccess() && tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && Strings.isNullOrEmpty(tool.getEmail())) {
             throw new CustomWebApplicationException("A published, private tool must have either an tool author email or tool maintainer email set up.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // An Amazon ECR repository cannot change its visibility once it's created. Thus, Amazon ECR tools cannot have their visibility changed.
+        if (registry == Registry.AMAZON_ECR) {
+            checkAmazonECRPrivateAccess(foundTool.getRegistry(), tool.isPrivateAccess());
         }
 
         updateInfo(foundTool, tool);
@@ -496,6 +503,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/registerManual")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "registerManual", description = "Register a tool manually, along with tags.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Register a tool manually, along with tags.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
@@ -527,6 +535,9 @@ public class DockerRepoResource
                 + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 
+        // Check if the tool has a valid tool name
+        checkEntryName(toolParam.getToolname());
+
         final Set<Tag> workflowVersionsFromParam = Sets.newHashSet(toolParam.getWorkflowVersions());
         toolParam.setWorkflowVersions(Sets.newHashSet());
         // cannot create tool with a transient version hanging on it
@@ -542,6 +553,11 @@ public class DockerRepoResource
         if (tool.isPrivateAccess() && Strings.isNullOrEmpty(tool.getToolMaintainerEmail())) {
             throw new CustomWebApplicationException("Tool maintainer email is required for private tools.", HttpStatus.SC_BAD_REQUEST);
         }
+
+        if (registry == Registry.AMAZON_ECR) {
+            checkAmazonECRPrivateAccess(tool.getRegistry(), tool.isPrivateAccess());
+        }
+
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
@@ -741,8 +757,9 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}/published")
-    @Operation(operationId = "getPublishedContainerByPath", description = "Get a list of published tools by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Get a list of published tools by path.", notes = "NO authentication", response = Tool.class)
+    @Operation(operationId = "getPublishedContainerByPath", summary = "Get a list of published tools by path.", description = "Do not include tool name.",
+            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiOperation(value = "Get a list of published tools by path.", notes = "NO authentication. Do not include tool name.", response = Tool.class, responseContainer = "List")
     public List<Tool> getPublishedContainerByPath(
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, true);
@@ -755,9 +772,10 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
-    @Operation(operationId = "getContainerByPath", description = "Get a list of tools by path.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getContainerByPath", summary = "Get a list of tools by path.", description = "Do not include tool name.",
+            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a list of tools by path.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require tool name.", response = Tool.class, responseContainer = "List")
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Do not include tool name.", response = Tool.class, responseContainer = "List")
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
@@ -770,7 +788,8 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/tool/{repository}")
-    @Operation(operationId = "getContainerByToolPath", description = "Get a tool by the specific tool path", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "getContainerByToolPath", summary = "Get a tool by the specific tool path", description = "Requires full path (including tool name if applicable).",
+            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a tool by the specific tool path", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getContainerByToolPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
@@ -790,7 +809,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("/path/tool/{repository}/published")
-    @Operation(operationId = "getPublishedContainerByToolPath", description = "Get a published tool by the specific tool path.")
+    @Operation(operationId = "getPublishedContainerByToolPath", summary = "Get a published tool by the specific tool path.", description = "Requires full path (including tool name if applicable).")
     @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include, @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
@@ -884,8 +903,8 @@ public class DockerRepoResource
         "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
-        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
+        final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO);
     }
 
@@ -899,8 +918,8 @@ public class DockerRepoResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
-        @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
-        final FileType testParameterType = DescriptorLanguage.getTestParameterType(descriptorType).orElseThrow(() -> new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST));
+        @ApiParam(value = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
+        final FileType testParameterType = descriptorLanguage.getTestParamType();
         return getAllSourceFiles(containerId, tag, testParameterType, user, fileDAO);
     }
 
@@ -946,9 +965,9 @@ public class DockerRepoResource
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
-            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
-                HttpStatus.SC_BAD_REQUEST);
+            String msg = "The tag '" + Utilities.cleanForLogging(tagName) + "' for tool '" + tool.getToolPath() + "' does not exist.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         Tag tag = firstTag.get();
@@ -982,9 +1001,9 @@ public class DockerRepoResource
         Optional<Tag> firstTag = tool.getWorkflowVersions().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (firstTag.isEmpty()) {
-            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
-                HttpStatus.SC_BAD_REQUEST);
+            String msg = "The tag '\" + Utilities.cleanForLogging(tagName) + \"' for tool '\" + tool.getToolPath() + \"' does not exist.\")";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         Tag tag = firstTag.get();
@@ -1116,6 +1135,21 @@ public class DockerRepoResource
     private void checkNotHosted(Tool tool) {
         if (tool.getMode() == ToolMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    // Checks that the Amazon ECR docker path matches the provided private access.
+    // If the tool has Amazon ECR's public docker path, public.ecr.aws, the tool must be public
+    // If the tool has Amazon ECR's private docker path, *.dkr.ecr.*.amazonaws.com, the tool must be private
+    private void checkAmazonECRPrivateAccess(String amazonECRDockerPath, boolean privateAccess) {
+        // Public Amazon ECR tool (public.ecr.aws docker path) can't be set to private
+        if (Registry.AMAZON_ECR.getDockerPath().equals(amazonECRDockerPath) && privateAccess) {
+            throw new CustomWebApplicationException("The public Amazon ECR tool cannot be set to private.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Private Amazon ECR tool with custom docker path can't be set to public
+        if (AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(amazonECRDockerPath).matches() && !privateAccess) {
+            throw new CustomWebApplicationException("The private Amazon ECR tool cannot be set to public.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 

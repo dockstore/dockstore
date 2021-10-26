@@ -4,6 +4,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Collection;
@@ -183,7 +184,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // No user given, only show collections from approved organizations
             Organization organization = organizationDAO.findApprovedByName(organizationName);
             if (organization == null) {
-                String msg = "Organization " + organizationName + " not found.";
+                String msg = "Organization " + Utilities.cleanForLogging(organizationName) + " not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
@@ -197,13 +198,15 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // User is given, check if the collections organization is either approved or the user has access
             // Admins and curators should be able to see collections from unapproved organizations
             Organization organization = organizationDAO.findByName(organizationName);
-            if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO)) {
-                String msg = "Organization " + organizationName + " not found.";
+            if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO, userDAO)) {
+                String msg = "Organization " + Utilities.cleanForLogging(organizationName) + " not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
+            throwExceptionForNullCollection(collection);
+
             Hibernate.initialize(collection.getAliases());
             addCollectionEntriesToCollection(collection);
             return collection;
@@ -413,7 +416,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             Organization organization = organizationDAO.findApprovedById(organizationId);
             throwExceptionForNullOrganization(organization);
         } else {
-            boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO);
+            boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO, userDAO);
             if (!doesOrgExist) {
                 String msg = "Organization not found.";
                 LOG.info(msg);
@@ -472,6 +475,13 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         Collection matchingCollection = collectionDAO.findByNameAndOrg(collection.getName(), organizationId);
         if (matchingCollection != null) {
             String msg = "A collection already exists with the name '" + collection.getName() + "' in the specified organization.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        matchingCollection = collectionDAO.findByDisplayNameAndOrg(collection.getDisplayName(), organizationId);
+        if (matchingCollection != null) {
+            String msg = "A collection already exists with the display name '" + collection.getDisplayName() + "' in the specified organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -617,7 +627,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO);
+        return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO, userDAO);
     }
 
     /**

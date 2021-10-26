@@ -45,6 +45,9 @@ database:
     hibernate.hbm2ddl.auto: validate
     # suppress session log to reduce verbosity
     hibernate.generate_statistics: false
+    hibernate.jdbc.batch_size: 30
+    hibernate.order_inserts: true
+    hibernate.order_updates: true
 
   # the maximum amount of time to wait on an empty pool before throwing an exception
   maxWaitForConnection: 1s

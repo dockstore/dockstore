@@ -1,0 +1,9 @@
+---
+TopMedVariantCaller.input_cram_files:
+  - https://raw.githubusercontent.com/dockstore/dockstore/1.11/README.md
+TopMedVariantCaller.ref_1000G_omni2_5_b38_sites_PASS_vcf_gz: https://raw.githubusercontent.com/dockstore/dockstore/1.11/pom.xml
+TopMedVariantCaller.docker_image: quay.io/ucsc_cgl/topmed_freeze3_calling:1.9.0
+duplicate: https://raw.githubusercontent.com/dockstore/dockstore/1.11/README.md
+boolean: true
+number: 5
+unsupportedFtp: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/CHANGELOG

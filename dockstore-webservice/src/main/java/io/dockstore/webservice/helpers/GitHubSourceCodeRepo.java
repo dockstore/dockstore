@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
@@ -314,7 +315,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
-                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
+                ZonedDateTime zonedDateTime = Instant.ofEpochMilli(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
                 throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + ", please wait til " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
@@ -872,14 +873,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     public void reportOnGitHubRelease(GHRateLimit startRateLimit, GHRateLimit endRateLimit, String repository, String username, String gitReference, boolean isSuccessful) {
-        String gitHubRepoInfo = "Performing GitHub release for repository: " + repository + ", user: " + username + ", and git reference: " + gitReference;
-        String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
-        if (isSuccessful) {
-            LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
-        } else {
-            LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+        if (LOG.isInfoEnabled()) {
+            String gitHubRepoInfo =
+                "Performing GitHub release for repository: " + Utilities.cleanForLogging(repository) + ", user: " + Utilities.cleanForLogging(username) + ", and git reference: " + Utilities
+                    .cleanForLogging((gitReference));
+            String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
+            if (isSuccessful) {
+                LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
+            } else {
+                LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+            }
         }
-
     }
 
     public GHRateLimit getGhRateLimitQuietly() {

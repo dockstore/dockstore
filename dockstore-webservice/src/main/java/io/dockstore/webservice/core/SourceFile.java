@@ -76,6 +76,7 @@ import org.slf4j.LoggerFactory;
 public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
+    public static final String SHA_TYPE = "SHA-256";
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -111,8 +112,8 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 5)
     private boolean frozen = false;
 
-    @Column(columnDefinition = "varchar")
-    @Convert(converter = ChecksumConverter.class)
+    @Column(columnDefinition = "TEXT", name = "sha256", updatable = false, insertable = false)
+    @Convert(converter = Sha256Converter.class)
     @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     private List<Checksum> checksums = new ArrayList<>();
 

@@ -130,7 +130,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     public T createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
         @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
-        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") String descriptorType,
+        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage,
         @ApiParam(value = "The Docker namespace (Tools only)") @QueryParam("namespace") String namespace,
             @ApiParam(value = "Optional entry name (Tools only)") @QueryParam("entryName") String entryName) {
 
@@ -141,10 +141,10 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
+        checkEntryName(entryName); // Check if the entry name is valid
         // Only check type for workflows
-        DescriptorLanguage convertedDescriptorType = checkType(descriptorType);
         String convertedRegistry = checkRegistry(registry);
-        T entry = getEntry(user, convertedRegistry, name, convertedDescriptorType, namespace, entryName);
+        T entry = getEntry(user, convertedRegistry, name, descriptorLanguage, namespace, entryName);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -361,13 +361,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             }
         }
     }
-
-    /**
-     * Check that the descriptor type is a valid type and return the descriptor type object. Not required for tools, since a tool has many types.
-     * @param descriptorType
-     * @return Verified type
-     */
-    protected abstract DescriptorLanguage checkType(String descriptorType);
 
     /**
      * Check that the registry is a valid registry and return the registry object
