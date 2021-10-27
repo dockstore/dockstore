@@ -44,6 +44,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -541,7 +542,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Create or retrieve workflow or service based on Dockstore.yml
-     * @param workflowType Either BioWorkflow.class or Service.class
+     * @param workflowType Either BioWorkflow.class, Service.class or AppTool.class
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param user User that triggered action
      * @param workflowName User that triggered action
@@ -550,6 +551,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return New or updated workflow
      */
     private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
+        // Validate workflowName before checking for existing workflows because if workflowName contains slashes (which are invalid),
+        // we may find a workflow that matches the workflow path but has a different values for the components that make up the path.
+        StringInputValidationHelper.checkEntryName(workflowName);
+
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
         Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
