@@ -15,21 +15,28 @@ public class StringInputValidationHelperTest {
 
         try {
             StringInputValidationHelper.checkEntryName("!@#$/%^&*<foo><bar>");
-            fail("Should not be able to register a workflow with a workflow name containing special characters that are not underscores and hyphens.");
+            fail("Entry name with special characters that are not underscores and hyphens should fail validation.");
+        } catch (CustomWebApplicationException ex) {
+            assertTrue(ex.getErrorMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            StringInputValidationHelper.checkEntryName("foo bar");
+            fail("Entry name with spaces should fail validation.");
         } catch (CustomWebApplicationException ex) {
             assertTrue(ex.getErrorMessage().contains(invalidEntryNameMessage));
         }
 
         try {
             StringInputValidationHelper.checkEntryName("-foo-");
-            fail("Should not be able to register a workflow with a workflow name that has external hyphens.");
+            fail("Entry name with external hyphens should fail validation.");
         } catch (CustomWebApplicationException ex) {
             assertTrue(ex.getErrorMessage().contains(invalidEntryNameMessage));
         }
 
         try {
             StringInputValidationHelper.checkEntryName("_foo_");
-            fail("Should not be able to register a workflow with a workflow name that has external underscores.");
+            fail("Entry name with external underscores should fail validation.");
         } catch (CustomWebApplicationException ex) {
             assertTrue(ex.getErrorMessage().contains(invalidEntryNameMessage));
         }
@@ -38,7 +45,7 @@ public class StringInputValidationHelperTest {
             String longWorkflowName = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-"
                     + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn"; // 257 characters
             StringInputValidationHelper.checkEntryName(longWorkflowName);
-            fail("Should not be able to register a workflow with a workflow name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters.");
+            fail("Entry name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters should fail validation.");
         } catch (CustomWebApplicationException ex) {
             assertTrue(ex.getErrorMessage().contains(invalidEntryNameMessage));
         }
