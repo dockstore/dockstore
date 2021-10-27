@@ -17,7 +17,6 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
-import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.ENTRY_NAME_LENGTH_LIMIT;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1815,41 +1814,6 @@ public class WorkflowIT extends BaseIT {
             fail("Should not be able to register a workflow with a workflow name containing special characters that are not underscores and hyphens.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
-        }
-
-        try {
-            workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "-foo-", "wdl", "/test.json");
-            fail("Should not be able to register a workflow with a workflow name that has external hyphens.");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
-        }
-
-        try {
-            workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "_foo_", "wdl", "/test.json");
-            fail("Should not be able to register a workflow with a workflow name that has external underscores.");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
-        }
-
-        try {
-            String longWorkflowName = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-"
-                    + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn"; // 257 characters
-            workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", longWorkflowName, "wdl", "/test.json");
-            fail("Should not be able to register a workflow with a workflow name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters.");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
-        }
-
-        try {
-            workflowsApi.manualRegister("github", "dockstore-testing/hello-wdl-workflow", "/Dockstore.wdl", "foo", "wdl", "/test.json");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            fail("Should be able to register a workflow with a workflow name containing only alphanumeric characters.");
-        }
-
-        try {
-            workflowsApi.manualRegister("github", "dockstore-testing/hello-wdl-workflow", "/Dockstore.wdl", "foo-bar_1", "wdl", "/test.json");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            fail("Should be able to register a workflow with a workflow name containing alphanumeric characters, internal hyphens, and internal underscores.");
         }
     }
 

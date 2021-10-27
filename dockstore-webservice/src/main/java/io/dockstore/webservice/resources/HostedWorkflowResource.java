@@ -302,6 +302,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     public void checkEntryName(String name) {
-        return; // Don't need to check anything because hosted workflows don't have entry names
+        return; // Don't need to validate entry name because hosted workflows don't have entry names
     }
 }

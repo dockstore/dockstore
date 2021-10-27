@@ -372,6 +372,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     protected abstract String checkRegistry(String registry);
 
     /**
+     * Check that the entry name is valid
+     * @param entryName
+     */
+    protected abstract void checkEntryName(String entryName);
+
+    /**
      * Create new version of a workflow or tag of a tool
      * @param entry the parent for the new version
      * @return the new version
