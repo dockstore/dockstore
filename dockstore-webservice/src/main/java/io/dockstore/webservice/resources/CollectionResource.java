@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -145,6 +146,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         if (user.isEmpty()) {
             // No user given, only show collections from approved organizations
             Collection collection = collectionDAO.findById(collectionId);
+            throwExceptionForNullCollection(collection);
             // check that organization id matches
             if (collection.getOrganizationID() != organizationId) {
                 collection = null;
@@ -455,6 +457,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Create a collection in the given organization.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
@@ -509,6 +512,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @PUT
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name, display name, description, and topic can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     @Operation(operationId = "updateCollection", summary = "Update a collection.", description = "Update a collection. Currently only name, display name, description, and topic can be updated.", security = @SecurityRequirement(name = "bearer"))
@@ -552,6 +556,36 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         return collectionDAO.findById(collectionId);
 
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("{organizationId}/collections/{collectionId}")
+    @ApiOperation(value = "Delete a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, hidden = true)
+    @Operation(operationId = "deleteCollection", summary = "Delete a collection.", description = "Delete a collection.", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully deleted the collection")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    public void deleteCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
+        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
+        // Ensure collection exists to the user
+        Collection collection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
+        Organization organization = getOrganizationAndCheckModificationRights(user, collection);
+
+        // Soft delete the collection
+        collection.setDeleted(true);
+
+        // Create the delete collection event.
+        Event.Builder eventBuild = new Event.Builder()
+                .withOrganization(organization)
+                .withCollection(collection)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.DELETE_COLLECTION);
+
+        Event deleteCollectionEvent = eventBuild.build();
+        eventDAO.create(deleteCollectionEvent);
     }
 
     @PUT

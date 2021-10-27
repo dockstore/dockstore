@@ -54,6 +54,8 @@ import org.junit.rules.ExpectedException;
 
 @Category(ConfidentialTest.class)
 public class OrganizationIT extends BaseIT {
+    private static final long NONEXISTENT_ID = Long.MAX_VALUE;
+
     private static final StarRequest STAR_REQUEST = getStarRequest(true);
     private static final StarRequest UNSTAR_REQUEST = getStarRequest(false);
 
@@ -137,6 +139,19 @@ public class OrganizationIT extends BaseIT {
      */
     private Collection stubCollectionObject() {
         Collection collection = new Collection();
+        collection.setName("Alignment");
+        collection.setDisplayName("Alignment Algorithms");
+        collection.setDescription("A collection of alignment algorithms");
+        return collection;
+    }
+
+    /**
+     * Creates a stub OpenApi collection object
+     *
+     * @return Collection object
+     */
+    private io.dockstore.openapi.client.model.Collection openApiStubCollectionObject() {
+        io.dockstore.openapi.client.model.Collection collection = new io.dockstore.openapi.client.model.Collection();
         collection.setName("Alignment");
         collection.setDisplayName("Alignment Algorithms");
         collection.setDescription("A collection of alignment algorithms");
@@ -1981,6 +1996,103 @@ public class OrganizationIT extends BaseIT {
         }
     }
 
+    private void testDeleteCollectionFail(final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi, long organizationId, long collectionId, int status) {
+        try {
+            organizationsApi.deleteCollection(organizationId, collectionId);
+            fail("Collection deletion should have failed with status code " + status + ".");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            // This is the expected behavior
+            assertEquals(status, ex.getCode());
+        }
+    }
+
+    private boolean existsCollection(long organizationId, long collectionId) {
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi  organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
+        try {
+            organizationsApi.getCollectionById(organizationId, collectionId);
+            return (true);
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            return (false);
+        }
+    }
+
+    @Test
+    public void testDeleteCollection() {
+        final io.dockstore.openapi.client.ApiClient webClientUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser);
+
+        // Create an approved organization
+        io.dockstore.openapi.client.model.Organization organization = organizationsApi.createOrganization(openApiStubOrgObject());
+        long organizationId = organization.getId();
+        organizationsApi.approveOrganization(organizationId);
+
+        // Create a collection and make sure it is visible
+        io.dockstore.openapi.client.model.Collection collection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
+        long collectionId = collection.getId();
+        assertTrue(existsCollection(organizationId, collectionId));
+
+        // Add a tool to the collection.
+        long entryId = 2;
+        ContainersApi containersApi = new ContainersApi(getWebClient(USER_2_USERNAME, testingPostgres));
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        containersApi.publish(entryId, publishRequest);
+        organizationsApi.addEntryToCollection(organizationId, collectionId, entryId, null);
+
+        // Make sure the tool is in the collection.
+        final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientUser);
+        assertEquals(1, entriesApi.entryCollections(entryId).size());
+
+        // Test various combos of nonexistent IDs
+        testDeleteCollectionFail(organizationsApi, NONEXISTENT_ID, NONEXISTENT_ID, HttpStatus.SC_NOT_FOUND);
+        assertTrue(existsCollection(organizationId, collectionId));
+        testDeleteCollectionFail(organizationsApi, organizationId, NONEXISTENT_ID, HttpStatus.SC_NOT_FOUND);
+        assertTrue(existsCollection(organizationId, collectionId));
+        testDeleteCollectionFail(organizationsApi, NONEXISTENT_ID, collectionId, HttpStatus.SC_NOT_FOUND);
+        assertTrue(existsCollection(organizationId, collectionId));
+
+        // Org non-members and org non-admin members should not be able to delete the collection, even if they are a global admin
+        final io.dockstore.openapi.client.ApiClient webClientUser2 = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApi2 = new io.dockstore.openapi.client.api.OrganizationsApi(webClientUser2);
+        testDeleteCollectionFail(organizationsApi2, organizationId, collectionId, HttpStatus.SC_UNAUTHORIZED);
+        assertTrue(existsCollection(organizationId, collectionId));
+        organizationsApi.addUserToOrg(OrganizationUser.Role.MEMBER.toString(), 1L, organizationId, "");
+        organizationsApi2.acceptOrRejectInvitation(organizationId, true);
+        testDeleteCollectionFail(organizationsApi2, organizationId, collectionId, HttpStatus.SC_UNAUTHORIZED);
+        assertTrue(existsCollection(organizationId, collectionId));
+
+        // An org admin should be able to delete the collection
+        organizationsApi.deleteCollection(organizationId, collectionId);
+        assertFalse(existsCollection(organizationId, collectionId));
+
+        // We've soft-deleted the collection, by marking it as "deleted" but keeping it in the db table.
+        // Perform a couple of additional operations to make sure the collection is no longer visible.
+        assertEquals(0, organizationsApi.getCollectionsFromOrganization(organizationId, "").size());
+        assertEquals(0, entriesApi.entryCollections(entryId).size());
+        String sameOrganizationName = openApiStubOrgObject().getName();
+        String sameCollectionName = openApiStubCollectionObject().getName();
+        try {
+            organizationsApi.getCollectionByName(sameOrganizationName, sameCollectionName);
+            fail("Should fail because the collection was deleted.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());
+        }
+
+        // Make sure a delete collection event was generated.
+        List<io.dockstore.openapi.client.model.Event> events = organizationsApi.getOrganizationEvents(organizationId, 0, Integer.MAX_VALUE);
+        io.dockstore.openapi.client.model.Event deleteEvent = events.stream().filter(e -> e.getType() == io.dockstore.openapi.client.model.Event.TypeEnum.DELETE_COLLECTION).findFirst().get();
+        assertEquals(organizationId, deleteEvent.getOrganization().getId().longValue());
+        assertEquals(collectionId, deleteEvent.getCollection().getId().longValue());
+        assertEquals(4L, deleteEvent.getInitiatorUser().getId().longValue());
+        assertNull(deleteEvent.getUser());
+
+        // Add a collection with the same properties as the previously-deleted collection to ensure there's no interference from "ghosts".
+        io.dockstore.openapi.client.model.Collection matchingCollection = organizationsApi.createCollection(openApiStubCollectionObject(), organizationId);
+        long matchingCollectionId = matchingCollection.getId();
+        assertTrue(existsCollection(organizationId, matchingCollectionId));
+        assertNotEquals(collectionId, matchingCollectionId);
+    }
+
     @Test
     public void testStarringOrganization() {
         // Setup user
@@ -2143,11 +2255,10 @@ public class OrganizationIT extends BaseIT {
         // Setup admin
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
-        final Long nonexistentID = 11111111111111111L; // very unlikely an org is assigned this ID
 
         // Access non-existent organization - this should fail with a 404
         try {
-            organizationsApiAdmin.getOrganizationById(nonexistentID);
+            organizationsApiAdmin.getOrganizationById(NONEXISTENT_ID);
             fail("An admin accessing a nonexistent organization should throw an exception");
         } catch (io.dockstore.openapi.client.ApiException ex) {
             assertEquals(HttpStatus.SC_NOT_FOUND, ex.getCode());

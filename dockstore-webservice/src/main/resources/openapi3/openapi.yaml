@@ -3451,7 +3451,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Collection'
         description: Collection to register.
@@ -3469,6 +3469,36 @@ paths:
       tags:
       - organizations
   /organizations/{organizationId}/collections/{collectionId}:
+    delete:
+      description: Delete a collection.
+      operationId: deleteCollection
+      parameters:
+      - description: Organization ID.
+        in: path
+        name: organizationId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Collection ID.
+        in: path
+        name: collectionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successfully deleted the collection
+        "401":
+          description: Unauthorized
+        "404":
+          description: Collection not found
+      security:
+      - bearer: []
+      summary: Delete a collection.
+      tags:
+      - organizations
     get:
       description: Retrieve a collection by ID. Supports optional authentication.
       operationId: getCollectionById
@@ -3520,7 +3550,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Collection'
         description: Collection to register.
@@ -7667,6 +7697,7 @@ components:
           - REJECT_ORG_INVITE
           - CREATE_COLLECTION
           - MODIFY_COLLECTION
+          - DELETE_COLLECTION
           - REMOVE_FROM_COLLECTION
           - ADD_TO_COLLECTION
           - ADD_VERSION_TO_ENTRY
