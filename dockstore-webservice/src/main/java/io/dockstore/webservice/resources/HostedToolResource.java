@@ -267,6 +267,6 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
 
     @Override
     protected void checkEntryName(String entryName) {
-        StringInputValidationHelper.checkEntryName(entryName);
+        StringInputValidationHelper.checkEntryName(Tool.class, entryName);
     }
 }

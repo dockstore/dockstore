@@ -687,13 +687,12 @@ public class CRUDClientIT extends BaseIT {
     public void testHostedToolNameValidation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
-        final String invalidEntryNameMessage = "Invalid entry name";
 
         try {
             hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "<foo!>/<$bar>");
             fail("Should not be able to register a hosted tool with a tool name containing special characters that are not underscores or hyphens.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+            assertTrue(ex.getMessage().contains("Invalid tool name"));
         }
     }
 }

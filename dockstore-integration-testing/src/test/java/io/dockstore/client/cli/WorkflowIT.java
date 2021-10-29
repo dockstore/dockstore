@@ -1807,13 +1807,12 @@ public class WorkflowIT extends BaseIT {
     public void testManualWorkflowNameValidation() {
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
-        String invalidEntryNameMessage = "Invalid entry name";
 
         try {
             workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "!@#$/%^&*<foo><bar>", "wdl", "/test.json");
             fail("Should not be able to register a workflow with a workflow name containing special characters that are not underscores and hyphens.");
         } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+            assertTrue(ex.getMessage().contains("Invalid workflow name"));
         }
     }
 

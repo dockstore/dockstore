@@ -806,7 +806,7 @@ public class WebhookIT extends BaseIT {
      * @throws Exception
      */
     @Test
-    public void testDockstoreYmlInvalidName() throws Exception {
+    public void testDockstoreYmlInvalidWorkflowName() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
@@ -819,6 +819,7 @@ public class WebhookIT extends BaseIT {
             List<io.dockstore.openapi.client.model.LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
             assertEquals("There should be 1 unsuccessful event", 1,
                     failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
+            assertTrue(failEvents.get(0).getMessage().contains("Invalid workflow name"));
         }
     }
 

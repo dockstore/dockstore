@@ -553,7 +553,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Validate workflowName before checking for existing workflows because if workflowName contains slashes (which are invalid),
         // we may find a workflow that matches the workflow path but has a different values for the components that make up the path.
-        StringInputValidationHelper.checkEntryName(workflowName);
+        StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");

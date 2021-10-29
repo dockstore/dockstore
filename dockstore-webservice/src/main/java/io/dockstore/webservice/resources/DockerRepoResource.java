@@ -537,7 +537,7 @@ public class DockerRepoResource
         }
 
         // Check if the tool has a valid tool name
-        StringInputValidationHelper.checkEntryName(toolParam.getToolname());
+        StringInputValidationHelper.checkEntryName(toolParam.getClass(), toolParam.getToolname());
 
         final Set<Tag> workflowVersionsFromParam = Sets.newHashSet(toolParam.getWorkflowVersions());
         toolParam.setWorkflowVersions(Sets.newHashSet());

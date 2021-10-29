@@ -1407,7 +1407,6 @@ public class GeneralIT extends BaseIT {
     public void testManualToolNameValidation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi containersApi = new ContainersApi(webClient);
-        String invalidEntryNameMessage = "Invalid entry name";
         DockstoreTool tool = createManualTool();
 
         try {
@@ -1415,7 +1414,7 @@ public class GeneralIT extends BaseIT {
             containersApi.registerManual(tool);
             fail("Should not be able to register a tool with a tool name containing special characters that are not underscores and hyphens.");
         } catch (ApiException ex) {
-            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+            assertTrue(ex.getMessage().contains("Invalid tool name"));
         }
     }
 

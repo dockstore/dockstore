@@ -1258,7 +1258,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // Validate the workflow name
-        StringInputValidationHelper.checkEntryName(workflowName);
+        StringInputValidationHelper.checkEntryName(BioWorkflow.class, workflowName);
 
         String registryURLPrefix = sourceControlEnum.get().toString();
         String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";
