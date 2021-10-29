@@ -3,6 +3,7 @@ package io.dockstore.webservice.helpers;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import java.util.regex.Pattern;
@@ -25,7 +26,7 @@ public final class StringInputValidationHelper {
      * @param entryType Valid types: Tool.class, AppTool.class, BioWorkflow.class, or Service.class.
      * @param name Name to validate
      */
-    public static void checkEntryName(Class entryType, String name) {
+    public static void checkEntryName(Class<? extends Entry> entryType, String name) {
         if (name != null && !name.isEmpty() && (!ENTRY_NAME_PATTERN.matcher(name).matches() || name.length() > ENTRY_NAME_LENGTH_LIMIT)) {
             String entryTypeString;
 
