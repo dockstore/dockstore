@@ -149,6 +149,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         if (user.isEmpty()) {
             // No user given, only show collections from approved organizations
             Collection collection = collectionDAO.findById(collectionId);
+            throwExceptionForNullCollection(collection);
             // check that organization id matches
             if (collection.getOrganizationID() != organizationId) {
                 collection = null;
@@ -209,6 +210,8 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
+            throwExceptionForNullCollection(collection);
+
             Hibernate.initialize(collection.getAliases());
             evictAndAddEntries(collection);
             return collection;
@@ -577,6 +580,36 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         Set<Entry> entries = new HashSet<>();
         collectionEntries.forEach(collectionEntry -> entries.add(toolDAO.getGenericEntryById(collectionEntry.getId())));
         entries.forEach(this::handleIndexUpdate);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("{organizationId}/collections/{collectionId}")
+    @ApiOperation(value = "Delete a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, hidden = true)
+    @Operation(operationId = "deleteCollection", summary = "Delete a collection.", description = "Delete a collection.", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully deleted the collection")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    public void deleteCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
+        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
+        // Ensure collection exists to the user
+        Collection collection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
+        Organization organization = getOrganizationAndCheckModificationRights(user, collection);
+
+        // Soft delete the collection
+        collection.setDeleted(true);
+
+        // Create the delete collection event.
+        Event.Builder eventBuild = new Event.Builder()
+                .withOrganization(organization)
+                .withCollection(collection)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.DELETE_COLLECTION);
+
+        Event deleteCollectionEvent = eventBuild.build();
+        eventDAO.create(deleteCollectionEvent);
     }
 
     @PUT

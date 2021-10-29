@@ -40,6 +40,7 @@ import javax.validation.constraints.Size;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.Where;
 
 /**
  * This describes a Dockstore organization that can be created by users.
@@ -120,6 +121,7 @@ public class Organization implements Serializable, Aliasable {
 
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
+    @Where(clause = "deleted = false")
     private Set<Collection> collections = new HashSet<>();
 
     @Transient

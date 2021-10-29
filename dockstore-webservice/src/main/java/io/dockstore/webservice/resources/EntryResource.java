@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.DescriptionMetrics;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.OrcidPutCode;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -87,6 +88,7 @@ import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -275,12 +277,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Timed
     @UnitOfWork
     @Operation(description = "Export entry to ORCID. DOI is required", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully exported entry to ORCID", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
     @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = "Internal Server Error")
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Not Found")
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
     @ApiOperation(value = "hidden", hidden = true)
-    public void exportToORCID(@Parameter(hidden = true, name = "user") @Auth User user, @Parameter(description = "The id of the entry to export.", name = "entryId", in = ParameterIn.PATH, required = true)
+    public Entry exportToORCID(@Parameter(hidden = true, name = "user") @Auth User user, @Parameter(description = "The id of the entry to export.", name = "entryId", in = ParameterIn.PATH, required = true)
         @PathParam("entryId") Long entryId,
         @Parameter(description = "Optional version ID of the entry version to export.", name = "versionId", in = ParameterIn.QUERY) @QueryParam("versionId") Long versionId) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
@@ -316,12 +318,17 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
+
+        OrcidPutCode userPutCode;
         if (optionalVersion.isPresent()) {
-            putCode = optionalVersion.get().getVersionMetadata().getOrcidPutCode();
+            userPutCode = optionalVersion.get().getVersionMetadata().getUserIdToOrcidPutCode().get(user.getId());
         } else {
-            putCode = entry.getOrcidPutCode();
+            userPutCode = entry.getUserIdToOrcidPutCode().get(user.getId());
         }
+        putCode = (userPutCode == null) ? null : userPutCode.orcidPutCode;
+
         String orcidWorkString;
+        boolean updateSuccess;
         String orcidId = nonCachedUser.getOrcid();
         if (orcidId == null) {
             throw new CustomWebApplicationException("Dockstore could not get your ORCID ID", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -329,15 +336,34 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         try {
             orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
             if (putCode == null) {
-                createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId);
+                int responseCode = createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId, user.getId());
+                // If there's a conflict, the user already has an ORCID work with the same DOI URL. Try to link the ORCID work to the Dockstore entry by getting its put code
+                if (responseCode == HttpStatus.SC_CONFLICT) {
+                    String doiUrl = optionalVersion.isPresent() ? optionalVersion.get().getDoiURL() : entry.getConceptDoi();
+                    Optional<Long> existingPutCode = ORCIDHelper.searchForPutCodeByDoiUrl(baseApiURL, orcidId, orcidByUserId, doiUrl);
+                    if (existingPutCode.isPresent()) {
+                        String existingPutCodeString = existingPutCode.get().toString();
+                        // Sync the ORCID put code to Dockstore
+                        setPutCode(optionalVersion, entry, existingPutCodeString, user.getId());
+                        orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, existingPutCodeString);
+                        // Since the ORCID work was already created, update the work
+                        updateSuccess = updateOrcidWork(orcidId, orcidWorkString, orcidByUserId, existingPutCodeString);
+                        if (!updateSuccess) {
+                            // Shouldn't really get here because we know the work with the put code exists
+                            LOG.error("Could not find ORCID work based on put code: {}", existingPutCodeString);
+                        }
+                    } else {
+                        throw new CustomWebApplicationException("Could not export to ORCID: unable to find the put code for the existing ORCID work with DOI URL " + doiUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    }
+                }
             } else {
-                boolean success = updateOrcidWork(orcidId, orcidWorkString, orcidByUserId, putCode);
-                if (!success) {
-                    LOG.error("Could not find ORCID work based on put code: " + putCode);
+                updateSuccess = updateOrcidWork(orcidId, orcidWorkString, orcidByUserId, putCode);
+                if (!updateSuccess) {
+                    LOG.error("Could not find ORCID work based on put code: {} ", putCode);
                     // This is almost going to be redundant because it's going to attempt to create a new work
-                    setPutCode(optionalVersion, entry, null);
+                    setPutCode(optionalVersion, entry, null, user.getId());
                     orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
-                    createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId);
+                    createOrcidWork(optionalVersion, entry, orcidId, orcidWorkString, orcidByUserId, user.getId());
                 }
             }
         } catch (IOException | URISyntaxException | JAXBException | DatatypeConfigurationException e) {
@@ -346,30 +372,30 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             Thread.currentThread().interrupt();
             throw new CustomWebApplicationException("Could not export to ORCID: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+
+        Hibernate.initialize(entry.getWorkflowVersions());
+        return entry;
     }
 
-    private void setPutCode(Optional<Version> optionalVersion, Entry entry, String putCode) {
+    private void setPutCode(Optional<Version> optionalVersion, Entry entry, String putCode, long userId) {
+        OrcidPutCode orcidPutCode = new OrcidPutCode(putCode);
         if (optionalVersion.isPresent()) {
-            optionalVersion.get().getVersionMetadata().setOrcidPutCode(putCode);
+            optionalVersion.get().getVersionMetadata().getUserIdToOrcidPutCode().put(userId, orcidPutCode);
         } else {
-            entry.setOrcidPutCode(putCode);
+            entry.getUserIdToOrcidPutCode().put(userId, orcidPutCode);
         }
     }
 
-    private void createOrcidWork(Optional<Version> optionalVersion, Entry entry, String orcidId, String orcidWorkString,
-        List<Token> orcidTokens)
-            throws IOException, URISyntaxException, InterruptedException {
+    private int createOrcidWork(Optional<Version> optionalVersion, Entry entry, String orcidId, String orcidWorkString,
+        List<Token> orcidTokens, long userId) throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
                 .postWorkString(baseApiURL, orcidId, orcidWorkString, orcidTokens.get(0).getToken());
         switch (response.statusCode()) {
         case HttpStatus.SC_CREATED:
-            setPutCode(optionalVersion, entry, getPutCodeFromLocation(response));
-            break;
-        case HttpStatus.SC_CONFLICT:
-            // User has an ORCID work with the same DOI URL. Rather than link the Dockstore entry to ORCID work, just throw error.
-            throw new CustomWebApplicationException(
-                    "Could not export to ORCID. There exists another ORCID work with the same DOI URL. \n" + response.body(),
-                    response.statusCode());
+            setPutCode(optionalVersion, entry, getPutCodeFromLocation(response), userId);
+            return response.statusCode();
+        case HttpStatus.SC_CONFLICT: // User has an ORCID work with the same DOI URL.
+            return response.statusCode();
         default:
             throw new CustomWebApplicationException("Could not export to ORCID.\n" + response.body(), response.statusCode());
         }

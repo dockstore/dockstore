@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.ENTRY_NAME_LENGTH_LIMIT;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1104,7 +1105,7 @@ public class WorkflowIT extends BaseIT {
         // Test that an image referenced by digest is grabbed correctly
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "ghcrImages");
-        assertEquals(7, version.getImages().size());
+        assertTrue("Should have at least 7 images. There are " + version.getImages().size(), version.getImages().size() >= 7);
         verifyImageChecksumsAreSaved(version);
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow");
@@ -1122,7 +1123,7 @@ public class WorkflowIT extends BaseIT {
         // Test that an image referenced by digest is grabbed correctly
         Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/hello-wdl-workflow", "", DescriptorType.WDL.toString(), SourceControl.GITHUB, "/Dockstore.wdl", true);
         WorkflowVersion version = snapshotWorkflowVersion(workflowsApi, workflow, "ecrImages");
-        assertEquals(6, version.getImages().size());
+        assertTrue("Should have at least 6 images. There are " + version.getImages().size(), version.getImages().size() >= 6);
         verifyImageChecksumsAreSaved(version);
 
         List<ToolVersion> versions = ga4Ghv20Api.toolsIdVersionsGet("#workflow/github.com/dockstore-testing/hello-wdl-workflow");
@@ -1301,7 +1302,7 @@ public class WorkflowIT extends BaseIT {
         for (ToolVersion trsVersion : versions) {
             if (trsVersion.getName().equals(snapShottedVersionName)) {
                 assertTrue(trsVersion.isIsProduction());
-                assertEquals("There should be" + numImages + "image(s) in this workflow", numImages, trsVersion.getImages().size());
+                assertTrue(String.format("There should be at least %s image(s) in this workflow. There are %s.", numImages, trsVersion.getImages().size()), trsVersion.getImages().size() >= numImages);
                 snapshotInList = true;
                 assertFalse(trsVersion.getImages().isEmpty());
                 for (ImageData imageData :trsVersion.getImages()) {
@@ -1797,6 +1798,58 @@ public class WorkflowIT extends BaseIT {
             success = false;
         } finally {
             assertFalse(success);
+        }
+    }
+
+    /**
+     * Tests that the workflow name is validated when manually registering a workflow
+     */
+    @Test
+    public void testManualWorkflowNameValidation() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        String invalidEntryNameMessage = "Invalid entry name";
+
+        try {
+            workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "!@#$/%^&*<foo><bar>", "wdl", "/test.json");
+            fail("Should not be able to register a workflow with a workflow name containing special characters that are not underscores and hyphens.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "-foo-", "wdl", "/test.json");
+            fail("Should not be able to register a workflow with a workflow name that has external hyphens.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "_foo_", "wdl", "/test.json");
+            fail("Should not be able to register a workflow with a workflow name that has external underscores.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            String longWorkflowName = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-"
+                    + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn"; // 257 characters
+            workflowsApi.manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", longWorkflowName, "wdl", "/test.json");
+            fail("Should not be able to register a workflow with a workflow name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            workflowsApi.manualRegister("github", "dockstore-testing/hello-wdl-workflow", "/Dockstore.wdl", "foo", "wdl", "/test.json");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            fail("Should be able to register a workflow with a workflow name containing only alphanumeric characters.");
+        }
+
+        try {
+            workflowsApi.manualRegister("github", "dockstore-testing/hello-wdl-workflow", "/Dockstore.wdl", "foo-bar_1", "wdl", "/test.json");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            fail("Should be able to register a workflow with a workflow name containing alphanumeric characters, internal hyphens, and internal underscores.");
         }
     }
 

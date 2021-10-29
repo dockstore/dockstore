@@ -57,4 +57,9 @@ CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username,
 
 create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
 
-create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';
+DROP INDEX collection_name_index;
+CREATE UNIQUE INDEX collection_name_index ON collection (LOWER(name), organizationid) WHERE NOT deleted;
+DROP INDEX collection_displayname_index;
+CREATE UNIQUE INDEX collection_displayname_index ON collection (LOWER(displayname), organizationid) WHERE NOT deleted;
+
+CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category';

@@ -2177,8 +2177,12 @@ paths:
           type: integer
           format: int64
       responses:
-        "204":
-          description: No Content
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully exported entry to ORCID
         "400":
           description: Bad Request
         "404":
@@ -3543,6 +3547,36 @@ paths:
       tags:
       - organizations
   /organizations/{organizationId}/collections/{collectionId}:
+    delete:
+      description: Delete a collection.
+      operationId: deleteCollection
+      parameters:
+      - description: Organization ID.
+        in: path
+        name: organizationId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Collection ID.
+        in: path
+        name: collectionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successfully deleted the collection
+        "401":
+          description: Unauthorized
+        "404":
+          description: Collection not found
+      security:
+      - bearer: []
+      summary: Delete a collection.
+      tags:
+      - organizations
     get:
       description: Retrieve a collection by ID. Supports optional authentication.
       operationId: getCollectionById
@@ -5765,7 +5799,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: validations, aliases"
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
@@ -5930,7 +5965,9 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
+        in: query
         name: include
         schema:
           type: string
@@ -6034,7 +6071,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
+        in: query
         name: include
         schema:
           type: string
@@ -6237,7 +6276,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
+        in: query
         name: include
         schema:
           type: string
@@ -7512,8 +7553,6 @@ components:
           type: string
         namespace:
           type: string
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7553,6 +7592,12 @@ components:
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7623,8 +7668,6 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7638,6 +7681,12 @@ components:
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7709,8 +7758,6 @@ components:
           writeOnly: true
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7724,6 +7771,12 @@ components:
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7797,6 +7850,7 @@ components:
           - REJECT_ORG_INVITE
           - CREATE_COLLECTION
           - MODIFY_COLLECTION
+          - DELETE_COLLECTION
           - REMOVE_FROM_COLLECTION
           - ADD_TO_COLLECTION
           - ADD_VERSION_TO_ENTRY
@@ -8101,6 +8155,12 @@ components:
       type: object
       properties:
         orcid:
+          type: string
+    OrcidPutCode:
+      type: object
+      description: An ORCID put code uniquely identifies a work on ORCID
+      properties:
+        orcidPutCode:
           type: string
     Organization:
       type: object
@@ -9158,14 +9218,18 @@ components:
         id:
           type: integer
           format: int64
-        orcidPutCode:
-          type: string
         parsedInformationSet:
           type: array
           items:
             $ref: '#/components/schemas/ParsedInformation'
         publicAccessibleTestParameterFile:
           type: boolean
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the version
+            was exported to ORCID for the corresponding Dockstore user.
     VersionTypeValidation:
       type: object
       properties:
@@ -9287,8 +9351,6 @@ components:
           - STUB
           - HOSTED
           - DOCKSTORE_YML
-        orcidPutCode:
-          type: string
         organization:
           type: string
         output_file_formats:
@@ -9321,6 +9383,12 @@ components:
           format: int64
         type:
           type: string
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:

@@ -13,7 +13,11 @@ public class CollectionDAO extends AbstractDAO<Collection> {
     }
 
     public Collection findById(Long id) {
-        return get(id);
+        Collection collection = get(id);
+        if (collection != null && collection.isDeleted()) {
+            return (null);
+        }
+        return (collection);
     }
 
     public long create(Collection collection) {

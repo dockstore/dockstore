@@ -1,11 +1,14 @@
 package io.dockstore.webservice.helpers;
 
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Version;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -15,11 +18,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -35,9 +40,14 @@ import org.orcid.jaxb.model.v3.release.record.ExternalID;
 import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
 import org.orcid.jaxb.model.v3.release.record.Work;
 import org.orcid.jaxb.model.v3.release.record.WorkTitle;
+import org.orcid.jaxb.model.v3.release.record.summary.WorkGroup;
+import org.orcid.jaxb.model.v3.release.record.summary.WorkSummary;
+import org.orcid.jaxb.model.v3.release.record.summary.Works;
 
 // Swagger-ui available here: https://api.orcid.org/v3.0/#!/Development_Member_API_v3.0/
 public final class ORCIDHelper {
+    private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
+
     private ORCIDHelper() {
     }
 
@@ -104,7 +114,7 @@ public final class ORCIDHelper {
 
     public static HttpResponse<String> postWorkString(String baseURL, String id, String workString, String token)
             throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work")).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).POST(ofString(workString)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).POST(ofString(workString)).build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -115,7 +125,7 @@ public final class ORCIDHelper {
      */
     public static HttpResponse<String> putWorkString(String baseURL, String id, String workString, String token, String putCode)
             throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, "application/vnd.orcid+xml").header(HttpHeaders.AUTHORIZATION, "Bearer " + token).PUT(ofString(workString)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).PUT(ofString(workString)).build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -149,5 +159,45 @@ public final class ORCIDHelper {
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
         marshaller.marshal(work, writer);
         return writer.getBuffer().toString();
+    }
+
+    public static Optional<Long> searchForPutCodeByDoiUrl(String baseURL, String id, List<Token> orcidTokens, String doiUrl)
+            throws IOException, URISyntaxException, InterruptedException, JAXBException {
+        // Get user's ORCID works
+        HttpResponse<String> response = getAllWorks(baseURL, id, orcidTokens.get(0).getToken());
+
+        if (response.statusCode() == HttpStatus.SC_OK) {
+            Works works = transformXmlToWorks(response.body());
+            // Find the ORCID work with the DOI URL and get its put code
+            for (WorkGroup work : works.getWorkGroup()) {
+                // There should only be one external ID that matches the DOI url
+                Optional<ExternalID> doiExternalId = work.getIdentifiers().getExternalIdentifier().stream().filter(externalID -> externalID.getValue().equals(doiUrl)).findFirst();
+                if (doiExternalId.isPresent()) {
+                    WorkSummary workSummary = work.getWorkSummary().get(0);
+                    return Optional.of(workSummary.getPutCode());
+                }
+            }
+            return Optional.empty();
+        } else {
+            throw new CustomWebApplicationException("Could not get all ORCID works to find put code for the existing ORCID work: " + response.body(), response.statusCode());
+        }
+    }
+
+    /**
+     * This gets all works belonging to the orcid author with the provided orcid ID.
+     */
+    public static HttpResponse<String> getAllWorks(String baseURL, String id, String token) throws IOException, URISyntaxException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/works")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
+        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+                HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * Transforms the ORCID XML response from a get all works call to a Works object. Assumes that the XML from Orcid is safe.
+     */
+    private static Works transformXmlToWorks(String worksXml) throws JAXBException {
+        JAXBContext context = JAXBContext.newInstance(Works.class);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        return (Works) unmarshaller.unmarshal(new StringReader(worksXml));
     }
 }

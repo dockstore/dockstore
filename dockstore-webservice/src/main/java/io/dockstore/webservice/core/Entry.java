@@ -83,7 +83,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
     @NamedQuery(name = "Entry.getGenericEntryById", query = "SELECT e from Entry e WHERE :id = e.id"),
         @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select distinct new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select distinct new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED' and col.deleted = false"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", query = "select distinct new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.displayName, cat.topic) from Category cat join cat.entries as entry where entry.entry.id = :entryId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoriesByEntryId", query = "select distinct cat from Category cat join cat.entries as entry where entry.entry.id = :entryId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds", query = "select distinct entry.entry, cat from Category cat join cat.entries as entry where entry.entry.id in (:entryIds)"),
@@ -98,7 +98,6 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
         @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId")
-
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -251,9 +250,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
 
-    @Column
-    @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
-    private String orcidPutCode;
+    @ElementCollection(targetClass = OrcidPutCode.class)
+    @JoinTable(name = "entry_orcidputcode", joinColumns = @JoinColumn(name = "entry_id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_user_orcidputcode", columnNames = { "entry_id", "userid", "orcidputcode" }))
+    @MapKeyColumn(name = "userid", columnDefinition = "bigint")
+    @ApiModelProperty(value = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
+    @Schema(description = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
+    @BatchSize(size = 25)
+    private Map<Long, OrcidPutCode> userIdToOrcidPutCode = new HashMap<>();
 
     @Transient
     @JsonIgnore
@@ -667,12 +670,12 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.blacklistedVersionNames = blacklistedVersionNames;
     }
 
-    public String getOrcidPutCode() {
-        return orcidPutCode;
+    public Map<Long, OrcidPutCode> getUserIdToOrcidPutCode() {
+        return userIdToOrcidPutCode;
     }
 
-    public void setOrcidPutCode(String orcidPutCode) {
-        this.orcidPutCode = orcidPutCode;
+    public void setUserIdToOrcidPutCode(Map<Long, OrcidPutCode> userIdToOrcidPutCode) {
+        this.userIdToOrcidPutCode = userIdToOrcidPutCode;
     }
 
     public List<Category> getCategories() {

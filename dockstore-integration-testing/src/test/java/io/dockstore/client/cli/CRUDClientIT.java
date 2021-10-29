@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.common.DescriptorLanguage.WDL;
+import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.ENTRY_NAME_LENGTH_LIMIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -125,6 +126,7 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setUserIdToOrcidPutCode(null); // Setting to null to compare with the getContainer endpoint since that one doesn't return orcid put codes
         assertEquals(container, hostedTool);
         assertNull(container.getUsers());
     }
@@ -224,6 +226,7 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setUserIdToOrcidPutCode(null); // Setting it to null to compare with the getWorkflow endpoint since that one doesn't return orcid put codes
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
         assertEquals(container, hostedTool);
@@ -676,5 +679,57 @@ public class CRUDClientIT extends BaseIT {
             .createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL.toString().toLowerCase(), null, null);
         thrown.expect(ApiException.class);
         workflowApi.deleteTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "1");
+    }
+
+    /**
+     * Tests that the tool name is validated when registering a hosted tool.
+     */
+    @Test
+    public void testHostedToolNameValidation() {
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.HostedApi hostedApi = new io.dockstore.openapi.client.api.HostedApi(webClient);
+        final String invalidEntryNameMessage = "Invalid entry name";
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "<foo!>/<$bar>");
+            fail("Should not be able to register a hosted tool with a tool name containing special characters that are not underscores or hyphens.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "-foo-");
+            fail("Should not be able to register a hosted tool with a tool name that has external hyphens.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "_foo_");
+            fail("Should not be able to register a hosted tool with a tool name that has external underscores.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            String longToolName = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-"
+                    + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn"; // 257 characters
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", longToolName);
+            fail("Should not be able to register a hosted tool with a tool name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "foo");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            fail("Should be able to register a hosted tool with a tool name containing only alphanumeric characters.");
+        }
+
+        try {
+            hostedApi.createHostedTool(Registry.QUAY_IO.getDockerPath().toLowerCase(), "awesomeTool", CWL.getShortName(), "coolNamespace", "foo-bar_1");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            fail("Should be able to register a hosted tool with a tool name containing alphanumeric characters, internal hyphens, and internal underscores.");
+        }
     }
 }

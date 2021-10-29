@@ -59,9 +59,12 @@ public final class Hoverfly {
     public static final String SUFFIX3 = "Google3";
     public static final String SUFFIX4 = "Google4";
 
-    // These two are for ORCID
+    // These are for ORCID
     public static final String BAD_PUT_CODE = "666666";
-    public static final String PUT_CODE = "7777777";
+    public static final String PUT_CODE_USER_1 = "7777777";
+    public static final String PUT_CODE_USER_2 = "8888888";
+    public static final String ORCID_USER_1 = "0000-0001-8365-0487";
+    public static final String ORCID_USER_2 = "0000-0002-8365-0487";
 
     private static final String GITHUB_USER1 = fixture("fixtures/GitHubUser.json");
     private static final String GITHUB_USER2 = fixture("fixtures/GitHubUser2.json");
@@ -148,12 +151,24 @@ public final class Hoverfly {
 
     public static final SimulationSource ORCID_SIMULATION_SOURCE = dsl(
             service("https://api.sandbox.orcid.org")
-                    .post("/v3.0/0000-0001-8365-0487/work").anyBody().willReturn(response().status(HttpStatus.SC_CREATED).andSetState("Work", "Created").header("Location", PUT_CODE))
-                    .post("/v3.0/0000-0001-8365-0487/work").withState("Work", "Created").anyBody().willReturn(response().status(HttpStatus.SC_CONFLICT).body(fixture(
+                    .post(String.format("/v3.0/%s/work", ORCID_USER_1)).anyBody().willReturn(response().status(HttpStatus.SC_CREATED).andSetState("Work1", "Created").header("Location",
+                            PUT_CODE_USER_1))
+                    .post(String.format("/v3.0/%s/work", ORCID_USER_1)).withState("Work1", "Created").anyBody().willReturn(response().status(HttpStatus.SC_CONFLICT).body(fixture(
                     "fixtures/successfulPostOrcidWork.xml")))
-                    .post("/v3.0/0000-0001-8365-0487/work").body(contains(PUT_CODE)).willReturn(badRequest().body(fixture("fixtures/putCodeOnPostOrcidWork.xml")))
-                    .put("/v3.0/0000-0001-8365-0487/work/" + PUT_CODE).body(contains(PUT_CODE)).willReturn(success().body(fixture("fixtures/successfulPutOrcidWork.xml")))
-                    .put("/v3.0/0000-0001-8365-0487/work/" + BAD_PUT_CODE).body(contains(BAD_PUT_CODE)).willReturn(notFound()));
+                    .post(String.format("/v3.0/%s/work", ORCID_USER_1)).body(contains(PUT_CODE_USER_1)).willReturn(badRequest().body(fixture("fixtures/putCodeOnPostOrcidWork.xml")))
+                    .put(String.format("/v3.0/%s/work/%s", ORCID_USER_1, PUT_CODE_USER_1)).body(contains(PUT_CODE_USER_1)).willReturn(success().body(fixture("fixtures/successfulPutOrcidWork.xml")))
+                    .put(String.format("/v3.0/%s/work/%s", ORCID_USER_1, BAD_PUT_CODE)).body(contains(BAD_PUT_CODE)).willReturn(notFound())
+                    .get(String.format("/v3.0/%s/works", ORCID_USER_1)).anyBody().willReturn(response().status(HttpStatus.SC_OK).body(fixture(
+                            "fixtures/successfulGetAllOrcidWorks.xml")))
+
+                    .post(String.format("/v3.0/%s/work", ORCID_USER_2)).anyBody().willReturn(response().status(HttpStatus.SC_CREATED).andSetState("Work2", "Created").header("Location",
+                            PUT_CODE_USER_2))
+                    .post(String.format("/v3.0/%s/work", ORCID_USER_2)).withState("Work2", "Created").anyBody().willReturn(response().status(HttpStatus.SC_CONFLICT).body(fixture(
+                            "fixtures/successfulPostOrcidWork.xml")))
+                    .post(String.format("/v3.0/%s/work", ORCID_USER_2)).body(contains(PUT_CODE_USER_2)).willReturn(badRequest().body(fixture("fixtures/putCodeOnPostOrcidWork.xml")))
+                    .put(String.format("/v3.0/%s/work/%s", ORCID_USER_2, PUT_CODE_USER_2)).body(contains(PUT_CODE_USER_2)).willReturn(success().body(fixture("fixtures/successfulPutOrcidWork.xml")))
+                    .put(String.format("/v3.0/%s/work/%s", ORCID_USER_2, BAD_PUT_CODE)).body(contains(BAD_PUT_CODE)).willReturn(notFound())
+    );
 
     public static final SimulationSource CHECK_URL_SOURCE =
         dsl(service("http://fakecheckurllambdabaseurl:3000")

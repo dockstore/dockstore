@@ -19,6 +19,7 @@ package io.dockstore.client.cli;
 import static io.dockstore.webservice.core.SourceFile.SHA_TYPE;
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.dockstore.webservice.resources.AuthenticatedResourceInterface.ENTRY_NAME_LENGTH_LIMIT;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1398,6 +1399,65 @@ public class GeneralIT extends BaseIT {
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl
                 + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", long.class);
         assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
+
+    /**
+     * Tests that the tool name is validated when manually registering a tool
+     */
+    @Test
+    public void testManualToolNameValidation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi containersApi = new ContainersApi(webClient);
+        String invalidEntryNameMessage = "Invalid entry name";
+        DockstoreTool tool = createManualTool();
+
+        try {
+            tool.setToolname("!@#$%^&<foo>/<bar>");
+            containersApi.registerManual(tool);
+            fail("Should not be able to register a tool with a tool name containing special characters that are not underscores and hyphens.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            tool.setToolname("-foo-");
+            containersApi.registerManual(tool);
+            fail("Should not be able to register a tool with a tool name that has external hyphens.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            tool.setToolname("_foo_");
+            containersApi.registerManual(tool);
+            fail("Should not be able to register a tool with a tool name that has external underscores.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            String longToolName = "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-"
+                    + "abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz-abcdefghijklmn"; // 257 characters
+            tool.setToolname(longToolName);
+            containersApi.registerManual(tool);
+            fail("Should not be able to register a tool with a tool name that exceeds " + ENTRY_NAME_LENGTH_LIMIT + " characters.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains(invalidEntryNameMessage));
+        }
+
+        try {
+            tool.setToolname("foo");
+            containersApi.registerManual(tool);
+        } catch (ApiException ex) {
+            fail("Should be able to register a tool with a tool name containing only alphanumeric characters.");
+        }
+
+        try {
+            tool.setToolname("foo-bar_1");
+            containersApi.registerManual(tool);
+        } catch (ApiException ex) {
+            fail("Should be able to register a tool with a tool name containing alphanumeric characters, internal hyphens, and internal underscores.");
+        }
     }
 
     /**

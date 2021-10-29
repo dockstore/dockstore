@@ -2,7 +2,7 @@ version: 2.1
 parameters:
   java-tag:
     type: string
-    default: "11.0.11"
+    default: "11.0.12"
 orbs:
   aws-s3: circleci/aws-s3@3.0.0
 executors:
@@ -29,7 +29,7 @@ executors:
           - discovery.type: single-node
     resource_class: medium+
   machine_integration_test_exec:
-    machine: # run the steps with Ubuntu VM
+    machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
       image: ubuntu-2004:202104-01
     environment:
       PGHOST: 127.0.0.1
