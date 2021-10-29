@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import org.junit.Test;
