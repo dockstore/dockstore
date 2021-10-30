@@ -210,7 +210,7 @@
         </addColumn>
         <addNotNullConstraint columnName="dtype" tableName="collection"/>
         <sql dbms="postgresql">
-            create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category';
+            create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category' and deleted = false;
         </sql>
         <sql dbms="postgresql">
             insert into organization (name, displayname, description, status, categorizer, link, email, dbcreatedate, dbupdatedate) values ('dockstore', 'Dockstore', 'Each of this organization''s Collections is a Category.', 'HIDDEN', true, 'https://dockstore.org/', 'support@dockstore.org', LOCALTIMESTAMP, LOCALTIMESTAMP);

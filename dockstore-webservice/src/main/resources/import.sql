@@ -62,4 +62,4 @@ CREATE UNIQUE INDEX collection_name_index ON collection (LOWER(name), organizati
 DROP INDEX collection_displayname_index;
 CREATE UNIQUE INDEX collection_displayname_index ON collection (LOWER(displayname), organizationid) WHERE NOT deleted;
 
-CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category';
+CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category' AND deleted = false;

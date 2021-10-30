@@ -15,7 +15,7 @@ public class CollectionDAO extends AbstractDAO<Collection> {
     public Collection findById(Long id) {
         Collection collection = get(id);
         if (collection != null && collection.isDeleted()) {
-            return (null);
+            return null;
         }
         return (collection);
     }

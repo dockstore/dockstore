@@ -26,7 +26,11 @@ public class CategoryDAO extends AbstractDockstoreDAO<Category> {
     }
 
     public Category findById(Long id) {
-        return get(id);
+        Category category = get(id);
+        if (category != null && category.isDeleted()) {
+            return null;
+        }
+        return (category);
     }
 
     public Category findByName(String name) {
