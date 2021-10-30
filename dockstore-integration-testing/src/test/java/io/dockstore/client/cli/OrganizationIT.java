@@ -2370,7 +2370,7 @@ public class OrganizationIT extends BaseIT {
                         // If the user wasn't an admin, the update should fail.
                         assertFalse(isAdmin);
                     }
-                   
+
                     // Status should not have changed.
                     organization = organizationsApiAdmin.getOrganizationById(organization.getId());
                     assertEquals(startStatus, organization.getStatus());
@@ -2662,7 +2662,7 @@ public class OrganizationIT extends BaseIT {
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
         addCollection("test", "dockstore");
 
-        // Add two versions of a workflow, and confirm the correct number of categories and entries within
+        // Add two versions of a workflow, and confirm the correct number of categories and entries within.
         Workflow workflow = createWorkflow1();
         long id = workflow.getId();
         assertEquals(0, entriesApi.entryCategories(id).size());
@@ -2690,22 +2690,57 @@ public class OrganizationIT extends BaseIT {
 
         addAdminToOrg(ADMIN_USERNAME, "dockstore");
 
-        // Create some normal collections
+        // Create some normal collections.
         addCollection("test", "normal");
         addCollection("test2", "normal");
 
-        // There should be no categories
+        // There should be no categories.
         assertEquals(0, categoriesApi.getCategories(null, null).size());
         assertEquals(0, categoriesApi.getCategories("test", null).size());
 
-        // Create a category with the same name
+        // Create a category with the same name.
         addCollection("test", "dockstore");
 
-        // There should only be one category
+        // There should only be one category.
         assertEquals(1, categoriesApi.getCategories(null, null).size());
         assertEquals(1, categoriesApi.getCategories("test", null).size());
 
-        // The category and the normal collection with the same name should have different ids
+        // The category and the normal collection with the same name should have different ids.
         assertNotEquals(organizationsApiAdmin.getCollectionByName("dockstore", "test").getId(), organizationsApiAdmin.getCollectionByName("normal", "test").getId());
+    }
+
+    /**
+     * Test Category deletion.
+     */
+    @Test
+    public void testCategoryDeletion() {
+        addAdminToOrg(ADMIN_USERNAME, "dockstore");
+
+        final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
+        final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientAdminUser);
+        final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
+
+        // Add two categories.
+        addCollection("test", "dockstore");
+        addCollection("test2", "dockstore");
+        assertEquals(2, categoriesApi.getCategories(null, null).size());
+
+        // Add a workflow to the categories.
+        Workflow workflow = createWorkflow1();
+        addToCollection("test", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
+        addToCollection("test2", "dockstore", workflow, workflow.getWorkflowVersions().get(0).getId());
+        assertEquals(2, entriesApi.entryCategories(workflow.getId()).size());
+
+        // Delete a category.
+        io.dockstore.openapi.client.model.Organization organization = organizationsApiAdmin.getOrganizationByName("dockstore");
+        organizationsApiAdmin.deleteCollection(organization.getId(), categoriesApi.getCategories("test", null).get(0).getId());
+
+        // Verify that the proper number of categories are visible.
+        assertEquals(1, categoriesApi.getCategories(null, null).size());
+        assertEquals(0, categoriesApi.getCategories("test", null).size());
+        assertEquals(1, categoriesApi.getCategories("test2", null).size());
+        assertEquals(1, entriesApi.entryCategories(workflow.getId()).size());
+        assertEquals(1, categoriesApi.getCategories("test2", "entries").get(0).getEntries().get(0).getCategories().size());
     }
 }
