@@ -2655,7 +2655,6 @@ public class OrganizationIT extends BaseIT {
     @Test
     public void testCategoryWithMultipleVersionsOfEntry() {
         final io.dockstore.openapi.client.ApiClient webClientAdminUser = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
-        final io.dockstore.openapi.client.api.OrganizationsApi organizationsApiAdmin = new io.dockstore.openapi.client.api.OrganizationsApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.EntriesApi entriesApi = new io.dockstore.openapi.client.api.EntriesApi(webClientAdminUser);
         final io.dockstore.openapi.client.api.CategoriesApi categoriesApi = new io.dockstore.openapi.client.api.CategoriesApi(webClientAdminUser);
 

@@ -474,28 +474,30 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // If the organization is a categorizer, make sure there are no category name collisions and convert the Collection to a Category
+        final Collection collectionOrCategory;
+
         if (organization.isCategorizer()) {
-            // Check if any other categories exist with that name
+            // The organization is a categorizer, make sure there are no category name collisions and convert the Collection to a Category
             Category matchingCategory = categoryDAO.findByName(collection.getName());
             if (matchingCategory != null) {
                 String msg = "A category already exists with the name '" + collection.getName() + "'.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
             }
-            // Convert the Collection to a Category
-            collection = constructCategory(collection);
+            collectionOrCategory = constructCategory(collection);
+        } else {
+            collectionOrCategory = collection;
         }
 
         // Save the collection
-        long id = collectionDAO.create(collection);
-        organization.addCollection(collection);
+        long id = collectionDAO.create(collectionOrCategory);
+        organization.addCollection(collectionOrCategory);
 
         // Event for creation
         User foundUser = userDAO.findById(user.getId());
         Event createCollectionEvent = new Event.Builder()
                 .withOrganization(organization)
-                .withCollection(collection)
+                .withCollection(collectionOrCategory)
                 .withInitiatorUser(foundUser)
                 .withType(Event.EventType.CREATE_COLLECTION)
                 .build();
