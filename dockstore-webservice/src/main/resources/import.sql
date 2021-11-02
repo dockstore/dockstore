@@ -36,7 +36,6 @@ ALTER TABLE cloudinstance_supportedlanguages ADD CONSTRAINT cloudinstance_suppor
 
 -- https://liquibase.jira.com/browse/CORE-2895
 CREATE UNIQUE INDEX organization_name_index on organization (LOWER(name));
-CREATE UNIQUE INDEX collection_name_index on collection (LOWER(name), organizationid);
 -- JPA doesn't seem to understand deferrable constraints, need to insert them this way
 ALTER TABLE tag ADD CONSTRAINT fk_tagVersionMetadata FOREIGN KEY(id) REFERENCES public.version_metadata (id) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE workflowversion ADD CONSTRAINT fk_workflowVersionMetadata FOREIGN KEY(id) REFERENCES public.version_metadata (id) DEFERRABLE INITIALLY DEFERRED;
@@ -55,11 +54,7 @@ ALTER TABLE token DROP CONSTRAINT one_token_link_per_identify;
 CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprofileid, tokensource) WHERE onlineprofileid IS NOT NULL;
 CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;
 
-create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
-
-DROP INDEX collection_name_index;
 CREATE UNIQUE INDEX collection_name_index ON collection (LOWER(name), organizationid) WHERE NOT deleted;
-DROP INDEX collection_displayname_index;
 CREATE UNIQUE INDEX collection_displayname_index ON collection (LOWER(displayname), organizationid) WHERE NOT deleted;
 
 CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category' AND deleted = false;
