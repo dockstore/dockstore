@@ -744,6 +744,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         private String composeSetupVersion;
 
+        private String cwlParsingLambdaVersion;
+        private String wdlParsingLambdaVersion;
+        private String nextflowParsingLambdaVersion;
+        private String galaxyParsingPluginVersion;
+        private String checkUrlLambdaVersion;
+
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
         }
@@ -983,6 +989,46 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setFeaturedNewsUrl(String featuredNewsUrl) {
             this.featuredNewsUrl = featuredNewsUrl;
+        }
+
+        public String getCwlParsingLambdaVersion() {
+            return cwlParsingLambdaVersion;
+        }
+
+        public void setCwlParsingLambdaVersion(String cwlParsingLambdaVersion) {
+            this.cwlParsingLambdaVersion = cwlParsingLambdaVersion;
+        }
+
+        public String getWdlParsingLambdaVersion() {
+            return wdlParsingLambdaVersion;
+        }
+
+        public void setWdlParsingLambdaVersion(String wdlParsingLambdaVersion) {
+            this.wdlParsingLambdaVersion = wdlParsingLambdaVersion;
+        }
+
+        public String getNextflowParsingLambdaVersion() {
+            return nextflowParsingLambdaVersion;
+        }
+
+        public void setNextflowParsingLambdaVersion(String nextflowParsingLambdaVersion) {
+            this.nextflowParsingLambdaVersion = nextflowParsingLambdaVersion;
+        }
+
+        public String getGalaxyParsingPluginVersion() {
+            return galaxyParsingPluginVersion;
+        }
+
+        public void setGalaxyParsingPluginVersion(String galaxyParsingPluginVersion) {
+            this.galaxyParsingPluginVersion = galaxyParsingPluginVersion;
+        }
+
+        public String getCheckUrlLambdaVersion() {
+            return checkUrlLambdaVersion;
+        }
+
+        public void setCheckUrlLambdaVersion(String checkUrlLambdaVersion) {
+            this.checkUrlLambdaVersion = checkUrlLambdaVersion;
         }
     }
 }
