@@ -551,10 +551,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return New or updated workflow
      */
     private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
-        // Validate workflowName before checking for existing workflows because if workflowName contains slashes (which are invalid),
-        // we may find a workflow that matches the workflow path but has a different values for the components that make up the path.
-        StringInputValidationHelper.checkEntryName(workflowType, workflowName);
-
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
         Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
@@ -566,6 +562,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (user == null) {
                 throw new CustomWebApplicationException("User does not have an account on Dockstore.", LAMBDA_FAILURE);
             }
+
+            StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
             if (workflowType == BioWorkflow.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);
