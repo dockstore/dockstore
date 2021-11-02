@@ -23,6 +23,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
@@ -35,7 +36,9 @@ import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -261,7 +264,25 @@ public class ElasticListener implements StateListenerInterface {
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        addCategoriesJson(jsonNode, entry);
         return jsonNode;
+    }
+
+    private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
+
+        List<Map<String, Object>> values = new ArrayList<>();
+
+        for (Category category: entry.getCategories()) {
+            Map<String, Object> value = new LinkedHashMap<>();
+            value.put("id", category.getId());
+            value.put("name", category.getName());
+            value.put("description", category.getDescription());
+            value.put("displayName", category.getDisplayName());
+            value.put("topic", category.getTopic());
+            values.add(value);
+        }
+
+        ((ObjectNode)node).put("categories", MAPPER.valueToTree(values));
     }
 
     /**

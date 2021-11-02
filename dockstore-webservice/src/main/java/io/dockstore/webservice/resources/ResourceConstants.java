@@ -31,6 +31,7 @@ public final class ResourceConstants {
     public static final String METADATA = "Information about Dockstore like RSS, sitemap, lists of dependencies, etc.";
     public static final String TOOLTESTER = "Interactions with the Dockstore-support's ToolTester application";
     public static final String ORGANIZATIONS = "Operations on Dockstore organizations";
+    public static final String CATEGORIES = "Operations on Dockstore categories";
     public static final String CURATION = "List and modify notifications for users of Dockstore";
     public static final String NIHDATACOMMONS = "Needed for SmartAPI compatibility apparantly, might be cargo cult behaviour";
     public static final String LAMBDAEVENTS = "Query lambda events triggered by GitHub Apps";

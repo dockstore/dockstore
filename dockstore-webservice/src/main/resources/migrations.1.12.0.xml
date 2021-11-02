@@ -184,7 +184,8 @@
         <dropColumn columnName="orcidputcode" tableName="version_metadata"/>
         <dropColumn columnName="orcidputcode" tableName="workflow"/>
     </changeSet>
-    <changeSet id="deleteCollection" author="svonworl">
+
+    <changeSet author="svonworl" id="deleteCollection">
         <addColumn tableName="collection">
             <column name="deleted" type="boolean" value="false"/>
         </addColumn>
@@ -193,6 +194,30 @@
             create unique index collection_name_index on collection (LOWER(name), organizationid) where not deleted;
             drop index collection_displayname_index;
             create unique index collection_displayname_index on collection (LOWER(displayname), organizationid) where not deleted;
+        </sql>
+    </changeSet>
+
+    <changeSet author="svonworl" id="categories_new_feature">
+        <addColumn tableName="organization">
+            <column name="categorizer" type="boolean" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <!-- the following addColumn+addNotNullConstraint combo is necessary because the JPA-generated db defines the discriminator column "dtype" as NOT NULL and also without an SQL-defined DEFAULT value. See https://stackoverflow.com/questions/3997966/can-i-add-a-not-null-column-without-default-value -->
+        <addColumn tableName="collection">
+            <column name="dtype" type="varchar(31)" value="Collection">
+            </column>
+        </addColumn>
+        <addNotNullConstraint columnName="dtype" tableName="collection"/>
+        <sql dbms="postgresql">
+            create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category' and deleted = false;
+        </sql>
+        <sql dbms="postgresql">
+            insert into organization (name, displayname, description, status, categorizer, link, email, dbcreatedate, dbupdatedate) values ('dockstore', 'Dockstore', 'Each of this organization''s Collections is a Category.', 'HIDDEN', true, 'https://dockstore.org/', 'support@dockstore.org', LOCALTIMESTAMP, LOCALTIMESTAMP);
+        </sql>
+        <!-- Add all existing admins, except for the webservice/ui integration test admin users, to the "dockstore" org. -->
+        <sql dbms="postgresql">
+            insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where isadmin and username not in ('admin@admin.com', 'DockstoreTestUser', 'DockstoreTestUser2', 'user_admin', 'user_A');
         </sql>
     </changeSet>
 </databaseChangeLog>

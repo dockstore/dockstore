@@ -18,6 +18,8 @@ package io.dockstore.webservice.jdbi;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
@@ -31,7 +33,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.TypedQuery;
@@ -163,6 +167,36 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId));
+    }
+
+    public List<CategorySummary> findCategorySummariesByEntryId(long entryId) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId").setParameter("entryId", entryId));
+    }
+
+    public List<Category> findCategoriesByEntryId(long entryId) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId").setParameter("entryId", entryId));
+    }
+
+    /**
+     * Retrieve the list of categories containing each of the specified Entries.
+     * @param entryIds a list of Entry IDs
+     * @return a map of each Entry contained by one-or-more Categories to a list of all Categories that contain it, any Entry contained by zero Categories is not included in the map
+     */
+    public Map<Entry, List<Category>> findCategoriesByEntryIds(List<Long> entryIds) {
+        // run a query to determine the categories that contain the specified entries, where the result is a list of unique entry/category pairs.
+        // for example, if Entry E is in categories C and D, the result would be [[E, C], [E, D]].
+
+        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList("entryIds", entryIds));
+
+        // convert the list of entry/category pairs to a map (as described in the javadoc above).
+        Map<Entry, List<Category>> entryToCategories = new HashMap<>();
+        results.forEach(result -> {
+            Entry entry = (Entry)result[0];
+            Category category = (Category)result[1];
+            entryToCategories.computeIfAbsent(entry, k -> new ArrayList<>()).add(category);
+        });
+
+        return (entryToCategories);
     }
 
     public T findPublishedById(long id) {

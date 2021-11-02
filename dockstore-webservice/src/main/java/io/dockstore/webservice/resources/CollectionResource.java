@@ -7,18 +7,21 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
-import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.ParamHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -44,13 +47,11 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -64,7 +65,6 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,21 +81,23 @@ import org.slf4j.LoggerFactory;
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
+    private static final String ORGANIZATION_NOT_FOUND_MESSAGE = "Organization not found.";
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
 
+    private final CategoryDAO categoryDAO;
     private final CollectionDAO collectionDAO;
     private final OrganizationDAO organizationDAO;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
-    private final SessionFactory sessionFactory;
     private final VersionDAO versionDAO;
+    private final CollectionHelper helper;
 
     public CollectionResource(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
+        this.categoryDAO = new CategoryDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -103,6 +105,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.versionDAO = new VersionDAO(sessionFactory);
+        this.helper = new CollectionHelper(sessionFactory, toolDAO);
     }
 
     /**
@@ -155,7 +158,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
             Collection approvalForCollection = getApprovalForCollection(collection);
-            addCollectionEntriesToCollection(approvalForCollection);
+            evictAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -168,7 +171,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
-            addCollectionEntriesToCollection(collection);
+            evictAndAddEntries(collection);
             return collection;
         }
     }
@@ -194,7 +197,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             throwExceptionForNullCollection(collection);
             Collection approvalForCollection = getApprovalForCollection(collection);
-            addCollectionEntriesToCollection(approvalForCollection);
+            evictAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -210,48 +213,21 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throwExceptionForNullCollection(collection);
 
             Hibernate.initialize(collection.getAliases());
-            addCollectionEntriesToCollection(collection);
+            evictAndAddEntries(collection);
             return collection;
         }
     }
 
-    private void addCollectionEntriesToCollection(Collection collection) {
-        Session currentSession = sessionFactory.getCurrentSession();
-        currentSession.evict(collection);
-        List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
-        List<CollectionEntry> collectionServices = workflowDAO.getCollectionServices(collection.getId());
-        List<CollectionEntry> collectionTools = workflowDAO.getCollectionTools(collection.getId());
-        List<CollectionEntry> collectionWorkflowsWithVersions = workflowDAO.getCollectionWorkflowsWithVersions(collection.getId());
-        List<CollectionEntry> collectionServicesWithVersions = workflowDAO.getCollectionServicesWithVersions(collection.getId());
-        List<CollectionEntry> collectionToolsWithVersions = workflowDAO.getCollectionToolsWithVersions(collection.getId());
-        List<CollectionEntry> collectionEntries = new ArrayList<>();
-        collectionEntries.addAll(collectionWorkflows);
-        collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);        
-        collectionEntries.addAll(collectionWorkflowsWithVersions);
-        collectionEntries.addAll(collectionServicesWithVersions);
-        collectionEntries.addAll(collectionToolsWithVersions);
-        collectionEntries.forEach(entry -> {
-            List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
-            List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
-            entry.setLabels(labelStrings);
-            if (entry.getEntryType().equals("tool")) {
-                entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
-            } else if (entry.getEntryType().equals("workflow")) {
-                entry.setDescriptorTypes(workflowDAO.getWorkflowsDescriptorTypes(entry.getId()));
-            }
-        });
-        collection.setCollectionEntries(collectionEntries);
-        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
-        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
+    private void evictAndSummarize(Collection collection) {
+        helper.evictAndSummarize(collection);
+    }
+
+    private void evictAndAddEntries(Collection collection) {
+        helper.evictAndAddEntries(collection);
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
-        if (collection == null) {
-            String msg = "Collection not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
+        helper.throwExceptionForNullCollection(collection);
     }
 
     @POST
@@ -276,7 +252,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
         }
 
-
         // Event for addition
         Organization organization = organizationDAO.findById(organizationId);
 
@@ -296,6 +271,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Event addToCollectionEvent = eventBuild.build();
         eventDAO.create(addToCollectionEvent);
+
+        // If added to a Category, update the Entry in the index
+        if (entryAndCollection.getRight() instanceof Category) {
+            handleIndexUpdate(entryAndCollection.getLeft());
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -349,6 +329,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Event removeFromCollectionEvent = eventBuild.build();
         eventDAO.create(removeFromCollectionEvent);
+
+        // If deleted from a Category, update the Entry in the index
+        if (entryAndCollection.getRight() instanceof Category) {
+            handleIndexUpdate(entryAndCollection.getLeft());
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -420,35 +405,27 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         } else {
             boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO, userDAO);
             if (!doesOrgExist) {
-                String msg = "Organization not found.";
+                String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
         }
 
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
-        Session currentSession = sessionFactory.getCurrentSession();
-        if (checkIncludes(include, "entries")) {
-            collections.forEach(collection -> {
-                currentSession.evict(collection);
-                addCollectionEntriesToCollection(collection);
-            });
-        } else {
-            // Ensure that entries is empty
-            // This is probably unnecessary
-            collections.forEach(collection -> {
-                currentSession.evict(collection);
-                collection.setEntries(new HashSet<>());
-                collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
-                collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
-            });
-        }
+        boolean includeEntries = ParamHelper.csvIncludesField(include, "entries");
+        collections.forEach(collection -> {
+            if (includeEntries) {
+                evictAndAddEntries(collection);
+            } else {
+                evictAndSummarize(collection);
+            }
+        });
         return collections;
     }
 
     private void throwExceptionForNullOrganization(Organization organization) {
         if (organization == null) {
-            String msg = "Organization not found";
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -469,7 +446,15 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // First check if the organization exists and that the user is an admin or maintainer
         boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organizationId, user.getId(), organizationDAO);
         if (!isUserAdminOrMaintainer) {
-            String msg = "Organization not found.";
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        // Get the organization
+        Organization organization = organizationDAO.findById(organizationId);
+        if (organization == null) {
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -489,18 +474,30 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Get the organization
-        Organization organization = organizationDAO.findById(organizationId);
+        final Collection collectionOrCategory;
+
+        if (organization.isCategorizer()) {
+            // The organization is a categorizer, make sure there are no category name collisions and convert the Collection to a Category
+            Category matchingCategory = categoryDAO.findByName(collection.getName());
+            if (matchingCategory != null) {
+                String msg = "A category already exists with the name '" + collection.getName() + "'.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+            collectionOrCategory = constructCategory(collection);
+        } else {
+            collectionOrCategory = collection;
+        }
 
         // Save the collection
-        long id = collectionDAO.create(collection);
-        organization.addCollection(collection);
+        long id = collectionDAO.create(collectionOrCategory);
+        organization.addCollection(collectionOrCategory);
 
         // Event for creation
         User foundUser = userDAO.findById(user.getId());
         Event createCollectionEvent = new Event.Builder()
                 .withOrganization(organization)
-                .withCollection(collection)
+                .withCollection(collectionOrCategory)
                 .withInitiatorUser(foundUser)
                 .withType(Event.EventType.CREATE_COLLECTION)
                 .build();
@@ -526,13 +523,19 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Check if new name is valid
         if (!Objects.equals(existingCollection.getName(), collection.getName())) {
-            Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
-            if (duplicateName != null) {
-                if (duplicateName.getId() == existingCollection.getId()) {
+            boolean isCategory = existingCollection instanceof Category;
+            Collection duplicateCollection;
+            if (isCategory) {
+                duplicateCollection = categoryDAO.findByName(collection.getName());
+            } else {
+                duplicateCollection = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
+            }
+            if (duplicateCollection != null) {
+                if (duplicateCollection.getId() == existingCollection.getId()) {
                     // do nothing
                     LOG.debug("this appears to be a case change");
                 } else {
-                    String msg = "A collection already exists with the name '" + collection.getName() + "', please try another one.";
+                    String msg = "A " + (isCategory ? "category" : "collection") + " already exists with the name '" + collection.getName() + "', please try another one.";
                     LOG.info(msg);
                     throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
                 }
@@ -554,8 +557,31 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .build();
         eventDAO.create(updateCollectionEvent);
 
+        // If we are updating a Category, assume a property has changed and reindex the Entries.
+        if (existingCollection instanceof Category) {
+            reindexEntries(existingCollection);
+        }
+
         return collectionDAO.findById(collectionId);
 
+    }
+
+    private void reindexEntries(Collection collection) {
+        long id = collection.getId();
+
+        // Accumulate the entry,version combos, there can be multiple different versions per entry.
+        List<CollectionEntry> collectionEntries = new ArrayList<>();
+        collectionEntries.addAll(toolDAO.getCollectionWorkflows(id));
+        collectionEntries.addAll(toolDAO.getCollectionWorkflowsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getCollectionTools(id));
+        collectionEntries.addAll(toolDAO.getCollectionToolsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getCollectionServices(id));
+        collectionEntries.addAll(toolDAO.getCollectionServicesWithVersions(id));
+
+        // Reduce to a set of entries and index.
+        Set<Entry> entries = new HashSet<>();
+        collectionEntries.forEach(collectionEntry -> entries.add(toolDAO.getGenericEntryById(collectionEntry.getId())));
+        entries.forEach(this::handleIndexUpdate);
     }
 
     @DELETE
@@ -613,6 +639,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .build();
         eventDAO.create(updateCollectionEvent);
 
+        if (oldCollection instanceof Category) {
+            reindexEntries(oldCollection);
+        }
+
         return collectionDAO.findById(collectionId);
     }
 
@@ -664,18 +694,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO, userDAO);
     }
 
-    /**
-     * Checks if the include string (csv) includes some field
-     * @param include CSV string where each field is of the form [a-zA-Z]+
-     * @param field Field to query for
-     * @return True if include has the given field, false otherwise
-     */
-    private boolean checkIncludes(String include, String field) {
-        String includeString = (include == null ? "" : include);
-        List<String> includeSplit = Arrays.asList(includeString.split(","));
-        return includeSplit.contains(field);
-    }
-
     @Override
     public Optional<PublicStateManager> getPublicStateManager() {
         return Optional.empty();
@@ -708,5 +726,19 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Hibernate.initialize(byAlias.getAliases());
         return byAlias;
+    }
+
+    private void handleIndexUpdate(Entry entry) {
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+    }
+
+    private Category constructCategory(Collection collection) {
+        Category category = new Category();
+        category.setName(collection.getName());
+        category.setDescription(collection.getDescription());
+        category.setDisplayName(collection.getDisplayName());
+        category.setTopic(collection.getTopic());
+        category.setOrganization(collection.getOrganization());
+        return category;
     }
 }

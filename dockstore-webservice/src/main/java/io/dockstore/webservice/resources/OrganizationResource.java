@@ -516,8 +516,27 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateEmail(organization.getEmail());
         validateLink(organization.getLink());
 
+        if (organization.isCategorizer()) {
+
+            // only a global admin can create a categorizer organization.
+            if (!user.getIsAdmin()) {
+                String msg = "Only an administrator can create a categorizer organization.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+            }
+
+            // Create with either APPROVED or HIDDEN status.
+            if (organization.getStatus() != Organization.ApplicationState.APPROVED) {
+                organization.setStatus(Organization.ApplicationState.HIDDEN);
+            }
+
+        } else {
+
+            // should not be approved by default
+            organization.setStatus(Organization.ApplicationState.PENDING);
+        }
+
         // Save organization
-        organization.setStatus(Organization.ApplicationState.PENDING); // should not be approved by default
         long id = organizationDAO.create(organization);
 
         User foundUser = userDAO.findById(user.getId());
@@ -586,8 +605,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateLink(organization.getLink());
 
         if (!oldOrganization.getName().equals(organization.getName()) || !oldOrganization.getDisplayName().equals(organization.getDisplayName())) {
-            if (user.getIsAdmin() || user.isCurator() || oldOrganization.getStatus() != Organization.ApplicationState.APPROVED) {
-                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved
+            if (user.getIsAdmin() || user.isCurator() || (oldOrganization.getStatus() != Organization.ApplicationState.APPROVED && oldOrganization.getStatus() != Organization.ApplicationState.HIDDEN)) {
+                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved or hidden
                 // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
                 oldOrganization.setName(organization.getName());
                 oldOrganization.setDisplayName(organization.getDisplayName());
