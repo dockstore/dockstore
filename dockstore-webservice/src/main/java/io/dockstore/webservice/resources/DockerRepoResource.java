@@ -51,6 +51,7 @@ import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -536,7 +537,7 @@ public class DockerRepoResource
         }
 
         // Check if the tool has a valid tool name
-        checkEntryName(toolParam.getToolname());
+        StringInputValidationHelper.checkEntryName(toolParam.getClass(), toolParam.getToolname());
 
         final Set<Tag> workflowVersionsFromParam = Sets.newHashSet(toolParam.getWorkflowVersions());
         toolParam.setWorkflowVersions(Sets.newHashSet());

@@ -801,6 +801,28 @@ public class WebhookIT extends BaseIT {
         assertEquals(0, version.getOrcidAuthors().size());
     }
 
+    /**
+     * Tests that the GitHub release process doesn't work for workflows with invalid names
+     * @throws Exception
+     */
+    @Test
+    public void testDockstoreYmlInvalidWorkflowName() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+
+        try {
+            workflowsApi.handleGitHubRelease("refs/heads/invalidWorkflowName", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertEquals("Should not be able to add a workflow with an invalid name", LAMBDA_ERROR, ex.getCode());
+            List<io.dockstore.openapi.client.model.LambdaEvent> failEvents = usersApi.getUserGitHubEvents("0", 10);
+            assertEquals("There should be 1 unsuccessful event", 1,
+                    failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
+            assertTrue(failEvents.get(0).getMessage().contains("Invalid workflow name"));
+        }
+    }
+
     @Test
     public void testTools() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);

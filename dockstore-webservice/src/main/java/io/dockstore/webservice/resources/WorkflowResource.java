@@ -61,6 +61,7 @@ import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.helpers.URIHelper;
 import io.dockstore.webservice.helpers.ZenodoHelper;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
@@ -1257,7 +1258,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
 
         // Validate the workflow name
-        checkEntryName(workflowName);
+        StringInputValidationHelper.checkEntryName(BioWorkflow.class, workflowName);
 
         String registryURLPrefix = sourceControlEnum.get().toString();
         String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";

@@ -44,6 +44,7 @@ import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -541,7 +542,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     /**
      * Create or retrieve workflow or service based on Dockstore.yml
-     * @param workflowType Either BioWorkflow.class or Service.class
+     * @param workflowType Either BioWorkflow.class, Service.class or AppTool.class
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param user User that triggered action
      * @param workflowName User that triggered action
@@ -561,6 +562,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (user == null) {
                 throw new CustomWebApplicationException("User does not have an account on Dockstore.", LAMBDA_FAILURE);
             }
+
+            StringInputValidationHelper.checkEntryName(workflowType, workflowName);
 
             if (workflowType == BioWorkflow.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);

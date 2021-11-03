@@ -203,8 +203,8 @@ public class GalaxyPluginIT {
     public void testTestParameterPaths() {
         final ApiClient webClient = getWebClient(true, BaseIT.USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/tags/dockstore/3851", installationId);
-        Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19 variation analysis on Illumina metagenomic data", BaseIT.BIOWORKFLOW, "versions");
+        workflowApi.handleGitHubRelease(galaxyWorkflowRepo, BaseIT.USER_2_USERNAME, "refs/heads/validTestParameterFiles", installationId);
+        Workflow workflow = workflowApi.getWorkflowByPath("github.com/" + galaxyWorkflowRepo + "/COVID-19-variation-analysis-on-Illumina-metagenomic-data", BaseIT.BIOWORKFLOW, "versions");
         WorkflowVersion version = workflow.getWorkflowVersions().get(0);
         List<SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(version.getId());
         assertTrue("Test file should have the expected path",

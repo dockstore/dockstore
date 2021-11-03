@@ -35,6 +35,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -262,5 +263,10 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         }
 
         throw new CustomWebApplicationException(registry + " is not a valid registry type", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Override
+    protected void checkEntryName(String entryName) {
+        StringInputValidationHelper.checkEntryName(Tool.class, entryName);
     }
 }
