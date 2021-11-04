@@ -215,6 +215,7 @@ public class DockerRepoResource
     @Path("/{containerId}/refresh")
     @Timed
     @UnitOfWork
+    @UsernameRenameRequired
     @Operation(operationId = "refresh", description = "Refresh one particular tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Refresh one particular tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
@@ -503,6 +504,7 @@ public class DockerRepoResource
     @POST
     @Timed
     @UnitOfWork
+    @UsernameRenameRequired
     @Path("/registerManual")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "registerManual", description = "Register a tool manually, along with tags.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
@@ -1027,6 +1029,7 @@ public class DockerRepoResource
     @PUT
     @Timed
     @UnitOfWork
+    @UsernameRenameRequired
     @Path("/{containerId}/star")
     @Operation(operationId = "starEntry", description = "Star a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Star a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })

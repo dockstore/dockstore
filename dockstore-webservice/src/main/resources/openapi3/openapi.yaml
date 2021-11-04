@@ -9055,6 +9055,8 @@ components:
             $ref: '#/components/schemas/Profile'
         username:
           type: string
+        usernameChangeRequired:
+          type: boolean
     UserInfo:
       type: object
       properties:

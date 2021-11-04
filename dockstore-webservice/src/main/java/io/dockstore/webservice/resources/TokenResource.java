@@ -82,6 +82,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -459,6 +460,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
                 user = new User();
                 user.setUsername(username);
+                user.setUsernameChangeRequired(restrictUser(username));
                 userID = userDAO.create(user);
                 acceptTOSAndPrivacyPolicy(user);
             } else {
@@ -610,6 +612,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             if (user == null && authUser == null) {
                 User newUser = new User();
                 newUser.setUsername(username);
+                newUser.setUsernameChangeRequired(restrictUser(username));
                 userID = userDAO.create(newUser);
                 user = userDAO.findById(userID);
                 acceptTOSAndPrivacyPolicy(user);
@@ -674,6 +677,14 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         long dockstoreTokenId = tokenDAO.create(dockstoreToken);
         dockstoreToken = tokenDAO.findById(dockstoreTokenId);
         return dockstoreToken;
+    }
+
+    public boolean restrictUser(String username) {
+        Matcher matcher = UserResource.USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
+        if (matcher.find()) {
+            return true;
+        }
+        return false;
     }
 
     @GET
