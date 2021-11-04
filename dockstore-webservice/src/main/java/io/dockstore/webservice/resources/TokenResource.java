@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.USERNAME_CONTAINS_KEYWORD_PATTERN;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
@@ -460,7 +461,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
                 user = new User();
                 user.setUsername(username);
-                user.setUsernameChangeRequired(restrictUser(username));
+                user.setUsernameChangeRequired(shouldRestricUser(username));
                 userID = userDAO.create(user);
                 acceptTOSAndPrivacyPolicy(user);
             } else {
@@ -612,7 +613,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             if (user == null && authUser == null) {
                 User newUser = new User();
                 newUser.setUsername(username);
-                newUser.setUsernameChangeRequired(restrictUser(username));
+                newUser.setUsernameChangeRequired(shouldRestricUser(username));
                 userID = userDAO.create(newUser);
                 user = userDAO.findById(userID);
                 acceptTOSAndPrivacyPolicy(user);
@@ -679,12 +680,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
-    public boolean restrictUser(String username) {
-        Matcher matcher = UserResource.USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
-        if (matcher.find()) {
-            return true;
-        }
-        return false;
+    public boolean shouldRestricUser(String username) {
+        Matcher matcher = USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
+        return matcher.find();
     }
 
     @GET

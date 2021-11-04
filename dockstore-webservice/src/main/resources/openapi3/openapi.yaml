@@ -9057,6 +9057,8 @@ components:
           type: string
         usernameChangeRequired:
           type: boolean
+          description: Indicates whether the user is required to change their username
+            before being allowed to do various operations on Dockstore.
     UserInfo:
       type: object
       properties:

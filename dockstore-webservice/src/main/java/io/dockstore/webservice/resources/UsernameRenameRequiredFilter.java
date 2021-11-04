@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.resources;
 
+import static io.dockstore.webservice.Constants.USERNAME_CHANGE_REQUIRED;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
 import java.security.Principal;
@@ -32,7 +34,7 @@ import org.slf4j.LoggerFactory;
 @Provider
 public class UsernameRenameRequiredFilter implements ContainerRequestFilter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UsernameRenameRequired.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UsernameRenameRequiredFilter.class);
 
     @Context
     private ResourceInfo resourceInfo;
@@ -44,8 +46,7 @@ public class UsernameRenameRequiredFilter implements ContainerRequestFilter {
             if (principal instanceof User) {
                 final User user = (User)principal;
                 if (user.isUsernameChangeRequired()) {
-                    throw new CustomWebApplicationException("Your username contains one or more of the following keywords: dockstore, admin, curator, system, or manager. "
-                        + "Several operations will be blocked until you change your username via the Accounts page.", HttpStatus.SC_UNAUTHORIZED);
+                    throw new CustomWebApplicationException(USERNAME_CHANGE_REQUIRED, HttpStatus.SC_UNAUTHORIZED);
                 }
             }
         }

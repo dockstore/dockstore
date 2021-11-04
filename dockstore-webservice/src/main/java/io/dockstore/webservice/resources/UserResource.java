@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.USERNAME_CONTAINS_KEYWORD_PATTERN;
 import static io.dockstore.webservice.resources.ResourceConstants.APPEASE_SWAGGER_PATCH;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.PAGINATION_LIMIT;
@@ -139,7 +140,7 @@ import org.slf4j.LoggerFactory;
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     protected static final Pattern GITHUB_ID_PATTERN = Pattern.compile(".*/u/(\\d+).*");
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-    protected static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
+    //protected static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
     private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private static final String USER_NOT_FOUND_DESCRIPTION = "User not found";

@@ -112,10 +112,6 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private boolean isBanned;
 
-    @Column(columnDefinition = "boolean default 'false'")
-    @ApiModelProperty(value = "Indicates whether the user is required to change their username before being allowed to do various operations on Dockstore.", position = 15)
-    private boolean usernameChangeRequired;
-
     @ElementCollection(targetClass = Profile.class)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id", columnDefinition = "bigint"), uniqueConstraints = {
             @UniqueConstraint(columnNames = { "id", "token_type" })}, indexes = {
@@ -191,6 +187,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private final Set<Organization> starredOrganizations;
 
+    @Column(columnDefinition = "boolean default 'false'", nullable = false)
+    @Schema(description = "Indicates whether the user is required to change their username before being allowed to do various operations on Dockstore.")
+    @ApiModelProperty(value = "Indicates whether the user is required to change their username before being allowed to do various operations on Dockstore.", position = 17)
+    private boolean usernameChangeRequired;
     /**
      * The total number of hosted entries (workflows and tools) a user is allowed to create.  A value of null
      * means to use the configured system limit.
