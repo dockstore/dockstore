@@ -222,7 +222,9 @@
     </changeSet>
     <changeSet author="natalieperez (generated)" id="addUsernameChangeRequiredColumn">
         <addColumn tableName="enduser">
-            <column defaultValueBoolean="false" name="usernamechangerequired" type="bool"/>
+            <column defaultValueBoolean="false" name="usernamechangerequired" type="bool">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
     </changeSet>
 </databaseChangeLog>
