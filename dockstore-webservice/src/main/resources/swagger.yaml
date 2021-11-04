@@ -6499,7 +6499,11 @@ definitions:
         type: "string"
       bitBucketClientId:
         type: "string"
+      checkUrlLambdaVersion:
+        type: "string"
       composeSetupVersion:
+        type: "string"
+      cwlParsingLambdaVersion:
         type: "string"
       cwlVisualizerUri:
         type: "string"
@@ -6516,6 +6520,8 @@ definitions:
       featuredContentUrl:
         type: "string"
       featuredNewsUrl:
+        type: "string"
+      galaxyParsingPluginVersion:
         type: "string"
       gitBuildVersion:
         type: "string"
@@ -6543,6 +6549,8 @@ definitions:
         type: "string"
       googleScope:
         type: "string"
+      nextflowParsingLambdaVersion:
+        type: "string"
       orcidAuthUrl:
         type: "string"
       orcidClientId:
@@ -6562,6 +6570,8 @@ definitions:
       tagManagerId:
         type: "string"
       terraImportUrl:
+        type: "string"
+      wdlParsingLambdaVersion:
         type: "string"
       zenodoAuthUrl:
         type: "string"

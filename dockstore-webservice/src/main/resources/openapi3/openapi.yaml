@@ -7212,7 +7212,11 @@ components:
           type: string
         bitBucketClientId:
           type: string
+        checkUrlLambdaVersion:
+          type: string
         composeSetupVersion:
+          type: string
+        cwlParsingLambdaVersion:
           type: string
         cwlVisualizerUri:
           type: string
@@ -7229,6 +7233,8 @@ components:
         featuredContentUrl:
           type: string
         featuredNewsUrl:
+          type: string
+        galaxyParsingPluginVersion:
           type: string
         gitBuildVersion:
           type: string
@@ -7256,6 +7262,8 @@ components:
           type: string
         googleScope:
           type: string
+        nextflowParsingLambdaVersion:
+          type: string
         orcidAuthUrl:
           type: string
         orcidClientId:
@@ -7275,6 +7283,8 @@ components:
         tagManagerId:
           type: string
         terraImportUrl:
+          type: string
+        wdlParsingLambdaVersion:
           type: string
         zenodoAuthUrl:
           type: string
