@@ -417,14 +417,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     final Optional<SourceFile> sourceFileOptional = secondarySourceFiles.stream()
                             .filter(sf -> sf.getPath().equals(finalSecondaryFile)).findFirst();
                     final String content = sourceFileOptional.map(SourceFile::getContent).orElse(null);
-                    try {
-                        Yaml safeSecondaryYaml = new Yaml(new SafeConstructor());
-                        // This should throw an exception if there are unexpected blocks
-                        safeSecondaryYaml.load(finalSecondaryFile);
-                        stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
-                    } catch (Exception e) {
-                        LOG.info("Secondary descriptor uses unsafe types");
-                    }
+                    Yaml safeSecondaryYaml = new Yaml(new SafeConstructor());
+                    // This should throw an exception if there are unexpected blocks
+                    safeSecondaryYaml.load(finalSecondaryFile);
+                    stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
                     if (isExpressionTool(content, yaml)) {
                         stepToType.put(workflowStepId, expressionToolType);
                     } else if (isTool(content, yaml)) {
@@ -711,6 +707,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // This should throw an exception if there are unexpected blocks
                 safeYaml.load(content);
             } catch (Exception e) {
+                LOG.info("An unsafe YAML could not be parsed.", e);
                 return false;
             }
             Map<String, Object> mapping = yaml.loadAs(content, Map.class);
