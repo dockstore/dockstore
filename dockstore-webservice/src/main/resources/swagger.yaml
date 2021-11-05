@@ -2075,6 +2075,8 @@ paths:
       summary: "Star a tool."
       description: ""
       operationId: "starEntry"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3677,6 +3679,8 @@ paths:
       summary: "Star an organization."
       description: ""
       operationId: "starOrganization"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -8341,6 +8345,11 @@ definitions:
         format: "int64"
         position: 16
         description: "Time privacy policy was accepted"
+      usernameChangeRequired:
+        type: "boolean"
+        position: 17
+        description: "Indicates whether the user is required to change their username\
+          \ before being allowed to do various operations on Dockstore."
     description: "End users for the dockstore"
   Validation:
     type: "object"

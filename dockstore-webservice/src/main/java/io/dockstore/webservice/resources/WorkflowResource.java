@@ -287,6 +287,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
+    @UsernameRenameRequired
     @Operation(operationId = "refresh", description = "Refresh one particular workflow.", security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "refresh", value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
@@ -1223,6 +1224,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/manualRegister")
+    @UsernameRenameRequired
     @SuppressWarnings("checkstyle:ParameterNumber")
     @Operation(operationId = "manualRegister", description = "Manually register a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Manually register a workflow.", authorizations = {
@@ -1537,6 +1539,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @PUT
     @Timed
     @UnitOfWork
+    @UsernameRenameRequired
     @Path("/{workflowId}/star")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "starEntry", description = "Star a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
@@ -1900,6 +1903,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @POST
     @Timed
     @UnitOfWork
+    @UsernameRenameRequired
     @Path("/registries/{gitRegistry}/organizations/{organization}/repositories/{repositoryName}")
     @Operation(operationId = "addWorkflow", description = "Adds a workflow for a registry and repository path with defaults set.", security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = "See OpenApi for details")

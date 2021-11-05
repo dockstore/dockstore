@@ -187,6 +187,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private final Set<Organization> starredOrganizations;
 
+    @Column(columnDefinition = "boolean default 'false'", nullable = false)
+    @Schema(description = "Indicates whether the user is required to change their username before being allowed to do various operations on Dockstore.")
+    @ApiModelProperty(value = "Indicates whether the user is required to change their username before being allowed to do various operations on Dockstore.", position = 17)
+    private boolean usernameChangeRequired;
     /**
      * The total number of hosted entries (workflows and tools) a user is allowed to create.  A value of null
      * means to use the configured system limit.
@@ -541,6 +545,14 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public Set<CloudInstance> getCloudInstances() {
         return cloudInstances;
+    }
+
+    public boolean isUsernameChangeRequired() {
+        return usernameChangeRequired;
+    }
+
+    public void setUsernameChangeRequired(boolean usernameChangeRequired) {
+        this.usernameChangeRequired = usernameChangeRequired;
     }
 
     /**
