@@ -26,7 +26,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "apptool")
 @NamedQueries({
-    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublished", query = "SELECT a FROM AppTool a WHERE a.isPublished = true")
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.findAllPublished", query = "SELECT a FROM AppTool a WHERE a.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.AppTool.getEntriesByUserId", query = "SELECT a FROM AppTool a WHERE a.id in (SELECT ue.id FROM User u INNER JOIN u.entries ue where u.id = :userId)")
 })
 public class AppTool extends Workflow {
 
