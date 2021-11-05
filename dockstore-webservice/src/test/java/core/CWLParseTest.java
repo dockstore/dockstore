@@ -23,10 +23,14 @@ import java.util.HashSet;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.testing.ResourceHelpers;
+
+import java.util.TreeSet;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -115,6 +119,8 @@ public class CWLParseTest {
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         // This checks the version is not created but not that it was never parsed
         Assert.assertEquals(entry.isValid(), false);
+        TreeSet<Validation> validations = new TreeSet(entry.getValidations());
+        Assert.assertTrue(validations.first().getMessage().contains("CWL file is malformed or missing"));
     }
 
     @Test

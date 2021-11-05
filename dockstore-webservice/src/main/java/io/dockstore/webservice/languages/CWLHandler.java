@@ -818,6 +818,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 safe = true;
             } catch (Exception e) {
                 isValid = false;
+                LOG.info("An unsafe YAML was attempted to be parsed");
+                validationMessage.append("CWL file is malformed or missing, cannot extract metadata: " + e.getMessage());
             }
             if (safe) {
                 Yaml yaml = new Yaml();
