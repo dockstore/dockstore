@@ -19,9 +19,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import static org.junit.Assert.assertEquals;
 
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -33,9 +33,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class CWLParseTest {
 
