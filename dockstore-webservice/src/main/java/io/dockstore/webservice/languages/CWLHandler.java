@@ -60,6 +60,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
 /**
@@ -83,6 +84,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
+                Yaml safeYaml = new Yaml(new SafeConstructor());
+                // This should throw an exception if there are unexpected blocks
+                safeYaml.load(content);
                 Yaml yaml = new Yaml();
                 Map map = yaml.loadAs(content, Map.class);
                 String description = null;
@@ -190,6 +194,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Map<String, SourceFile> imports = new HashMap<>();
         Yaml yaml = new Yaml();
         try {
+            Yaml safeYaml = new Yaml(new SafeConstructor());
+            // This should throw an exception if there are unexpected blocks
+            safeYaml.load(content);
             Map<String, ?> fileContentMap = yaml.loadAs(content, Map.class);
             handleMap(repositoryId, workingDirectoryForFile, version, imports, fileContentMap, sourceCodeRepoInterface);
         } catch (YAMLException e) {
@@ -216,6 +223,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Set<FileFormat> fileFormats = new HashSet<>();
         Yaml yaml = new Yaml();
         try {
+            Yaml safeYaml = new Yaml(new SafeConstructor());
+            // This should throw an exception if there are unexpected blocks
+            safeYaml.load(content);
             Map<String, ?> map = yaml.loadAs(content, Map.class);
             Object targetType = map.get(type);
             if (targetType instanceof Map) {
@@ -255,6 +265,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         ToolDAO dao) {
         Yaml yaml = new Yaml();
         try {
+            Yaml safeYaml = new Yaml(new SafeConstructor());
+            // This should throw an exception if there are unexpected blocks
+            safeYaml.load(mainDescriptor);
             // Initialize data structures for DAG
             Map<String, ToolInfo> toolInfoMap = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             List<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
@@ -404,7 +417,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     final Optional<SourceFile> sourceFileOptional = secondarySourceFiles.stream()
                             .filter(sf -> sf.getPath().equals(finalSecondaryFile)).findFirst();
                     final String content = sourceFileOptional.map(SourceFile::getContent).orElse(null);
-                    stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
+                    try {
+                        Yaml safeSecondaryYaml = new Yaml(new SafeConstructor());
+                        // This should throw an exception if there are unexpected blocks
+                        safeSecondaryYaml.load(finalSecondaryFile);
+                        stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
+                    } catch (Exception e) {
+                        LOG.info("Secondary descriptor uses unsafe types");
+                    }
                     if (isExpressionTool(content, yaml)) {
                         stepToType.put(workflowStepId, expressionToolType);
                     } else if (isTool(content, yaml)) {
@@ -686,6 +706,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      */
     private boolean isWorkflow(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
+            try {
+                Yaml safeYaml = new Yaml(new SafeConstructor());
+                // This should throw an exception if there are unexpected blocks
+                safeYaml.load(content);
+            } catch (Exception e) {
+                return false;
+            }
             Map<String, Object> mapping = yaml.loadAs(content, Map.class);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
@@ -783,6 +810,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
+            try {
+                Yaml safeYaml = new Yaml(new SafeConstructor());
+                // This should throw an exception if there are unexpected blocks
+                safeYaml.load(mainDescriptor.get().getContent());
+            } catch (Exception e) {
+                isValid = false;
+            }
             Yaml yaml = new Yaml();
             String content = mainDescriptor.get().getContent();
             if (content == null || content.isEmpty()) {

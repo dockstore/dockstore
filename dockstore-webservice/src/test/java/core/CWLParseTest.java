@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -32,6 +33,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class CWLParseTest {
 
@@ -101,6 +105,19 @@ public class CWLParseTest {
         Assert.assertEquals("incorrect author", "Peter Amstutz", entry.getAuthor());
         Assert.assertEquals("incorrect email", "peter.amstutz@curoverse.com", entry.getEmail());
         Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription());
+    }
+
+    /**
+     * This tests a malicious CWL descriptor
+     * @throws IOException If file contents could not be read
+     */
+    @Test
+    public void testMaliciousCwl() throws IOException {
+        String filePath = ResourceHelpers.resourceFilePath("malicious.cwl");
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        // This checks the version is not created but not that it was never parsed
+        assertEquals(entry.isValid(), false);
     }
 
     @Test
