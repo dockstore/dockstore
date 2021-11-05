@@ -15,11 +15,11 @@
  */
 package core;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
-import static org.junit.Assert.assertEquals;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Tag;
@@ -114,7 +114,7 @@ public class CWLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         // This checks the version is not created but not that it was never parsed
-        assertEquals(entry.isValid(), false);
+        Assert.assertEquals(entry.isValid(), false);
     }
 
     @Test
