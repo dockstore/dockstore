@@ -90,10 +90,12 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <!-- might be useful someday in a pinch if oicr goes down again
         <repository>
             <id>gitlab-maven</id>
             <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
         </repository>
+        -->
     </repositories>
 
     <licenses>
@@ -104,19 +106,18 @@
     </licenses>
 
     <distributionManagement>
-        <!-- restore when online
-              <repository>
-                  <id>central</id>
-                  <name>artifacts.oicr.on.ca-releases</name>
-                  <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
-              </repository>
-              <snapshotRepository>
-                  <id>snapshots</id>
-                  <name>artifacts.oicr.on.ca-snapshots</name>
-                  <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
-              </snapshotRepository>
-        -->
+        <repository>
+            <id>central</id>
+            <name>artifacts.oicr.on.ca-releases</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>artifacts.oicr.on.ca-snapshots</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
+        </snapshotRepository>
 
+        <!-- might be useful someday in a pinch if oicr goes down again
         <repository>
             <id>gitlab-maven</id>
             <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
@@ -125,6 +126,7 @@
             <id>gitlab-maven</id>
             <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
         </snapshotRepository>
+        -->
     </distributionManagement>
 
     <modules>
