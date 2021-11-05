@@ -129,5 +129,9 @@
       <name>artifactory.broadinstitute.org</name>
       <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
     </repository>
+    <repository>
+      <id>gitlab-maven</id>
+      <url>https://gitlab.com/api/v4/groups/P757201/packages/maven</url>
+    </repository>
   </repositories>
 </project>
