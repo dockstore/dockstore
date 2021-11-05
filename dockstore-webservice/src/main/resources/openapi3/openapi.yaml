@@ -1644,7 +1644,8 @@ paths:
       description: Star a tool.
       operationId: starEntry
       parameters:
-      - in: path
+      - description: Tool to star.
+        in: path
         name: containerId
         required: true
         schema:
@@ -1652,9 +1653,11 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
+        description: StarRequest to star a repo for a user
+        required: true
       responses:
         default:
           content:
@@ -4022,7 +4025,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
         description: StarRequest to star an organization for a user.

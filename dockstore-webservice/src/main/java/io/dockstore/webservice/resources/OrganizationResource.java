@@ -351,6 +351,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @PUT
     @Timed
     @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
     @UsernameRenameRequired
     @Path("/{organizationId}/star")
     @ApiOperation(value = "Star an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })

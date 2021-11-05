@@ -2075,6 +2075,8 @@ paths:
       summary: "Star a tool."
       description: ""
       operationId: "starEntry"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3677,6 +3679,8 @@ paths:
       summary: "Star an organization."
       description: ""
       operationId: "starOrganization"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:

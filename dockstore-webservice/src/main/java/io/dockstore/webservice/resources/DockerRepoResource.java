@@ -1031,11 +1031,12 @@ public class DockerRepoResource
     @UnitOfWork
     @UsernameRenameRequired
     @Path("/{containerId}/star")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "starEntry", description = "Star a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Star a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void starEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
-        @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
+        @ApiParam(value = "Tool to star.", required = true) @Parameter(description = "Tool to star.", required = true)  @PathParam("containerId") Long containerId,
+        @ApiParam(value = "StarRequest to star a repo for a user", required = true) @Parameter(description = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         if (request.getStar()) {
             starEntryHelper(tool, user, "tool", tool.getToolPath());
