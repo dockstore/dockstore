@@ -78,24 +78,24 @@ POM as their parent.
     </properties>
     <!-- This section should be identical to the root pom.xml -->
     <distributionManagement>
-    	<!-- restore when online 
-        <repository>
-            <id>central</id>
-            <name>artifacts.oicr.on.ca-releases</name>
-            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <name>artifacts.oicr.on.ca-snapshots</name>
-            <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
-        </snapshotRepository>
-	-->
+        <!-- restore when online
+          <repository>
+              <id>central</id>
+              <name>artifacts.oicr.on.ca-releases</name>
+              <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+          </repository>
+          <snapshotRepository>
+              <id>snapshots</id>
+              <name>artifacts.oicr.on.ca-snapshots</name>
+              <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
+          </snapshotRepository>
+        -->
 
         <repository>
             <id>gitlab-maven</id>
             <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
         </repository>
-	<snapshotRepository>
+        <snapshotRepository>
             <id>gitlab-maven</id>
             <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
         </snapshotRepository>
