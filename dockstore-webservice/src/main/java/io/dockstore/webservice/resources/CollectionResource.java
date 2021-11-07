@@ -603,6 +603,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Soft delete the collection
         collection.setDeleted(true);
 
+        // If the collection was a Category, reindex the entries.
+        if (collection instanceof Category) {
+            reindexEntries(collection);
+        }
+
         // Create the delete collection event.
         Event.Builder eventBuild = new Event.Builder()
                 .withOrganization(organization)
