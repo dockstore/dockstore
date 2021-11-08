@@ -15,11 +15,11 @@
  */
 package core;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.SortedSet;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Tag;
@@ -28,8 +28,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.testing.ResourceHelpers;
-
-import java.util.SortedSet;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
