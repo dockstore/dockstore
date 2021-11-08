@@ -116,7 +116,7 @@ public class CWLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
         Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
         // This checks the version is not created but not that it was never parsed
-        Assert.assertEquals(entry.isValid(), false);
+        Assert.assertEquals(false, entry.isValid());
         SortedSet<Validation> validations = entry.getValidations();
         Assert.assertTrue(validations.first().getMessage().contains("CWL file is malformed or missing"));
     }
