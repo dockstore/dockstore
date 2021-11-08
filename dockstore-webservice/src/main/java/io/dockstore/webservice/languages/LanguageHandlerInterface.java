@@ -159,6 +159,7 @@ public interface LanguageHandlerInterface {
                 try {
                     yaml.load(sourcefile.getContent());
                 } catch (YAMLException e) {
+                    LOG.error("There was an exception validating sourcefile", e);
                     validationMessageObject.put(sourcefile.getPath(), e.getMessage());
                     isValid = false;
                 }
