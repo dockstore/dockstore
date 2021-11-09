@@ -90,6 +90,12 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <!-- might be useful someday in a pinch if oicr goes down again
+        <repository>
+            <id>gitlab-maven</id>
+            <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
+        </repository>
+        -->
     </repositories>
 
     <licenses>
@@ -110,6 +116,17 @@
             <name>artifacts.oicr.on.ca-snapshots</name>
             <url>https://artifacts.oicr.on.ca/artifactory/collab-snapshot</url>
         </snapshotRepository>
+
+        <!-- might be useful someday in a pinch if oicr goes down again
+        <repository>
+            <id>gitlab-maven</id>
+            <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
+        </repository>
+        <snapshotRepository>
+            <id>gitlab-maven</id>
+            <url>https://gitlab.com/api/v4/projects/17865731/packages/maven</url>
+        </snapshotRepository>
+        -->
     </distributionManagement>
 
     <modules>
