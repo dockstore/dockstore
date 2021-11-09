@@ -60,6 +60,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
 /**
@@ -83,6 +84,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
+                Yaml safeYaml = new Yaml(new SafeConstructor());
+                // This should throw an exception if there are unexpected blocks
+                safeYaml.load(content);
                 Yaml yaml = new Yaml();
                 Map map = yaml.loadAs(content, Map.class);
                 String description = null;
@@ -190,6 +194,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Map<String, SourceFile> imports = new HashMap<>();
         Yaml yaml = new Yaml();
         try {
+            Yaml safeYaml = new Yaml(new SafeConstructor());
+            // This should throw an exception if there are unexpected blocks
+            safeYaml.load(content);
             Map<String, ?> fileContentMap = yaml.loadAs(content, Map.class);
             handleMap(repositoryId, workingDirectoryForFile, version, imports, fileContentMap, sourceCodeRepoInterface);
         } catch (YAMLException e) {
@@ -216,6 +223,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Set<FileFormat> fileFormats = new HashSet<>();
         Yaml yaml = new Yaml();
         try {
+            Yaml safeYaml = new Yaml(new SafeConstructor());
+            // This should throw an exception if there are unexpected blocks
+            safeYaml.load(content);
             Map<String, ?> map = yaml.loadAs(content, Map.class);
             Object targetType = map.get(type);
             if (targetType instanceof Map) {
@@ -255,6 +265,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         ToolDAO dao) {
         Yaml yaml = new Yaml();
         try {
+            Yaml safeYaml = new Yaml(new SafeConstructor());
+            // This should throw an exception if there are unexpected blocks
+            safeYaml.load(mainDescriptor);
             // Initialize data structures for DAG
             Map<String, ToolInfo> toolInfoMap = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             List<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
@@ -404,6 +417,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     final Optional<SourceFile> sourceFileOptional = secondarySourceFiles.stream()
                             .filter(sf -> sf.getPath().equals(finalSecondaryFile)).findFirst();
                     final String content = sourceFileOptional.map(SourceFile::getContent).orElse(null);
+                    Yaml safeSecondaryYaml = new Yaml(new SafeConstructor());
+                    // This should throw an exception if there are unexpected blocks
+                    safeSecondaryYaml.load(finalSecondaryFile);
                     stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
                     if (isExpressionTool(content, yaml)) {
                         stepToType.put(workflowStepId, expressionToolType);
@@ -686,6 +702,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      */
     private boolean isWorkflow(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
+            try {
+                Yaml safeYaml = new Yaml(new SafeConstructor());
+                // This should throw an exception if there are unexpected blocks
+                safeYaml.load(content);
+            } catch (Exception e) {
+                LOG.info("An unsafe YAML could not be parsed.", e);
+                return false;
+            }
             Map<String, Object> mapping = yaml.loadAs(content, Map.class);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
@@ -779,25 +803,38 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
         boolean isValid = true;
+        boolean safe = false;
         StringBuilder validationMessage = new StringBuilder();
         Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
-            Yaml yaml = new Yaml();
-            String content = mainDescriptor.get().getContent();
-            if (content == null || content.isEmpty()) {
+            try {
+                Yaml safeYaml = new Yaml(new SafeConstructor());
+                // This should throw an exception if there are unexpected blocks
+                safeYaml.load(mainDescriptor.get().getContent());
+                safe = true;
+            } catch (Exception e) {
                 isValid = false;
-                validationMessage.append("Primary descriptor is empty.");
-            } else if (!content.contains("class: Workflow")) {
-                isValid = false;
-                validationMessage.append("A CWL workflow requires 'class: Workflow'.");
-                if (content.contains("class: CommandLineTool") || content.contains("class: ExpressionTool")) {
-                    String cwlClass = content.contains("class: CommandLineTool") ? "CommandLineTool" : "ExpressionTool";
-                    validationMessage.append(" This file contains 'class: ").append(cwlClass).append("'. Did you mean to register a tool?");
+                LOG.info("An unsafe YAML was attempted to be parsed");
+                validationMessage.append("CWL file is malformed or missing, cannot extract metadata: " + e.getMessage());
+            }
+            if (safe) {
+                Yaml yaml = new Yaml();
+                String content = mainDescriptor.get().getContent();
+                if (content == null || content.isEmpty()) {
+                    isValid = false;
+                    validationMessage.append("Primary descriptor is empty.");
+                } else if (!content.contains("class: Workflow")) {
+                    isValid = false;
+                    validationMessage.append("A CWL workflow requires 'class: Workflow'.");
+                    if (content.contains("class: CommandLineTool") || content.contains("class: ExpressionTool")) {
+                        String cwlClass = content.contains("class: CommandLineTool") ? "CommandLineTool" : "ExpressionTool";
+                        validationMessage.append(" This file contains 'class: ").append(cwlClass).append("'. Did you mean to register a tool?");
+                    }
+                } else if (!this.isValidCwl(content, yaml)) {
+                    isValid = false;
+                    validationMessage.append("Invalid CWL version.");
                 }
-            } else if (!this.isValidCwl(content, yaml)) {
-                isValid = false;
-                validationMessage.append("Invalid CWL version.");
             }
         } else {
             validationMessage.append("Primary CWL descriptor is not present.");

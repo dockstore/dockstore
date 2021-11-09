@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.representer.Representer;
@@ -176,6 +177,9 @@ public final class DockstoreYamlHelper {
 
     private static <T> T readContent(final String content, final Constructor constructor) throws DockstoreYamlException {
         try {
+            // first check to make sure there aren't any unsafe types
+            final Yaml safeYaml = new Yaml(new SafeConstructor());
+            safeYaml.load(content);
             Representer representer = new Representer();
             representer.getPropertyUtils().setSkipMissingProperties(true);
             final Yaml yaml = new Yaml(constructor, representer);
