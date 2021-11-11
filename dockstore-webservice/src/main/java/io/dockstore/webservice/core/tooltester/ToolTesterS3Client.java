@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -45,12 +46,13 @@ public class ToolTesterS3Client {
     private static final int MAX_TOOL_ID_STRING_SEGMENTS = 5;
     private static final int TOOL_ID_REPOSITORY_INDEX = 3;
     private static final int TOOL_ID_TOOLNAME_INDEX = 4;
-    private String bucketName;
-    private AmazonS3 s3;
+    private final String bucketName;
+    private final AmazonS3 s3;
 
     public ToolTesterS3Client(String bucketName) {
         this.bucketName = bucketName;
-        this.s3 = AmazonS3ClientBuilder.standard().build();
+        //TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
+        this.s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1).build();
     }
 
     /**
