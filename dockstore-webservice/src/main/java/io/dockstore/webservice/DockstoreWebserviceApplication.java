@@ -110,6 +110,7 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.UserResourceDockerRegistries;
+import io.dockstore.webservice.resources.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
@@ -463,6 +464,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // Filter used to log every request an admin user makes.
         environment.jersey().register(new AdminPrivilegesFilter());
+
+        environment.jersey().register(new UsernameRenameRequiredFilter());
 
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);

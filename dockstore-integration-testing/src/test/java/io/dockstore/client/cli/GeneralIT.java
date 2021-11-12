@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.dockstore.webservice.core.SourceFile.SHA_TYPE;
 import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
 import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
@@ -34,8 +35,10 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.DockstoreTool.ModeEnum;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
@@ -1360,6 +1363,21 @@ public class GeneralIT extends BaseIT {
         return tool;
     }
 
+    private io.dockstore.openapi.client.model.DockstoreTool getOpenApiQuayContainer(String gitUrl) {
+        io.dockstore.openapi.client.model.DockstoreTool tool = new io.dockstore.openapi.client.model.DockstoreTool();
+        tool.setMode(ModeEnum.MANUAL_IMAGE_PATH);
+        tool.setName("my-md5sum");
+        tool.setGitUrl(gitUrl);
+        tool.setDefaultDockerfilePath("/md5sum/Dockerfile");
+        tool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
+        tool.setNamespace("dockstoretestuser2");
+        tool.setToolname("altname");
+        tool.setPrivateAccess(false);
+        tool.setDefaultCWLTestParameterFile("/testcwl.json");
+        return tool;
+    }
+
     /**
      * Tests that manually adding a tool that should become auto is properly converted
      */
@@ -1579,4 +1597,108 @@ public class GeneralIT extends BaseIT {
         otherUserContainersApi.getToolZip(toolId, versionId);
     }
 
+    @Test
+    public void testUsernameRequiredFilter() {
+        String gitUrl = "git@github.com:DockstoreTestUser2/dockstore-whalesay-imports.git";
+        io.dockstore.openapi.client.ApiClient openApiClient = BaseIT.getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.HostedApi openApiHosted = new io.dockstore.openapi.client.api.HostedApi(openApiClient);
+        final io.dockstore.openapi.client.api.ContainersApi openApiContainers = new io.dockstore.openapi.client.api.ContainersApi(openApiClient);
+        final io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflows = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        final io.dockstore.openapi.client.api.OrganizationsApi openApiOrganizations = new io.dockstore.openapi.client.api.OrganizationsApi(openApiClient);
+        io.dockstore.openapi.client.api.UsersApi openApiUsers = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+
+        io.dockstore.openapi.client.model.User user1 = openApiUsers.getUser();
+
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
+        try {
+            openApiHosted.createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            fail("Should not be able to create a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        io.dockstore.openapi.client.model.DockstoreTool tool1 = getOpenApiQuayContainer(gitUrl);
+        try {
+            openApiContainers.registerManual(tool1);
+            fail("Should not be able to create a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        tool1 = openApiContainers.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        try {
+            openApiContainers.refresh(tool1.getId());
+            fail("Should not be able to create a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        tool1 = openApiContainers.getContainerByToolPath("registry.hub.docker.com/seqware/seqware/test5", null);
+        io.dockstore.openapi.client.model.StarRequest starRequest1 = new io.dockstore.openapi.client.model.StarRequest();
+        starRequest1.setStar(true);
+        try {
+            openApiContainers.starEntry(starRequest1, tool1.getId());
+            fail("Should not be able to star a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        try {
+            openApiWorkflows.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname",
+                DescriptorLanguage.WDL.getShortName(), "/test.json");
+            fail("Should not be able to register a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        // briefly switch so the workflow can get published and check that a previously blocked request works now
+        testingPostgres.runUpdateStatement("update tool set ispublished = 'f'");
+        openApiUsers.changeUsername("thisIsFine");
+        openApiContainers.starEntry(starRequest1, tool1.getId());
+        openApiWorkflows.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
+        io.dockstore.openapi.client.model.Workflow workflow1 = openApiWorkflows.getWorkflow(1000L, null);
+
+        // Change back to continue testing
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'thisIsFine'");
+        testingPostgres.runUpdateStatement("update enduser set username = 'DockstoreTestUser2' where username = 'thisIsFine'");
+
+        try {
+            openApiWorkflows.starEntry1(workflow1.getId(), starRequest1);
+            fail("Should not be able to star a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        try {
+            openApiWorkflows.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
+            fail("Should not be able to add a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        io.dockstore.openapi.client.model.Organization organization = new io.dockstore.openapi.client.model.Organization();
+        organization.setName("testname");
+        organization.setDisplayName("test name");
+        organization.setEmail("test@email.com");
+        organization.setDescription("");
+        organization.setTopic("This is a short topic");
+
+        try {
+            openApiOrganizations.createOrganization(organization);
+            fail("Should not be able to create an organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 'f' where username = 'DockstoreTestUser2'");
+        organization = openApiOrganizations.createOrganization(organization);
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
+
+        try {
+            openApiOrganizations.starOrganization(starRequest1, organization.getId());
+            fail("Should not be able to star an organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+    }
 }

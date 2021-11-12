@@ -1644,7 +1644,8 @@ paths:
       description: Star a tool.
       operationId: starEntry
       parameters:
-      - in: path
+      - description: Tool to star.
+        in: path
         name: containerId
         required: true
         schema:
@@ -1652,9 +1653,11 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
+        description: StarRequest to star a repo for a user
+        required: true
       responses:
         default:
           content:
@@ -4022,7 +4025,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
         description: StarRequest to star an organization for a user.
@@ -7365,7 +7368,11 @@ components:
           type: string
         bitBucketClientId:
           type: string
+        checkUrlLambdaVersion:
+          type: string
         composeSetupVersion:
+          type: string
+        cwlParsingLambdaVersion:
           type: string
         cwlVisualizerUri:
           type: string
@@ -7382,6 +7389,8 @@ components:
         featuredContentUrl:
           type: string
         featuredNewsUrl:
+          type: string
+        galaxyParsingPluginVersion:
           type: string
         gitBuildVersion:
           type: string
@@ -7409,6 +7418,8 @@ components:
           type: string
         googleScope:
           type: string
+        nextflowParsingLambdaVersion:
+          type: string
         orcidAuthUrl:
           type: string
         orcidClientId:
@@ -7428,6 +7439,8 @@ components:
         tagManagerId:
           type: string
         terraImportUrl:
+          type: string
+        wdlParsingLambdaVersion:
           type: string
         zenodoAuthUrl:
           type: string
@@ -9055,6 +9068,10 @@ components:
             $ref: '#/components/schemas/Profile'
         username:
           type: string
+        usernameChangeRequired:
+          type: boolean
+          description: Indicates whether the user is required to change their username
+            before being allowed to do various operations on Dockstore.
     UserInfo:
       type: object
       properties:
