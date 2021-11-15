@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -50,7 +51,8 @@ public class ToolTesterS3Client {
 
     public ToolTesterS3Client(String bucketName) {
         this.bucketName = bucketName;
-        this.s3 = S3Client.builder().build();
+        //TODO should not need to hardcode region since buckets are global, but http://opensourceforgeeks.blogspot.com/2018/07/how-to-fix-unable-to-find-region-via.html
+        this.s3 = S3Client.builder().region(Region.US_EAST_1).build();
     }
 
     /**
