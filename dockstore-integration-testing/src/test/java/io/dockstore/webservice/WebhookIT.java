@@ -523,6 +523,7 @@ public class WebhookIT extends BaseIT {
      * This tests the GitHub release process when the dockstore.yml is
      * * Missing the primary descriptor
      * * Missing a test parameter file
+     * * Has an unknown property
      */
     @Test
     public void testInvalidDockstoreYmlFiles() throws Exception {
@@ -584,9 +585,30 @@ public class WebhookIT extends BaseIT {
         assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
 
-        // There should be 3 successful lambda events
+        // Push unknownProperty on GitHub - one existing wdl workflow, incorrectly spelled testParameterFiles property
+        client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/unknownProperty", installationId);
+        workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
+        assertEquals(1, workflowCount);
+
+        // Ensure that new version is in the correct state (invalid)
+        workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "validations");
+        assertNotNull(workflow);
+        assertEquals("Should have four versions", 4, workflow.getWorkflowVersions().size());
+
+        WorkflowVersion unknownPropertyVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "unknownProperty")).findFirst().get();
+        assertTrue("Version should be valid (unknown property doesn't make the version invalid)", unknownPropertyVersion.isValid());
+
+        // Check existence of files and validations
+        sourceFiles = fileDAO.findSourceFilesByVersion(unknownPropertyVersion.getId());
+        assertTrue("Should have .dockstore.yml file", sourceFiles.stream().anyMatch(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), DOCKSTORE_YML_PATH)));
+        assertTrue("Should not have /dockstore.wdl.json file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/dockstore.wdl.json")).findFirst().isEmpty());
+        assertTrue("Should have Dockstore2.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
+        assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
+        assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
+
+        // There should be 4 successful lambda events
         List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
-        assertEquals("There should be 3 successful events", 3, events.stream().filter(LambdaEvent::isSuccess).count());
+        assertEquals("There should be 4 successful events", 4, events.stream().filter(LambdaEvent::isSuccess).count());
 
         final int versionCountBeforeInvalidDockstoreYml = getFoobar1Workflow(client).getWorkflowVersions().size();
         // Push branch with invalid dockstore.yml

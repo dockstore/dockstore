@@ -374,5 +374,11 @@ public class DockstoreYamlTest {
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             assertEquals("Unknown property: 'published'. Did you mean: 'publish'?", ex.getMessage());
         }
+
+        try {
+            DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE11_YAML.replace("description", "descriptions"));
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertEquals("Unknown property: 'descriptions'. Did you mean: 'description'?", ex.getMessage());
+        }
     }
 }
