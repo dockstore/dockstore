@@ -38,6 +38,7 @@ import org.yaml.snakeyaml.representer.Representer;
 public final class DockstoreYamlHelper {
 
     public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
+    public static final String UNKNOWN_PROPERTY = "Unknown property: ";
     public static final Pattern WRONG_KEY_PATTERN = Pattern.compile("Unable to find property '(.+)'");
 
     enum Version {
@@ -64,7 +65,7 @@ public final class DockstoreYamlHelper {
 
             @Override
             public void validateDockstoreYamlProperties(final String content) throws DockstoreYamlException {
-                findUnknownProperty(DockstoreYaml11.class, content);
+                checkForUnknownProperty(DockstoreYaml11.class, content);
             }
         },
         ONE_TWO("1.2") {
@@ -77,7 +78,7 @@ public final class DockstoreYamlHelper {
 
             @Override
             public void validateDockstoreYamlProperties(final String content) throws DockstoreYamlException {
-                findUnknownProperty(DockstoreYaml12.class, content);
+                checkForUnknownProperty(DockstoreYaml12.class, content);
             }
         };
 
@@ -227,13 +228,14 @@ public final class DockstoreYamlHelper {
     }
 
     /**
-     * Finds an unknown property in the .dockstore.yml if it exists and tries to find a suggestion.
+     * Checks to see if an unknown property exists in the .dockstore.yml. If there is, an exception is thrown with an error message containing
+     * the unknown property and a suggested property (if one exists).
      * An exception is ONLY thrown if there's an unknown property. Will not throw for other yaml validation errors.
      * @param dockstoreYamlClass DockstoreYaml class. Allowed values: DockstoreYaml12.class, DockstoreYaml11.class
      * @param content .dockstore.yml content
      * @throws DockstoreYamlException Exception is thrown only if an unknown property is found in the content
      */
-    private static void findUnknownProperty(final Class<? extends DockstoreYaml> dockstoreYamlClass, final String content) throws DockstoreYamlException {
+    private static void checkForUnknownProperty(final Class<? extends DockstoreYaml> dockstoreYamlClass, final String content) throws DockstoreYamlException {
         try {
             readContent(content, new Constructor(dockstoreYamlClass), false);
         } catch (DockstoreYamlException ex) {
@@ -243,20 +245,23 @@ public final class DockstoreYamlHelper {
             if (matcher.find()) {
                 String unknownProperty = matcher.group(1);
                 String suggestedProperty = getSuggestedDockstoreYamlProperty(dockstoreYamlClass, unknownProperty);
-                String errorMessage = String.format("Unknown property: '%s'.", unknownProperty);
+                String errorMessage = UNKNOWN_PROPERTY + String.format("'%s'.", unknownProperty);
                 if (!suggestedProperty.isEmpty()) {
                     errorMessage += String.format(" Did you mean: '%s'?", suggestedProperty);
                 }
+                LOG.info(ERROR_READING_DOCKSTORE_YML + errorMessage, ex);
                 throw new DockstoreYamlException(errorMessage);
             }
+            LOG.info(ex.getMessage(), ex);
         }
     }
 
     /**
-     * Finds a valid .dockstore.yml property that is the closest to the unknown property according to its Levenshtein distance.
+     * Tries to find a valid .dockstore.yml property that is the closest to the unknown property according to its Levenshtein distance.
+     * If a suggested property cannot be found, then an empty string is returned.
      * @param dockstoreYamlClass The DockstoreYaml class. Allowed values: DockstoreYaml12.class, Dockstore11.class
      * @param unknownProperty The unknown property to find a suggestion for.
-     * @return A suggested property.
+     * @return A suggested property if one is found or an empty string if a suggested property cannot be found.
      */
     public static String getSuggestedDockstoreYamlProperty(Class<? extends DockstoreYaml> dockstoreYamlClass, String unknownProperty) {
         Set<String> validProperties = getDockstoreYamlProperties(dockstoreYamlClass);

@@ -361,24 +361,26 @@ public class DockstoreYamlTest {
     @Test
     public void testGetDockstoreYamlProperties() {
         Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
-        assertEquals("There should be 33 unique properties in a version 1.2 .dockstore.yml", 33, properties.size());
+        assertEquals("Should have the correct number of unique properties for a version 1.2 .dockstore.yml", 33, properties.size());
 
         properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
-        assertEquals("There should be 29 unique properties in a version 1.1 .dockstore.yml", 29, properties.size());
+        assertEquals("Should have the correct number of unique properties for a version 1.1 .dockstore.yml", 29, properties.size());
     }
 
     @Test
     public void testValidateDockstoreYamlProperties() {
         try {
             DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE12_YAML.replace("publish", "published"));
+            fail("Should not pass property validation because there's an unknown property");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertEquals("Unknown property: 'published'. Did you mean: 'publish'?", ex.getMessage());
+            assertTrue(ex.getMessage().contains(DockstoreYamlHelper.UNKNOWN_PROPERTY));
         }
 
         try {
             DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE11_YAML.replace("description", "descriptions"));
+            fail("Should not pass property validation because there's an unknown property");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertEquals("Unknown property: 'descriptions'. Did you mean: 'description'?", ex.getMessage());
+            assertTrue(ex.getMessage().contains(DockstoreYamlHelper.UNKNOWN_PROPERTY));
         }
     }
 }
