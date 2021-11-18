@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -330,4 +331,56 @@ public class DockstoreYamlTest {
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
     }
 
+
+    @Test
+    public void testGetSuggestedDockstoreYamlProperty() {
+        Class dockstoreYamlClass = DockstoreYaml12.class;
+
+        String suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "z");
+        assertEquals("Shouldn't suggest a property if there's too many changes that needs to be done", "", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "workflows");
+        assertEquals("Should return the same property back if it's already a valid property", "workflows", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "affilliation");
+        assertEquals("affiliation", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "filter");
+        assertEquals("filters", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "apptool");
+        assertEquals("tools", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "e-mail");
+        assertEquals("email", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "testParameterFilets");
+        assertEquals("testParameterFiles", suggestedProperty);
+    }
+
+    @Test
+    public void testGetDockstoreYamlProperties() {
+        Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
+        assertEquals("Should have the correct number of unique properties for a version 1.2 .dockstore.yml", 33, properties.size());
+
+        properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
+        assertEquals("Should have the correct number of unique properties for a version 1.1 .dockstore.yml", 29, properties.size());
+    }
+
+    @Test
+    public void testValidateDockstoreYamlProperties() {
+        try {
+            DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE12_YAML.replace("publish", "published"));
+            fail("Should not pass property validation because there's an unknown property");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains(DockstoreYamlHelper.UNKNOWN_PROPERTY));
+        }
+
+        try {
+            DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE11_YAML.replace("description", "descriptions"));
+            fail("Should not pass property validation because there's an unknown property");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains(DockstoreYamlHelper.UNKNOWN_PROPERTY));
+        }
+    }
 }

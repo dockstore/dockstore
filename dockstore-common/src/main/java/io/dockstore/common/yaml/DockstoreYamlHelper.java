@@ -1,12 +1,20 @@
 package io.dockstore.common.yaml;
 
 import io.dockstore.common.DescriptorLanguageSubclass;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,6 +26,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -29,6 +38,7 @@ import org.yaml.snakeyaml.representer.Representer;
 public final class DockstoreYamlHelper {
 
     public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
+    public static final String UNKNOWN_PROPERTY = "Unknown property: ";
     public static final Pattern WRONG_KEY_PATTERN = Pattern.compile("Unable to find property '(.+)'");
 
     enum Version {
@@ -39,6 +49,11 @@ public final class DockstoreYamlHelper {
                 validate(dockstoreYaml10);
                 return dockstoreYaml10;
             }
+
+            @Override
+            public void validateDockstoreYamlProperties(final String content) throws DockstoreYamlException {
+                return; // Don't validate properties for 1.0
+            }
         },
         ONE_ONE("1.1") {
             @Override
@@ -47,6 +62,11 @@ public final class DockstoreYamlHelper {
                 validate(dockstoreYaml11);
                 return dockstoreYaml11;
             }
+
+            @Override
+            public void validateDockstoreYamlProperties(final String content) throws DockstoreYamlException {
+                checkForUnknownProperty(DockstoreYaml11.class, content);
+            }
         },
         ONE_TWO("1.2") {
             @Override
@@ -54,6 +74,11 @@ public final class DockstoreYamlHelper {
                 final DockstoreYaml12 dockstoreYaml12 = readDockstoreYaml12(content);
                 validate(dockstoreYaml12);
                 return dockstoreYaml12;
+            }
+
+            @Override
+            public void validateDockstoreYamlProperties(final String content) throws DockstoreYamlException {
+                checkForUnknownProperty(DockstoreYaml12.class, content);
             }
         };
 
@@ -64,6 +89,8 @@ public final class DockstoreYamlHelper {
         }
 
         public abstract DockstoreYaml readAndValidateDockstoreYaml(String content) throws DockstoreYamlException;
+
+        public abstract void validateDockstoreYamlProperties(String content) throws DockstoreYamlException;
 
         public static Optional<Version> findVersion(final String versionString) {
             return Stream.of(values()).filter(v -> v.version.equals(versionString)).findFirst();
@@ -112,7 +139,7 @@ public final class DockstoreYamlHelper {
             }
 
         });
-        return readContent(content, constructor);
+        return readContent(content, constructor, true);
     }
 
     static DockstoreYaml readDockstoreYaml(final String content) throws DockstoreYamlException {
@@ -165,17 +192,17 @@ public final class DockstoreYamlHelper {
 
 
     private static DockstoreYaml11 readDockstoreYaml11(final String content) throws DockstoreYamlException {
-        return readContent(content, new Constructor(DockstoreYaml11.class));
+        return readContent(content, new Constructor(DockstoreYaml11.class), true);
     }
 
     private static DockstoreYaml12 readDockstoreYaml12(final String content) throws DockstoreYamlException {
-        return readContent(content, new Constructor(DockstoreYaml12.class));
+        return readContent(content, new Constructor(DockstoreYaml12.class), true);
     }
 
-    private static <T> T readContent(final String content, final Constructor constructor) throws DockstoreYamlException {
+    private static <T> T readContent(final String content, final Constructor constructor, final boolean skipUnknownProperties) throws DockstoreYamlException {
         try {
             Representer representer = new Representer();
-            representer.getPropertyUtils().setSkipMissingProperties(true);
+            representer.getPropertyUtils().setSkipMissingProperties(skipUnknownProperties);
             final Yaml yaml = new Yaml(constructor, representer);
             return yaml.load(content);
         } catch (Exception e) {
@@ -184,6 +211,156 @@ public final class DockstoreYamlHelper {
             errorMsg += exceptionMsg;
             LOG.error(errorMsg, e);
             throw new DockstoreYamlException(errorMsg);
+        }
+    }
+
+    /**
+     * Validates the .dockstore.yml properties. An exception is ONLY thrown if there's an unknown property.
+     * An initial reading of the content (using a method like readAsDockstoreYaml12, for example) should be performed prior to calling this method to catch other validation errors.
+     * @param content .dockstore.yml content
+     * @throws DockstoreYamlException Exception is thrown only if an unknown property is found in the content.
+     */
+    public static void validateDockstoreYamlProperties(final String content) throws DockstoreYamlException {
+        final Optional<Version> maybeVersion = findValidVersion(content);
+        if (maybeVersion.isPresent()) {
+            maybeVersion.get().validateDockstoreYamlProperties(content);
+        }
+    }
+
+    /**
+     * Checks to see if an unknown property exists in the .dockstore.yml. If there is, an exception is thrown with an error message containing
+     * the unknown property and a suggested property (if one exists).
+     * An exception is ONLY thrown if there's an unknown property. Will not throw for other yaml validation errors.
+     * @param dockstoreYamlClass DockstoreYaml class. Allowed values: DockstoreYaml12.class, DockstoreYaml11.class
+     * @param content .dockstore.yml content
+     * @throws DockstoreYamlException Exception is thrown only if an unknown property is found in the content
+     */
+    private static void checkForUnknownProperty(final Class<? extends DockstoreYaml> dockstoreYamlClass, final String content) throws DockstoreYamlException {
+        try {
+            readContent(content, new Constructor(dockstoreYamlClass), false);
+        } catch (DockstoreYamlException ex) {
+            String exceptionMessage = ex.getMessage();
+            final Matcher matcher = WRONG_KEY_PATTERN.matcher(exceptionMessage);
+
+            if (matcher.find()) {
+                String unknownProperty = matcher.group(1);
+                String suggestedProperty = getSuggestedDockstoreYamlProperty(dockstoreYamlClass, unknownProperty);
+                String errorMessage = UNKNOWN_PROPERTY + String.format("'%s'.", unknownProperty);
+                if (!suggestedProperty.isEmpty()) {
+                    errorMessage += String.format(" Did you mean: '%s'?", suggestedProperty);
+                }
+                LOG.info(ERROR_READING_DOCKSTORE_YML + errorMessage, ex);
+                throw new DockstoreYamlException(errorMessage);
+            }
+            LOG.info(ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Tries to find a valid .dockstore.yml property that is the closest to the unknown property according to its Levenshtein distance.
+     * If a suggested property cannot be found, then an empty string is returned.
+     * @param dockstoreYamlClass The DockstoreYaml class. Allowed values: DockstoreYaml12.class, Dockstore11.class
+     * @param unknownProperty The unknown property to find a suggestion for.
+     * @return A suggested property if one is found or an empty string if a suggested property cannot be found.
+     */
+    public static String getSuggestedDockstoreYamlProperty(Class<? extends DockstoreYaml> dockstoreYamlClass, String unknownProperty) {
+        Set<String> validProperties = getDockstoreYamlProperties(dockstoreYamlClass);
+        LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
+        int shortestDistance = Integer.MAX_VALUE;
+        String shortestDistanceProperty = "";
+
+        if (validProperties.contains(unknownProperty) || unknownProperty.isEmpty()) {
+            return unknownProperty;
+        }
+
+        for (String validProperty : validProperties) {
+            int distance = levenshteinDistance.apply(unknownProperty, validProperty);
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                shortestDistanceProperty = validProperty;
+            }
+        }
+
+        // Return the property if the number of changes needed to be made is less than the length of the unknown property.
+        // This is to prevent suggestions that don't make sense.
+        if (shortestDistance < unknownProperty.length()) {
+            return shortestDistanceProperty;
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Gets all the properties of a .dockstore.yml as a list of strings.
+     * The convention that makes this work is that all the property fields in the DockstoreYaml classes are private.
+     * Uses bread-first search to find all the classes.
+     * @param dockstoreYamlClass The DockstoreYaml class. Allowed values: DockstoreYaml12.class, DockstoreYaml11.class
+     * @return A set of properties belonging to the .dockstore.yml version
+     */
+    public static Set<String> getDockstoreYamlProperties(Class<? extends DockstoreYaml> dockstoreYamlClass) {
+        Set<String> properties = new HashSet<>();
+        Queue<Class> dockstoreYmlPropertiesQueue = new ArrayDeque<>(); // A queue to process the property classes
+        List<Class> discoveredClasses = new ArrayList<>();
+        final String dockstoreYamlPackageName = dockstoreYamlClass.getPackageName();
+
+        discoveredClasses.add(dockstoreYamlClass);
+        dockstoreYmlPropertiesQueue.add(dockstoreYamlClass); // Add the high level class to the queue
+
+        while (!dockstoreYmlPropertiesQueue.isEmpty()) {
+            Class propertyClass = dockstoreYmlPropertiesQueue.poll(); // Get a class in the queue to process
+            Field[] declaredFields = propertyClass.getDeclaredFields(); // Get all the fields declared in the class
+
+            // Go through each field and determine if the field needs to be parsed further for properties
+            for (Field field : declaredFields) {
+                if (Modifier.isPublic(field.getModifiers())) {
+                    continue; // By our own convention, public fields are not part of the .dockstore.yml properties
+                }
+
+                // The field name is a .dockstore.yml property
+                properties.add(field.getName());
+
+                // Determine the class of the field
+                Class fieldClass = field.getType();
+                Type fieldGenericType = field.getGenericType(); // This is the field's generic type, if it has one. If it doesn't, this is just the field's class
+                if  (fieldGenericType instanceof ParameterizedType) {
+                    // Example: List<YamlWorkflow> is a parameterized type. We want to get the class YamlWorkflow
+                    Type[] parameterizedTypes = ((ParameterizedType) fieldGenericType).getActualTypeArguments();
+                    // There can be more than one parameterized type if it's something like Map<String, String>
+                    for (Type type: parameterizedTypes) {
+                        String className = type.getTypeName();
+                        try {
+                            fieldClass = Class.forName(className);
+                        } catch (ClassNotFoundException ex) {
+                            LOG.error("Could not get the class object for {}", className, ex);
+                            continue;
+                        }
+                        addNewPropertyClassToQueue(dockstoreYamlPackageName, fieldClass, discoveredClasses, dockstoreYmlPropertiesQueue);
+                    }
+                } else {
+                    addNewPropertyClassToQueue(dockstoreYamlPackageName, fieldClass, discoveredClasses, dockstoreYmlPropertiesQueue);
+                }
+            }
+        }
+
+        return properties;
+    }
+
+    /**
+     * Adds a class to the queue if it belongs in the io.dockstore.common.yaml package and it hasn't been processed yet.
+     * Also checks if the class has a super class and adds that to the queue if it's valid.
+     * @param dockstoreYamlPackageName The package name of the DockstoreYaml class
+     * @param propertyClass The class to add to the queue if it's valid
+     * @param discoveredClasses List of classes that have been discovered and processed
+     * @param classQueue Queue of classes waiting to be processed
+     */
+    private static void addNewPropertyClassToQueue(String dockstoreYamlPackageName, Class propertyClass, List<Class> discoveredClasses, Queue classQueue) {
+        // Check if the class is in the io.dockstore.common.yaml package to prevent classes like String from being added to the queue
+        if (propertyClass.getPackageName().equals(dockstoreYamlPackageName) && !discoveredClasses.contains(propertyClass)) {
+            discoveredClasses.add(propertyClass);
+            classQueue.add(propertyClass);
+
+            // Check if the superclass is a valid .dockstore.yml class. Ex: Service12's superclass is AbstractYamlService
+            addNewPropertyClassToQueue(dockstoreYamlPackageName, propertyClass.getSuperclass(), discoveredClasses, classQueue);
         }
     }
 

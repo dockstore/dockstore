@@ -776,8 +776,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         version.setWorkflowPath(primaryDescriptorPath);
 
-        Map<String, String> validationMessage = new HashMap<>();
-
+        String validationMessage = "";
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
@@ -813,17 +812,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
                 if (missingParamFiles.size() > 0) {
-                    validationMessage.put(DOCKSTORE_YML_PATH, String.format("%s: %s.", missingParamFiles.size() == 1 ? "The following file is missing" : "The following files are missing",
-                            missingParamFiles.stream().map(paramFile -> String.format("'%s'", paramFile)).collect(Collectors.joining(", "))));
+                    validationMessage = String.format("The following %s missing: %s.", missingParamFiles.size() == 1 ? "file is" : "files are",
+                            missingParamFiles.stream().map(paramFile -> String.format("'%s'", paramFile)).collect(Collectors.joining(", ")));
                 }
             }
         } else {
             // File not found or null
             LOG.info("Could not find the file " + primaryDescriptorPath + " in repo " + repository);
-            validationMessage.put(DOCKSTORE_YML_PATH, "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.");
+            validationMessage = "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.";
         }
 
-        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessage.isEmpty(), validationMessage);
+        try {
+            DockstoreYamlHelper.validateDockstoreYamlProperties(dockstoreYml.getContent()); // Validate that there are no unknown properties
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            validationMessage = validationMessage.isEmpty() ? ex.getMessage() : validationMessage + " " + ex.getMessage();
+        }
+
+        Map<String, String> validationMessageObject = new HashMap<>();
+        if (!validationMessage.isEmpty()) {
+            validationMessageObject.put(DOCKSTORE_YML_PATH, validationMessage);
+        }
+        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessageObject.isEmpty(), validationMessageObject);
         Validation dockstoreYmlValidation = new Validation(DescriptorLanguage.FileType.DOCKSTORE_YML, dockstoreYmlValidationMessage);
         version.addOrUpdateValidation(dockstoreYmlValidation);
 

@@ -30,12 +30,12 @@ public class YamlWorkflow {
      * Allow GALAXY, but continue to support GXFORMAT2, and keep it
      * as GXFORMAT2 in the object for other classes already relying on that
      */
-    private static final String NEW_GALAXY_SUBCLASS = "GALAXY";
+    public static final String NEW_GALAXY_SUBCLASS = "GALAXY";
 
     private String name;
-    @NotNull
+    @NotNull(message = "Missing property \"subclass\"")
     private String subclass;
-    @NotNull
+    @NotNull(message = "Missing property \"primaryDescriptorPath\"")
     private String primaryDescriptorPath;
 
     /**

@@ -49,35 +49,35 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
     public VersionTypeValidation validateWorkflowSet(String initialPath, String contents,
         Map<String, Pair<String, GenericFileType>> indexedFiles) {
 
+        String validationMessage = "";
         Map<String, String> validationMessageObject = new HashMap<>();
 
-        boolean isValid = true;
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(contents);
             final Service12 service = dockstoreYaml12.getService();
             if (service == null) {
-                validationMessageObject.put(initialPath, "No services are defined.");
-                isValid = false;
+                validationMessage = "No services are defined.";
             } else {
                 final List<String> files = service.getFiles();
                 if (files == null) {
-                    validationMessageObject.put(initialPath, "The key 'files' does not exist.");
-                    isValid = false;
+                    validationMessage = "The key 'files' does not exist.";
                 } else {
                     // check that files in .dockstore.yml exist
                     String missingFiles = files.stream().filter(file -> indexedFiles.get("/" + file) == null).map(file -> String.format("'%s'", file))
                         .collect(Collectors.joining(", "));
                     if (!missingFiles.isEmpty()) {
-                        validationMessageObject.put(initialPath, String.format("The following file(s) are missing: %s.", missingFiles));
-                        isValid = false;
+                        validationMessage = String.format("The following file(s) are missing: %s.", missingFiles);
                     }
                 }
             }
+            DockstoreYamlHelper.validateDockstoreYamlProperties(contents); // Validate that there are no unknown properties
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            validationMessageObject.put(initialPath, ex.getMessage());
-            isValid = false;
+            validationMessage = validationMessage.isEmpty() ? ex.getMessage() : validationMessage + " " + ex.getMessage();
         }
-        VersionTypeValidation validation = new VersionTypeValidation(isValid, validationMessageObject);
+        if (!validationMessage.isEmpty()) {
+            validationMessageObject.put(initialPath, validationMessage);
+        }
+        VersionTypeValidation validation = new VersionTypeValidation(validationMessageObject.isEmpty(), validationMessageObject);
         return validation;
     }
 
