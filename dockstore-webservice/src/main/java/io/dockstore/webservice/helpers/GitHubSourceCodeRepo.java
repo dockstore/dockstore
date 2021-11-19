@@ -513,14 +513,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         if (!toIgnore) {
             try {
-                sha = ref.getObject().getSha();
-                if (ref.getObject().getType().equals("tag")) {
-                    GHTagObject tagObject = repository.getTagObject(sha);
-                    sha = tagObject.getObject().getSha();
-                } else if (ref.getObject().getType().equals("branch")) {
-                    GHBranch branch = repository.getBranch(refName);
-                    sha = branch.getSHA1();
-                }
+                sha = getCommitSHA(ref, repository, refName);
 
                 GHCommit commit = repository.getCommit(sha);
                 branchDate = commit.getCommitDate();
@@ -534,6 +527,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             return null;
         }
+    }
+
+    private String getCommitSHA(GHRef ref, GHRepository repository, String refName) throws IOException {
+        String sha = ref.getObject().getSha();
+        if (ref.getObject().getType().equals("tag")) {
+            GHTagObject tagObject = repository.getTagObject(sha);
+            sha = tagObject.getObject().getSha();
+        } else if (ref.getObject().getType().equals("branch")) {
+            GHBranch branch = repository.getBranch(refName);
+            sha = branch.getSHA1();
+        } else {
+            // I'm not sure when this would ever happen.
+            throw new CustomWebApplicationException("Unsupported branch/tag/release. Unable to find commit ID.", HttpStatus.SC_BAD_REQUEST);
+        }
+        return sha;
     }
 
     /**
@@ -997,16 +1005,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // When a user creates an annotated tag, the object type will be a tag. Otherwise, it's probably of type commit?
                 // The documentation doesn't list the possibilities https://github-api.kohsuke.org/apidocs/org/kohsuke/github/GHRef.GHObject.html#getType(),
                 // but I'll assume it mirrors the 4 Git types: blobs, trees, commits, and tags.
-                if (reference.equals(version.getReference())) {
-                    if ("commit".equals(ref.getObject().getType())) {
-                        return ref.getObject().getSha();
-                    } else if ("tag".equals(ref.getObject().getType())) {
-                        return repo.getTagObject(ref.getObject().getSha()).getObject().getSha();
-                    } else {
-                        // I'm not sure when this would ever happen.
-                        throw new CustomWebApplicationException("Unsupported branch/tag/release. Unable to find commit ID.", HttpStatus.SC_BAD_REQUEST);
-                    }
-                }
+                return getCommitSHA(ref, repo, reference);
             }
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage(), e);
