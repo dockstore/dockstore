@@ -542,7 +542,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             // I'm not sure when this would happen.
             LOG.error("Unsupported GitHub reference object. Unable to find commit ID for type: " + ref.getObject().getType());
-            throw new CustomWebApplicationException("Unsupported branch/tag/release. Unable to find commit ID.", HttpStatus.SC_BAD_REQUEST);
+            // This is probably wrong, but we should mimic the behaviour from before since this is a hotfix.
+            sha = ref.getObject().getSha();
         }
         return sha;
     }
