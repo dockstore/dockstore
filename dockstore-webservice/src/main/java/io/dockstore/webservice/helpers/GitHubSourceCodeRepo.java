@@ -530,15 +530,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     private String getCommitSHA(GHRef ref, GHRepository repository, String refName) throws IOException {
-        String sha = ref.getObject().getSha();
-        if (ref.getObject().getType().equals("tag")) {
+        String sha = null;
+        if ("commit".equals(ref.getObject().getType())) {
+            sha = ref.getObject().getSha();
+        } else if (ref.getObject().getType().equals("tag")) {
             GHTagObject tagObject = repository.getTagObject(sha);
             sha = tagObject.getObject().getSha();
         } else if (ref.getObject().getType().equals("branch")) {
             GHBranch branch = repository.getBranch(refName);
             sha = branch.getSHA1();
         } else {
-            // I'm not sure when this would ever happen.
+            // I'm not sure when this would happen.
+            LOG.error("Unsupported GitHub reference object. Unable to find commit ID for type: " + ref.getObject().getType());
             throw new CustomWebApplicationException("Unsupported branch/tag/release. Unable to find commit ID.", HttpStatus.SC_BAD_REQUEST);
         }
         return sha;
