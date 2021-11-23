@@ -28,7 +28,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.testing.ResourceHelpers;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Rule;
