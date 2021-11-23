@@ -262,6 +262,10 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
+    @Column
+    @ApiModelProperty(value = "Short description of the entry")
+    private String topic;
+
     public Entry() {
         users = new TreeSet<>();
         starredUsers = new TreeSet<>();
@@ -684,5 +688,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }
