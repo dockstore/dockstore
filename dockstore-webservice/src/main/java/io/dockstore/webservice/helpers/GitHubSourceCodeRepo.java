@@ -529,6 +529,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    // When a user creates an annotated tag, the object type will be a tag. Otherwise, it's probably of type commit?
+    // The documentation doesn't list the possibilities https://github-api.kohsuke.org/apidocs/org/kohsuke/github/GHRef.GHObject.html#getType(),
+    // but I'll assume it mirrors the 4 Git types: blobs, trees, commits, and tags.
     private String getCommitSHA(GHRef ref, GHRepository repository, String refName) throws IOException {
         String sha = null;
         if ("commit".equals(ref.getObject().getType())) {
@@ -1006,9 +1009,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
-                // When a user creates an annotated tag, the object type will be a tag. Otherwise, it's probably of type commit?
-                // The documentation doesn't list the possibilities https://github-api.kohsuke.org/apidocs/org/kohsuke/github/GHRef.GHObject.html#getType(),
-                // but I'll assume it mirrors the 4 Git types: blobs, trees, commits, and tags.
                 return getCommitSHA(ref, repo, reference);
             }
         } catch (IOException e) {
