@@ -262,8 +262,8 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
-    @Column
-    @ApiModelProperty(value = "Short description of the entry")
+    @Column()
+    @Schema(description = "Short description of the entry")
     private String topic;
 
     public Entry() {
