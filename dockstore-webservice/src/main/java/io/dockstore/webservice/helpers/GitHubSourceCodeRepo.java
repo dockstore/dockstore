@@ -1009,7 +1009,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
-                return getCommitSHA(ref, repo, reference);
+                if (reference.equals(version.getReference())) {
+                    return getCommitSHA(ref, repo, reference);
+                }
+
             }
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on getCommitId " + e.getMessage(), e);
