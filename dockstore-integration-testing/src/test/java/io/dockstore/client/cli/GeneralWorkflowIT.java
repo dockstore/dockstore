@@ -589,7 +589,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testAddingWorkflowForumUrl() throws ApiException {
+    public void testAddingWorkflowForumUrlAndTopic() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -600,14 +600,17 @@ public class GeneralWorkflowIT extends BaseIT {
                         "/test.json");
         
         //update the forumUrl to hello.com
+        final String newTopic = "newTopic";
         workflow.setForumUrl("hello.com");
-        workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId(), false);
+        workflow.setTopic(newTopic);
+        Workflow updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
         //check the workflow's forumUrl is hello.com
         final String updatedForumUrl = testingPostgres
                 .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
         assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
+
+        Assert.assertEquals(newTopic, updatedWorkflow.getTopic());
     }
 
     @Test
