@@ -16,7 +16,19 @@
 
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.core.GenericType;
 
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
@@ -39,22 +51,12 @@ import io.swagger.bitbucket.client.model.PaginatedRepositories;
 import io.swagger.bitbucket.client.model.PaginatedTreeentries;
 import io.swagger.bitbucket.client.model.Repository;
 import io.swagger.bitbucket.client.model.Tag;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.ws.rs.core.GenericType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -71,6 +73,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
 
+    // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
+    // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
+    // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
+    // in https://www.regular-expressions.info/catastrophic.html
+    // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
+    // Can test regex at https://regex101.com/
+    // format 1 git@bitbucket.org:dockstore/dockstore-ui.git
+    private static final Pattern BITBUCKET_REGEX_PATTERN = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
 
 
     /**
@@ -359,8 +369,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String repositoryId;
         String giturl = entry.getGitUrl();
 
-        Pattern p = Pattern.compile("git@bitbucket.org:(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(giturl);
+        Matcher m = BITBUCKET_REGEX_PATTERN.matcher(giturl);
         LOG.info(gitUsername + ": " + giturl);
 
         if (!m.find()) {

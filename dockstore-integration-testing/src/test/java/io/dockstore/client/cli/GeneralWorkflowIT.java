@@ -16,16 +16,10 @@
 
 package io.dockstore.client.cli;
 
-import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
-import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
-import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
-import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -43,10 +37,6 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -60,6 +50,17 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+
+import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
+import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
+import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * This test suite tests various workflow related processes.
@@ -304,6 +305,30 @@ public class GeneralWorkflowIT extends BaseIT {
                 "/Dockstore.wdl", true);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
+        }
+    }
+
+    /**
+     * This tests adding and removing labels from a workflow
+     */
+    @Test
+    public void testLabelFormat() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        // Set up workflow
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl",
+                SourceControl.GITHUB, "/Dockstore.wdl", true);
+
+        // test good labels
+        workflow = workflowsApi.updateLabels(workflow.getId(), "abc,abc-abc,123-123,abc-123,123-abc-abc", "");
+        assertEquals(5, workflow.getLabels().size());
+
+        // test bad labels
+        try {
+            workflow = workflowsApi.updateLabels(workflow.getId(), "-,-abc,123-,abc--123,123-abc-", "");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Invalid label format"));
         }
     }
 
