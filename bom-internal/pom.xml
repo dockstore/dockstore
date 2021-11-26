@@ -136,6 +136,11 @@ POM as their parent.
                 <artifactId>cromwell-wdl-transforms-draft3_2.12</artifactId>
                 <version>${cromwell.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.core</artifactId>
+                <version>6.0.0</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.broadinstitute</groupId>
@@ -440,8 +445,40 @@ POM as their parent.
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.4.3.Final</version>
+                <version>6.1.7.Final</version>
             </dependency>
+            <dependency>
+                <groupId>org.hibernate.common</groupId>
+                <artifactId>hibernate-commons-annotations</artifactId>
+                <version>5.1.2.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.enterprise</groupId>
+                <artifactId>cdi-api</artifactId>
+                <version>2.0.Beta1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>2.11.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.transaction</groupId>
+                <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                <version>1.1.1.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>7.0.0-beta1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <version>4.3.0</version>
+            </dependency>
+
+
 
             <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
             <dependency>
@@ -589,7 +626,7 @@ POM as their parent.
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
                 <scope>provided</scope>
-                <version>3.0.1</version>
+                <version>3.0.1u2</version>
             </dependency>
 
             <dependency>
@@ -738,6 +775,11 @@ POM as their parent.
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-compiler</artifactId>
                 <version>${scala.version}</version>
             </dependency>
             <dependency>
@@ -1123,6 +1165,11 @@ POM as their parent.
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>jakarta.servlet-api</artifactId>
                 <version>4.0.4</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>servlet-api</artifactId>
+                <version>2.5</version>
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch.client</groupId>
