@@ -47,7 +47,7 @@ POM as their parent.
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <dropwizard.version>2.0.25</dropwizard.version>
-        <dropwizard-annotations.version>4.1.25</dropwizard-annotations.version>
+        <dropwizard-annotations.version>4.2.4</dropwizard-annotations.version>
         <elasticsearch-version>7.10.2</elasticsearch-version>
         <swagger-annotations-version>1.6.3</swagger-annotations-version>
         <openapi-annotations-version>2.1.11</openapi-annotations-version>
@@ -476,6 +476,11 @@ POM as their parent.
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-annotations</artifactId>
                 <version>4.3.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>2.3.3</version>
             </dependency>
 
 
