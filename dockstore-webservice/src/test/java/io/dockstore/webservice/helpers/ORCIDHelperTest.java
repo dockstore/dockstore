@@ -1,0 +1,39 @@
+/*
+ * Copyright 2021 OICR and UCSC
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.dockstore.webservice.helpers;
+
+import io.dockstore.webservice.helpers.ORCIDHelper;
+import org.junit.Assert;
+import org.junit.Test;
+
+public class ORCIDHelperTest {
+
+    @Test
+    public void testDoiToUrl() throws IOException {
+
+        // Valid DOIs should be converted to a URL that references the doi.org proxy.
+        // A valid DOI starts with "10." and contains a slash.
+        for (String doi: Arrays.asList("10.5281/zenodo.5541915", "10.foo/bar")) {
+            assertEquals("https://doi.org/" + doi, ORCIDHelper.doiToUrl(doi));
+        }
+
+        // Invalid DOIs, including DOI URLs, should be returned as-is.
+        for (String nonDoi: Arrays.asList("https://doi.org/10.5281/zenodo.5541915", "10.1234", "", null)) {
+            assertEquals(nonDoi, ORCIDHelper.doiToUrl(nonDoi));
+        }
+    }
+}
