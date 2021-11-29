@@ -16,24 +16,24 @@
 
 package io.dockstore.webservice.helpers;
 
-import io.dockstore.webservice.helpers.ORCIDHelper;
+import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class ORCIDHelperTest {
 
     @Test
-    public void testDoiToUrl() throws IOException {
+    public void testDoiToUrl() {
 
         // Valid DOIs should be converted to a URL that references the doi.org proxy.
         // A valid DOI starts with "10." and contains a slash.
-        for (String doi: Arrays.asList("10.5281/zenodo.5541915", "10.foo/bar")) {
-            assertEquals("https://doi.org/" + doi, ORCIDHelper.doiToUrl(doi));
+        for (String doi: Arrays.asList("10.5281/zenodo.5541915", "10.3.14159/foobar")) {
+            Assert.assertEquals("https://doi.org/" + doi, ORCIDHelper.doiToUrl(doi));
         }
 
         // Invalid DOIs, including DOI URLs, should be returned as-is.
-        for (String nonDoi: Arrays.asList("https://doi.org/10.5281/zenodo.5541915", "10.1234", "", null)) {
-            assertEquals(nonDoi, ORCIDHelper.doiToUrl(nonDoi));
+        for (String nonDoi: Arrays.asList("https://doi.org/10.5281/zenodo.5541915", "12.13.14/potato", "")) {
+            Assert.assertEquals(nonDoi, ORCIDHelper.doiToUrl(nonDoi));
         }
     }
 }

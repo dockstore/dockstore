@@ -113,13 +113,14 @@ public final class ORCIDHelper {
     }
 
     public static String doiToUrl(String doi) {
-        // If the DOI appears well-formed, return the corresponding doi.org proxy URL.
-        // https://www.doi.org/doi_handbook/2_Numbering.html
+        // If the DOI appears well-formed, return the corresponding doi.org proxy URL:
         // https://www.doi.org/factsheets/DOIProxy.html
+        // A well-formed DOI starts with "10." and contains a slash:
+        // https://www.doi.org/doi_handbook/2_Numbering.html#2.2
         if (doi != null && doi.startsWith("10.") && doi.contains("/")) {
             return "https://doi.org/" + doi;
         }
-        // Otherwise, it might be a URL already, empty, or null.  Return as-is.
+        // If the argument isn't a well-formed DOI, it might be a URL already, or empty.  Return as-is.
         return doi;
     }
 
