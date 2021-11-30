@@ -141,6 +141,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRepository repository = github.getRepository(repositoryId);
             return repository.getDescription();
         } catch (IOException e) {
+            LOG.error(String.format("Could not get topic from: %s", repositoryId, e));
             return null;
         }
     }
