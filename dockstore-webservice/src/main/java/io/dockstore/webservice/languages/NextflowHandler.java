@@ -370,6 +370,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
     private List<String> getInputDependencyList(GroovySourceAST processAST) {
         GroovySourceAST inputAST = getFirstAstWithKeyword(processAST, "input", true);
         if (inputAST != null) {
+            // Stops from parsing outside the input AST
+            inputAST.setNextSibling(null);
             return getListOfIO(inputAST);
         } else {
             return new ArrayList<>();
