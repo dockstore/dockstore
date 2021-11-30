@@ -136,6 +136,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    public String getTopic(String repositoryId) {
+        try {
+            GHRepository repository = github.getRepository(repositoryId);
+            return repository.getDescription();
+        } catch (IOException e) {
+            LOG.error(String.format("Could not get topic from: %s", repositoryId, e));
+            return null;
+        }
+    }
+
     @Override
     public String getName() {
         return "GitHub";
@@ -337,6 +347,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            workflow.setTopic(this.getTopic(repositoryId));
             setLicenseInformation(workflow, workflow.getOrganization() + '/' + workflow.getRepository());
 
             // Why is the path not set here?
@@ -367,6 +378,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
+        service.setTopic(this.getTopic(repositoryId));
         this.setLicenseInformation(service, repositoryId);
         LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
         service.setLicenseInformation(licenseInformation);
@@ -419,6 +431,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
         workflow.setWorkflowName(workflowName);
+        workflow.setTopic(this.getTopic(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
         DescriptorLanguage descriptorLanguage;
         try {

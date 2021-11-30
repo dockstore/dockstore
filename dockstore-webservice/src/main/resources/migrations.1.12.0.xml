@@ -227,4 +227,18 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="gluu (generated)" id="addTopic">
+        <addColumn tableName="apptool">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

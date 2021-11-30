@@ -465,6 +465,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow wf = workflowDAO.findById(workflowId);
         checkEntry(wf);
+        // TODO: Need to handle updating a hosted workflow's workflow-level properties such as forumUrl and topic
         checkNotHosted(wf);
         checkCanWriteWorkflow(user, wf);
 
@@ -514,6 +515,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
+        oldWorkflow.setTopic(newWorkflow.getTopic());
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);

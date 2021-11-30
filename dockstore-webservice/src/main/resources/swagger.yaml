@@ -6675,6 +6675,8 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
+      topic:
+        type: "string"
       topicId:
         type: "integer"
         format: "int64"
@@ -6919,6 +6921,8 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
+      topic:
+        type: "string"
       topicId:
         type: "integer"
         format: "int64"
@@ -8633,6 +8637,8 @@ definitions:
         $ref: "#/definitions/LicenseInformation"
       parentEntry:
         $ref: "#/definitions/Entry"
+      topic:
+        type: "string"
       topicId:
         type: "integer"
         format: "int64"

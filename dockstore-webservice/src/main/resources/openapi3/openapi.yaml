@@ -7602,6 +7602,9 @@ components:
           type: string
         toolname:
           type: string
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
@@ -7691,6 +7694,9 @@ components:
           items:
             $ref: '#/components/schemas/User'
           uniqueItems: true
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
@@ -7781,6 +7787,9 @@ components:
           items:
             $ref: '#/components/schemas/User'
           uniqueItems: true
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
@@ -9395,6 +9404,9 @@ components:
           items:
             $ref: '#/components/schemas/User'
           uniqueItems: true
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
