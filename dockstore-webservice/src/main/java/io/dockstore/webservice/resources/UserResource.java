@@ -607,7 +607,11 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/{userId}/appTools")
     @Timed
     @UnitOfWork
-    @Operation(operationId = "userAppTools", description = "List all appTools owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), method = "GET")
+    @Operation(operationId = "userAppTools", description = "List all appTools owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+        + "", description = "A list of GitHub App tools owned by the user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     public List<Workflow> userAppTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);

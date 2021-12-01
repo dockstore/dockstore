@@ -5050,14 +5050,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: A list of GitHub App tools owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
