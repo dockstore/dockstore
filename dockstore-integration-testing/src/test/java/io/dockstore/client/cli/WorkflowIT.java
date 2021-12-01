@@ -501,6 +501,44 @@ public class WorkflowIT extends BaseIT {
     }
 
     /**
+     * Tests for https://github.com/dockstore/dockstore/issues/3928
+     */
+    @Test
+    public void testNextflowTableToolAndDagContent() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        // Test getting the tool table and dag for a nextflow workflow that has a nextflow.config and main.nf
+        Workflow workflow = manualRegisterAndPublish(workflowApi, "kathy-t/hello-nextflow-workflow", "", "nfl", SourceControl.GITHUB, "/nextflow.config", false);
+        WorkflowVersion masterVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("master")).findFirst().get();
+        String masterToolJsonFromApi = workflowApi.getTableToolContent(workflow.getId(), masterVersion.getId());
+        String masterToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", masterVersion.getId()), String.class);
+        assertNotNull(masterToolJson);
+        assertFalse(masterToolJson.isEmpty());
+        assertEquals(masterToolJsonFromApi, masterToolJson);
+
+        String masterDagJsonFromApi = workflowApi.getWorkflowDag(workflow.getId(), masterVersion.getId());
+        String masterDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", masterVersion.getId()), String.class);
+        assertNotNull(masterDagJson);
+        assertFalse(masterDagJson.isEmpty());
+        assertEquals(masterDagJsonFromApi, masterDagJson);
+
+        // Test getting the tool table and dag for a nextflow workflow that has a nextflow.config but is missing main.nf
+        WorkflowVersion missingMainScriptVersion = workflow.getWorkflowVersions().stream().filter(wv -> wv.getName().equals("missingMainScriptFile")).findFirst().get();
+        String missingMainScriptToolJsonFromApi = workflowApi.getTableToolContent(workflow.getId(), missingMainScriptVersion.getId());
+        String missingMainScriptToolJson = testingPostgres.runSelectStatement(String.format("select tooltablejson from workflowversion where id = '%s'", missingMainScriptVersion.getId()), String.class);
+        assertNotNull(missingMainScriptToolJson);
+        assertFalse(missingMainScriptToolJson.isEmpty());
+        assertEquals(missingMainScriptToolJsonFromApi, missingMainScriptToolJson);
+
+        String missingMainScriptDagJsonFromApi = workflowApi.getWorkflowDag(workflow.getId(), missingMainScriptVersion.getId());
+        String missingMainScriptDagJson = testingPostgres.runSelectStatement(String.format("select dagjson from workflowversion where id = '%s'", missingMainScriptVersion.getId()), String.class);
+        assertNotNull(missingMainScriptDagJson);
+        assertFalse(missingMainScriptDagJson.isEmpty());
+        assertEquals(missingMainScriptDagJsonFromApi, missingMainScriptDagJson);
+    }
+
+    /**
      * This tests that you are able to download zip files for versions of a workflow
      */
     @Test
