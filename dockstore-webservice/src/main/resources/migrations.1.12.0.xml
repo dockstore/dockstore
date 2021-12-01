@@ -241,4 +241,10 @@
             <column name="topic" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
+    <changeSet author="svonworl" id="removeGarbageFromVersionMetadata">
+        <!-- clean up some 'string' string literals that somehow snuck into version_metadata -->
+        <sql dbms="postgresql">
+            update version_metadata set doiurl = null where doiurl = 'string';
+        </sql>
+    </changeSet>
 </databaseChangeLog>
