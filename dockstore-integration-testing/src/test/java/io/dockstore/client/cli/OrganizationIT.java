@@ -530,6 +530,7 @@ public class OrganizationIT extends BaseIT {
         io.dockstore.openapi.client.model.Organization newOrganization = new io.dockstore.openapi.client.model.Organization();
         newOrganization.setDisplayName(organization.getDisplayName());
         newOrganization.setName(organization.getName());
+        newOrganization.setEmail("fakeEmail@gmail.com");
         organizationsApiAdmin.updateOrganization(newOrganization, organization.getId());
 
         // attempt to update organization with no name
