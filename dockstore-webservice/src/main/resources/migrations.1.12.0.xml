@@ -1,0 +1,244 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2021 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.12.0">
+    <changeSet author="ktran (generated)" id="addImageSpecifier">
+        <addColumn tableName="image">
+            <column name="specifier" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="natalieperez (generated)" id="addAppTool">
+        <createTable tableName="apptool">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="apptool_pkey"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="conceptdoi" type="VARCHAR(255)"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="licensename" type="VARCHAR(255)"/>
+            <column name="orcidputcode" type="VARCHAR(255)"/>
+            <column name="topicid" type="BIGINT"/>
+            <column name="checkerid" type="BIGINT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="n/a" name="descriptortypesubclass" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forumurl" type="VARCHAR(256)"/>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+            <column name="actualdefaultversion" type="BIGINT"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="actualdefaultversion" baseTableName="apptool" constraintName="fk_defaultversion_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+        <addUniqueConstraint columnNames="actualdefaultversion" constraintName="uk_actualdefaultversion_apptool" tableName="apptool"/>
+        <addUniqueConstraint columnNames="checkerid" constraintName="uk_checkerid_apptool" tableName="apptool"/>
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="apptool" constraintName="fk_checkerid_apptool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="upgradeLiquibase">
+        <dropIndex tableName="cloud_instance" indexName="unique_user_instances"/>
+        <addUniqueConstraint columnNames="url, user_id, partner" constraintName="unique_user_instances" tableName="cloud_instance"/>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="addCheckUrl">
+        <addColumn tableName="version_metadata">
+            <column name="publicaccessibletestparameterfile" type="bool"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="calculatedChecksums" author="coverbeck">
+        <sql dbms="postgresql">
+            create extension if not exists pgcrypto;
+            alter table sourcefile disable row level security;
+        </sql>
+        <dropColumn tableName="sourcefile" columnName="checksums"></dropColumn>
+        <sql dbms="postgresql">
+            alter table sourcefile add column sha256 text generated always as (digest(content, 'sha256')) stored;
+        </sql>
+        <sql dbms="postgresql">
+            alter table sourcefile enable row level security;
+        </sql>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="unique_collection_display_names_per_org">
+        <dropUniqueConstraint constraintName="uk_collDisplayName" tableName="collection"/>
+        <sql dbms="postgresql">
+            create unique index collection_displayname_index on collection (LOWER(displayname), organizationid);
+        </sql>
+    </changeSet>
+    <changeSet id="deleteVersion" author="gluu">
+        <delete tableName="collection_entry_version"><where>version_id not in (SELECT id from workflowversion union select id from tag) and version_id is not null</where></delete>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addMultipleOrcidPutCodesForVersionMetadata">
+        <createTable tableName="version_metadata_orcidputcode">
+            <column name="version_metadata_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_orcidputcode_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="orcidputcode" type="TEXT"/>
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="version_metadata_orcidputcode_pkey"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="version_metadata_id" baseTableName="version_metadata_orcidputcode" constraintName="fk_version_metadata_id_version_metadata_orcidputcode" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="version_metadata"/>
+        <addUniqueConstraint columnNames="version_metadata_id, userid, orcidputcode" constraintName="unique_version_metadata_user_orcidputcode" tableName="version_metadata_orcidputcode"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="addMultipleOrcidPutCodesForEntry">
+        <createTable tableName="entry_orcidputcode">
+            <column name="entry_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_orcidputcode_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="orcidputcode" type="TEXT"/>
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="entry_orcidputcode_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="entry_id, userid, orcidputcode" constraintName="unique_entry_user_orcidputcode" tableName="entry_orcidputcode"/>
+    </changeSet>
+    <changeSet author="ktran" id="migrateOldOrcidPutCode">
+        <sql dbms="postgresql">
+            <comment>Migrate old orcidputcode if we can tell who exported it, e.g. the workflow entry/version has an orcidputcode and only one user has an orcid id</comment>
+
+            insert into entry_orcidputcode(entry_id, orcidputcode, userid)
+            with exported_workflow_orcid_users as (
+                select workflow.id, workflow.orcidputcode, user_entry.userid
+                from workflow
+                inner join user_entry on workflow.id = user_entry.entryid
+                inner join enduser on user_entry.userid = enduser.id
+                where workflow.orcidputcode is not null and enduser.orcid is not null
+            ),
+            exported_workflow_one_orcid_user as (
+                select id, count(userid)
+                from exported_workflow_orcid_users
+                group by id
+                having count(userid) = 1
+            )
+            select exported_workflow_one_orcid_user.id, orcidputcode, userid
+            from exported_workflow_one_orcid_user
+            inner join exported_workflow_orcid_users on exported_workflow_one_orcid_user.id = exported_workflow_orcid_users.id;
+
+            insert into version_metadata_orcidputcode(version_metadata_id, orcidputcode, userid)
+            with exported_version_orcid_users as (
+                select version_metadata.id, version_metadata.orcidputcode, user_entry.userid
+                from version_metadata
+                inner join workflowversion on version_metadata.id = workflowversion.id
+                inner join workflow on workflowversion.parentid = workflow.id
+                inner join user_entry on workflow.id = user_entry.entryid
+                inner join enduser on user_entry.userid = enduser.id
+                where version_metadata.orcidputcode is not null and enduser.orcid is not null
+            ),
+            exported_version_one_orcid_user as (
+                select id, count(userid)
+                from exported_version_orcid_users
+                group by id
+                having count(userid) = 1
+            )
+            select exported_version_one_orcid_user.id, orcidputcode, userid
+            from exported_version_one_orcid_user
+            inner join exported_version_orcid_users on exported_version_one_orcid_user.id = exported_version_orcid_users.id;
+        </sql>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="removeOldOrcidPutCodeColumn">
+        <dropColumn columnName="orcidputcode" tableName="apptool"/>
+        <dropColumn columnName="orcidputcode" tableName="service"/>
+        <dropColumn columnName="orcidputcode" tableName="tool"/>
+        <dropColumn columnName="orcidputcode" tableName="version_metadata"/>
+        <dropColumn columnName="orcidputcode" tableName="workflow"/>
+    </changeSet>
+
+    <changeSet author="svonworl" id="deleteCollection">
+        <addColumn tableName="collection">
+            <column name="deleted" type="boolean" value="false"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            drop index collection_name_index;
+            create unique index collection_name_index on collection (LOWER(name), organizationid) where not deleted;
+            drop index collection_displayname_index;
+            create unique index collection_displayname_index on collection (LOWER(displayname), organizationid) where not deleted;
+        </sql>
+    </changeSet>
+
+    <changeSet author="svonworl" id="categories_new_feature">
+        <addColumn tableName="organization">
+            <column name="categorizer" type="boolean" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <!-- the following addColumn+addNotNullConstraint combo is necessary because the JPA-generated db defines the discriminator column "dtype" as NOT NULL and also without an SQL-defined DEFAULT value. See https://stackoverflow.com/questions/3997966/can-i-add-a-not-null-column-without-default-value -->
+        <addColumn tableName="collection">
+            <column name="dtype" type="varchar(31)" value="Collection">
+            </column>
+        </addColumn>
+        <addNotNullConstraint columnName="dtype" tableName="collection"/>
+        <sql dbms="postgresql">
+            create unique index collection_categoryname_index on collection (LOWER(name)) where dtype = 'Category' and deleted = false;
+        </sql>
+        <sql dbms="postgresql">
+            insert into organization (name, displayname, description, status, categorizer, link, email, dbcreatedate, dbupdatedate) values ('dockstore', 'Dockstore', 'Each of this organization''s Collections is a Category.', 'HIDDEN', true, 'https://dockstore.org/', 'support@dockstore.org', LOCALTIMESTAMP, LOCALTIMESTAMP);
+        </sql>
+        <!-- Add all existing admins, except for the webservice/ui integration test admin users, to the "dockstore" org. -->
+        <sql dbms="postgresql">
+            insert into organization_user (organizationid, userid, accepted, role) select (select id from organization where name = 'dockstore'), id, true, 'ADMIN' from enduser where isadmin and username not in ('admin@admin.com', 'DockstoreTestUser', 'DockstoreTestUser2', 'user_admin', 'user_A');
+        </sql>
+    </changeSet>
+    <changeSet author="natalieperez (generated)" id="addUsernameChangeRequiredColumn">
+        <addColumn tableName="enduser">
+            <column defaultValueBoolean="false" name="usernamechangerequired" type="bool">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="addTopic">
+        <addColumn tableName="apptool">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

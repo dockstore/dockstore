@@ -1,5 +1,11 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -11,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -20,6 +25,8 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinColumns;
 import javax.persistence.JoinTable;
@@ -36,13 +43,6 @@ import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -55,13 +55,15 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Schema(name = "Collection", description = "Collection in an organization, collects entries")
 @Entity
 @Table(name = "collection")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias AND e.deleted = FALSE"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId AND col.deleted = FALSE"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.deleteByOrgId", query = "DELETE Collection c WHERE c.organization.id = :organizationId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND organizationid = :organizationId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId AND c.deleted = FALSE"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND organizationid = :organizationId AND col.deleted = FALSE"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND organizationid = :organizationId AND col.deleted = FALSE"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
 })
 
 @NamedNativeQueries({
@@ -91,7 +93,7 @@ public class Collection implements Serializable, Aliasable {
     @Schema(description = "Description of the collection")
     private String description;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     @Pattern(regexp = "[\\w ,_\\-&()']*")
     @Size(min = 3, max = 50)
     @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
@@ -149,6 +151,10 @@ public class Collection implements Serializable, Aliasable {
 
     @Transient
     private List<CollectionEntry> collectionEntries = new ArrayList<>();
+
+    @JsonIgnore
+    @Column
+    private boolean deleted;
 
     @JsonProperty("organizationName")
     @ApiModelProperty(value = "The name of the organization the collection belongs to")
@@ -271,5 +277,13 @@ public class Collection implements Serializable, Aliasable {
 
     public void setCollectionEntries(List<CollectionEntry> collectionEntries) {
         this.collectionEntries = collectionEntries;
+    }
+
+    public boolean isDeleted() {
+        return (deleted);
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

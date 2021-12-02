@@ -15,15 +15,7 @@
  */
 package io.swagger.api.impl;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static org.junit.Assert.assertEquals;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,11 +39,18 @@ import io.swagger.model.DescriptorType;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolVersion;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author gluu
@@ -133,7 +132,7 @@ public class ToolsImplCommonTest {
         tag.setReference("sampleReference");
         tag.setValid(true);
         List<Checksum> checksums = Collections.singletonList(new Checksum("SHA-1", "fakeChecksum"));
-        Set<Image> image = Collections.singleton(new Image(checksums, "sampleRepo", "sampleTag", "SampleImageId", Registry.QUAY_IO, null, null));
+        Set<Image> image = Collections.singleton(new Image(checksums, "test_org/test6", "sampleTag", "SampleImageId", Registry.QUAY_IO, null, null));
         tag.setImages(image);
         Tag hiddenTag = new Tag();
         hiddenTag.setImageId("hiddenImageId");
@@ -209,7 +208,7 @@ public class ToolsImplCommonTest {
         expectedToolVersion.setVerified(false);
         expectedToolVersion.setVerifiedSource("[]");
         expectedToolVersion.setRegistryUrl("quay.io");
-        expectedToolVersion.setImageName("quay.io/test_org/test6");
+        expectedToolVersion.setImageName("quay.io/test_org/test6:sampleTag");
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);

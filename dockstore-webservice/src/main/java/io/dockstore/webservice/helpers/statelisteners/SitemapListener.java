@@ -15,13 +15,12 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.util.List;
-import java.util.SortedSet;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import java.util.List;
+import java.util.SortedSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,7 @@ public class SitemapListener implements StateListenerInterface {
     // The cache only has one key, arbitrarily choosing it to be this
     public static final String SITEMAP_KEY = "sitemap";
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
-    private Cache<String, SortedSet<String>> cache = CacheBuilder.newBuilder().build();
+    private Cache<String, SortedSet<String>> cache = Caffeine.newBuilder().build();
 
     /**
      * Custom getter

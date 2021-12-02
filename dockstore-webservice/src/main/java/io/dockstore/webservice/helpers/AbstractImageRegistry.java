@@ -16,26 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import javax.validation.constraints.NotNull;
+import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -64,12 +45,29 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
 
 /**
  * Abstract class for registries of docker containers.
@@ -231,15 +229,25 @@ public abstract class AbstractImageRegistry {
         // Update db tools by copying over from api tools
         List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
 
+        List<String> exceptionMessages = new ArrayList<>();
+
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
-            logToolRefresh(dashboardPrefix, tool);
+            try {
+                logToolRefresh(dashboardPrefix, tool);
 
-            List<Tag> toolTags = getTags(tool);
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
-                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
-            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+                List<Tag> toolTags = getTags(tool);
+                final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                    .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
+                updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO, eventDAO, user);
+            } catch (Exception e) {
+                LOG.info(String.format("Refreshing %s error: %s", tool.getPath(), e));
+                exceptionMessages.add(String.format("Refreshing %s error: %s", tool.getPath(), e.getMessage()));
+            }
+        }
+        if (!exceptionMessages.isEmpty()) {
+            throw new CustomWebApplicationException(String.join(System.lineSeparator(), exceptionMessages), HttpStatus.SC_EXPECTATION_FAILED);
         }
     }
 
@@ -414,10 +422,10 @@ public abstract class AbstractImageRegistry {
 
     private Optional<String> getDockerHubToolAsString(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
-        return getDockerHubToolAsString(repo);
+        return getDockerHubToolAsOptionalString(repo);
     }
 
-    public static Optional<String> getDockerHubToolAsString(String repo) {
+    public static Optional<String> getDockerHubToolAsOptionalString(String repo) {
         final String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
         Optional<String> response;
         try {
@@ -697,17 +705,6 @@ public abstract class AbstractImageRegistry {
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
-
-                    Optional<String> sha = FileFormatHelper.calcSHA1(oldFile.getContent());
-                    if (sha.isPresent()) {
-                        checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                        if (oldFile.getChecksums() == null) {
-                            oldFile.setChecksums(checksums);
-                        } else {
-                            oldFile.getChecksums().clear();
-                            oldFile.getChecksums().addAll(checksums);
-                        }
-                    }
                     newFiles.remove(newFile);
                     found = true;
                     break;
@@ -723,10 +720,6 @@ public abstract class AbstractImageRegistry {
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
-            Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-            if (sha.isPresent()) {
-                file.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-            }
             tag.addSourceFile(file);
         }
 

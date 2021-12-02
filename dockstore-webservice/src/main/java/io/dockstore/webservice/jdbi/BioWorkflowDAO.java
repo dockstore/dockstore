@@ -15,15 +15,14 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
+import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.core.database.WorkflowPath;
+import java.util.List;
 import org.hibernate.SessionFactory;
-
-import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 /**
  * @author gluu

@@ -22,8 +22,10 @@ COMMENT ON COLUMN workflowversion.dbupdatedate IS 'Remote: When workflow was ref
 -- postgres partial indexes seem unsupported https://stackoverflow.com/questions/12025844/how-to-annotate-unique-constraint-with-where-clause-in-jpa
 CREATE UNIQUE INDEX full_workflow_name ON workflow USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX full_tool_name ON tool USING btree (registry, namespace, name, toolname) WHERE toolname IS NOT NULL;
+CREATE UNIQUE INDEX full_apptool_name ON apptool USING btree (sourcecontrol, organization, repository, workflowname) WHERE toolname IS NOT NULL;
 CREATE UNIQUE INDEX partial_workflow_name ON workflow USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
 CREATE UNIQUE INDEX partial_tool_name ON tool USING btree (registry, namespace, name) WHERE toolname IS NULL;
+CREATE UNIQUE INDEX partial_apptool_name ON apptool USING btree (sourcecontrol, organization, repository) WHERE toolname IS NULL;
 CREATE UNIQUE INDEX full_service_name ON service USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
 CREATE UNIQUE INDEX partial_service_name ON service USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
 CREATE UNIQUE INDEX partial_cloud_instance ON cloud_instance USING btree (url) WHERE user_id IS NULL;
@@ -34,7 +36,6 @@ ALTER TABLE cloudinstance_supportedlanguages ADD CONSTRAINT cloudinstance_suppor
 
 -- https://liquibase.jira.com/browse/CORE-2895
 CREATE UNIQUE INDEX organization_name_index on organization (LOWER(name));
-CREATE UNIQUE INDEX collection_name_index on collection (LOWER(name), organizationid);
 -- JPA doesn't seem to understand deferrable constraints, need to insert them this way
 ALTER TABLE tag ADD CONSTRAINT fk_tagVersionMetadata FOREIGN KEY(id) REFERENCES public.version_metadata (id) DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE workflowversion ADD CONSTRAINT fk_workflowVersionMetadata FOREIGN KEY(id) REFERENCES public.version_metadata (id) DEFERRABLE INITIALLY DEFERRED;
@@ -52,3 +53,8 @@ CREATE UNIQUE INDEX one_sign_in_method_by_profile ON user_profile USING btree (o
 ALTER TABLE token DROP CONSTRAINT one_token_link_per_identify;
 CREATE UNIQUE INDEX one_token_link_per_identify ON token USING btree (onlineprofileid, tokensource) WHERE onlineprofileid IS NOT NULL;
 CREATE UNIQUE INDEX one_token_link_per_identify2 ON token USING btree (username, tokensource) WHERE onlineprofileid IS NULL;
+
+CREATE UNIQUE INDEX collection_name_index ON collection (LOWER(name), organizationid) WHERE NOT deleted;
+CREATE UNIQUE INDEX collection_displayname_index ON collection (LOWER(displayname), organizationid) WHERE NOT deleted;
+
+CREATE UNIQUE INDEX collection_categoryname_index ON collection (LOWER(name)) WHERE dtype = 'Category' AND deleted = false;

@@ -16,16 +16,15 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
+import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-
-import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT;
 
 /**
  * @author xliu
@@ -36,11 +35,11 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findByUserRegistryNamespace(final long userId, final String registry, final String namespace) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
     }
 
     public List<Tool> findByUserRegistryNamespaceRepository(final long userId, final String registry, final String namespace, final String repository) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
     }
 
     public List<ToolPath> findAllPublishedPaths() {
@@ -60,7 +59,7 @@ public class ToolDAO extends EntryDAO<Tool> {
      * @return A list of tools with the given path
      */
     public List<Tool> findAllByPath(String path, boolean findPublished) {
-        String[] splitPath = Tool.splitPath(path);
+        String[] splitPath = Tool.splitPath(path, false);
 
         // Not a valid path
         if (splitPath == null) {
@@ -82,12 +81,12 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
 
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Tool> toolQuery = namedTypedQuery(fullQueryName)
             .setParameter("registry", registry)
             .setParameter("namespace", namespace)
             .setParameter("name", name);
 
-        return list(query);
+        return list(toolQuery);
     }
 
     /**
@@ -99,7 +98,35 @@ public class ToolDAO extends EntryDAO<Tool> {
      * @return Tool matching the path
      */
     public Tool findByPath(String path, boolean findPublished) {
-        String[] splitPath = Tool.splitPath(path);
+        final int minToolNamePathLength = 4; // <registry>/<org>/<repo>/<toolname>
+        final int pathLength = path.split("/").length;
+        // Determine which type of path to look for first: path with a tool name or path without a tool name
+        boolean hasToolName = pathLength >= minToolNamePathLength;
+
+        Tool result = findByPath(path, hasToolName, findPublished);
+        if (pathLength >= minToolNamePathLength && result == null) {
+            // If <repo> contains slashes, there are two scenarios that can form the same tool path. In the following scenarios, assume that <registry> and <org> are the same.
+            // Scenario 1: <repo> = 'foo', <toolname> = 'bar'
+            // Scenario 2: <repo> = 'foo/bar', <toolname> = NULL
+            // Need to try the opposite scenario if we couldn't find the tool using the initial scenario (i.e. if we first tried to find a path with a toolname, try to find one without).
+            result = findByPath(path, !hasToolName, findPublished);
+        }
+
+        return result;
+    }
+
+    /**
+     * Finds the tool matching the given tool path
+     * When findPublished is true, will only look at published tools
+     * When hasToolName is true, will assume that the path contains a tool name when splitting the path
+     *
+     * @param path
+     * @param hasToolName Boolean indicating whether the path contains a tool name. This is used when splitting the path.
+     * @param findPublished
+     * @return Tool matching the path
+     */
+    public Tool findByPath(String path, boolean hasToolName, boolean findPublished) {
+        String[] splitPath = Tool.splitPath(path, hasToolName);
 
         // Not a valid path
         if (splitPath == null) {
@@ -132,7 +159,7 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
 
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Tool> query = namedTypedQuery(fullQueryName)
             .setParameter("registry", registry)
             .setParameter("namespace", namespace)
             .setParameter("name", name);
@@ -145,7 +172,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public List<Tool> findPublishedByNamespace(String namespace) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
     }
   
     /**
@@ -159,6 +186,6 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public Tool findByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
     }
 }

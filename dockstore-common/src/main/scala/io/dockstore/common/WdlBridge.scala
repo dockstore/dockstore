@@ -8,7 +8,7 @@ import common.validation.Checked._
 import common.validation.ErrorOr.ErrorOr
 import cromwell.core.path.DefaultPathBuilder
 import cromwell.languages.LanguageFactory
-import cromwell.languages.util.{ImportResolver, LanguageFactoryUtil}
+import cromwell.languages.util.ImportResolver
 import cromwell.languages.util.ImportResolver.{DirectoryResolver, HttpResolver, ImportResolver, ResolvedImportBundle}
 import languages.wdl.biscayne.WdlBiscayneLanguageFactory
 import languages.wdl.draft2.WdlDraft2LanguageFactory

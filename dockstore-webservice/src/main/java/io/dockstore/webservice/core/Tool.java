@@ -16,6 +16,17 @@
 
 package io.dockstore.webservice.core;
 
+import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
+import io.dockstore.common.Registry;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -24,7 +35,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -41,16 +51,6 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.EntryType;
-import io.dockstore.common.Registry;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -384,7 +384,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
 
         // Deal with registries with custom registry paths
-        if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+        if (AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(this.registry).matches()) {
             return Registry.AMAZON_ECR;
         } else if (this.registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
             return Registry.SEVEN_BRIDGES;
@@ -400,8 +400,13 @@ public class Tool extends Entry<Tool, Tag> {
         case DOCKER_HUB:
             this.setRegistry(registryThing.getDockerPath());
             break;
-        case SEVEN_BRIDGES:
         case AMAZON_ECR:
+            // Set registry to public Amazon ECR docker path if it's not a private Amazon ECR registry
+            if (this.registry != null && !AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(this.registry).matches()) {
+                this.setRegistry(registryThing.getDockerPath());
+            }
+            break;
+        case SEVEN_BRIDGES:
             break;
         default:
             break;

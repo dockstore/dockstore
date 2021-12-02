@@ -15,6 +15,11 @@
  */
 package io.dockstore.webservice;
 
+import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.WorkflowIT;
 import io.dockstore.common.CommonTestUtilities;
@@ -34,11 +39,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
-
-import static io.dockstore.common.CommonTestUtilities.restartElasticsearch;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author dyuen
@@ -105,7 +105,7 @@ public class SearchResourceIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
         // do targeted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
         entriesApi.addAliases(workflow.getId(), "potatoAlias");
@@ -150,7 +150,7 @@ public class SearchResourceIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null, false);
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, BIOWORKFLOW, null);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId(), false);
 

@@ -1,13 +1,7 @@
 package io.dockstore.webservice;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.http.HttpResponse;
-import java.util.Date;
-import java.util.Optional;
-
-import javax.xml.bind.JAXBException;
-import javax.xml.datatype.DatatypeConfigurationException;
+import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
+import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
@@ -17,14 +11,18 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.specto.hoverfly.junit.rule.HoverflyRule;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.http.HttpResponse;
+import java.util.Date;
+import java.util.Optional;
+import javax.xml.bind.JAXBException;
+import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
-import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 
 @Category(NonConfidentialTest.class)
 public class ORCIDHelperTest {
@@ -68,5 +66,7 @@ public class ORCIDHelperTest {
         response = ORCIDHelper.putWorkString(BASE_URL, id, orcidWorkString, token, putCode);
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
         Assert.assertTrue(response.body().contains("work:work put-code=\"" + putCode + "\" "));
+        response = ORCIDHelper.getAllWorks(BASE_URL, id, token);
+        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
     }
 }

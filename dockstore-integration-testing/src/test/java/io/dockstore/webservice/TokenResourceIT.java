@@ -15,47 +15,6 @@
  */
 package io.dockstore.webservice;
 
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.NonConfidentialTest;
-import io.dockstore.common.TestingPostgres;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.resources.TokenResource;
-import io.dropwizard.testing.DropwizardTestSupport;
-import io.specto.hoverfly.junit.rule.HoverflyRule;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.TokensApi;
-import io.swagger.client.api.UsersApi;
-import org.apache.http.HttpStatus;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
-
 import static io.dockstore.common.CommonTestUtilities.getWebClient;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME1;
 import static io.dockstore.common.Hoverfly.CUSTOM_USERNAME2;
@@ -75,6 +34,46 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.NonConfidentialTest;
+import io.dockstore.common.TestingPostgres;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.resources.TokenResource;
+import io.dropwizard.testing.DropwizardTestSupport;
+import io.specto.hoverfly.junit.rule.HoverflyRule;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.TokensApi;
+import io.swagger.client.api.UsersApi;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import org.apache.http.HttpStatus;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 /**
  * This test does not require confidential data. It does however require the Hoverfly's self-signed certificate.
@@ -191,7 +190,7 @@ public class TokenResourceIT {
                 tokensApi.listToken(currToken.getId());
                 fail("Should not be able to list a deleted token");
             } catch (ApiException e) {
-                boolean firstExceptionCheck = e.getMessage().contains("There was an error processing your request");
+                boolean firstExceptionCheck = "Token not found.".equals(e.getMessage());
                 boolean secondExceptionCheck = "Credentials are required to access this resource.".equals(e.getMessage());
                 Assert.assertTrue(firstExceptionCheck || secondExceptionCheck);
             }

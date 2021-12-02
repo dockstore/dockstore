@@ -19,7 +19,6 @@ package io.dockstore.webservice.resources;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Optional;
-
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;

@@ -16,8 +16,8 @@
 
 package io.dockstore.client.cli;
 
-import java.util.List;
-import java.util.Optional;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -31,6 +31,8 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.util.List;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -39,9 +41,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Created by jpatricia on 24/06/16.

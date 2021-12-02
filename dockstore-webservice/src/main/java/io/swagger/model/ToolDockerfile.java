@@ -15,12 +15,11 @@
  */
 package io.swagger.model;
 
-import java.util.Objects;
-
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 
 /**
  * A tool dockerfile is a document that describes how to build a particular Docker image.

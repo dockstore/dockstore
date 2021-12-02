@@ -1,27 +1,9 @@
 package io.dockstore.webservice.resources;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Collection;
@@ -52,6 +34,25 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -63,8 +64,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Collection of organization endpoints
@@ -281,7 +280,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public Organization updateOrganizationDescription(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
         @ApiParam(value = "Organization's description in markdown.", required = true) @Parameter(description = "Organization's description in markdown.", name = "description", required = true) String description) {
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -352,6 +351,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @PUT
     @Timed
     @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
+    @UsernameRenameRequired
     @Path("/{organizationId}/star")
     @ApiOperation(value = "Star an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @Operation(operationId = "starOrganization", summary = "Star an organization.", description = "Star an organization.", security = @SecurityRequirement(name = "bearer"))
@@ -414,10 +415,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throwExceptionForNullOrganization(organization);
             return organization;
         } else {
-            // User is given, check if organization is either approved or the user has access
-            // Admins and curators should be able to see unapproved organizations
             boolean doesOrgExist =
-                doesOrganizationExistToUser(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+                doesOrganizationExistToUserResourceDAO(orgId, user.get().getId());
             if (!doesOrgExist) {
                 String msg = "Organization not found";
                 LOG.info(msg);
@@ -501,6 +500,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork
     @Consumes("application/json")
+    @UsernameRenameRequired
     @ApiOperation(value = "Create an organization.", notes = "Organization requires approval by an admin before being made public.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organization.class)
     @Operation(operationId = "createOrganization", summary = "Create an organization.", description = "Create an organization. Organization requires approval by an admin before being made public.", security = @SecurityRequirement(name = "bearer"))
@@ -519,8 +519,27 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateEmail(organization.getEmail());
         validateLink(organization.getLink());
 
+        if (organization.isCategorizer()) {
+
+            // only a global admin can create a categorizer organization.
+            if (!user.getIsAdmin()) {
+                String msg = "Only an administrator can create a categorizer organization.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+            }
+
+            // Create with either APPROVED or HIDDEN status.
+            if (organization.getStatus() != Organization.ApplicationState.APPROVED) {
+                organization.setStatus(Organization.ApplicationState.HIDDEN);
+            }
+
+        } else {
+
+            // should not be approved by default
+            organization.setStatus(Organization.ApplicationState.PENDING);
+        }
+
         // Save organization
-        organization.setStatus(Organization.ApplicationState.PENDING); // should not be approved by default
         long id = organizationDAO.create(organization);
 
         User foundUser = userDAO.findById(user.getId());
@@ -549,7 +568,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization to update with.", required = true) @Parameter(description = "Organization to register.", name = "organization", required = true) Organization organization,
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
 
-        boolean doesOrgExist = doesOrganizationExistToUser(id, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(id, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -596,8 +615,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         validateLink(organization.getLink());
 
         if (!oldOrganization.getName().equals(organization.getName()) || !oldOrganization.getDisplayName().equals(organization.getDisplayName())) {
-            if (user.getIsAdmin() || user.isCurator() || oldOrganization.getStatus() != Organization.ApplicationState.APPROVED) {
-                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved
+            if (user.getIsAdmin() || user.isCurator() || (oldOrganization.getStatus() != Organization.ApplicationState.APPROVED && oldOrganization.getStatus() != Organization.ApplicationState.HIDDEN)) {
+                // Only update the name and display name if the user is an admin/curator or if the org is not yet approved or hidden
                 // This is for https://ucsc-cgl.atlassian.net/browse/SEAB-203 to prevent name squatting after organization was approved
                 oldOrganization.setName(organization.getName());
                 oldOrganization.setDisplayName(organization.getDisplayName());
@@ -622,16 +641,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     }
 
     /**
-     * Validate email string. null/empty is valid since it's optional.
+     * Validate email string.
      * @param email The email to validate
      */
     private void validateEmail(String email) {
-        if (StringUtils.isEmpty(email)) {
-            return;
-        }
         EmailValidator emailValidator = EmailValidator.getInstance();
-        if (!emailValidator.isValid(email)) {
-            String msg = "Email is invalid: " + email;
+        if (StringUtils.isEmpty(email) || !emailValidator.isValid(email)) {
+            String msg = "You must enter a valid email address: " + email;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -667,7 +683,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId) {
         User userToAdd = userDAO.findByUsername(username);
         if (userToAdd == null) {
-            String msg = "No user exists with the username '" + username + "'.";
+            String msg = "No user exists with the username '" + Utilities.cleanForLogging(username) + "'.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -786,7 +802,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Accept or reject.", required = true) @Parameter(description = "Accept or reject.", name = "accept", in = ParameterIn.QUERY, required = true) @QueryParam("accept") boolean accept) {
 
         // Check that the organization exists
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);
@@ -868,8 +884,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
-    private boolean doesOrganizationExistToUser(Long organizationId, Long userId) {
-        return doesOrganizationExistToUser(organizationId, userId, organizationDAO);
+    private boolean doesOrganizationExistToUserResourceDAO(Long organizationId, Long userId) {
+        return doesOrganizationExistToUser(organizationId, userId, organizationDAO, userDAO);
     }
 
     /**
@@ -880,10 +896,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * @param userId
      * @return True if organization exists to user, false otherwise
      */
-    static boolean doesOrganizationExistToUser(Long organizationId, Long userId, OrganizationDAO organizationDAO) {
+    static boolean doesOrganizationExistToUser(Long organizationId, Long userId, OrganizationDAO organizationDAO, UserDAO userDAO) {
         Organization organization = organizationDAO.findById(organizationId);
         if (organization == null) {
             return false;
+        }
+        // Admins and curators should be able to see unapproved organizations
+        User user = userDAO.findById(userId);
+        if (user != null && (user.getIsAdmin() || user.isCurator())) {
+            return true;
         }
         OrganizationUser organizationUser = getUserOrgRole(organization, userId);
         return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
@@ -902,10 +923,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             return false;
         }
 
-        if (organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER) {
-            return true;
-        }
-        return false;
+        return organizationUser.getRole() == OrganizationUser.Role.ADMIN || organizationUser.getRole() == OrganizationUser.Role.MAINTAINER;
     }
 
     static boolean isUserAdminOrMaintainer(Long organizationId, Long userId, OrganizationDAO organizationDAO) {
@@ -924,7 +942,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      */
     private Pair<Organization, User> commonUserOrg(Long organizationId, Long userId, User user) {
         // Check that the organization exists
-        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        boolean doesOrgExist = doesOrganizationExistToUserResourceDAO(organizationId, user.getId());
         if (!doesOrgExist) {
             String msg = "Organization not found";
             LOG.info(msg);

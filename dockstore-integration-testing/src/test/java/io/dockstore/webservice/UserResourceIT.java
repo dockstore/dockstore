@@ -15,8 +15,13 @@
  */
 package io.dockstore.webservice;
 
-import java.util.List;
-import java.util.Objects;
+import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.dockstore.client.cli.BaseIT;
 import io.dockstore.client.cli.WorkflowIT;
@@ -26,6 +31,8 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.model.PrivilegeRequest;
 import io.dockstore.openapi.client.model.SourceControlOrganization;
+import io.dockstore.openapi.client.model.UserInfo;
+import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -42,6 +49,8 @@ import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import java.util.List;
+import java.util.Objects;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -54,14 +63,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 /**
  * Tests operations from the UserResource
  *
@@ -69,6 +70,8 @@ import static org.junit.Assert.fail;
  */
 @Category(ConfidentialTest.class)
 public class UserResourceIT extends BaseIT {
+    private static final String SERVICE_REPO = "DockstoreTestUser2/test-service";
+    private static final String INSTALLATION_ID = "1179416";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -148,17 +151,17 @@ public class UserResourceIT extends BaseIT {
 
     @Test
     public void testUserTermination() throws ApiException {
-        ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         ApiClient userWebClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.ApiClient openApiAdminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
 
         UsersApi userUserWebClient = new UsersApi(userWebClient);
+        io.dockstore.openapi.client.api.UsersApi openApiUserWebClient = new io.dockstore.openapi.client.api.UsersApi(openApiAdminWebClient);
         final User user = userUserWebClient.getUser();
         assertFalse(user.getUsername().isEmpty());
 
-        UsersApi adminAdminWebClient = new UsersApi(adminWebClient);
-        final Boolean aBoolean = adminAdminWebClient.terminateUser(user.getId());
+        openApiUserWebClient.banUser(true, user.getId());
 
-        assertTrue(aBoolean);
+        assertTrue(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
 
         try {
             userUserWebClient.getUser();
@@ -166,6 +169,9 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_UNAUTHORIZED);
         }
+
+        openApiUserWebClient.banUser(false, user.getId());
+        assertFalse(testingPostgres.runSelectStatement(String.format("select isbanned from enduser where id = '%s'", user.getId()), boolean.class));
     }
 
     @Test
@@ -222,9 +228,6 @@ public class UserResourceIT extends BaseIT {
         ApiClient client = getAnonymousWebClient();
         UsersApi userApi = new UsersApi(client);
 
-        String serviceRepo = "DockstoreTestUser2/test-service";
-        String installationId = "1179416";
-
         // anon should not exist
         boolean shouldFail = false;
         try {
@@ -248,17 +251,17 @@ public class UserResourceIT extends BaseIT {
         // try to delete with published workflows & service
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
         workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "", DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        workflowsApi.handleGitHubRelease(serviceRepo, USER_2_USERNAME, "refs/tags/1.0", installationId);
+        workflowsApi.handleGitHubRelease(SERVICE_REPO, USER_2_USERNAME, "refs/tags/1.0", INSTALLATION_ID);
 
         final Workflow workflowByPath = workflowsApi
-            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+            .getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId(), false);
 
         // Verify that admin can access unpublished workflow, because admin is going to verify later
         // that the workflow is gone
-        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
-        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
+        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
+        adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
 
         // publish one
         workflowsApi.publish(workflowByPath.getId(), CommonTestUtilities.createPublishRequest(true));
@@ -281,7 +284,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the workflow
         boolean expectedAdminAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null, false);
+            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, BIOWORKFLOW, null);
 
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
@@ -292,7 +295,7 @@ public class UserResourceIT extends BaseIT {
         // Verify that self-destruct also deleted the service
         boolean expectedAdminServiceAccessToFail = false;
         try {
-            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + serviceRepo, null, true);
+            adminWorkflowsApi.getWorkflowByPath(SourceControl.GITHUB + "/" + SERVICE_REPO, SERVICE, null);
         } catch (ApiException e) {
             assertEquals(e.getCode(), HttpStatus.SC_BAD_REQUEST);
             expectedAdminServiceAccessToFail = true;
@@ -339,6 +342,35 @@ public class UserResourceIT extends BaseIT {
         assertTrue(deletedOtherUser);
         userCount = testingPostgres.runSelectStatement("select count(*) from enduser", long.class);
         assertEquals(3, userCount);
+    }
+
+    @Test
+    public void testGettingUserEmails() {
+        io.dockstore.openapi.client.ApiClient client = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(client);
+        io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi adminUserApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
+
+        List<UserInfo> userInfo = adminUserApi.getAllUserEmails();
+        assertTrue(userInfo.size() >= 2);
+
+
+        testingPostgres.runUpdateStatement("UPDATE user_profile set email = 'fakeEmail@example.com'");
+        userInfo = adminUserApi.getAllUserEmails();
+        userInfo.stream().forEach(info -> {
+            assertNotNull(info.getDockstoreUsername());
+            assertEquals("fakeEmail@example.com", info.getThirdPartyEmail());
+            assertNotNull(info.getThirdPartyUsername());
+            assertNotNull(info.getTokenType());
+        });
+
+        try {
+            userApi.getAllUserEmails();
+            fail("Should not be able to successfully call endpoint unless the user is an admin.");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("User not authorized."));
+        }
+
     }
 
     @Test
@@ -496,7 +528,7 @@ public class UserResourceIT extends BaseIT {
         assertTrue(entries.stream().anyMatch(e -> e.getPath().contains("dockstore-workflow-md5sum-unified")));
 
         // Update an entry
-        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", null, false);
+        Workflow workflow = workflowsApi.getWorkflowByPath("gitlab.com/dockstore.test.user2/dockstore-workflow-md5sum-unified", BIOWORKFLOW, null);
         Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
 
         // Develop branch doesn't have a descriptor with the default Dockstore.cwl, it should pull from README instead
@@ -679,30 +711,6 @@ public class UserResourceIT extends BaseIT {
         assertEquals("Toronto", userProfile.getLocation());
     }
 
-    @Test
-    public void testUpdateUserMetadataToGetIds() {
-        io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
-
-        // DockstoreUser2's profile elements should be initially set to null since the GitHub metadata isn't synced yet
-        assertNull(userProfile.getEmail());
-        assertNull(userProfile.getAvatarURL());
-        assertNull(userProfile.getLocation());
-
-        // The API call updateUserMetadataToGetIds() should not throw an error and exit if any users' tokens are out of date or absent
-        // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
-        userApi.updateUserMetadataToGetIds();
-        String userId = "17859829";
-        io.dockstore.openapi.client.model.User user = userApi.getUser();
-        userProfile = user.getUserProfiles().get("github.com");
-        String onlineProfileId = testingPostgres.runSelectStatement("SELECT onlineprofileid FROM user_profile WHERE id = '" + user.getId() + "'", String.class);
-        assertEquals(userId, onlineProfileId);
-        assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
-        assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
-        assertEquals("Toronto", userProfile.getLocation());
-    }
-
     /**
      * Tests the endpoint while all users have no valid GitHub token and the caller also does not have a valid token
      */
@@ -730,5 +738,38 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
+    }
+
+    @Test
+    public void testGetStarredWorkflowsAndServices() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        final io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(webClient);
+        final long userId = usersApi.getUser().getId();
+
+        // Add service
+        workflowsApi.handleGitHubRelease("refs/tags/1.0", INSTALLATION_ID, SERVICE_REPO, USER_2_USERNAME);
+        assertEquals(1, usersApi.userServices(userId).size());
+        assertEquals(0, usersApi.userWorkflows(userId).size());
+
+        // Star service
+        io.dockstore.openapi.client.model.Workflow service = workflowsApi.getWorkflowByPath("github.com/" + SERVICE_REPO, WorkflowSubClass.SERVICE, "");
+        io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
+        workflowsApi.starEntry1(service.getId(), starRequest);
+        assertEquals(1, usersApi.getStarredServices().size());
+        assertEquals(0, usersApi.getStarredWorkflows().size());
+
+        // Add workflow
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME,
+                "/Dockstore.cwl", "", DescriptorLanguage.CWL.getShortName(), "");
+        workflow = workflowsApi.refresh1(workflow.getId(), false);
+        assertEquals(1, usersApi.userServices(userId).size());
+        assertEquals(1, usersApi.userWorkflows(userId).size());
+
+        // Star workflow
+        workflowsApi.starEntry1(workflow.getId(), starRequest);
+        assertEquals(1, usersApi.getStarredServices().size());
+        assertEquals(1, usersApi.getStarredWorkflows().size());
     }
 }

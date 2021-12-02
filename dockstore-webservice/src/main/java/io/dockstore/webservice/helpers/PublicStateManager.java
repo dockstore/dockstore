@@ -15,16 +15,14 @@
  */
 package io.dockstore.webservice.helpers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
 import io.dockstore.webservice.helpers.statelisteners.RSSListener;
 import io.dockstore.webservice.helpers.statelisteners.SitemapListener;
 import io.dockstore.webservice.helpers.statelisteners.StateListenerInterface;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author dyuen
@@ -36,11 +34,20 @@ public final class PublicStateManager {
     private final SitemapListener sitemapListener = new SitemapListener();
     private final RSSListener rssListener = new RSSListener();
     private final ElasticListener elasticListener = new ElasticListener();
-    private final List<StateListenerInterface> listeners = new ArrayList<>(Arrays.asList(sitemapListener, rssListener, elasticListener));
+    private final List<StateListenerInterface> listeners = new ArrayList<>();
     private DockstoreWebserviceConfiguration config;
 
     private PublicStateManager() {
         // inaccessible on purpose
+        reset();
+    }
+
+    public void reset() {
+        config = null;
+        listeners.clear();
+        listeners.add(sitemapListener);
+        listeners.add(rssListener);
+        listeners.add(elasticListener);
     }
 
     public SitemapListener getSitemapListener() {
@@ -51,12 +58,29 @@ public final class PublicStateManager {
         return rssListener;
     }
 
+    public ElasticListener getElasticListener() {
+        return elasticListener;
+    }
+
     public static PublicStateManager getInstance() {
         return SINGLETON;
     }
 
     public void addListener(StateListenerInterface listener) {
         getListeners().add(listener);
+        listener.setConfig(config);
+    }
+
+    /**
+     * Add a listener so it is invoked directly before the target listener.
+     * If the target listener is not currently managed, the listener is added
+     * so that it is invoked before all other listeners.
+     * @param listener the listener to insert
+     * @param target the target listener
+     */
+    public void insertListener(StateListenerInterface listener, StateListenerInterface target) {
+        int index = getListeners().indexOf(target);
+        getListeners().add(Math.max(index, 0), listener);
         listener.setConfig(config);
     }
 

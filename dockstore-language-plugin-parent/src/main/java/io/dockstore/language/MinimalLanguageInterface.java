@@ -15,11 +15,10 @@
  */
 package io.dockstore.language;
 
+import io.dockstore.common.DescriptorLanguage;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import io.dockstore.common.DescriptorLanguage;
 import org.apache.commons.lang3.tuple.Pair;
 import org.pf4j.ExtensionPoint;
 
@@ -69,7 +68,8 @@ public interface MinimalLanguageInterface extends ExtensionPoint {
     /**
      * When indexing, Dockstore will distinguish between extra files that hold things like extra code, tools, configuration (imported descriptors) and test parameter files (example parameter sets used to run a workflow)
      */
-    enum GenericFileType { IMPORTED_DESCRIPTOR, TEST_PARAMETER_FILE, CONTAINERFILE }
+    enum GenericFileType { IMPORTED_DESCRIPTOR, TEST_PARAMETER_FILE, CONTAINERFILE
+    }
 
     /**
      * Reads files relative to the file found via {@link #initialPathPattern()}

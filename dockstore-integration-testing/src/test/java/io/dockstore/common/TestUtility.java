@@ -16,18 +16,17 @@
 
 package io.dockstore.common;
 
+import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
+
+import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
-import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
 
 /**
  * @author jpatricia

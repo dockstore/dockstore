@@ -1,8 +1,11 @@
 package io.dockstore.client.cli;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static io.dockstore.common.Hoverfly.BAD_PUT_CODE;
+import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
+import static io.dockstore.common.Hoverfly.ORCID_USER_1;
+import static io.dockstore.common.Hoverfly.ORCID_USER_2;
+import static io.dockstore.common.Hoverfly.PUT_CODE_USER_1;
+import static org.junit.Assert.fail;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
@@ -12,13 +15,18 @@ import io.dockstore.openapi.client.ApiException;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
+import io.dockstore.openapi.client.model.DescriptionMetrics;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
 import io.dockstore.webservice.core.TokenScope;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.resources.EntryResource;
 import io.specto.hoverfly.junit.core.Hoverfly;
 import io.specto.hoverfly.junit.core.HoverflyMode;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,11 +35,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import static io.dockstore.common.Hoverfly.BAD_PUT_CODE;
-import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
-import static io.dockstore.common.Hoverfly.PUT_CODE;
-import static org.junit.Assert.fail;
 
 public class EntryResourceIT extends BaseIT {
     @Rule
@@ -79,7 +82,7 @@ public class EntryResourceIT extends BaseIT {
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, e.getCode());
             Assert.assertEquals(EntryResource.ENTRY_NO_DOI_ERROR_MESSAGE, e.getMessage());
         }
-        testingPostgres.runUpdateStatement("update workflow set conceptDOI='dummy'");
+        testingPostgres.runUpdateStatement("update workflow set conceptDOI='https://doi.org/10.1038/s41586-020-1969-6'");
         try {
             entriesApi.exportToORCID(workflowId, workflowVersionId);
             fail("Should not have been able to export a version without DOI URL");
@@ -117,7 +120,7 @@ public class EntryResourceIT extends BaseIT {
         // Give the user a fake ORCID token
         testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
             + "(9001, 'fakeToken', 'fakeRefreshToken', 'orcid.org', 1, 'Potato', '" + TokenScope.AUTHENTICATE.name() + "')");
-        testingPostgres.runUpdateStatement("update enduser set orcid='0000-0001-8365-0487' where id='1'");
+        testingPostgres.runUpdateStatement(String.format("update enduser set orcid='%s' where id='1'", ORCID_USER_1));
 
         try {
             entriesApi.exportToORCID(workflowId, null);
@@ -139,23 +142,148 @@ public class EntryResourceIT extends BaseIT {
             hoverfly.resetState();
             // Manually change it to the wrong put code
             testingPostgres.runUpdateStatement(
-                    String.format("update workflow set orcidputcode='%s'where orcidputcode='%s'", BAD_PUT_CODE, PUT_CODE));
+                    String.format("update entry_orcidputcode set orcidputcode='%s' where orcidputcode='%s'", BAD_PUT_CODE, PUT_CODE_USER_1));
             // Dockstore should be able to recover from having the wrong put code for whatever reason
             entriesApi.exportToORCID(workflowId, null);
 
-            // Clear DB
-            testingPostgres.runUpdateStatement("update workflow set orcidputcode=null");
+            // Remove the put code. Test scenario where the put code and DOI URL are on ORCID, but the put code is not on Dockstore
+            testingPostgres.runUpdateStatement(String.format("delete from entry_orcidputcode where entry_id=%s", workflowId));
             Map<String, String> createdState = new HashMap<>();
-            createdState.put("Work", "Created");
+            createdState.put("Work1", "Created");
             hoverfly.setState(createdState);
 
-            try {
-                entriesApi.exportToORCID(workflowId, null);
-                Assert.fail("Should've failed if DOI URL already exists on ORCID");
-            } catch (ApiException e) {
-                Assert.assertEquals(HttpStatus.SC_CONFLICT, e.getCode());
-                Assert.assertTrue(e.getMessage().contains("Could not export to ORCID. There exists another ORCID work with the same DOI URL."));
-            }
+            entriesApi.exportToORCID(workflowId, null); // Exporting should succeed. Dockstore will find the put code and update the ORCID work
+            String putCode = testingPostgres.runSelectStatement(String.format("select orcidputcode from entry_orcidputcode where entry_id = '%s'", workflowId), String.class);
+            Assert.assertEquals("Should be able to find the put code for the ORCID work", PUT_CODE_USER_1, putCode);
+        }
+    }
+
+    @Test
+    public void testMultipleUsersOrcidExport() {
+        ApiClient userClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(userClient);
+        UsersApi usersApi = new UsersApi(userClient);
+        User user = usersApi.getUser();
+        WorkflowsApi workflowsApi = new WorkflowsApi(userClient);
+
+        ApiClient otherUserClient = getOpenAPIWebClient(OTHER_USERNAME, testingPostgres);
+        EntriesApi otherEntriesApi = new EntriesApi(otherUserClient);
+        UsersApi otherUsersApi = new UsersApi(otherUserClient);
+        User otherUser = otherUsersApi.getUser();
+
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getShortName(), "");
+        Long workflowId = workflow.getId();
+        workflowsApi.refresh1(workflowId, false);
+        workflow = workflowsApi.getWorkflow(workflowId, null);
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        Long workflowVersionId = workflowVersions.get(0).getId();
+
+        // Give otherUser access to the workflow to mimic being part of the same GitHub organization as the first user
+        Assert.assertEquals("Other user should have no workflows", 0, otherUsersApi.userWorkflows(otherUser.getId()).size());
+        testingPostgres.runUpdateStatement(String.format("insert into user_entry (userid, entryid) values (%s, %s)", otherUser.getId(), workflowId));
+        List<Workflow> workflows = otherUsersApi.userWorkflows(otherUser.getId());
+        Assert.assertEquals("Other user should have one workflow", 1, workflows.size());
+
+        // Give user 1 a fake ORCID token
+        testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+                + "(9001, 'fakeToken1', 'fakeRefreshToken1', 'orcid.org', 1, 'Potato', '" + TokenScope.ACTIVITIES_UPDATE.name() + "')");
+        testingPostgres.runUpdateStatement(String.format("update enduser set orcid='%s' where id=%s", ORCID_USER_1, user.getId()));
+
+        // Give other user a fake ORCID token
+        testingPostgres.runUpdateStatement("insert into token (id, content, refreshToken, tokensource, userid, username, scope) values "
+                + "(9002, 'fakeToken2', 'fakeRefreshToken2', 'orcid.org', 2, 'Tomato', '" + TokenScope.ACTIVITIES_UPDATE.name() + "')");
+        testingPostgres.runUpdateStatement(String.format("update enduser set orcid='%s' where id=%s", ORCID_USER_2, otherUser.getId()));
+
+        // Give the workflow a concept DOI
+        testingPostgres.runUpdateStatement(String.format("update workflow set conceptDOI='dummy' where id=%s", workflowId));
+
+        // Give the workflow version a DOI url
+        testingPostgres.runUpdateStatement(String.format("update version_metadata set doistatus='%s' where id=%s", Version.DOIStatus.CREATED.name(), workflowVersionId));
+        testingPostgres.runUpdateStatement(String.format("update version_metadata set doiurl='dummyurl' where id=%s", workflowVersionId));
+
+        // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
+        try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
+            hoverfly.start();
+            hoverfly.simulate(ORCID_SIMULATION_SOURCE);
+            // User 1 should be able to export to ORCID
+            entriesApi.exportToORCID(workflowId, null);
+            // Exporting twice should work because it's an update
+            entriesApi.exportToORCID(workflowId, null);
+
+            // User 2 should also be able to export the same workflow to ORCID
+            otherEntriesApi.exportToORCID(workflowId, null);
+            // Exporting twice should work because it's an update
+            otherEntriesApi.exportToORCID(workflowId, null);
+
+            // Test workflow version ORCID export
+            hoverfly.resetState();
+
+            // User 1 should be able to export workflow version to ORCID
+            entriesApi.exportToORCID(workflowId, workflowVersionId);
+            entriesApi.exportToORCID(workflowId, workflowVersionId); // Should be able to export twice to update
+
+            // User 2 should be able to export the same workflow version to ORCID
+            otherEntriesApi.exportToORCID(workflowId, workflowVersionId);
+            otherEntriesApi.exportToORCID(workflowId, workflowVersionId); // Should be able to export twice to update
+        }
+    }
+
+    @Test
+    public void testDescriptionMetrics() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(client);
+        UsersApi usersApi = new UsersApi(client);
+        User user = usersApi.getUser();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/dockstore-whalesay-wdl", "/dockstore.wdl", "",
+            DescriptorLanguage.WDL.getShortName(), "");
+
+        List<Workflow> workflows = usersApi.userWorkflows(user.getId());
+        Long workflowId = workflows.get(0).getId();
+        workflowsApi.refresh1(workflowId, false);
+
+        Assert.assertTrue(workflows.size() > 0);
+
+        Workflow workflow = workflowsApi.getWorkflow(workflowId, null);
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        Long workflowVersionId = workflowVersions.get(0).getId();
+
+        // The provided workflow should have a description
+        try {
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertTrue(descriptionMetrics.getCalculatedEntropy() > 0
+                && descriptionMetrics.getCalculatedWordCount() > 0
+                && descriptionMetrics.getDescriptionLength() > 0);
+        } catch (Exception e) {
+            fail("Description metrics should have calculated nonzero values for the description.");
+        }
+
+        // Update the version description to something specific
+        final String newDescription = "'Test 1'";
+        final String updateStatement = String.format("UPDATE version_metadata SET description=%s WHERE id=%d",
+            newDescription, workflowVersionId);
+        testingPostgres.runUpdateStatement(updateStatement);
+        try {
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertEquals("Incorrect entropy", 5, (long) descriptionMetrics.getCalculatedEntropy());
+            Assert.assertEquals("Incorrect word count", 2, (long) descriptionMetrics.getCalculatedWordCount());
+            Assert.assertEquals("Incorrect description length", 6, (long) descriptionMetrics.getDescriptionLength());
+        } catch (ApiException e) {
+            fail("Description metrics should have calculated nonzero values for the description.");
+        }
+
+        // Update the version description to be null
+        final String updateToNull = String.format("UPDATE version_metadata SET description=NULL WHERE id=%d", workflowVersionId);
+        testingPostgres.runUpdateStatement(updateToNull);
+        try {
+            DescriptionMetrics descriptionMetrics = entriesApi.getDescriptionMetrics(workflowId, workflowVersionId);
+            Assert.assertEquals("Incorrect entropy", 0, (long) descriptionMetrics.getCalculatedEntropy());
+            Assert.assertEquals("Incorrect word count", 0, (long) descriptionMetrics.getCalculatedWordCount());
+            Assert.assertEquals("Incorrect description length", 0, (long) descriptionMetrics.getDescriptionLength());
+        } catch (ApiException e) {
+            fail("The version does not have a description, so metrics should be set to 0.");
         }
     }
 }

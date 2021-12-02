@@ -16,6 +16,17 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.SourceControl;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Objects;
@@ -23,7 +34,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import javax.persistence.AttributeConverter;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -39,18 +49,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguageSubclass;
-import io.dockstore.common.SourceControl;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.Hidden;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -61,7 +59,7 @@ import org.hibernate.annotations.Check;
  *
  * @author dyuen
  */
-@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class}, discriminator = "type")
+@ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore", subTypes = {BioWorkflow.class, Service.class, AppTool.class}, discriminator = "type")
 
 @Entity
 // this is crazy, but even though this is an abstract class it looks like JPA dies without this dummy value
@@ -91,7 +89,8 @@ import org.hibernate.annotations.Check;
 @SuppressWarnings("checkstyle:magicnumber")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({ @JsonSubTypes.Type(value = BioWorkflow.class, name = "BioWorkflow"),
-    @JsonSubTypes.Type(value = Service.class, name = "Service") })
+    @JsonSubTypes.Type(value = Service.class, name = "Service"),
+    @JsonSubTypes.Type(value = AppTool.class, name = "AppTool")})
 public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     static final String PUBLISHED_QUERY = " FROM Workflow c WHERE c.isPublished = true ";

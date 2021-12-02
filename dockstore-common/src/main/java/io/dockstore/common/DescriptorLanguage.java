@@ -16,12 +16,11 @@
 
 package io.dockstore.common;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -29,43 +28,44 @@ import org.apache.commons.lang3.StringUtils;
  *
  * @author agduncan94
  */
+// @Schema(enumAsRef = true)
 public enum DescriptorLanguage {
     // Add new descriptor language here
     CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false,
-        ImmutableSet.of("cwl", "yaml", "yml")) {
+        Set.of("cwl", "yaml", "yml"), true, true) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
         }
     },
-    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON, false, false, ImmutableSet.of("wdl")) {
+    WDL("WDL", "Workflow Description Language", FileType.DOCKSTORE_WDL, FileType.WDL_TEST_JSON, false, false, Set.of("wdl"), true, true) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
         }
     },
     GXFORMAT2("gxformat2", "Galaxy Workflow Format 2", FileType.DOCKSTORE_GXFORMAT2, FileType.GXFORMAT2_TEST_FILE, false, true,
-        ImmutableSet.of("ga", "yaml", "yml")) {
+        Set.of("ga", "yaml", "yml"), true, false) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_YML;
         }
     },
     // DOCKSTORE-2428 - demo how to add new workflow language
-    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, ImmutableSet.of("swl")) {
+    SWL("SWL", "Silly Workflow Language", FileType.DOCKSTORE_SWL, FileType.SWL_TEST_JSON, false, true, Set.of("swl"), false, false) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type);
         }
     },
-    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, ImmutableSet.of("config")) {
+    NEXTFLOW("NFL", "Nextflow", FileType.NEXTFLOW_CONFIG, FileType.NEXTFLOW_TEST_PARAMS, false, false, Set.of("config"), true, false) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.NEXTFLOW || type == FileType.DOCKSTORE_YML;
         }
     },
     SERVICE("service", "generic placeholder for services", FileType.DOCKSTORE_SERVICE_YML, FileType.DOCKSTORE_SERVICE_TEST_JSON, true,
-        false, ImmutableSet.of("yml")) {
+        false, Set.of("yml"), true, false) {
         @Override
         public boolean isRelevantFileType(FileType type) {
             return super.isRelevantFileType(type) || type == FileType.DOCKSTORE_SERVICE_OTHER;
@@ -102,14 +102,14 @@ public enum DescriptorLanguage {
      */
     private final boolean pluginLanguage;
 
-    private final ImmutableSet<String> defaultPrimaryDescriptorExtensions;
+    private final Set<String> defaultPrimaryDescriptorExtensions;
 
+    private final boolean supportsHosted;
 
-    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final ImmutableSet<String> defaultPrimaryDescriptorExtensions) {
-        this(shortName, friendlyName, fileType, testParamType, false, false, defaultPrimaryDescriptorExtensions);
-    }
+    private final boolean supportsChecker;
 
-    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final boolean serviceLanguage, final boolean pluginLanguage, final ImmutableSet<String> defaultPrimaryDescriptorExtensions) {
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    DescriptorLanguage(final String shortName, final String friendlyName, final FileType fileType, final FileType testParamType, final boolean serviceLanguage, final boolean pluginLanguage, final Set<String> defaultPrimaryDescriptorExtensions, final boolean supportsHosted, final boolean supportsChecker) {
         this.shortName = shortName;
         this.friendlyName = friendlyName;
         this.fileType = fileType;
@@ -117,7 +117,10 @@ public enum DescriptorLanguage {
         this.serviceLanguage = serviceLanguage;
         this.pluginLanguage = pluginLanguage;
         this.defaultPrimaryDescriptorExtensions = defaultPrimaryDescriptorExtensions;
+        this.supportsHosted = supportsHosted;
+        this.supportsChecker = supportsChecker;
     }
+
     @Override
     public String toString() {
         return shortName;
@@ -142,7 +145,7 @@ public enum DescriptorLanguage {
         return fileType;
     }
 
-    public static Optional<FileType> getFileType(String descriptorType) {
+    public static Optional<FileType> getOptionalFileType(String descriptorType) {
         // Tricky case for GALAXY because it doesn't match the rules of the other languages
         if (StringUtils.containsIgnoreCase(descriptorType, "galaxy")) {
             return Optional.of(GXFORMAT2.fileType);
@@ -157,13 +160,6 @@ public enum DescriptorLanguage {
         return testParamType;
     }
 
-    public static Optional<FileType> getTestParameterType(String descriptorType) {
-        if (descriptorType == null) {
-            return Optional.empty();
-        }
-        return Arrays.stream(DescriptorLanguage.values()).filter(lang -> descriptorType.equalsIgnoreCase(lang.toString())).findFirst().map(DescriptorLanguage::getTestParamType);
-    }
-
     public boolean isServiceLanguage() {
         return serviceLanguage;
     }
@@ -176,8 +172,16 @@ public enum DescriptorLanguage {
         return pluginLanguage;
     }
 
-    public ImmutableSet<String> getDefaultPrimaryDescriptorExtensions() {
+    public Set<String> getDefaultPrimaryDescriptorExtensions() {
         return defaultPrimaryDescriptorExtensions;
+    }
+
+    public boolean isSupportsChecker() {
+        return supportsChecker;
+    }
+
+    public boolean isSupportsHosted() {
+        return supportsHosted;
     }
 
     public enum FileTypeCategory {

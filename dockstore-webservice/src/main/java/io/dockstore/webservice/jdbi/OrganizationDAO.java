@@ -1,9 +1,8 @@
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Organization;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -32,44 +31,43 @@ public class OrganizationDAO extends AbstractDAO<Organization> {
     }
 
     public List<Organization> findApprovedSortedByStar() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findApprovedSortedByStar"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Organization.findApprovedSortedByStar"));
     }
     public List<Organization> findAllApproved() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAllApproved"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Organization.findAllApproved"));
     }
 
     public List<Organization> findAllPending() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAllPending"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Organization.findAllPending"));
     }
 
     public List<Organization> findAllRejected() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAllRejected"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Organization.findAllRejected"));
     }
 
     public List<Organization> findAll() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.findAll"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Organization.findAll"));
     }
 
 
     public Organization findByName(String name) {
-        Query query =  namedQuery("io.dockstore.webservice.core.Organization.findByName")
-                .setParameter("name", name);
+        Query<Organization> query = namedTypedQuery("io.dockstore.webservice.core.Organization.findByName").setParameter("name", name);
         return uniqueResult(query);
     }
 
     public Organization findApprovedByName(String name) {
-        Query query =  namedQuery("io.dockstore.webservice.core.Organization.findApprovedByName")
+        Query<Organization> query =  namedTypedQuery("io.dockstore.webservice.core.Organization.findApprovedByName")
                 .setParameter("name", name);
         return uniqueResult(query);
     }
 
     public Organization findApprovedById(Long id) {
-        Query query =  namedQuery("io.dockstore.webservice.core.Organization.findApprovedById")
+        Query<Organization> query =  namedTypedQuery("io.dockstore.webservice.core.Organization.findApprovedById")
                 .setParameter("id", id);
         return uniqueResult(query);
     }
 
     public Organization getByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Organization.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Organization.getByAlias").setParameter("alias", alias));
     }
 }

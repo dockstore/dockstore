@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.dockstore</groupId>
   <artifactId>dockstore-webservice</artifactId>
-  <version>1.11.10-SNAPSHOT</version>
+  <version>1.12.0-alpha.1-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache Software License, Version 2.0</name>
@@ -48,49 +48,49 @@
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-logging</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-lifecycle</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-quay-client</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>2.0.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-sam-client</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>2.0.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-bitbucket-client</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>2.0.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-discourse-client</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>2.0.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-common</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>1.12.0-alpha.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-language-plugin-parent</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>1.12.0-alpha.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -102,7 +102,7 @@
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>swagger-java-zenodo-client</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>2.0.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -118,68 +118,68 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jsr305</artifactId>
           <groupId>com.google.code.findbugs</groupId>
+          <artifactId>jsr305</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-jaxrs-json-provider</artifactId>
           <groupId>com.fasterxml.jackson.jaxrs</groupId>
+          <artifactId>jackson-jaxrs-json-provider</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>joda-time</artifactId>
           <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-annotations</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-datatype-joda</artifactId>
           <groupId>com.fasterxml.jackson.datatype</groupId>
+          <artifactId>jackson-datatype-joda</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-module-jaxb-annotations</artifactId>
           <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-jaxb-annotations</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>scala-library</artifactId>
           <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-lang3</artifactId>
           <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-databind</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-core</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-dataformat-yaml</artifactId>
           <groupId>com.fasterxml.jackson.dataformat</groupId>
+          <artifactId>jackson-dataformat-yaml</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jersey-container-servlet-core</artifactId>
           <groupId>org.glassfish.jersey.containers</groupId>
+          <artifactId>jersey-container-servlet-core</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.glassfish.jersey.core</groupId>
           <artifactId>jersey-common</artifactId>
-          <groupId>org.glassfish.jersey.core</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.glassfish.jersey.core</groupId>
           <artifactId>jersey-server</artifactId>
-          <groupId>org.glassfish.jersey.core</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>javax.inject</artifactId>
           <groupId>org.glassfish.hk2.external</groupId>
+          <artifactId>javax.inject</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -196,72 +196,72 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jsr311-api</artifactId>
           <groupId>javax.ws.rs</groupId>
+          <artifactId>jsr311-api</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jsr305</artifactId>
           <groupId>com.google.code.findbugs</groupId>
+          <artifactId>jsr305</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-jaxrs-json-provider</artifactId>
           <groupId>com.fasterxml.jackson.jaxrs</groupId>
+          <artifactId>jackson-jaxrs-json-provider</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>joda-time</artifactId>
           <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-annotations</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-datatype-joda</artifactId>
           <groupId>com.fasterxml.jackson.datatype</groupId>
+          <artifactId>jackson-datatype-joda</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-module-jaxb-annotations</artifactId>
           <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-jaxb-annotations</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>scala-library</artifactId>
           <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-lang3</artifactId>
           <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-databind</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-core</artifactId>
-          <groupId>com.fasterxml.jackson.core</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-dataformat-yaml</artifactId>
           <groupId>com.fasterxml.jackson.dataformat</groupId>
+          <artifactId>jackson-dataformat-yaml</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jersey-container-servlet-core</artifactId>
           <groupId>org.glassfish.jersey.containers</groupId>
+          <artifactId>jersey-container-servlet-core</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.glassfish.jersey.core</groupId>
           <artifactId>jersey-common</artifactId>
-          <groupId>org.glassfish.jersey.core</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.glassfish.jersey.core</groupId>
           <artifactId>jersey-server</artifactId>
-          <groupId>org.glassfish.jersey.core</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>javax.inject</artifactId>
           <groupId>org.glassfish.hk2.external</groupId>
+          <artifactId>javax.inject</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -280,90 +280,90 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.2.3</version>
+      <version>1.2.5</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.2.3</version>
+      <version>1.2.5</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-core</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
+          <groupId>ch.qos.logback</groupId>
           <artifactId>logback-classic</artifactId>
-          <groupId>ch.qos.logback</groupId>
         </exclusion>
         <exclusion>
+          <groupId>ch.qos.logback</groupId>
           <artifactId>logback-core</artifactId>
-          <groupId>ch.qos.logback</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-text</artifactId>
           <groupId>org.apache.commons</groupId>
+          <artifactId>commons-text</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-hibernate</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>javassist</artifactId>
           <groupId>org.javassist</groupId>
+          <artifactId>javassist</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>hibernate-core</artifactId>
           <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-core</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>h2</artifactId>
           <groupId>com.h2database</groupId>
+          <artifactId>h2</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>poi</artifactId>
           <groupId>org.apache.poi</groupId>
+          <artifactId>poi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-assets</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-client</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>javassist</artifactId>
           <groupId>org.javassist</groupId>
+          <artifactId>javassist</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-jersey</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>javassist</artifactId>
           <groupId>org.javassist</groupId>
+          <artifactId>javassist</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -382,49 +382,49 @@
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-auth</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-annotation</artifactId>
-      <version>4.1.19</version>
+      <version>4.1.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-healthchecks</artifactId>
-      <version>4.1.19</version>
+      <version>4.1.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
-      <version>5.4.30.Final</version>
+      <version>5.5.7.Final</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>javassist</artifactId>
           <groupId>org.javassist</groupId>
+          <artifactId>javassist</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-db</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-migrations</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-forms</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -440,15 +440,9 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.hibernate.javax.persistence</groupId>
-      <artifactId>hibernate-jpa-2.1-api</artifactId>
-      <version>1.0.0.Final</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
-      <version>42.2.19</version>
+      <version>42.2.23</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -460,7 +454,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.30</version>
+      <version>1.7.32</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -478,13 +472,13 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlets</artifactId>
-      <version>9.4.39.v20210325</version>
+      <version>9.4.43.v20210629</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
-      <version>9.4.39.v20210325</version>
+      <version>9.4.43.v20210629</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -496,24 +490,24 @@
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-jetty</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.8.6</version>
+      <version>2.8.8</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard</groupId>
       <artifactId>dropwizard-jackson</artifactId>
-      <version>2.0.21</version>
+      <version>2.0.25</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>logback-classic</artifactId>
           <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -548,8 +542,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>commons-codec</artifactId>
           <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -560,8 +554,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jaxb-api</artifactId>
           <groupId>javax.xml.bind</groupId>
+          <artifactId>jaxb-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -572,8 +566,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jaxb-api</artifactId>
           <groupId>javax.xml.bind</groupId>
+          <artifactId>jaxb-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -596,8 +590,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>okhttp-urlconnection</artifactId>
           <groupId>com.squareup.okhttp3</groupId>
+          <artifactId>okhttp-urlconnection</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -614,8 +608,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -632,8 +626,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -650,8 +644,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -664,28 +658,28 @@
     <dependency>
       <groupId>io.cwl</groupId>
       <artifactId>cwlavro-tools</artifactId>
-      <version>2.0.4.4</version>
+      <version>2.0.4.6</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>httpclient-osgi</artifactId>
           <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient-osgi</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>httpcore-osgi</artifactId>
           <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore-osgi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>io.cwl</groupId>
       <artifactId>cwlavro-generated</artifactId>
-      <version>2.0.4.4</version>
+      <version>2.0.4.6</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -714,199 +708,199 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>httpcore-osgi</artifactId>
           <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore-osgi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>t-digest</artifactId>
           <groupId>com.tdunning</groupId>
+          <artifactId>t-digest</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>joda-time</artifactId>
           <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>log4j-core</artifactId>
           <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-analyzers-common</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-backward-codecs</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-grouping</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-highlighter</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-join</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-memory</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-misc</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-queries</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-queryparser</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-sandbox</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-spatial-extras</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-spatial3d</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.lucene</groupId>
           <artifactId>lucene-suggest</artifactId>
-          <groupId>org.apache.lucene</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch</groupId>
           <artifactId>elasticsearch-core</artifactId>
-          <groupId>org.elasticsearch</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch</groupId>
           <artifactId>elasticsearch-secure-sm</artifactId>
-          <groupId>org.elasticsearch</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch</groupId>
           <artifactId>elasticsearch-x-content</artifactId>
-          <groupId>org.elasticsearch</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch</groupId>
           <artifactId>elasticsearch-geo</artifactId>
-          <groupId>org.elasticsearch</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch</groupId>
           <artifactId>elasticsearch-cli</artifactId>
-          <groupId>org.elasticsearch</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch</groupId>
           <artifactId>jna</artifactId>
-          <groupId>org.elasticsearch</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>HdrHistogram</artifactId>
           <groupId>org.hdrhistogram</groupId>
+          <artifactId>HdrHistogram</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jts-core</artifactId>
           <groupId>org.locationtech.jts</groupId>
+          <artifactId>jts-core</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>spatial4j</artifactId>
           <groupId>org.locationtech.spatial4j</groupId>
+          <artifactId>spatial4j</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-client</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>commons-codec</artifactId>
           <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-logging</artifactId>
           <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>httpclient</artifactId>
           <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-high-level-client</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>elasticsearch-rest-client</artifactId>
           <groupId>org.elasticsearch.client</groupId>
+          <artifactId>elasticsearch-rest-client</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch.plugin</groupId>
           <artifactId>mapper-extras-client</artifactId>
-          <groupId>org.elasticsearch.plugin</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.elasticsearch.plugin</groupId>
           <artifactId>parent-join-client</artifactId>
-          <groupId>org.elasticsearch.plugin</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>aggs-matrix-stats-client</artifactId>
           <groupId>org.elasticsearch.plugin</groupId>
+          <artifactId>aggs-matrix-stats-client</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch-x-content</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jackson-core</artifactId>
           <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.dataformat</groupId>
           <artifactId>jackson-dataformat-smile</artifactId>
-          <groupId>com.fasterxml.jackson.dataformat</groupId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.dataformat</groupId>
           <artifactId>jackson-dataformat-yaml</artifactId>
-          <groupId>com.fasterxml.jackson.dataformat</groupId>
         </exclusion>
         <exclusion>
+          <groupId>com.fasterxml.jackson.dataformat</groupId>
           <artifactId>jackson-dataformat-cbor</artifactId>
-          <groupId>com.fasterxml.jackson.dataformat</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>elasticsearch-core</artifactId>
           <groupId>org.elasticsearch</groupId>
+          <artifactId>elasticsearch-core</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>snakeyaml</artifactId>
           <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch-core</artifactId>
-      <version>7.10.1</version>
+      <version>7.10.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -916,8 +910,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -928,21 +922,33 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.25</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sqs</artifactId>
+      <version>2.17.79</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
-      <artifactId>sqs</artifactId>
-      <version>2.16.22</version>
+      <artifactId>s3</artifactId>
+      <version>2.17.79</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sdk-core</artifactId>
+      <version>2.17.79</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-core</artifactId>
+      <version>2.17.79</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>regions</artifactId>
-      <version>2.16.22</version>
+      <version>2.17.79</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -978,7 +984,7 @@
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
-      <version>2.9.0</version>
+      <version>3.0.3</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -994,24 +1000,24 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>commons-lang3</artifactId>
           <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-lang</artifactId>
           <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>jackson-jaxrs-json-provider</artifactId>
           <groupId>com.fasterxml.jackson.jaxrs</groupId>
+          <artifactId>jackson-jaxrs-json-provider</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>swagger-jersey-jaxrs</artifactId>
           <groupId>io.swagger</groupId>
+          <artifactId>swagger-jersey-jaxrs</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-io</artifactId>
           <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1046,8 +1052,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jaxb-api</artifactId>
           <groupId>javax.xml.bind</groupId>
+          <artifactId>jaxb-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

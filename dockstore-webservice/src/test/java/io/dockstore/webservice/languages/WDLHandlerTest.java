@@ -1,20 +1,13 @@
 package io.dockstore.webservice.languages;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
@@ -25,6 +18,15 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.testing.ResourceHelpers;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -33,10 +35,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.mockito.Mockito;
-
-import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 public class WDLHandlerTest {
 
@@ -52,19 +50,14 @@ public class WDLHandlerTest {
     public void getWorkflowContent() throws IOException {
         final WDLHandler wdlHandler = new WDLHandler();
         final Version workflow = new WorkflowVersion();
-        workflow.setAuthor("Jane Doe");
-        workflow.setDescriptionAndDescriptionSource("A good description", DescriptionSource.DESCRIPTOR);
-        workflow.setEmail("janedoe@example.org");
 
         final String validFilePath = ResourceHelpers.resourceFilePath("valid_description_example.wdl");
 
         final String goodWdl = FileUtils.readFileToString(new File(validFilePath), StandardCharsets.UTF_8);
         Version version = wdlHandler.parseWorkflowContent(validFilePath, goodWdl, Collections.emptySet(), workflow);
-        Assert.assertEquals(version.getAuthor(), "Mr. Foo");
-        Assert.assertEquals(version.getEmail(), "foo@foo.com");
-        Assert.assertEquals(version.getDescription(),
-                "This is a cool workflow trying another line \n## This is a header\n* First Bullet\n* Second bullet");
-
+        Assert.assertEquals("Mr. Foo", version.getAuthor());
+        Assert.assertEquals("foo@foo.com", version.getEmail());
+        Assert.assertEquals("This is a cool workflow trying another line \n## This is a header\n* First Bullet\n* Second bullet", version.getDescription());
 
         final String invalidFilePath = ResourceHelpers.resourceFilePath("invalid_description_example.wdl");
         final String invalidDescriptionWdl = FileUtils.readFileToString(new File(invalidFilePath), StandardCharsets.UTF_8);

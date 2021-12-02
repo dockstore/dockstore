@@ -1,13 +1,12 @@
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.SourceFile;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
-
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.webservice.core.SourceFile;
 import org.junit.Assert;
 import org.junit.Test;
 

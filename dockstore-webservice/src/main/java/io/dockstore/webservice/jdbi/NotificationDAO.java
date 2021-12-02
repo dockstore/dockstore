@@ -1,9 +1,8 @@
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Notification;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
@@ -34,6 +33,6 @@ public class NotificationDAO extends AbstractDAO<Notification> {
     }
 
     public List<Notification> getActiveNotifications() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Notification.getActiveNotifications"));
+        return list(namedTypedQuery("io.dockstore.webservice.core.Notification.getActiveNotifications"));
     }
 }

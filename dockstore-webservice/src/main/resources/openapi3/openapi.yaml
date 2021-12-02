@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: TBD
   title: Dockstore API
-  version: 1.11.10-SNAPSHOT
+  version: 1.12.0-alpha.1-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -33,6 +33,8 @@ servers:
 tags:
 - description: "Create, update list aliases for accessing entries"
   name: aliases
+- description: Operations on Dockstore categories
+  name: categories
 - description: Operations on Dockstore organizations
   name: organizations
 - description: "Needed for SmartAPI compatibility apparantly, might be cargo cult\
@@ -587,12 +589,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new bitbucket.org token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -608,12 +616,18 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_Auth'
-          description: default response
+          description: Satellizer successfully posted a new GitHub token to Dockstore
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -628,12 +642,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new github.com token
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -648,12 +668,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new gitlab.com token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -668,12 +694,22 @@ paths:
             schema:
               type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_Auth'
-          description: default response
+          description: Successfully posted a new Google token to Dockstore
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
+        "417":
+          description: Expectation failed
       security:
       - bearer: []
       tags:
@@ -689,12 +725,20 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added orcid.org token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
+        "500":
+          description: Internal server error
       security:
       - bearer: []
       summary: Add a new orcid.org token
@@ -702,7 +746,7 @@ paths:
       - tokens
   /auth/tokens/quay.io:
     get:
-      description: Add a new quay IO token.
+      description: Add a new Quay.io token.
       operationId: addQuayToken
       parameters:
       - in: query
@@ -710,12 +754,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new Quay.io token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -730,12 +780,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: Successfully added a new zenodo.org token
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "409":
+          description: Conflict
       security:
       - bearer: []
       tags:
@@ -752,10 +808,12 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
-          content:
-            application/json: {}
-          description: default response
+        "204":
+          description: Successfully deleted token
+        "403":
+          description: Forbidden
+        "404":
+          description: Token not found
       security:
       - bearer: []
       tags:
@@ -771,16 +829,69 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: A token specified by id
+        "404":
+          description: Token not found
       security:
       - bearer: []
       tags:
       - tokens
+  /categories:
+    get:
+      description: Retrieve all categories.
+      operationId: getCategories
+      parameters:
+      - description: Name of category to retrieve
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: "Comma-delimited list of fields to include: entries"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: Successfully retrieved categories
+      summary: Retrieve all categories.
+      tags:
+      - categories
+  /categories/{id}:
+    get:
+      description: Retrieve a category by ID.
+      operationId: getCategoryById
+      parameters:
+      - description: Category ID.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: Successfully retrieved category
+        "404":
+          description: Category not found
+      summary: Retrieve a category by ID.
+      tags:
+      - categories
   /cloudInstances:
     get:
       operationId: getCloudInstances
@@ -857,6 +968,13 @@ paths:
         name: descriptorType
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       - in: query
         name: namespace
         schema:
@@ -870,8 +988,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
-          description: Successfully created hosted entry
+                $ref: '#/components/schemas/DockstoreTool'
+          description: Successfully created a hosted tool.
       security:
       - bearer: []
       tags:
@@ -958,7 +1076,7 @@ paths:
       - containers
   /containers/path/tool/{repository}:
     get:
-      description: Get a tool by the specific tool path
+      description: Requires full path (including tool name if applicable).
       operationId: getContainerByToolPath
       parameters:
       - in: path
@@ -979,11 +1097,12 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a tool by the specific tool path
       tags:
       - containers
   /containers/path/tool/{repository}/published:
     get:
-      description: Get a published tool by the specific tool path.
+      description: Requires full path (including tool name if applicable).
       operationId: getPublishedContainerByToolPath
       parameters:
       - in: path
@@ -1002,6 +1121,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
           description: default response
+      summary: Get a published tool by the specific tool path.
       tags:
       - containers
   /containers/path/{containerId}/tags:
@@ -1031,7 +1151,7 @@ paths:
       - containertags
   /containers/path/{repository}:
     get:
-      description: Get a list of tools by path.
+      description: Do not include tool name.
       operationId: getContainerByPath
       parameters:
       - in: path
@@ -1050,11 +1170,12 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a list of tools by path.
       tags:
       - containers
   /containers/path/{repository}/published:
     get:
-      description: Get a list of published tools by path.
+      description: Do not include tool name.
       operationId: getPublishedContainerByPath
       parameters:
       - in: path
@@ -1073,6 +1194,7 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a list of published tools by path.
       tags:
       - containers
   /containers/published:
@@ -1122,7 +1244,7 @@ paths:
       operationId: registerManual
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -1248,7 +1370,9 @@ paths:
       tags:
       - containers
     put:
-      description: Update the tool with the given tool.
+      description: "Updates default descriptor paths, default Dockerfile paths, default\
+        \ test parameter paths, git url, and default version. Also updates tool maintainer\
+        \ email, and private access for manual tools."
       operationId: updateContainer
       parameters:
       - in: path
@@ -1259,7 +1383,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -1271,6 +1395,7 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Update the tool with the given tool.
       tags:
       - containers
   /containers/{containerId}/descriptor/{relative-path}:
@@ -1494,6 +1619,13 @@ paths:
         name: language
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -1512,7 +1644,8 @@ paths:
       description: Star a tool.
       operationId: starEntry
       parameters:
-      - in: path
+      - description: Tool to star.
+        in: path
         name: containerId
         required: true
         schema:
@@ -1520,9 +1653,11 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
+        description: StarRequest to star a repo for a user
+        required: true
       responses:
         default:
           content:
@@ -1758,6 +1893,13 @@ paths:
         name: descriptorType
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -2005,7 +2147,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Notification'
       responses:
@@ -2038,8 +2180,12 @@ paths:
           type: integer
           format: int64
       responses:
-        "204":
-          description: No Content
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Successfully exported entry to ORCID
         "400":
           description: Bad Request
         "404":
@@ -2071,6 +2217,36 @@ paths:
                 items:
                   $ref: '#/components/schemas/VersionVerifiedPlatform'
           description: default response
+      security:
+      - bearer: []
+      tags:
+      - entries
+  /entries/{entryId}/versions/{versionId}/descriptionMetrics:
+    get:
+      description: Retrieve metrics on the description of an entry
+      operationId: getDescriptionMetrics
+      parameters:
+      - description: Entry to retrieve the version from
+        in: path
+        name: entryId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Version to retrieve the sourcefile types from
+        in: path
+        name: versionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescriptionMetrics'
+          description: Successfully calculated description metrics
       security:
       - bearer: []
       tags:
@@ -2149,6 +2325,31 @@ paths:
           description: Successfully added alias to entry
       security:
       - bearer: []
+      tags:
+      - entries
+  /entries/{id}/categories:
+    get:
+      description: Get the categories that contain the published entry
+      operationId: entryCategories
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: Successfully retrieved categories
+        "400":
+          description: Entry must be published
       tags:
       - entries
   /entries/{id}/collections:
@@ -3331,7 +3532,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Collection'
         description: Collection to register.
@@ -3349,6 +3550,36 @@ paths:
       tags:
       - organizations
   /organizations/{organizationId}/collections/{collectionId}:
+    delete:
+      description: Delete a collection.
+      operationId: deleteCollection
+      parameters:
+      - description: Organization ID.
+        in: path
+        name: organizationId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Collection ID.
+        in: path
+        name: collectionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Successfully deleted the collection
+        "401":
+          description: Unauthorized
+        "404":
+          description: Collection not found
+      security:
+      - bearer: []
+      summary: Delete a collection.
+      tags:
+      - organizations
     get:
       description: Retrieve a collection by ID. Supports optional authentication.
       operationId: getCollectionById
@@ -3400,7 +3631,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Collection'
         description: Collection to register.
@@ -3794,7 +4025,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
         description: StarRequest to star an organization for a user.
@@ -4112,12 +4343,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: boolean
-          description: default response
+          description: Boolean indicating if a user with the specified username exists
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4195,6 +4432,25 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/emails:
+    get:
+      description: Admin-only endpoint. Get the emails of all Dockstore users
+      operationId: getAllUserEmails
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserInfo'
+          description: A list of Dockstore users' emails.
+        "403":
+          description: Forbidden
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/github/events:
     get:
       description: Get all of the GitHub Events for the logged in user.
@@ -4211,14 +4467,14 @@ paths:
           format: int32
           default: 100
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/LambdaEvent'
-          description: default response
+          description: A list of GitHub Events for the logged in user
       security:
       - bearer: []
       tags:
@@ -4248,14 +4504,16 @@ paths:
       description: Syncs Dockstore account with GitHub App Installations.
       operationId: syncUserWithGitHub
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: Successfully synced Dockstore account with GitHub App installations
+        "400":
+          description: Bad request
       security:
       - bearer: []
       tags:
@@ -4265,7 +4523,7 @@ paths:
       description: Get all of the git registries accessible to the logged in user.
       operationId: getUserRegistries
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
@@ -4277,7 +4535,7 @@ paths:
                   - github.com
                   - bitbucket.org
                   - gitlab.com
-          description: default response
+          description: A list of the git registries accessible to the logged in user
       security:
       - bearer: []
       tags:
@@ -4300,7 +4558,7 @@ paths:
           - bitbucket.org
           - gitlab.com
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
@@ -4308,7 +4566,8 @@ paths:
                 items:
                   type: string
                 uniqueItems: true
-          description: default response
+          description: A list of organizations for a given git registry accessible
+            to the logged in user
       security:
       - bearer: []
       tags:
@@ -4337,14 +4596,15 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Repository'
-          description: default response
+          description: A list of repositories for an organization for a given git
+            registry accessible to the logged in user
       security:
       - bearer: []
       tags:
@@ -4354,15 +4614,31 @@ paths:
       description: Get the authenticated user's starred organizations.
       operationId: getStarredOrganizations
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organization'
-                uniqueItems: true
-          description: default response
+          description: A list of the authenticated user's starred organizations
+      security:
+      - bearer: []
+      tags:
+      - users
+  /users/starredServices:
+    get:
+      description: Get the authenticated user's starred services.
+      operationId: getStarredServices
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+          description: A list of the authenticated user's starred services
       security:
       - bearer: []
       tags:
@@ -4372,15 +4648,14 @@ paths:
       description: Get the authenticated user's starred tools.
       operationId: getStarredTools
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Entry'
-                uniqueItems: true
-          description: default response
+          description: A list of the authenticated user's starred tools
       security:
       - bearer: []
       tags:
@@ -4390,15 +4665,14 @@ paths:
       description: Get the authenticated user's starred workflows.
       operationId: getStarredWorkflows
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Entry'
-                uniqueItems: true
-          description: default response
+          description: A list of the authenticated user's starred workflows
       security:
       - bearer: []
       tags:
@@ -4408,25 +4682,6 @@ paths:
       description: Update metadata of all users.
       operationId: updateUserMetadata
       responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-          description: default response
-      security:
-      - bearer: []
-      tags:
-      - users
-  /users/updateUserMetadataToGetIds:
-    get:
-      deprecated: true
-      description: Attempt to update the metadata of all GitHub and Google users and
-        then returns a list of Dockstore users who could not be updated.
-      operationId: updateUserMetadataToGetIds
-      responses:
         "200":
           content:
             application/json:
@@ -4434,8 +4689,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-          description: Get list Dockstore users we were unable to get GitHub/Google
-            IDs for.
+          description: Successfully updated metadata of all users
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       tags:
@@ -4453,12 +4709,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: boolean
-          description: default response
+          description: Boolean indicating if user was deleted successfully
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
       security:
       - bearer: []
       tags:
@@ -4467,12 +4729,12 @@ paths:
       description: Get the logged-in user.
       operationId: getUser
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: The logged-in user
       security:
       - bearer: []
       tags:
@@ -4487,12 +4749,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: Successfully changed username
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       tags:
@@ -4502,12 +4768,12 @@ paths:
       description: Get additional information about the authenticated user.
       operationId: getExtendedUserData
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExtendedUserData'
-          description: default response
+          description: Additional information about the authenticated user
       security:
       - bearer: []
       tags:
@@ -4517,15 +4783,29 @@ paths:
       description: Get the logged-in user's memberships.
       operationId: getUserMemberships
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrganizationUser'
-                uniqueItems: true
-          description: default response
+          description: A set of the logged-in user's memberships
+      security:
+      - bearer: []
+      tags:
+      - users
+  /users/user/updateAcceptedDocuments:
+    get:
+      description: Update the user's TOS and privacy policy to the latest versions.
+      operationId: updateAcceptedDocuments
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: User with updated TOS/Privacy Policy
       security:
       - bearer: []
       tags:
@@ -4549,20 +4829,22 @@ paths:
           - google.com
           - orcid.org
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: Successfully updated metadata for logged in user
+        "403":
+          description: Forbidden
       security:
       - bearer: []
       tags:
       - users
-  /users/user/{userId}:
-    delete:
-      description: Terminate user if possible.
-      operationId: terminateUsers
+  /users/user/{userId}/bannedStatus:
+    put:
+      description: Update banned status of user. Removes all tokens for banned users.
+      operationId: banUser
       parameters:
       - in: path
         name: userId
@@ -4570,13 +4852,19 @@ paths:
         schema:
           type: integer
           format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: boolean
+        required: true
       responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: boolean
-          description: default response
+        "204":
+          description: Successfully banned/unbanned user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4593,12 +4881,16 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Limits'
-          description: default response
+          description: A user's limits
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4619,12 +4911,16 @@ paths:
             schema:
               $ref: '#/components/schemas/Limits'
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Limits'
-          description: default response
+          description: Successfully updated the user's limits
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4640,12 +4936,18 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: A user with the specified username
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4667,14 +4969,14 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/EntryUpdateTime'
-          description: default response
+          description: A list of the entries for a user
       security:
       - bearer: []
       tags:
@@ -4697,14 +4999,14 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrganizationUpdateTime'
-          description: default response
+          description: A list of the Dockstore organizations for a user
       security:
       - bearer: []
       tags:
@@ -4721,12 +5023,16 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: A user with the specified userId
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4752,6 +5058,10 @@ paths:
                 items:
                   $ref: '#/components/schemas/CloudInstance'
           description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4776,11 +5086,13 @@ paths:
         required: true
       responses:
         "204":
-          description: No Content
+          description: No content
         "401":
           description: Unauthorized
         "403":
           description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4806,13 +5118,13 @@ paths:
           format: int64
       responses:
         "204":
-          description: No Content
+          description: No content
         "401":
           description: Unauthorized
         "403":
           description: Forbidden
         "404":
-          description: Not Found
+          description: Not found
       security:
       - bearer: []
       tags:
@@ -4844,13 +5156,13 @@ paths:
         required: true
       responses:
         "204":
-          description: No Content
+          description: No content
         "401":
           description: Unauthorized
         "403":
           description: Forbidden
         "404":
-          description: Not Found
+          description: Not found
       security:
       - bearer: []
       tags:
@@ -4867,14 +5179,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-          description: default response
+          description: A list of tools owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4891,14 +5207,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-          description: default response
+          description: A list of published tools from a user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4925,14 +5245,20 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-          description: default response
+          description: A list of tools owned by the user with the specified organization
+        "400":
+          description: Bad request
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4956,12 +5282,16 @@ paths:
               $ref: '#/components/schemas/PrivilegeRequest'
         required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: default response
+          description: Successfully updated user to admin or curator status
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -4978,14 +5308,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: A list of services owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5002,14 +5336,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Token_User'
-          description: default response
+          description: A list of tokens belonging to user specified by userId
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5027,14 +5365,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: A list of workflows owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5059,14 +5401,19 @@ paths:
         description: "This is here to appease Swagger. It requires PATCH methods to\
           \ have a body, even if it is empty. Please leave it empty."
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: Successfully added user to Dockstore workflows that they should
+            have access to
+        "400":
+          description: Bad request
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5083,14 +5430,18 @@ paths:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
-          description: default response
+          description: A list of published workflows from a user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
       security:
       - bearer: []
       tags:
@@ -5220,6 +5571,13 @@ paths:
         name: descriptorType
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       - in: query
         name: namespace
         schema:
@@ -5233,8 +5591,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
-          description: Successfully created hosted entry
+                $ref: '#/components/schemas/Workflow'
+          description: Successfully created a hosted workflow.
       security:
       - bearer: []
       tags:
@@ -5393,7 +5751,7 @@ paths:
       - workflows
   /workflows/path/entry/{repository}:
     get:
-      description: Get an entry by path.
+      description: Requires full path (including entry name if applicable).
       operationId: getEntryByPath
       parameters:
       - in: path
@@ -5410,11 +5768,12 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get an entry by path.
       tags:
       - workflows
   /workflows/path/entry/{repository}/published:
     get:
-      description: Get a published entry by path.
+      description: Requires full path (including entry name if applicable).
       operationId: getPublishedEntryByPath
       parameters:
       - in: path
@@ -5429,6 +5788,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Entry'
           description: default response
+      summary: Get a published entry by path.
       tags:
       - workflows
   /workflows/path/workflow/{repository}:
@@ -5442,17 +5802,18 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: validations, aliases"
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
         in: query
         name: include
         schema:
           type: string
-      - description: Whether to get a service or workflow
+      - description: Which Workflow subclass to retrieve.
         in: query
-        name: services
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -5599,7 +5960,7 @@ paths:
       - workflows
   /workflows/path/workflow/{repository}/published:
     get:
-      description: Get a published workflow by path
+      description: Does not require workflow name.
       operationId: getPublishedWorkflowByPath
       parameters:
       - in: path
@@ -5607,7 +5968,9 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
+        in: query
         name: include
         schema:
           type: string
@@ -5627,11 +5990,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
           description: default response
+      summary: Get a published workflow by path
       tags:
       - workflows
   /workflows/path/{repository}:
     get:
-      description: Get a list of workflows by path.
+      description: Do not include workflow name.
       operationId: getAllWorkflowByPath
       parameters:
       - in: path
@@ -5650,6 +6014,7 @@ paths:
           description: default response
       security:
       - bearer: []
+      summary: Get a list of workflows by path.
       tags:
       - workflows
   /workflows/published:
@@ -5709,7 +6074,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
+        in: query
         name: include
         schema:
           type: string
@@ -5883,6 +6250,13 @@ paths:
         required: true
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -5905,7 +6279,9 @@ paths:
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, versions, authors, orcidputcodes"
+        in: query
         name: include
         schema:
           type: string
@@ -6025,6 +6401,13 @@ paths:
         name: language
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -6145,7 +6528,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/PublishRequest'
       responses:
@@ -6323,6 +6706,13 @@ paths:
         name: language
         schema:
           type: string
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
       responses:
         default:
           content:
@@ -6349,7 +6739,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/StarRequest'
       responses:
@@ -6595,6 +6985,42 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation:
+    post:
+      description: Language parser calls this endpoint to update parsed information
+        for this version
+      operationId: postParsedInformation
+      parameters:
+      - description: Workflow to retrieve the version from.
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: Workflow version to retrieve the version from.
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LanguageParsingResponse'
+        description: Response from language parsing lambda
+        required: true
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles:
     get:
       description: Retrieve sourcefiles for an entry's version
@@ -6685,6 +7111,10 @@ components:
       properties:
         content:
           type: string
+    AppTool:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Workflow'
     Author:
       type: object
       properties:
@@ -6705,6 +7135,77 @@ components:
           parent_id:
             type: integer
             format: int64
+    Category:
+      type: object
+      description: Category of entries
+      properties:
+        aliases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
+        dbCreateDate:
+          type: integer
+          format: int64
+        dbUpdateDate:
+          type: integer
+          format: int64
+        description:
+          type: string
+          description: Description of the collection
+        displayName:
+          type: string
+          maxLength: 50
+          minLength: 3
+          pattern: "[\\w ,_\\-&()']*"
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionEntry'
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the collection in this web service
+        name:
+          type: string
+          description: Name of the collection
+          example: Alignment
+          maxLength: 39
+          minLength: 3
+          pattern: "[a-zA-Z][a-zA-Z\\d]*"
+        organizationID:
+          type: integer
+          format: int64
+        organizationName:
+          type: string
+        toolsLength:
+          type: integer
+          format: int64
+          description: Number of tools inside this collection
+        topic:
+          type: string
+          description: Short description of the collection
+          example: A collection of alignment algorithms
+        workflowsLength:
+          type: integer
+          format: int64
+          description: Number of workflows inside this collection
+      required:
+      - name
+      - topic
+    CategorySummary:
+      type: object
+      properties:
+        description:
+          type: string
+        displayName:
+          type: string
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        topic:
+          type: string
     Checksum:
       type: object
       description: The checksum value and its type
@@ -6813,6 +7314,10 @@ components:
     CollectionEntry:
       type: object
       properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategorySummary'
         dbUpdateDate:
           type: integer
           format: int64
@@ -6863,7 +7368,11 @@ components:
           type: string
         bitBucketClientId:
           type: string
+        checkUrlLambdaVersion:
+          type: string
         composeSetupVersion:
+          type: string
+        cwlParsingLambdaVersion:
           type: string
         cwlVisualizerUri:
           type: string
@@ -6880,6 +7389,8 @@ components:
         featuredContentUrl:
           type: string
         featuredNewsUrl:
+          type: string
+        galaxyParsingPluginVersion:
           type: string
         gitBuildVersion:
           type: string
@@ -6907,6 +7418,8 @@ components:
           type: string
         googleScope:
           type: string
+        nextflowParsingLambdaVersion:
+          type: string
         orcidAuthUrl:
           type: string
         orcidClientId:
@@ -6927,6 +7440,8 @@ components:
           type: string
         terraImportUrl:
           type: string
+        wdlParsingLambdaVersion:
+          type: string
         zenodoAuthUrl:
           type: string
         zenodoClientId:
@@ -6935,6 +7450,18 @@ components:
           type: string
         zenodoScope:
           type: string
+    DescriptionMetrics:
+      type: object
+      properties:
+        calculatedEntropy:
+          type: integer
+          format: int64
+        calculatedWordCount:
+          type: integer
+          format: int64
+        descriptionLength:
+          type: integer
+          format: int64
     DescriptorLanguageBean:
       type: object
       properties:
@@ -7039,8 +7566,6 @@ components:
           type: string
         namespace:
           type: string
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7058,6 +7583,7 @@ components:
           - GITLAB
           - AMAZON_ECR
           - SEVEN_BRIDGES
+          - GITHUB_CONTAINER_REGISTRY
         registry_string:
           type: string
         starredUsers:
@@ -7076,9 +7602,18 @@ components:
           type: string
         toolname:
           type: string
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7149,8 +7684,6 @@ components:
           $ref: '#/components/schemas/Entry'
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7161,9 +7694,18 @@ components:
           items:
             $ref: '#/components/schemas/User'
           uniqueItems: true
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7235,8 +7777,6 @@ components:
           writeOnly: true
         metadataFromVersion:
           $ref: '#/components/schemas/Version'
-        orcidPutCode:
-          type: string
         output_file_formats:
           type: array
           items:
@@ -7247,9 +7787,18 @@ components:
           items:
             $ref: '#/components/schemas/User'
           uniqueItems: true
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -7269,6 +7818,7 @@ components:
           - TOOL
           - WORKFLOW
           - SERVICE
+          - APPTOOL
         lastUpdateDate:
           type: integer
           format: int64
@@ -7322,6 +7872,7 @@ components:
           - REJECT_ORG_INVITE
           - CREATE_COLLECTION
           - MODIFY_COLLECTION
+          - DELETE_COLLECTION
           - REMOVE_FROM_COLLECTION
           - ADD_TO_COLLECTION
           - ADD_VERSION_TO_ENTRY
@@ -7390,6 +7941,7 @@ components:
           - GITLAB
           - AMAZON_ECR
           - SEVEN_BRIDGES
+          - GITHUB_CONTAINER_REGISTRY
         imageUpdateDate:
           type: string
         os:
@@ -7399,6 +7951,14 @@ components:
         size:
           type: integer
           format: int64
+        specifier:
+          type: string
+          enum:
+          - PARAMETER
+          - NO_TAG
+          - LATEST
+          - TAG
+          - DIGEST
         tag:
           type: string
     ImageData:
@@ -7488,6 +8048,87 @@ components:
           - service
         version:
           type: string
+    LanguageParsingRequest:
+      type: object
+      description: Request sent to the external language parsing service
+      properties:
+        branch:
+          type: string
+          description: The Git branch/tag
+        descriptorLanguage:
+          type: string
+          description: The language of the workflow
+          enum:
+          - CWL
+          - WDL
+          - gxformat2
+          - SWL
+          - NFL
+          - service
+        descriptorRelativePathInGit:
+          type: string
+          description: The relative path to the primary descriptor (relative to the
+            base in Git)
+        entryId:
+          type: integer
+          format: int64
+          description: Id of the Dockstore entry
+        sourceFiles:
+          type: array
+          description: List of SourceFiles that will be required for parsing hosted
+            entries from Dockstore
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        uri:
+          type: string
+          description: The Git URI
+        versionId:
+          type: integer
+          format: int64
+          description: Id of the Dockstore entry's workflowVersion
+      required:
+      - branch
+      - descriptorRelativePathInGit
+      - entryId
+      - uri
+      - versionId
+    LanguageParsingResponse:
+      type: object
+      description: Response from the external lambda parsing service
+      properties:
+        author:
+          type: string
+          description: Author found from parsing the version (may possibly be different
+            from what will be stored in Dockstore)
+        clonedRepositoryAbsolutePath:
+          type: string
+        description:
+          type: string
+          description: Description found from parsing the version (may possibly be
+            different from what will be stored in Dockstore)
+        email:
+          type: string
+          description: Email found from parsing the version (may possibly be different
+            from what will be stored in Dockstore)
+        languageParsingRequest:
+          $ref: '#/components/schemas/LanguageParsingRequest'
+        orcidID:
+          type: string
+          description: ORCID ID found from parsing the version (may possibly be different
+            from what will be stored in Dockstore)
+        parsedInformation:
+          $ref: '#/components/schemas/ParsedInformation'
+        secondaryFilePaths:
+          type: array
+          items:
+            type: string
+        sourceFiles:
+          type: array
+          description: List of SourceFiles returned after parsing a non-hosted entry
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        versionTypeValidation:
+          $ref: '#/components/schemas/VersionTypeValidation'
     LicenseInformation:
       type: object
       properties:
@@ -7537,6 +8178,12 @@ components:
       properties:
         orcid:
           type: string
+    OrcidPutCode:
+      type: object
+      description: An ORCID put code uniquely identifies a work on ORCID
+      properties:
+        orcidPutCode:
+          type: string
     Organization:
       type: object
       properties:
@@ -7547,6 +8194,8 @@ components:
         avatarUrl:
           type: string
           pattern: "([^\\s]+)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
+        categorizer:
+          type: boolean
         collectionsLength:
           type: integer
           format: int64
@@ -7588,6 +8237,7 @@ components:
           - PENDING
           - REJECTED
           - APPROVED
+          - HIDDEN
         topic:
           type: string
     OrganizationUpdateTime:
@@ -8427,6 +9077,21 @@ components:
             $ref: '#/components/schemas/Profile'
         username:
           type: string
+        usernameChangeRequired:
+          type: boolean
+          description: Indicates whether the user is required to change their username
+            before being allowed to do various operations on Dockstore.
+    UserInfo:
+      type: object
+      properties:
+        dockstoreUsername:
+          type: string
+        thirdPartyEmail:
+          type: string
+        thirdPartyUsername:
+          type: string
+        tokenType:
+          type: string
     Validation:
       type: object
       properties:
@@ -8572,15 +9237,34 @@ components:
     VersionMetadata:
       type: object
       properties:
+        description:
+          type: string
+          description: "This is a human-readable description of this container and\
+            \ what it is trying to accomplish, required GA4GH"
         id:
           type: integer
           format: int64
-        orcidPutCode:
-          type: string
         parsedInformationSet:
           type: array
           items:
             $ref: '#/components/schemas/ParsedInformation'
+        publicAccessibleTestParameterFile:
+          type: boolean
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the version
+            was exported to ORCID for the corresponding Dockstore user.
+    VersionTypeValidation:
+      type: object
+      properties:
+        message:
+          type: object
+          additionalProperties:
+            type: string
+        valid:
+          type: boolean
     VersionVerifiedPlatform:
       type: object
       properties:
@@ -8693,8 +9377,6 @@ components:
           - STUB
           - HOSTED
           - DOCKSTORE_YML
-        orcidPutCode:
-          type: string
         organization:
           type: string
         output_file_formats:
@@ -8722,11 +9404,20 @@ components:
           items:
             $ref: '#/components/schemas/User'
           uniqueItems: true
+        topic:
+          type: string
+          description: Short description of the entry
         topicId:
           type: integer
           format: int64
         type:
           type: string
+        userIdToOrcidPutCode:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/OrcidPutCode'
+          description: The presence of the put code for a userid indicates the entry
+            was exported to ORCID for the corresponding Dockstore user.
         users:
           type: array
           items:
@@ -8743,6 +9434,12 @@ components:
           type: string
       required:
       - type
+    WorkflowSubClass:
+      type: string
+      enum:
+      - BIOWORKFLOW
+      - SERVICE
+      - APPTOOL
     WorkflowVersion:
       type: object
       properties:

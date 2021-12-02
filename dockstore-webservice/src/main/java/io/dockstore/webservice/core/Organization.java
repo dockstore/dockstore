@@ -1,5 +1,11 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.webservice.helpers.EntryStarredSerializer;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.HashMap;
@@ -7,7 +13,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -32,16 +37,10 @@ import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.dockstore.webservice.helpers.EntryStarredSerializer;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.Where;
 
 /**
  * This describes a Dockstore organization that can be created by users.
@@ -122,6 +121,7 @@ public class Organization implements Serializable, Aliasable {
 
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
+    @Where(clause = "deleted = false")
     private Set<Collection> collections = new HashSet<>();
 
     @Transient
@@ -151,6 +151,10 @@ public class Organization implements Serializable, Aliasable {
     @Pattern(regexp = "([^\\s]+)(\\.jpg|\\.jpeg|\\.png|\\.gif)")
     @ApiModelProperty(value = "Logo URL", position = 9)
     private String avatarUrl;
+
+    @Column(columnDefinition = "boolean default 'false'", nullable = false)
+    @ApiModelProperty(value = "Does this organization manage categories?")
+    private boolean categorizer = false;
 
     public Organization() {
         starredUsers = new TreeSet<>();
@@ -311,7 +315,8 @@ public class Organization implements Serializable, Aliasable {
         this.displayName = displayName;
     }
 
-    public enum ApplicationState { PENDING, REJECTED, APPROVED }
+    public enum ApplicationState { PENDING, REJECTED, APPROVED, HIDDEN
+    }
 
     public String getAvatarUrl() {
         return avatarUrl;
@@ -319,5 +324,13 @@ public class Organization implements Serializable, Aliasable {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public boolean isCategorizer() {
+        return categorizer;
+    }
+
+    public void setCategorizer(boolean categorizer) {
+        this.categorizer = categorizer;
     }
 }

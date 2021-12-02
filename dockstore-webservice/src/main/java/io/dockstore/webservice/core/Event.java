@@ -1,7 +1,10 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -16,11 +19,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -110,6 +108,7 @@ public class Event {
     private Timestamp dbUpdateDate;
 
     public Event() { }
+
     public Event(User user, Organization organization, Collection collection, BioWorkflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
         this.organization = organization;
@@ -218,6 +217,7 @@ public class Event {
         REJECT_ORG_INVITE,
         CREATE_COLLECTION,
         MODIFY_COLLECTION,
+        DELETE_COLLECTION,
         REMOVE_FROM_COLLECTION,
         ADD_TO_COLLECTION,
         ADD_VERSION_TO_ENTRY
@@ -228,6 +228,7 @@ public class Event {
         private Organization organization;
         private Tool tool;
         private BioWorkflow bioWorkflow;
+        private AppTool appTool;
         private Service service;
         private Collection collection;
         private User initiatorUser;
@@ -263,6 +264,11 @@ public class Event {
 
         public Builder withBioWorkflow(BioWorkflow workflow) {
             this.bioWorkflow = workflow;
+            return this;
+        }
+
+        public Builder withAppTool(AppTool appTool) {
+            this.appTool = appTool;
             return this;
         }
 

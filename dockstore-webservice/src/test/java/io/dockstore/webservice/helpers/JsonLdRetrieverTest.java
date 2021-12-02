@@ -15,7 +15,8 @@
  */
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
+import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
+import static org.junit.Assert.assertEquals;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
@@ -25,10 +26,8 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.ResourceHelpers;
+import java.io.File;
 import org.junit.Test;
-
-import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by kcao on 21/03/17.

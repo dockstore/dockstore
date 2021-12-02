@@ -1,18 +1,16 @@
 package io.dockstore.webservice.resources;
 
+import io.dockstore.webservice.SimpleAuthorizer;
+import io.dockstore.webservice.core.User;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.text.MessageFormat;
-
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
-
-import io.dockstore.webservice.SimpleAuthorizer;
-import io.dockstore.webservice.core.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

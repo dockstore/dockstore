@@ -16,16 +16,29 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.helpers.EntryStarredSerializer;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -50,20 +63,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.EntryType;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.helpers.EntryStarredSerializer;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
@@ -81,7 +83,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
     @NamedQuery(name = "Entry.getGenericEntryById", query = "SELECT e from Entry e WHERE :id = e.id"),
         @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select distinct new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, col.displayName, organization.id, organization.name, organization.displayName) from Collection col join col.entries as entry join col.organization as organization where entry.entry.id = :entryId and organization.status = 'APPROVED' and col.deleted = false"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId", query = "select distinct new io.dockstore.webservice.core.CategorySummary(cat.id, cat.name, cat.description, cat.displayName, cat.topic) from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCategoriesByEntryId", query = "select distinct cat from Category cat join cat.entries as entry where entry.entry.id = :entryId and cat.deleted = false"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds", query = "select distinct entry.entry, cat from Category cat join cat.entries as entry where entry.entry.id in (:entryIds) and cat.deleted = false"),
         @NamedQuery(name = "Entry.getCollectionWorkflows", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'workflow', w.sourceControl, w.organization, w.repository, w.workflowName) from BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getWorkflowsLength", query = "SELECT COUNT(w.id) FROM BioWorkflow w, Collection col join col.entries as e where col.id = :collectionId and w.id = e.entry.id and w.isPublished = true"),
         @NamedQuery(name = "Entry.getCollectionServices", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(w.id, w.dbUpdateDate, 'service', w.sourceControl, w.organization, w.repository, w.workflowName) from Service w, Collection col join col.entries as e where col.id = :collectionId and e.version is null and w.id = e.entry.id and w.isPublished = true"),
@@ -93,7 +98,6 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
         @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId")
-
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -246,9 +250,21 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Embedded
     private LicenseInformation licenseInformation = new LicenseInformation();
 
-    @Column
-    @ApiModelProperty(value = "The presence of the put code indicates the entry was exported to ORCID.")
-    private String orcidPutCode;
+    @ElementCollection(targetClass = OrcidPutCode.class)
+    @JoinTable(name = "entry_orcidputcode", joinColumns = @JoinColumn(name = "entry_id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_user_orcidputcode", columnNames = { "entry_id", "userid", "orcidputcode" }))
+    @MapKeyColumn(name = "userid", columnDefinition = "bigint")
+    @ApiModelProperty(value = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
+    @Schema(description = "The presence of the put code for a userid indicates the entry was exported to ORCID for the corresponding Dockstore user.")
+    @BatchSize(size = 25)
+    private Map<Long, OrcidPutCode> userIdToOrcidPutCode = new HashMap<>();
+
+    @Transient
+    @JsonIgnore
+    private List<Category> categories = new ArrayList<>();
+
+    @Column()
+    @Schema(description = "Short description of the entry")
+    private String topic;
 
     public Entry() {
         users = new TreeSet<>();
@@ -569,21 +585,21 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     /**
-     * Given a path (A/B/C/D), splits it into parts and returns it
+     * Given a path (A/B/C/D), splits it into parts and returns it.
+     * Need to indicate whether the path has an entry name in order to determine the repo name if there are more than 3 components in the path
      *
      * @param path
-     * @return An array of fields used to identify an entry
+     * @param hasEntryName boolean indicating whether the path has an entry name
+     * @return An array of fields used to identify components of an entry's path
      */
-    public static String[] splitPath(String path) {
-        // Used for accessing index of path
+    public static String[] splitPath(String path, boolean hasEntryName) {
+        // Registry and org indices are deterministic: always the first and second components of the path, respectively
         final int registryIndex = 0;
         final int orgIndex = 1;
-        final int repoIndex = 2;
-        final int entryNameIndex = 3;
+        final int repoIndexStart = 2; // Repo and entry name indices are not deterministic because repo name can have slashes
 
-        // Lengths of paths
-        final int pathNoNameLength = 3;
-        final int pathWithNameLength = 4;
+        // Path must at least have 3 components, i.e. <registry>/<org>/<repo>
+        final int minPathLength = 3;
 
         // Used for storing values at path locations
         String registry;
@@ -593,15 +609,29 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
         // Split path by slash
         String[] splitPath = path.split("/");
+        final int lastIndex = splitPath.length - 1;
 
         // Only split if it is the correct length
-        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
-            // Get remaining positions
+        if (splitPath.length >= minPathLength) {
             registry = splitPath[registryIndex];
             org = splitPath[orgIndex];
-            repo = splitPath[repoIndex];
-            if (splitPath.length == pathWithNameLength) {
-                entryName = splitPath[entryNameIndex];
+
+            if (splitPath.length == minPathLength) { // <registry>/<org>/<repo>
+                repo = splitPath[repoIndexStart];
+            } else {
+                String[] repoNameComponents;
+                if (hasEntryName) {
+                    // Assume that the last component is the entry name: <registry>/<org>/<repo>/<entry-name>
+                    entryName = splitPath[lastIndex];
+
+                    // The repo name is the components between org and entry-name
+                    // Note: repo name may contain slashes, ex: <registry>/<org>/<repo-part-1>/<repo-part-2>/<entry-name>
+                    repoNameComponents = Arrays.copyOfRange(splitPath, repoIndexStart, lastIndex);
+                } else {
+                    // Assume that everything after the registry and org is part of the repository name: <registry>/<org>/<repo-part-1>/<repo-part-2>
+                    repoNameComponents = Arrays.copyOfRange(splitPath, repoIndexStart, lastIndex + 1);
+                }
+                repo = String.join("/", repoNameComponents);
             }
 
             // Return an array of the form [A,B,C,D]
@@ -644,11 +674,27 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.blacklistedVersionNames = blacklistedVersionNames;
     }
 
-    public String getOrcidPutCode() {
-        return orcidPutCode;
+    public Map<Long, OrcidPutCode> getUserIdToOrcidPutCode() {
+        return userIdToOrcidPutCode;
     }
 
-    public void setOrcidPutCode(String orcidPutCode) {
-        this.orcidPutCode = orcidPutCode;
+    public void setUserIdToOrcidPutCode(Map<Long, OrcidPutCode> userIdToOrcidPutCode) {
+        this.userIdToOrcidPutCode = userIdToOrcidPutCode;
+    }
+
+    public List<Category> getCategories() {
+        return (categories);
+    }
+
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }

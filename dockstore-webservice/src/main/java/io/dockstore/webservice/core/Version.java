@@ -16,6 +16,14 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
@@ -25,7 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -48,15 +55,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SequenceGenerator;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Strings;
-import com.google.gson.Gson;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
@@ -209,6 +207,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "The images that belong to this version", position = 15)
     @BatchSize(size = 25)
     private Set<Image> images = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "version", cascade = CascadeType.REMOVE)
+    private Set<EntryVersion> entryVersions = new HashSet<>();
 
     public Version() {
         sourceFiles = new TreeSet<>();
@@ -454,30 +456,35 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.getVersionMetadata().descriptionSource = newDescriptionSource;
     }
 
+    // remove this method when author is removed from VersionMetadata
     public void setAuthor(String newAuthor) {
-        this.getVersionMetadata().author = newAuthor;  // remove this line when author is removed from VersionMetadata
-        authors.clear();
-        if (newAuthor != null) {
-            authors.add(new Author(newAuthor));
-        }
+        this.getVersionMetadata().author = newAuthor;
     }
 
+    // remove this method when author is removed from VersionMetadata
     public void setEmail(String newEmail) {
-        this.getVersionMetadata().email = newEmail;  // remove this line when author is removed from VersionMetadata
-        if (authors.size() == 1) {
-            Optional<Author> author = authors.stream().findFirst();
-            if (author.isPresent() && author.get().getEmail() == null) {
-                author.get().setEmail(newEmail);
-            }
+        this.getVersionMetadata().email = newEmail;
+    }
+
+    public void addAuthor(final Author author) {
+        boolean isNewAuthor = this.authors.stream().noneMatch(existingAuthor -> existingAuthor.getName().equals(author.getName()));
+        if (isNewAuthor) {
+            this.authors.add(author);
         }
     }
 
     public void setAuthors(final Set<Author> authors) {
-        this.authors = authors;
+        this.authors.clear();
+        if (authors != null) {
+            this.authors.addAll(authors);
+        }
     }
 
     public void setOrcidAuthors(final Set<OrcidAuthor> orcidAuthors) {
-        this.orcidAuthors = orcidAuthors;
+        this.getOrcidAuthors().clear();
+        if (orcidAuthors != null) {
+            this.orcidAuthors.addAll(orcidAuthors);
+        }
     }
 
     public ReferenceType getReferenceType() {
@@ -574,9 +581,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.parent = parent;
     }
 
-    public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
+    public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED
+    }
 
-    public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
+    public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET
+    }
 
 
 }

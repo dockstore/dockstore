@@ -1,5 +1,7 @@
 package io.dockstore.webservice.helpers;
 
+import static org.mockito.Mockito.when;
+
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -8,8 +10,6 @@ import io.dockstore.webservice.core.User;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import static org.mockito.Mockito.when;
 
 public class GoogleHelperTest {
 

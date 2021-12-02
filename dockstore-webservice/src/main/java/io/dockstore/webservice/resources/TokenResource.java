@@ -16,28 +16,9 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.SecureRandom;
-import java.text.MessageFormat;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.Constants.USERNAME_CONTAINS_KEYWORD_PATTERN;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -57,6 +38,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import io.dockstore.common.HttpStatusMessageConstants;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.PrivacyPolicyVersion;
@@ -80,22 +62,43 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.SecureRandom;
+import java.text.MessageFormat;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
@@ -118,6 +121,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      */
     public static final JsonFactory JSON_FACTORY = new JacksonFactory();
     public static final String ADMINS_AND_CURATORS_MAY_NOT_LOGIN_WITH_GOOGLE = "Admins and curators may not login with Google";
+    public static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -125,6 +129,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final TOSVersion CURRENT_TOS_VERSION = TOSVersion.TOS_VERSION_2;
     private static final PrivacyPolicyVersion CURRENT_PRIVACY_POLICY_VERSION = PrivacyPolicyVersion.PRIVACY_POLICY_VERSION_2_5;
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
+    private static final String TOKEN_NOT_FOUND_DESCRIPTION = "Token not found";
+    private static final String USER_NOT_FOUND_MESSAGE = "User not found";
 
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
@@ -193,13 +199,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork(readOnly = true)
     @Operation(operationId = "listToken", description = "Get information about a specific token by id.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A token specified by id", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = TOKEN_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Get information about a specific token by id.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class)
-    @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
-            @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
+    @ApiResponses({ @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
+            @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = TOKEN_NOT_FOUND_DESCRIPTION) })
     public Token listToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
+        checkTokenExists(token);
         checkUser(user, token.getUserId());
 
         return token;
@@ -210,8 +219,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @UnitOfWork
     @Path("/quay.io")
     @JsonView(TokenViews.User.class)
-    @Operation(operationId = "addQuayToken", description = "Add a new quay IO token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Add a new quay IO token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
+    @Operation(operationId = "addQuayToken", description = "Add a new Quay.io token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added a new Quay.io token", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
+    @ApiOperation(value = "Add a new Quay.io token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
@@ -239,7 +252,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -274,11 +287,15 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/{tokenId}")
     @UnitOfWork
     @Operation(operationId = "deleteToken", description = "Delete a token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully deleted token")
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = TOKEN_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Delete a token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
+    @ApiResponses(@io.swagger.annotations.ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
     public Response deleteToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
+        checkTokenExists(token);
         checkUser(user, token.getUserId());
 
         // invalidate cache now that we're deleting the token
@@ -306,6 +323,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/gitlab.com")
     @JsonView(TokenViews.User.class)
     @Operation(operationId = "addGitlabToken", description = "Add a new gitlab.com token.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added a new gitlab.com token", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
     @ApiOperation(value = "Add a new gitlab.com token.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGitlabToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("code") String code) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
@@ -348,7 +369,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
 
     }
@@ -397,6 +418,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/google")
     @JsonView(TokenViews.Auth.class)
     @Operation(operationId = "addGoogleToken", description = "Allow satellizer to post a new Google token to Dockstore.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully posted a new Google token to Dockstore", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
+    @ApiResponse(responseCode = HttpStatus.SC_EXPECTATION_FAILED + "", description = HttpStatusMessageConstants.EXPECTATION_FAILED)
     @ApiOperation(value = "Allow satellizer to post a new Google token to Dockstore.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the Google token", response = Token.class)
     public Token addGoogleToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
@@ -434,7 +461,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
                 user = new User();
                 user.setUsername(username);
+                user.setUsernameChangeRequired(shouldRestricUser(username));
                 userID = userDAO.create(user);
+                acceptTOSAndPrivacyPolicy(user);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
             }
@@ -462,8 +491,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         user = userDAO.findById(userID);
-        acceptTOSAndPrivacyPolicy(user);
-
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
             dockstoreToken = createDockstoreToken(userID, user.getUsername());
@@ -491,7 +518,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
-    private void acceptTOSAndPrivacyPolicy(User user) {
+    public static void acceptTOSAndPrivacyPolicy(User user) {
         Date date = new Date();
         if (user.getTOSVersion() != CURRENT_TOS_VERSION) {
             user.setTOSVersion(CURRENT_TOS_VERSION);
@@ -524,6 +551,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/github")
     @JsonView(TokenViews.Auth.class)
     @Operation(operationId = "addToken", description = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "Satellizer successfully posted a new GitHub token to Dockstore", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
     @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
@@ -540,6 +572,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/github.com")
     @JsonView(TokenViews.User.class)
     @Operation(operationId = "addGithubToken", description = "Add a new github.com token, used by accounts page.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added a new github.com token", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
     @ApiOperation(value = "Add a new github.com token, used by accounts page.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
@@ -577,8 +613,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             if (user == null && authUser == null) {
                 User newUser = new User();
                 newUser.setUsername(username);
+                newUser.setUsernameChangeRequired(shouldRestricUser(username));
                 userID = userDAO.create(newUser);
-                userDAO.findById(userID);
+                user = userDAO.findById(userID);
+                acceptTOSAndPrivacyPolicy(user);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
             }
@@ -600,9 +638,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 githubToken = tokens.get(0);
             }
         }
-        // check that user has accepted the latest version of the TOS and privacy policy. If not, update since acceptance for both is passively done by logging in/registering
-        user = userDAO.findById(userID);
-        acceptTOSAndPrivacyPolicy(user);
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
@@ -629,10 +664,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     private Token createDockstoreToken(long userID, String githubLogin) {
         Token dockstoreToken;
-        final SecureRandom random = new SecureRandom();
         final int bufferLength = 1024;
         final byte[] buffer = new byte[bufferLength];
-        random.nextBytes(buffer);
+        SECURE_RANDOM.nextBytes(buffer);
         String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
         final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
 
@@ -646,12 +680,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return dockstoreToken;
     }
 
+    public boolean shouldRestricUser(String username) {
+        Matcher matcher = USERNAME_CONTAINS_KEYWORD_PATTERN.matcher(username);
+        return matcher.find();
+    }
+
     @GET
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org")
     @JsonView(TokenViews.User.class)
     @Operation(operationId = "addBitbucketToken", description = "Add a new bitbucket.org token, used by quay.io redirect.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added a new bitbucket.org token", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
     @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
@@ -700,7 +743,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -713,6 +756,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             notes = orcidDescription, response = Token.class)
     @Operation(operationId = "addOrcidToken", summary = orcidSummary, description = orcidDescription,
             security = @SecurityRequirement(name = "bearer"))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added orcid.org token", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
+    @ApiResponse(responseCode = HttpStatus.SC_INTERNAL_SERVER_ERROR + "", description = HttpStatusMessageConstants.INTERNAL_SERVER_ERROR)
     public Token addOrcidToken(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth final User user,
                                @QueryParam("code") final String code) {
         String accessToken;
@@ -776,7 +824,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -787,6 +835,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/zenodo.org")
     @JsonView(TokenViews.User.class)
     @Operation(operationId = "addZenodoToken", description = "Add a new zenodo.org token, used by accounts page.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully added a new zenodo.org token", content = @Content(schema = @Schema(implementation = Token.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = HttpStatusMessageConstants.NOT_FOUND)
+    @ApiResponse(responseCode = HttpStatus.SC_CONFLICT + "", description = HttpStatusMessageConstants.CONFLICT)
     @ApiOperation(value = "Add a new zenodo.org token, used by accounts page.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
@@ -832,7 +884,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             return tokenDAO.findById(create);
         } else {
             LOG.info("Could not find user");
-            throw new CustomWebApplicationException("User not found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -850,6 +902,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             LOG.info("Username: {}", username);
             return username;
         }
-        throw new CustomWebApplicationException("User not found", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        throw new CustomWebApplicationException(USER_NOT_FOUND_MESSAGE, HttpStatus.SC_NOT_FOUND);
     }
 }

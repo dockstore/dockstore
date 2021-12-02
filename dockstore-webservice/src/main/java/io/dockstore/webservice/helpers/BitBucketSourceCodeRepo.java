@@ -16,19 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.core.GenericType;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
@@ -51,12 +39,22 @@ import io.swagger.bitbucket.client.model.PaginatedRepositories;
 import io.swagger.bitbucket.client.model.PaginatedTreeentries;
 import io.swagger.bitbucket.client.model.Repository;
 import io.swagger.bitbucket.client.model.Tag;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.ws.rs.core.GenericType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen

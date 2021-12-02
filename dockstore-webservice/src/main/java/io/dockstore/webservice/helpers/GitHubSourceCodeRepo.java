@@ -16,6 +16,43 @@
 
 package io.dockstore.webservice.helpers;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
+import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.common.yaml.DockstoreYaml12;
+import io.dockstore.common.yaml.DockstoreYamlHelper;
+import io.dockstore.common.yaml.Service12;
+import io.dockstore.common.yaml.YamlWorkflow;
+import io.dockstore.webservice.CacheHitListener;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlOrganization;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.time.Instant;
@@ -33,36 +70,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguageSubclass;
-import io.dockstore.common.SourceControl;
-import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.common.yaml.DockstoreYaml12;
-import io.dockstore.common.yaml.DockstoreYamlHelper;
-import io.dockstore.common.yaml.Service12;
-import io.dockstore.common.yaml.YamlWorkflow;
-import io.dockstore.webservice.CacheHitListener;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.LicenseInformation;
-import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.SourceControlOrganization;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Validation;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -90,12 +97,6 @@ import org.kohsuke.github.extras.ImpatientHttpConnector;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -132,6 +133,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     .withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(okHttp3Connector).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public String getTopic(String repositoryId) {
+        try {
+            GHRepository repository = github.getRepository(repositoryId);
+            return repository.getDescription();
+        } catch (IOException e) {
+            LOG.error(String.format("Could not get topic from: %s", repositoryId, e));
+            return null;
         }
     }
 
@@ -314,7 +325,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHRateLimit ghRateLimit = github.getRateLimit();
             if (ghRateLimit.getRemaining() == 0) {
-                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
+                ZonedDateTime zonedDateTime = Instant.ofEpochMilli(ghRateLimit.getResetDate().getTime()).atZone(ZoneId.systemDefault());
                 throw new CustomWebApplicationException(OUT_OF_GIT_HUB_RATE_LIMIT + ", please wait til " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
             github.getMyOrganizations();
@@ -336,6 +347,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            workflow.setTopic(this.getTopic(repositoryId));
             setLicenseInformation(workflow, workflow.getOrganization() + '/' + workflow.getRepository());
 
             // Why is the path not set here?
@@ -366,6 +378,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         service.setDescriptorType(DescriptorLanguage.SERVICE);
         service.setDefaultWorkflowPath(DOCKSTORE_YML_PATH);
         service.setMode(WorkflowMode.DOCKSTORE_YML);
+        service.setTopic(this.getTopic(repositoryId));
         this.setLicenseInformation(service, repositoryId);
         LicenseInformation licenseInformation = GitHubHelper.getLicenseInformation(github, service.getOrganization() + '/' + service.getRepository());
         service.setLicenseInformation(licenseInformation);
@@ -391,8 +404,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * @param workflowName Name of the workflow
      * @return Workflow
      */
-    public BioWorkflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+    public Workflow initializeWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
         BioWorkflow workflow = new BioWorkflow();
+        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    }
+
+    public Workflow initializeOneStepWorkflowFromGitHub(String repositoryId, String subclass, String workflowName) {
+        AppTool workflow = new AppTool();
+        return setWorkflowInfo(repositoryId, subclass, workflowName, workflow);
+    }
+
+    /**
+     * Initialize bioworkflow/apptool object for GitHub repository
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     * @param subclass Subclass of the workflow
+     * @param workflowName Name of the workflow
+     * @param workflow Workflow to update
+     * @return Workflow
+     */
+    public Workflow setWorkflowInfo(final String repositoryId, final String subclass, final String workflowName,
+            final Workflow workflow) {
         workflow.setOrganization(repositoryId.split("/")[0]);
         workflow.setRepository(repositoryId.split("/")[1]);
         workflow.setSourceControl(SourceControl.GITHUB);
@@ -400,6 +431,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setLastUpdated(new Date());
         workflow.setMode(WorkflowMode.DOCKSTORE_YML);
         workflow.setWorkflowName(workflowName);
+        workflow.setTopic(this.getTopic(repositoryId));
         this.setLicenseInformation(workflow, repositoryId);
         DescriptorLanguage descriptorLanguage;
         try {
@@ -414,7 +446,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
+            Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // Get repository from GitHub
@@ -473,6 +505,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         return workflow;
     }
+
 
     /**
      * Retrieves a repository from github
@@ -741,7 +774,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             // TODO: Need to handle services; the YAML is guaranteed to have at least one of either
-            final Optional<YamlWorkflow> maybeWorkflow = dockstoreYaml12.getWorkflows().stream().filter(wf -> {
+            List<YamlWorkflow> workflows;
+            if (workflow instanceof AppTool) {
+                workflows = dockstoreYaml12.getTools();
+            } else {
+                workflows = dockstoreYaml12.getWorkflows();
+            }
+
+            final Optional<YamlWorkflow> maybeWorkflow = workflows.stream().filter(wf -> {
                 final String wfName = wf.getName();
                 final String dockstoreWorkflowPath =
                         "github.com/" + repository.getFullName() + (wfName != null && !wfName.isEmpty() ? "/" + wfName : "");
@@ -764,8 +804,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         version.setWorkflowPath(primaryDescriptorPath);
 
-        Map<String, String> validationMessage = new HashMap<>();
-
+        String validationMessage = "";
         String fileContent = this.readFileFromRepo(primaryDescriptorPath, ref.getLeft(), repository);
         if (fileContent != null) {
             // Add primary descriptor file and resolve imports
@@ -801,17 +840,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
                 if (missingParamFiles.size() > 0) {
-                    validationMessage.put(DOCKSTORE_YML_PATH, String.format("%s: %s.", missingParamFiles.size() == 1 ? "The following file is missing" : "The following files are missing",
-                            missingParamFiles.stream().map(paramFile -> String.format("'%s'", paramFile)).collect(Collectors.joining(", "))));
+                    validationMessage = String.format("The following %s missing: %s.", missingParamFiles.size() == 1 ? "file is" : "files are",
+                            missingParamFiles.stream().map(paramFile -> String.format("'%s'", paramFile)).collect(Collectors.joining(", ")));
                 }
             }
         } else {
             // File not found or null
             LOG.info("Could not find the file " + primaryDescriptorPath + " in repo " + repository);
-            validationMessage.put(DOCKSTORE_YML_PATH, "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.");
+            validationMessage = "Could not find the primary descriptor file '" + primaryDescriptorPath + "'.";
         }
 
-        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessage.isEmpty(), validationMessage);
+        try {
+            DockstoreYamlHelper.validateDockstoreYamlProperties(dockstoreYml.getContent()); // Validate that there are no unknown properties
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            validationMessage = validationMessage.isEmpty() ? ex.getMessage() : validationMessage + " " + ex.getMessage();
+        }
+
+        Map<String, String> validationMessageObject = new HashMap<>();
+        if (!validationMessage.isEmpty()) {
+            validationMessageObject.put(DOCKSTORE_YML_PATH, validationMessage);
+        }
+        VersionTypeValidation dockstoreYmlValidationMessage = new VersionTypeValidation(validationMessageObject.isEmpty(), validationMessageObject);
         Validation dockstoreYmlValidation = new Validation(DescriptorLanguage.FileType.DOCKSTORE_YML, dockstoreYmlValidationMessage);
         version.addOrUpdateValidation(dockstoreYmlValidation);
 
@@ -861,14 +910,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     public void reportOnGitHubRelease(GHRateLimit startRateLimit, GHRateLimit endRateLimit, String repository, String username, String gitReference, boolean isSuccessful) {
-        String gitHubRepoInfo = "Performing GitHub release for repository: " + repository + ", user: " + username + ", and git reference: " + gitReference;
-        String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
-        if (isSuccessful) {
-            LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
-        } else {
-            LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+        if (LOG.isInfoEnabled()) {
+            String gitHubRepoInfo =
+                "Performing GitHub release for repository: " + Utilities.cleanForLogging(repository) + ", user: " + Utilities.cleanForLogging(username) + ", and git reference: " + Utilities
+                    .cleanForLogging((gitReference));
+            String gitHubRateLimitInfo = " had a starting rate limit of " + startRateLimit.getRemaining() + " and ending rate limit of " + endRateLimit.getRemaining();
+            if (isSuccessful) {
+                LOG.info(gitHubRepoInfo + " succeeded and " + gitHubRateLimitInfo);
+            } else {
+                LOG.info(gitHubRepoInfo + " failed. Attempt " + gitHubRateLimitInfo);
+            }
         }
-
     }
 
     public GHRateLimit getGhRateLimitQuietly() {

@@ -15,21 +15,6 @@
  */
 package io.dockstore.common.yaml;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-
-import io.dropwizard.testing.FixtureHelpers;
-import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -37,6 +22,21 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import io.dropwizard.testing.FixtureHelpers;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class DockstoreYamlTest {
     private static final String DOCKSTORE10_YAML = FixtureHelpers.fixture("fixtures/dockstore10.yml");
@@ -167,7 +167,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
             fail("Dockstore yaml with no services and no workflows should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertEquals(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_SERVICE, e.getMessage());
+            assertEquals(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE, e.getMessage());
         }
     }
 
@@ -239,7 +239,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readAsDockstoreYaml12(workflowsKey);
             Assert.fail("Shouldn't be able to parse correctly");
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
-            assertTrue(ex.getMessage().contains("must have at least 1 workflow or service"));
+            assertTrue(ex.getMessage().contains("must have at least 1 workflow, tool, or service"));
         }
 
         final String nameKey = DOCKSTORE_GALAXY_YAML.replaceFirst("name", "Name");
@@ -354,4 +354,56 @@ public class DockstoreYamlTest {
         assertFalse(DockstoreYamlHelper.filterGitReference(Path.of("refs/tags/["), filters));
     }
 
+
+    @Test
+    public void testGetSuggestedDockstoreYamlProperty() {
+        Class dockstoreYamlClass = DockstoreYaml12.class;
+
+        String suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "z");
+        assertEquals("Shouldn't suggest a property if there's too many changes that needs to be done", "", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "workflows");
+        assertEquals("Should return the same property back if it's already a valid property", "workflows", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "affilliation");
+        assertEquals("affiliation", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "filter");
+        assertEquals("filters", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "apptool");
+        assertEquals("tools", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "e-mail");
+        assertEquals("email", suggestedProperty);
+
+        suggestedProperty = DockstoreYamlHelper.getSuggestedDockstoreYamlProperty(dockstoreYamlClass, "testParameterFilets");
+        assertEquals("testParameterFiles", suggestedProperty);
+    }
+
+    @Test
+    public void testGetDockstoreYamlProperties() {
+        Set<String> properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml12.class);
+        assertEquals("Should have the correct number of unique properties for a version 1.2 .dockstore.yml", 33, properties.size());
+
+        properties = DockstoreYamlHelper.getDockstoreYamlProperties(DockstoreYaml11.class);
+        assertEquals("Should have the correct number of unique properties for a version 1.1 .dockstore.yml", 29, properties.size());
+    }
+
+    @Test
+    public void testValidateDockstoreYamlProperties() {
+        try {
+            DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE12_YAML.replace("publish", "published"));
+            fail("Should not pass property validation because there's an unknown property");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains(DockstoreYamlHelper.UNKNOWN_PROPERTY));
+        }
+
+        try {
+            DockstoreYamlHelper.validateDockstoreYamlProperties(DOCKSTORE11_YAML.replace("description", "descriptions"));
+            fail("Should not pass property validation because there's an unknown property");
+        } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
+            assertTrue(ex.getMessage().contains(DockstoreYamlHelper.UNKNOWN_PROPERTY));
+        }
+    }
 }

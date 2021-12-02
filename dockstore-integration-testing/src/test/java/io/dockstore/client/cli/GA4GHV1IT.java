@@ -15,10 +15,11 @@
  */
 package io.dockstore.client.cli;
 
-import java.util.List;
-
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
+import static io.dropwizard.testing.FixtureHelpers.fixture;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
@@ -29,14 +30,11 @@ import io.swagger.client.model.ToolTestsV1;
 import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.model.ToolDescriptor;
+import java.util.List;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.junit.Test;
-
-import static io.dropwizard.testing.FixtureHelpers.fixture;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author gluu

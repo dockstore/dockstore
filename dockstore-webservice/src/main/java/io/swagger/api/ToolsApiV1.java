@@ -15,19 +15,6 @@
  */
 package io.swagger.api;
 
-import java.util.Optional;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.resources.ResourceConstants;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -44,6 +31,17 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import java.util.Optional;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import org.apache.http.HttpStatus;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/tools")
@@ -54,6 +52,7 @@ import org.apache.http.HttpStatus;
 @io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)
 public class ToolsApiV1 {
     private final ToolsApiService delegate = ToolsApiServiceFactory.getToolsApi();
+
     @SuppressWarnings("checkstyle:ParameterNumber")
     @GET
     @UnitOfWork(readOnly = true)

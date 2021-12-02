@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.dockstore</groupId>
   <artifactId>swagger-java-client</artifactId>
-  <version>1.11.10-SNAPSHOT</version>
+  <version>1.12.0-alpha.1-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache Software License, Version 2.0</name>
@@ -52,8 +52,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jackson-jaxrs-base</artifactId>
           <groupId>com.fasterxml.jackson.jaxrs</groupId>
+          <artifactId>jackson-jaxrs-base</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -64,8 +64,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jackson-annotations</artifactId>
           <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -76,8 +76,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>jackson-annotations</artifactId>
           <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -102,12 +102,12 @@
     <dependency>
       <groupId>io.dockstore</groupId>
       <artifactId>dockstore-webservice</artifactId>
-      <version>1.11.10-SNAPSHOT</version>
+      <version>1.12.0-alpha.1-SNAPSHOT</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <artifactId>*</artifactId>
           <groupId>*</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

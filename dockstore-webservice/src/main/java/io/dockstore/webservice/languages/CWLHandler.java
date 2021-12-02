@@ -15,16 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -40,8 +30,10 @@ import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.ParsedInformation;
@@ -50,6 +42,15 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -133,12 +134,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     LOG.info("Description not found!");
                 }
 
-                String dctKey = "dct:creator";
-                String schemaKey = "s:author";
-                if (map.containsKey(schemaKey)) {
-                    processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
-                } else if (map.containsKey(dctKey)) {
-                    processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                // Add authors from descriptor if there are no .dockstore.yml authors
+                if (version.getAuthors().isEmpty()) {
+                    String dctKey = "dct:creator";
+                    String schemaKey = "s:author";
+                    if (map.containsKey(schemaKey)) {
+                        processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
+                    } else if (map.containsKey(dctKey)) {
+                        processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                    }
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
@@ -178,11 +182,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         map = (Map)o;
         if (map != null) {
             String author = (String)map.get(authorKey);
-            version.setAuthor(author);
+            Author newAuthor = new Author(author);
             String email = (String)map.get(emailKey);
             if (!Strings.isNullOrEmpty(email)) {
-                version.setEmail(email.replaceFirst("^mailto:", ""));
+                newAuthor.setEmail(email.replaceFirst("^mailto:", ""));
             }
+            version.addAuthor(newAuthor);
         } else {
             LOG.info(errorMessage);
         }
@@ -275,7 +280,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String defaultDockerPath = null;
 
             // Initialize data structures for Tool table
-            Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
+            Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url, docker specifier)
 
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
@@ -432,9 +437,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
                 }
 
+                DockerSpecifier dockerSpecifier = null;
                 String dockerUrl = null;
                 if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
-                    dockerUrl = getURLFromEntry(stepDockerRequirement, dao);
+                    // CWL doesn't support parameterized docker pulls. Must be a string.
+                    dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerRequirement, DockerImageReference.LITERAL);
+                    dockerUrl = getURLFromEntry(stepDockerRequirement, dao, dockerSpecifier);
                 }
 
                 if (type == LanguageHandlerInterface.Type.DAG) {
@@ -442,9 +450,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
 
                 if (secondaryFile != null) {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(secondaryFile, stepDockerRequirement, dockerUrl));
+                    nodeDockerInfo.put(workflowStepId, new DockerInfo(secondaryFile, stepDockerRequirement, dockerUrl, dockerSpecifier));
                 } else {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(mainDescriptorPath, stepDockerRequirement, dockerUrl));
+                    nodeDockerInfo.put(workflowStepId, new DockerInfo(mainDescriptorPath, stepDockerRequirement, dockerUrl, dockerSpecifier));
                 }
 
             }

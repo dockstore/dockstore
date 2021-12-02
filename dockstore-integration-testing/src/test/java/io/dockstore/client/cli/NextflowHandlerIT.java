@@ -1,11 +1,5 @@
 package io.dockstore.client.cli;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -16,6 +10,11 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.languages.NextflowHandler;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -70,7 +69,7 @@ public class NextflowHandlerIT extends BaseIT {
         ToolDAO toolDAO = new ToolDAO(sessionFactory);
         Optional<String> content = nextflowHandler
                 .getContent("main.nf", mainDescriptorContents, new HashSet<>(stringSourceFileMap.values()), LanguageHandlerInterface.Type.TOOLS, toolDAO);
-        Assert.assertEquals("[{\"id\":\"FASTQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"},{\"id\":\"MULTIQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"},{\"id\":\"INDEX\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"},{\"id\":\"QUANT\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\"}]", content.get());
+        Assert.assertEquals("[{\"id\":\"FASTQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"MULTIQC\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"INDEX\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"},{\"id\":\"QUANT\",\"file\":\"main.nf\",\"docker\":\"nextflow/rnaseq-nf:latest\",\"link\":\"https://hub.docker.com/r/nextflow/rnaseq-nf\",\"specifier\":\"LATEST\"}]", content.get());
 
 
     }

@@ -1,17 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.DatatypeConverter;
-
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
@@ -19,6 +7,11 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.languages.CWLHandler;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +22,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class FileFormatHelper {
     private static final Logger LOG = LoggerFactory.getLogger(FileFormatHelper.class);
+
     private FileFormatHelper() { }
 
     /**
@@ -102,22 +96,5 @@ public final class FileFormatHelper {
             }
         });
         return fileFormatsFromDB;
-    }
-
-    public static Optional<String> calcSHA1(String content) {
-        if (content != null) {
-            try {
-                MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-                final byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-                messageDigest.update(bytes, 0, bytes.length);
-                String sha1 = DatatypeConverter.printHexBinary(messageDigest.digest()).toLowerCase();
-                return Optional.of(sha1);
-            } catch (UnsupportedOperationException | NoSuchAlgorithmException ex) {
-                LOG.error("Unable to calculate SHA-1", ex);
-            }
-        } else {
-            LOG.error("File descriptor content is null");
-        }
-        return Optional.empty();
     }
 }

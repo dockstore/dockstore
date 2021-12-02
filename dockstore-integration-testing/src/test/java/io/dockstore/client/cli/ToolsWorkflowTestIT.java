@@ -16,10 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -28,6 +24,9 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;

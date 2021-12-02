@@ -15,23 +15,15 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
@@ -43,6 +35,17 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
@@ -172,7 +175,7 @@ public class ElasticListener implements StateListenerInterface {
         }
         // sort entries into workflows and tools
         List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
-        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool)).collect(Collectors.toList());
+        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool) || (entry instanceof AppTool)).collect(Collectors.toList());
         if (!workflowsEntryList.isEmpty()) {
             postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
         }
@@ -261,7 +264,25 @@ public class ElasticListener implements StateListenerInterface {
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        addCategoriesJson(jsonNode, entry);
         return jsonNode;
+    }
+
+    private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
+
+        List<Map<String, Object>> values = new ArrayList<>();
+
+        for (Category category: entry.getCategories()) {
+            Map<String, Object> value = new LinkedHashMap<>();
+            value.put("id", category.getId());
+            value.put("name", category.getName());
+            value.put("description", category.getDescription());
+            value.put("displayName", category.getDisplayName());
+            value.put("topic", category.getTopic());
+            values.add(value);
+        }
+
+        ((ObjectNode)node).put("categories", MAPPER.valueToTree(values));
     }
 
     /**
@@ -290,6 +311,7 @@ public class ElasticListener implements StateListenerInterface {
             detachedTool.setGitUrl(tool.getGitUrl());
             detachedTool.setName(tool.getName());
             detachedTool.setToolname(tool.getToolname());
+            detachedTool.setTopic(detachedTool.getTopic());
             detachedEntry = detachedTool;
         } else if (entry instanceof BioWorkflow) {
             BioWorkflow bioWorkflow = (BioWorkflow) entry;
@@ -300,6 +322,7 @@ public class ElasticListener implements StateListenerInterface {
             detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
 
             // These are for table
+            detachedBioWorkflow.setTopic(bioWorkflow.getTopic());
             detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
             detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
             detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());

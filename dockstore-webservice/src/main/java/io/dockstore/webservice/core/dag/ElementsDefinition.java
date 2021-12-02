@@ -24,8 +24,10 @@ import java.util.List;
 public class ElementsDefinition {
     public List<NodeDefinition> nodes;
     public List<EdgeDefinition> edges;
+
     public static class EdgeDefinition {
         public EdgeDataDefinition data;
+
         public static class EdgeDataDefinition {
             public String id;
 
@@ -41,6 +43,7 @@ public class ElementsDefinition {
     }
     public static class NodeDefinition {
         public NodeDataDefinition data;
+
         public static class NodeDataDefinition {
             public String name;
             public String run;

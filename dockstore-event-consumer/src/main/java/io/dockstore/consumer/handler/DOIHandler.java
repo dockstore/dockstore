@@ -15,10 +15,6 @@
  */
 package io.dockstore.consumer.handler;
 
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Optional;
-
 import com.google.common.collect.Lists;
 import io.dockstore.common.model.DOIMessage;
 import io.dockstore.zenodo.client.ApiClient;
@@ -37,6 +33,9 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

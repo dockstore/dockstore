@@ -15,6 +15,19 @@
  */
 package io.dockstore.webservice.languages;
 
+import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.language.CompleteLanguageInterface;
+import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.RecommendedLanguageInterface;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
+import io.dockstore.webservice.core.DescriptionSource;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,19 +38,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.google.gson.Gson;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.language.CompleteLanguageInterface;
-import io.dockstore.language.MinimalLanguageInterface;
-import io.dockstore.language.RecommendedLanguageInterface;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.DescriptionSource;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
@@ -63,8 +63,12 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
         final MinimalLanguageInterface.WorkflowMetadata workflowMetadata = minimalLanguageInterface
             .parseWorkflowForMetadata(filepath, content, new HashMap<>());
-        version.setAuthor(workflowMetadata.getAuthor());
-        version.setEmail(workflowMetadata.getEmail());
+        // Add authors from descriptor if there are no .dockstore.yml authors
+        if (workflowMetadata.getAuthor() != null && version.getAuthors().isEmpty()) {
+            Author author = new Author(workflowMetadata.getAuthor());
+            author.setEmail(workflowMetadata.getEmail());
+            version.addAuthor(author);
+        }
         version.setDescriptionAndDescriptionSource(workflowMetadata.getDescription(), DescriptionSource.DESCRIPTOR);
         // TODO: hook up validation object to version for parsing metadata
         return version;
@@ -85,8 +89,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             }
 
             try {
-                return ((RecommendedLanguageInterface)minimalLanguageInterface).
-                        validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
+                return ((RecommendedLanguageInterface)minimalLanguageInterface)
+                    .validateWorkflowSet(primaryDescriptorFilePath, content, sourcefilesToIndexedFiles(sourcefiles));
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
