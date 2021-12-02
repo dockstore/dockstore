@@ -102,6 +102,21 @@ public class CWLParseTest {
         Assert.assertEquals("incorrect description", "Print the contents of a file to stdout using 'cat' running in a docker container.\nNew line doc.", entry.getDescription());
     }
 
+    /**
+     * This tests a malicious CWL descriptor
+     * @throws IOException If file contents could not be read
+     */
+    @Test
+    public void testMaliciousCwl() throws IOException {
+        String filePath = ResourceHelpers.resourceFilePath("malicious.cwl");
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Version entry = sInterface.parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
+        // This checks the version is not created but not that it was never parsed
+        Assert.assertEquals(false, entry.isValid());
+        SortedSet<Validation> validations = entry.getValidations();
+        Assert.assertTrue(validations.first().getMessage().contains("CWL file is malformed or missing"));
+    }
+
     @Test
     public void testCombinedMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
