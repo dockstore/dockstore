@@ -16,11 +16,23 @@
 
 package io.dockstore.webservice.helpers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -53,23 +65,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -98,6 +93,12 @@ import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+
 /**
  * @author dyuen
  */
@@ -108,6 +109,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final GitHub github;
     private String githubTokenUsername;
 
+    // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
+    // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
+    // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
+    // in https://www.regular-expressions.info/catastrophic.html
+    // So use more restrictive regex and possesive quantifiers '++' and atomic group
+    // Can test regex at https://regex101.com/
+    // format git@github.com:dockstore/dockstore-ui.git
+    private static final Pattern GITHUB_REGEX_PATTERN = Pattern.compile("^git@github.com:([^\\s/]++)/(?>(\\S+)\\.git)$");
     /**
      *  @param githubTokenUsername the username for githubTokenContent
      * @param githubTokenContent authorization token
@@ -945,9 +954,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         if (entry.getClass().equals(Tool.class)) {
             // Parse git url for repo
-            Pattern p = Pattern.compile("git@github.com:(\\S+)/(\\S+)\\.git");
-            Matcher m = p.matcher(entry.getGitUrl());
 
+            Matcher m = GITHUB_REGEX_PATTERN.matcher(entry.getGitUrl());
             if (!m.find()) {
                 return null;
             } else {

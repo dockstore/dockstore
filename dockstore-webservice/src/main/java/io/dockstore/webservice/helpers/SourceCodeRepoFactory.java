@@ -16,15 +16,16 @@
 
 package io.dockstore.webservice.helpers;
 
-import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +43,9 @@ public final class SourceCodeRepoFactory {
     // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
     // Can test regex at https://regex101.com/
     // format 1 git@github.com:dockstore/dockstore-ui.git
-    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
+    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("^git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git)$");
     // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
-    private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git$)");
+    private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("^git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git)$");
 
     private SourceCodeRepoFactory() {
         // hide the constructor for utility classes

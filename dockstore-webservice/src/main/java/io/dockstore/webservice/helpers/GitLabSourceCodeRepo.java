@@ -16,17 +16,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
-
-import com.google.common.collect.Lists;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceControlOrganization;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -39,6 +28,16 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import org.gitlab.api.GitlabAPI;
 import org.gitlab.api.TokenType;
 import org.gitlab.api.models.GitlabBranch;
@@ -48,6 +47,8 @@ import org.gitlab.api.models.GitlabRepositoryTree;
 import org.gitlab.api.models.GitlabTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author aduncan on 05/10/16.
@@ -60,7 +61,16 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitLabSourceCodeRepo.class);
     private final GitlabAPI gitlabAPI;
 
-    GitLabSourceCodeRepo(String gitUsername, String gitlabTokenContent) {
+    // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
+    // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
+    // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
+    // in https://www.regular-expressions.info/catastrophic.html
+    // So use more restrictive regex and possesive quantifiers '++' and atomic group
+    // Can test regex at https://regex101.com/
+    // format git@github.com:dockstore/dockstore-ui.git
+    private static final Pattern GITLAB_REGEX_PATTERN = Pattern.compile("^git@gitlab.com:([^\\s/]++)/(?>(\\S+)\\.git)$");
+
+    public GitLabSourceCodeRepo(String gitUsername, String gitlabTokenContent) {
         this.gitUsername = gitUsername;
         this.gitlabAPI = GitlabAPI.connect("https://gitlab.com", gitlabTokenContent, TokenType.ACCESS_TOKEN);
     }
@@ -224,8 +234,9 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         String repositoryId;
         String giturl = entry.getGitUrl();
 
-        Pattern p = Pattern.compile("git@gitlab.com:(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(giturl);
+        Matcher m = GITLAB_REGEX_PATTERN.matcher(entry.getGitUrl());
+        // Pattern p = Pattern.compile("git@gitlab.com:(\\S+)/(\\S+)\\.git");
+        // Matcher m = p.matcher(giturl);
         LOG.info(gitUsername + ": " + giturl);
 
         if (!m.find()) {

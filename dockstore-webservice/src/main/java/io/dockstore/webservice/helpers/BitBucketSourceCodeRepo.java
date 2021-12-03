@@ -77,17 +77,17 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
     // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
     // in https://www.regular-expressions.info/catastrophic.html
-    // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
+    // So use more restrictive regex and possesive quantifiers '++' and atomic group
     // Can test regex at https://regex101.com/
-    // format 1 git@bitbucket.org:dockstore/dockstore-ui.git
-    private static final Pattern BITBUCKET_REGEX_PATTERN = Pattern.compile("git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git$)");
+    // format git@bitbucket.org:dockstore/dockstore-ui.git
+    private static final Pattern BITBUCKET_REGEX_PATTERN = Pattern.compile("^git@([^\\s:]++):([^\\s/]++)/(?>\\S+\\.git)$");
 
 
     /**
      * @param gitUsername           username that owns the bitbucket token
      * @param bitbucketTokenContent bitbucket token
      */
-    BitBucketSourceCodeRepo(String gitUsername, String bitbucketTokenContent) {
+    public BitBucketSourceCodeRepo(String gitUsername, String bitbucketTokenContent) {
         this.gitUsername = gitUsername;
 
         apiClient = Configuration.getDefaultApiClient();

@@ -29,6 +29,11 @@ import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.WorkflowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GitLabSourceCodeRepo;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -524,6 +529,154 @@ public class GeneralWorkflowIT extends BaseIT {
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Please ensure that the workflow path uses the file extension cwl"));
         }
+
+    }
+
+    /**
+     * Tests that parsing a GitHub URL works
+     */
+    @Test
+    public void testGitLabUrlRegexParsing() {
+        GitLabSourceCodeRepo repo = new GitLabSourceCodeRepo("fakeUser", "fakeToken");
+        final BioWorkflow entry = new BioWorkflow();
+
+        /* Test good URLs */
+        entry.setGitUrl("git@gitlab.com:dockstore/dockstore-ui.git");
+        String gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", "dockstore/dockstore-ui", gitlabId);
+
+        entry.setGitUrl("git@gitlab.com:dockstore-cow/goat.git");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", "dockstore-cow/goat", gitlabId);
+
+        entry.setGitUrl("git@gitlab.com:dockstore.dot/goat.bat.git");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", "dockstore.dot/goat.bat", gitlabId);
+
+        entry.setGitUrl("git@gitlab.com:dockstore.dot/goat.git");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", "dockstore.dot/goat", gitlabId);
+
+        /* Test bad URLs */
+        entry.setGitUrl("git@gitlab.com/dockstore/dockstore-ui.git");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", null, gitlabId);
+
+        entry.setGitUrl("git@gitlab.com:dockstore:dockstore-ui.git");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", null, gitlabId);
+
+        entry.setGitUrl("git@gitlab.com:/dockstore-ui.git");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", null, gitlabId);
+
+        entry.setGitUrl("git@gitlab.com:dockstore");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", null, gitlabId);
+
+        entry.setGitUrl("git@gitlab.com:dockstore/dockstore-ui");
+        gitlabId = repo.getRepositoryId(entry);
+        assertEquals("gitlab ID parse check", null, gitlabId);
+
+    }
+    
+    /**
+     * Tests that parsing a GitHub URL works
+     */
+    @Test
+    public void testGitHubUrlRegexParsing() {
+        GitHubSourceCodeRepo repo = new GitHubSourceCodeRepo("fakeUser", "fakeToken");
+        final Tool entry = new Tool();
+
+        /* Test good URLs */
+        entry.setGitUrl("git@github.com:dockstore/dockstore-ui.git");
+        String githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", "dockstore/dockstore-ui", githubId);
+
+        entry.setGitUrl("git@github.com:dockstore-cow/goat.git");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", "dockstore-cow/goat", githubId);
+
+        entry.setGitUrl("git@github.com:dockstore.dot/goat.bat.git");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", "dockstore.dot/goat.bat", githubId);
+
+        entry.setGitUrl("git@github.com:dockstore.dot/goat.git");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", "dockstore.dot/goat", githubId);
+
+        /* Test bad URLs */
+        entry.setGitUrl("git@github.com/dockstore/dockstore-ui.git");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", null, githubId);
+
+        entry.setGitUrl("git@github.com:dockstore:dockstore-ui.git");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", null, githubId);
+
+        entry.setGitUrl("git@github.com:/dockstore-ui.git");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", null, githubId);
+
+        entry.setGitUrl("git@github.com:dockstore");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", null, githubId);
+
+        entry.setGitUrl("git@github.com:dockstore/dockstore-ui");
+        githubId = repo.getRepositoryId(entry);
+        assertEquals("GitHub ID parse check", null, githubId);
+
+    }
+
+    /**
+     * Tests that parsing a BitBucket URL works
+     */
+    @Test
+    public void testBitBucketUrlParsing() {
+        BitBucketSourceCodeRepo repo = new BitBucketSourceCodeRepo("fakeUser", "fakeToken");
+        final BioWorkflow entry = new BioWorkflow();
+
+        /* Test good URLs */
+        entry.setGitUrl("git@bitbucket.example.com:dockstore/dockstore-ui.git");
+        String bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", "bitbucket.example.com/dockstore", bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:dockstore/dockstore-ui.git");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", "bitbucket.org/dockstore", bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:dockstore-cow/goat.git");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", "bitbucket.org/dockstore-cow", bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:dockstore.dot/goat.bat.git");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", "bitbucket.org/dockstore.dot", bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:dockstore.dot/goat.git");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", "bitbucket.org/dockstore.dot", bitBucketId);
+
+        /* Test bad URLs */
+        entry.setGitUrl("git@bitbucket.org/dockstore/dockstore-ui.git");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:dockstore:dockstore-ui.git");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:/dockstore-ui.git");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:dockstore");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", null, bitBucketId);
+
+        entry.setGitUrl("git@bitbucket.org:dockstore/dockstore-ui");
+        bitBucketId = repo.getRepositoryId(entry);
+        assertEquals("Bitbucket ID parse check", null, bitBucketId);
 
     }
 
