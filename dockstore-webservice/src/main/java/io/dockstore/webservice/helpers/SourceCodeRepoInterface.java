@@ -431,7 +431,12 @@ public abstract class SourceCodeRepoInterface {
             fileContent = first.get().getContent();
             LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
             anInterface.parseWorkflowContent(filePath, fileContent, sourceFiles, version);
-            if ((version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null) {
+            // Previously, version has no description
+            boolean noDescription = (version.getDescription() == null || version.getDescription().isEmpty()) && version.getReference() != null;
+            // Previously, version has a README description
+            boolean oldREADMEDescription = (DescriptionSource.README == version.getDescriptionSource());
+            // Checking these conditions to prevent overwriting description from descriptor
+            if (noDescription || oldREADMEDescription) {
                 String readmeContent = getREADMEContent(repositoryId, version.getReference());
                 if (StringUtils.isNotBlank(readmeContent)) {
                     version.setDescriptionAndDescriptionSource(readmeContent, DescriptionSource.README);

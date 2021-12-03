@@ -133,7 +133,7 @@ public class ExtendedNextflowIT extends BaseIT {
         Workflow byPathWorkflow = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW, "versions", false);
         // There are 3 versions: master, v1.0, and v2.0
         // master and v2.0 has a nextflow.config file that has description and author, v1.0 does not
-        // v1.0 will pull description from README instead but the others will use nextflow.config
+        // v1.0 will pull description from README instead but the others will use nextflow.config. v1.0 also does not have a valid descriptor (or any sourcefiles)
         testWorkflowVersionMetadata(bitbucketWorkflow);
         testWorkflowVersionMetadata(byPathWorkflow);
         // Purposely mess up the metadata to test if it can be updated through refresh
