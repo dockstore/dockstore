@@ -1091,9 +1091,16 @@ public class DockerRepoResource
      * @return is url of the format git@source:gitUsername/gitRepository
      */
     private static boolean isGit(String url) {
-        Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(url);
-        return m.matches();
+        final Map<String, String> stringStringGitUrlMap = SourceCodeRepoFactory
+                .parseGitUrl(url);
+        if (stringStringGitUrlMap == null) {
+            return false;
+        }
+        return true;
+
+        // Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
+        // Matcher m = p.matcher(url);
+        // return m.matches();
     }
 
     /**

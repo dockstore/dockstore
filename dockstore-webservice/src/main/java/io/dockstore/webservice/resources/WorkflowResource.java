@@ -59,6 +59,7 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
@@ -111,8 +112,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
@@ -1712,18 +1711,27 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
             // Determine gitUrl
             gitUrl = tool.getGitUrl();
-
-            // Determine source control, org, and repo
-            Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
-            Matcher m = p.matcher(tool.getGitUrl());
-            if (m.find()) {
+            final Map<String, String> stringStringGitUrlMap = SourceCodeRepoFactory
+                    .parseGitUrl(gitUrl);
+            if (stringStringGitUrlMap != null) {
                 SourceControlConverter converter = new SourceControlConverter();
-                sourceControl = converter.convertToEntityAttribute(m.group(1));
-                organization = m.group(2);
-                repository = m.group(3);
+                sourceControl = converter.convertToEntityAttribute(stringStringGitUrlMap.get("Source"));
+                organization = stringStringGitUrlMap.get("Username");
+                repository = stringStringGitUrlMap.get("Repository");
             } else {
                 throw new CustomWebApplicationException("Problem parsing git url.", HttpStatus.SC_BAD_REQUEST);
             }
+            // Determine source control, org, and repo
+            // Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
+            // Matcher m = p.matcher(tool.getGitUrl());
+            // if (m.find()) {
+            //     SourceControlConverter converter = new SourceControlConverter();
+            //     sourceControl = converter.convertToEntityAttribute(m.group(1));
+            //     organization = m.group(2);
+            //     repository = m.group(3);
+            // } else {
+            //     throw new CustomWebApplicationException("Problem parsing git url.", HttpStatus.SC_BAD_REQUEST);
+            // }
 
             // Determine publish information
             isPublished = tool.getIsPublished();
