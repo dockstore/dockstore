@@ -587,6 +587,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             }
         }
 
+        // Check that new name was specified
+        if (organization.getName() == null) {
+            String msg = "An organization name must be specified.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Check if new name is valid
         if (!Objects.equals(oldOrganization.getName(), organization.getName())) {
             Organization duplicateName = organizationDAO.findByName(organization.getName());

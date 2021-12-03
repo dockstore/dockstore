@@ -172,6 +172,29 @@ public class DockstoreYamlTest {
     }
 
     @Test
+    public void testMaliciousDockstore12() {
+        // This test will show its not added, but doesn't prove it was never run. To do that
+        // we need to set up a server that checks the classpath (or another payload with
+        // simpler side effects?)
+        try {
+            DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2\nworkflows: !!javax.script.ScriptEngineManager [\n"
+                    +
+                    "  !!java.net.URLClassLoader [[\n"
+                    +
+                    "    !!java.net.URL [\"https://localhost:3000\"]\n"
+                    +
+                    "  ]]\n"
+                    +
+                    "]\n");
+            fail("Dockstore yaml breaking entities should fail");
+        } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+            assertTrue(e.getMessage().startsWith(DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML));
+            // This message is emitted when SafeConstructor is used
+            assertTrue(e.getMessage().contains("could not determine a constructor for the tag"));
+        }
+    }
+
+    @Test
     public void testMalformedDockstoreYaml() throws IOException {
         final String spec = "https://raw.githubusercontent.com/denis-yuen/test-malformed-app/c43103f4004241cb738280e54047203a7568a337/"
                 + ".dockstore.yml";

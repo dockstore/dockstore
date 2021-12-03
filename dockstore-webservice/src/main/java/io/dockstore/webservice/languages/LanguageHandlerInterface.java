@@ -76,6 +76,7 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 
 /**
@@ -178,10 +179,11 @@ public interface LanguageHandlerInterface {
         Map<String, String> validationMessageObject = new HashMap<>();
         for (SourceFile sourcefile : sourcefiles) {
             if (Objects.equals(sourcefile.getType(), fileType)) {
-                Yaml yaml = new Yaml();
+                Yaml yaml = new Yaml(new SafeConstructor());
                 try {
                     yaml.load(sourcefile.getContent());
                 } catch (YAMLException e) {
+                    LOG.error("There was an exception validating sourcefile", e);
                     validationMessageObject.put(sourcefile.getPath(), e.getMessage());
                     isValid = false;
                 }
