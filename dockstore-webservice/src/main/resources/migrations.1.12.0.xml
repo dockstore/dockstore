@@ -242,9 +242,10 @@
         </addColumn>
     </changeSet>
     <changeSet author="svonworl" id="removeGarbageFromVersionMetadata">
-        <!-- null some 'string' string literals that somehow snuck into version_metadata.doiurl -->
+        <!-- A few 'string' string literal values somehow snuck into version_metadata.doiurl. Null any value that's not a valid DOI and set a constraint so it doesn't happen again -->
         <sql dbms="postgresql">
-            update version_metadata set doiurl = null where doiurl = 'string';
+            update version_metadata set doiurl = null where doiurl not like '10._%/_%';
+            alter table version_metadata add constraint check_valid_doi check (doiurl like '10._%/_%' or doiurl is null);
         </sql>
     </changeSet>
 </databaseChangeLog>
