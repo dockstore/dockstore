@@ -37,8 +37,10 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -72,6 +74,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -432,6 +435,35 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
             @PathParam("id") Long id) {
         return createAndSetDiscourseTopic(id);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateEntryToGetTopics")
+    @Deprecated
+    @Operation(operationId = "updateEntryToGetTopics", description = "Attempt to get the topic of all entries that use GitHub as the source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a list of entries we were unable to get the topic for.", content = @Content(
+            mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public List<Entry> updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Entry> githubEntries = toolDAO.findAllGitHubGenericEntries();
+        List<Entry> entriesNotUpdatedWithTopic = new ArrayList<>();
+
+        // Use the GitHub token of the admin making this call
+        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+
+        for (Entry entry : githubEntries) {
+            try {
+                gitHubSourceCodeRepo.syncTopic(entry);
+            } catch (Exception ex) {
+                entriesNotUpdatedWithTopic.add(entry);
+            }
+        }
+        return entriesNotUpdatedWithTopic;
     }
 
     /**

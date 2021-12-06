@@ -139,7 +139,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public String getTopic(String repositoryId) {
         try {
             GHRepository repository = github.getRepository(repositoryId);
-            return repository.getDescription();
+            return repository.getDescription(); // Could be null if the repository doesn't have a description
         } catch (IOException e) {
             LOG.error(String.format("Could not get topic from: %s", repositoryId, e));
             return null;
@@ -1112,6 +1112,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(msg, ex);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
+    }
+
+    // DO NOT USE THIS FUNCTION ELSEWHERE.
+    // This function is only for gathering topics for existing workflows and tools and only needs to be run once.
+    public void syncTopic(Entry entry) {
+        String repositoryId = getRepositoryId(entry);
+        GHRepository repository;
+        try {
+            repository = github.getRepository(repositoryId);
+        } catch (IOException e) {
+            String errorMessage = String.format("Could not get topic from: %s", repositoryId);
+            LOG.info(errorMessage, e);
+            throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_NOT_FOUND);
+        }
+        entry.setTopic(repository.getDescription()); // Could be null if the repo doesn't have a description
     }
 
     public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
