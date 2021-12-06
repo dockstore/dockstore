@@ -75,15 +75,15 @@ public final class ORCIDHelper {
         externalID.setType("doi");
         if (optionalVersion.isPresent()) {
             Version v = optionalVersion.get();
-            Url url = new Url(v.getDoiURL());
-            externalID.setUrl(url);
-            externalID.setValue(v.getDoiURL());
+            String doi = v.getDoiURL(); // getDoiURL returns a DOI, not a URL
+            externalID.setUrl(new Url(doiToUrl(doi)));
+            externalID.setValue(doi);
             title.setContent(e.getEntryPath() + ":" + v.getName());
             work.setShortDescription(StringUtils.abbreviate(v.getDescription(), descriptionLength));
         } else {
-            Url url = new Url(e.getConceptDoi());
-            externalID.setUrl(url);
-            externalID.setValue(e.getConceptDoi());
+            String doi = e.getConceptDoi();
+            externalID.setUrl(new Url(doiToUrl(doi)));
+            externalID.setValue(doi);
             title.setContent(e.getEntryPath());
             work.setShortDescription(StringUtils.abbreviate(e.getDescription(), descriptionLength));
         }
@@ -110,6 +110,18 @@ public final class ORCIDHelper {
         lastModifiedDate.setValue(calendar);
         work.setLastModifiedDate(lastModifiedDate);
         return transformWork(work);
+    }
+
+    public static String doiToUrl(String doi) {
+        // If the DOI appears well-formed, return the corresponding doi.org proxy URL:
+        // https://www.doi.org/factsheets/DOIProxy.html
+        // A well-formed DOI starts with "10." and contains a slash:
+        // https://www.doi.org/doi_handbook/2_Numbering.html#2.2
+        if (doi != null && doi.startsWith("10.") && doi.contains("/")) {
+            return "https://doi.org/" + doi;
+        }
+        // If the argument isn't a well-formed DOI, it might be a URL already, or empty.  Return as-is.
+        return doi;
     }
 
     public static HttpResponse<String> postWorkString(String baseURL, String id, String workString, String token)
