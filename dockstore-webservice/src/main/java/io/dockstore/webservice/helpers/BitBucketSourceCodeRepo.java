@@ -16,7 +16,17 @@
 
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.core.GenericType;
 
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
@@ -39,22 +49,12 @@ import io.swagger.bitbucket.client.model.PaginatedRepositories;
 import io.swagger.bitbucket.client.model.PaginatedTreeentries;
 import io.swagger.bitbucket.client.model.Repository;
 import io.swagger.bitbucket.client.model.Tag;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.ws.rs.core.GenericType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -70,16 +70,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
-
-    // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
-    // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
-    // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
-    // in https://www.regular-expressions.info/catastrophic.html
-    // So use more restrictive regex and possesive quantifiers '++' and atomic group
-    // Can test regex at https://regex101.com/
-    // format git@bitbucket.org:dockstore/dockstore-ui.git
-    private static final Pattern BITBUCKET_REGEX_PATTERN = Pattern.compile("^git@([^\\s:]++):([^\\s/]++)/(?>\\S+\\.git)$");
-
 
     /**
      * @param gitUsername           username that owns the bitbucket token
@@ -366,17 +356,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         String repositoryId;
         String giturl = entry.getGitUrl();
-
-        Matcher m = BITBUCKET_REGEX_PATTERN.matcher(giturl);
+        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(giturl, Optional.of("git@bitbucket.org"));
         LOG.info(gitUsername + ": " + giturl);
-
-        if (!m.find()) {
+        if (gitMap.isEmpty()) {
             LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
             return null;
         }
-
-        repositoryId = m.group(1) + "/" + m.group(2);
-
+        repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY) + "/"
+                + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
         return repositoryId;
     }
 

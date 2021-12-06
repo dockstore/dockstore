@@ -108,15 +108,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final GitHub github;
     private String githubTokenUsername;
 
-    // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
-    // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
-    // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
-    // in https://www.regular-expressions.info/catastrophic.html
-    // So use more restrictive regex and possesive quantifiers '++' and atomic group
-    // Can test regex at https://regex101.com/
-    // format git@github.com:dockstore/dockstore-ui.git
-    private static final Pattern GITHUB_REGEX_PATTERN = Pattern.compile("^git@github.com:([^\\s/]++)/(?>(\\S+)\\.git)$");
-
     /**
      *  @param githubTokenUsername the username for githubTokenContent
      * @param githubTokenContent authorization token
@@ -954,12 +945,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         if (entry.getClass().equals(Tool.class)) {
             // Parse git url for repo
+            Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(entry.getGitUrl(), Optional.of("git@github.com"));
 
-            Matcher m = GITHUB_REGEX_PATTERN.matcher(entry.getGitUrl());
-            if (!m.find()) {
+            if (gitMap.isEmpty()) {
                 return null;
             } else {
-                return m.group(1) + "/" + m.group(2);
+                return gitMap.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY) + "/"
+                        + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
             }
         } else {
             return ((Workflow)entry).getOrganization() + '/' + ((Workflow)entry).getRepository();

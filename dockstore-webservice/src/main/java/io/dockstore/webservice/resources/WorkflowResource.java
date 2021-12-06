@@ -1711,27 +1711,16 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
             // Determine gitUrl
             gitUrl = tool.getGitUrl();
-            final Map<String, String> stringStringGitUrlMap = SourceCodeRepoFactory
+            final Optional<Map<String, String>>  stringStringGitUrlMap = SourceCodeRepoFactory
                     .parseGitUrl(gitUrl);
-            if (stringStringGitUrlMap != null) {
+            if (!stringStringGitUrlMap.isEmpty()) {
                 SourceControlConverter converter = new SourceControlConverter();
-                sourceControl = converter.convertToEntityAttribute(stringStringGitUrlMap.get("Source"));
-                organization = stringStringGitUrlMap.get("Username");
-                repository = stringStringGitUrlMap.get("Repository");
+                sourceControl = converter.convertToEntityAttribute(stringStringGitUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
+                organization = stringStringGitUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
+                repository = stringStringGitUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
             } else {
                 throw new CustomWebApplicationException("Problem parsing git url.", HttpStatus.SC_BAD_REQUEST);
             }
-            // Determine source control, org, and repo
-            // Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
-            // Matcher m = p.matcher(tool.getGitUrl());
-            // if (m.find()) {
-            //     SourceControlConverter converter = new SourceControlConverter();
-            //     sourceControl = converter.convertToEntityAttribute(m.group(1));
-            //     organization = m.group(2);
-            //     repository = m.group(3);
-            // } else {
-            //     throw new CustomWebApplicationException("Problem parsing git url.", HttpStatus.SC_BAD_REQUEST);
-            // }
 
             // Determine publish information
             isPublished = tool.getIsPublished();

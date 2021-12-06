@@ -16,15 +16,17 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,20 +37,17 @@ import org.slf4j.LoggerFactory;
 public final class SourceCodeRepoFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
-    // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
-    // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
-    // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
-    // in https://www.regular-expressions.info/catastrophic.html
-    // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
-    // Can test regex at https://regex101.com/
-    // format 1 git@github.com:dockstore/dockstore-ui.git
-    private static final Pattern GITHUB_REGEX_PATTERN_1 = Pattern.compile("^git@([^\\s:]++):([^\\s/]++)/(?>(\\S+)\\.git)$");
-    // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
-    private static final Pattern GITHUB_REGEX_PATTERN_2 = Pattern.compile("^git://([^\\s/]++)/([^\\s/]++)/(?>(\\S+)\\.git)$");
+
+    private static final String GITHUB_REPOSITORY_REGEX_1 = "[^\\s:]++";
+    private static final String GITHUB_REPOSITORY_REGEX_2 = "[^\\s/]++";
 
     private SourceCodeRepoFactory() {
         // hide the constructor for utility classes
     }
+
+    public static final String GIT_URL_REPOSITORY_KEY = "Repository";
+    public static final String GIT_URL_USER_KEY = "User";
+    public static final String GIT_URL_SOURCE_KEY = "Source";
 
     public static SourceCodeRepoInterface createGitHubAppRepo(String token) {
         // The gitUsername doesn't seem to matter
@@ -88,14 +87,15 @@ public final class SourceCodeRepoFactory {
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, String bitbucketTokenContent, String gitlabTokenContent,
             Token githubToken) {
 
-        Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
+        Optional<Map<String, String>> repoUrlMapOptional = parseGitUrl(gitUrl);
+        Map<String, String> repoUrlMap = repoUrlMapOptional.orElse(null);
 
         if (repoUrlMap == null) {
             return null;
         }
 
-        String source = repoUrlMap.get("Source");
-        String gitUsername = repoUrlMap.get("Username");
+        String source = repoUrlMap.get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY);
+        String gitUsername = repoUrlMap.get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
 
         SourceCodeRepoInterface repo;
         if (SourceControl.GITHUB.toString().equals(source)) {
@@ -128,9 +128,36 @@ public final class SourceCodeRepoFactory {
      * @param url
      * @return a map with keys: Source, Username, Repository
      */
-    public static Map<String, String> parseGitUrl(String url) {
-        Matcher m1 = GITHUB_REGEX_PATTERN_1.matcher(url);
-        Matcher m2 = GITHUB_REGEX_PATTERN_2.matcher(url);
+    public static Optional<Map<String, String>> parseGitUrl(String url) {
+        return parseGitUrl(url, Optional.empty());
+    }
+
+    /**
+     * Parse Git URL to retrieve source, username and repository name.
+     *
+     * @param url
+     * @param repositoryName fixed repository name to match in git URL
+     * @return a map with keys: Source, Username, Repository
+     */
+    public static Optional<Map<String, String>> parseGitUrl(String url, Optional<String> repositoryName) {
+        String repositoryNameRegex1 = repositoryName.isPresent() ? repositoryName.get() : GITHUB_REPOSITORY_REGEX_1;
+        String repositoryNameRegex2 = repositoryName.isPresent() ? repositoryName.get() : GITHUB_REPOSITORY_REGEX_2;
+        // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
+        // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
+        // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
+        // in https://www.regular-expressions.info/catastrophic.html
+        // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
+        // Can test regex at https://regex101.com/
+        // If a caller provides repositoryName the pattern matcher will expect that exact repository name in the URL,
+        // otherwise it will match any valid repository name
+        // Any valid user name will be matched
+        // Any valid repository name will be matched, including names with dots, e.g. my.repo.with.dots.git
+        Pattern gitUrlRegexPattern1 = Pattern.compile("^git@(" + repositoryNameRegex1 + "):([^\\s/]++)/(?>(\\S+)\\.git)$");
+        Pattern gitUrlRegexPattern2 = Pattern.compile("^git://(" + repositoryNameRegex2 + ")/([^\\s/]++)/(?>(\\S+)\\.git)$");
+
+
+        Matcher m1 = gitUrlRegexPattern1.matcher(url);
+        Matcher m2 = gitUrlRegexPattern2.matcher(url);
 
         Matcher matcherActual;
         if (m1.find()) {
@@ -139,7 +166,7 @@ public final class SourceCodeRepoFactory {
             matcherActual = m2;
         } else {
             LOG.info("Cannot parse url using any format: " + url);
-            return null;
+            return Optional.empty();
         }
 
         final int sourceIndex = 1;
@@ -149,15 +176,15 @@ public final class SourceCodeRepoFactory {
         String gitUsername = matcherActual.group(usernameIndex);
         String gitRepository = matcherActual.group(reponameIndex);
 
-        LOG.debug("Source: " + source);
-        LOG.debug("Username: " + gitUsername);
-        LOG.debug("Repository: " + gitRepository);
+        LOG.debug(GIT_URL_SOURCE_KEY + " " + source);
+        LOG.debug(GIT_URL_USER_KEY + " " + gitUsername);
+        LOG.debug(GIT_URL_REPOSITORY_KEY + " " + gitRepository);
 
         Map<String, String> map = new HashMap<>();
-        map.put("Source", source);
-        map.put("Username", gitUsername);
-        map.put("Repository", gitRepository);
-        return map;
+        map.put(GIT_URL_SOURCE_KEY, source);
+        map.put(GIT_URL_USER_KEY, gitUsername);
+        map.put(GIT_URL_REPOSITORY_KEY, gitRepository);
+        return Optional.of(map);
     }
 
     /**
@@ -167,11 +194,12 @@ public final class SourceCodeRepoFactory {
      * @return The associated SourceControl
      */
     public static SourceControl mapGitUrlToSourceCodeRepo(String url) {
-        Map<String, String> repoUrlMap = parseGitUrl(url);
-        if (repoUrlMap == null) {
-            throw new CustomWebApplicationException("Dockstore could not parse: " + url, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-        String source = repoUrlMap.get("Source");
+        Optional<Map<String, String>> repoUrlMapOptional = parseGitUrl(url);
+        Map<String, String> repoUrlMap = repoUrlMapOptional
+                .orElseThrow(() -> new CustomWebApplicationException("Dockstore could not parse: "
+                        + url, HttpStatus.SC_INTERNAL_SERVER_ERROR));
+
+        String source = repoUrlMap.get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY);
         if (SourceControl.GITHUB.toString().equals(source)) {
             return SourceControl.GITHUB;
         }
