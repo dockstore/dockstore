@@ -21,6 +21,7 @@ import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SE
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.EntryType;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -457,6 +458,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
 
         for (Entry entry : githubEntries) {
+            if (entry.getEntryType() == EntryType.SERVICE) {
+                continue;
+            }
             try {
                 gitHubSourceCodeRepo.syncTopic(entry);
             } catch (Exception ex) {
