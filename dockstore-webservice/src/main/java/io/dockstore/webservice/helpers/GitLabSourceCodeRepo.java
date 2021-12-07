@@ -222,7 +222,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         String repositoryId;
         String giturl = entry.getGitUrl();
-        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(entry.getGitUrl(), Optional.of("git@gitlab.com"));
+        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(entry.getGitUrl(), Optional.of("gitlab.com"));
         LOG.info(gitUsername + ": " + giturl);
 
         if (gitMap.isEmpty()) {

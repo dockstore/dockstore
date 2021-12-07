@@ -356,7 +356,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         String repositoryId;
         String giturl = entry.getGitUrl();
-        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(giturl, Optional.of("git@bitbucket.org"));
+        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(giturl, Optional.of("bitbucket.org"));
         LOG.info(gitUsername + ": " + giturl);
         if (gitMap.isEmpty()) {
             LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
