@@ -38,6 +38,7 @@ public final class SourceCodeRepoFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
+    private static final String LOG_GIT_URL_FORMAT_STRING = "{} {}";
     private static final String GITHUB_REPOSITORY_REGEX_1 = "[^\\s:]++";
     private static final String GITHUB_REPOSITORY_REGEX_2 = "[^\\s/]++";
 
@@ -176,9 +177,9 @@ public final class SourceCodeRepoFactory {
         String gitUsername = matcherActual.group(usernameIndex);
         String gitRepository = matcherActual.group(reponameIndex);
 
-        LOG.debug("{} {}", GIT_URL_SOURCE_KEY, source);
-        LOG.debug("{} {}", GIT_URL_USER_KEY, gitUsername);
-        LOG.debug("{} {}", GIT_URL_REPOSITORY_KEY, gitRepository);
+        LOG.debug(LOG_GIT_URL_FORMAT_STRING, GIT_URL_SOURCE_KEY, source);
+        LOG.debug(LOG_GIT_URL_FORMAT_STRING, GIT_URL_USER_KEY, gitUsername);
+        LOG.debug(LOG_GIT_URL_FORMAT_STRING, GIT_URL_REPOSITORY_KEY, gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put(GIT_URL_SOURCE_KEY, source);

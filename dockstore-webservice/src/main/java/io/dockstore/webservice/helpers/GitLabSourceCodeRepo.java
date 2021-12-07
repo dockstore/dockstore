@@ -16,17 +16,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
-
-import com.google.common.collect.Lists;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceControlOrganization;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -37,6 +26,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.Lists;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlOrganization;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import org.gitlab.api.GitlabAPI;
 import org.gitlab.api.TokenType;
 import org.gitlab.api.models.GitlabBranch;
@@ -46,6 +45,8 @@ import org.gitlab.api.models.GitlabRepositoryTree;
 import org.gitlab.api.models.GitlabTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author aduncan on 05/10/16.
@@ -229,8 +230,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
 
-        repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY) + "/"
-            + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
+        repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY) + "/"
+            + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
         return repositoryId;
     }
 

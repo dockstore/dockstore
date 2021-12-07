@@ -362,8 +362,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
             return null;
         }
-        repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY) + "/"
-                + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
+        repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY) + "/"
+                + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
         return repositoryId;
     }
 
