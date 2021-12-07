@@ -460,16 +460,15 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             }
 
             // Find a user that has a GitHub token
-            Optional<User> gitHubUser = entry.getUsers().stream().filter(entryUser -> !tokenDAO.findGithubByUserId(((User)entryUser).getId()).isEmpty()).findFirst();
+            Optional<List<Token>> gitHubUserToken = entry.getUsers().stream().map(entryUser -> tokenDAO.findGithubByUserId(((User)entryUser).getId())).filter(gitHubTokenList -> !((List<Token>)gitHubTokenList).isEmpty()).findFirst();
             // Keep track of entries without a user with a GitHub token, so we can try to update it later with the admin's GitHub token
-            if (gitHubUser.isEmpty()) {
+            if (gitHubUserToken.isEmpty()) {
                 entriesNotUpdatedWithUserToken.add(entry);
                 continue;
             }
 
             try {
-                Token gitHubUserToken = tokenDAO.findGithubByUserId(gitHubUser.get().getId()).get(0);
-                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubUserToken);
+                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubUserToken.get().get(0));
                 gitHubSourceCodeRepo.syncTopic(entry);
             } catch (Exception ex) {
                 entriesNotUpdatedWithTopic.add(entry);
