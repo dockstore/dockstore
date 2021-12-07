@@ -16,17 +16,16 @@
 
 package io.dockstore.webservice.helpers;
 
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
