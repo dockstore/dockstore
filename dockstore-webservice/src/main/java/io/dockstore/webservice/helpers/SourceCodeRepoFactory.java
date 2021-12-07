@@ -37,10 +37,6 @@ public final class SourceCodeRepoFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
-    private static final String LOG_GIT_URL_FORMAT_STRING = "{} {}";
-    private static final String GITHUB_REPOSITORY_REGEX_1 = "[^\\s:]++";
-    private static final String GITHUB_REPOSITORY_REGEX_2 = "[^\\s/]++";
-
     private SourceCodeRepoFactory() {
         // hide the constructor for utility classes
     }
@@ -140,8 +136,12 @@ public final class SourceCodeRepoFactory {
      * @return a map with keys: Source, Username, Repository
      */
     public static Optional<Map<String, String>> parseGitUrl(String url, Optional<String> repositoryName) {
-        String repositoryNameRegex1 = repositoryName.isPresent() ? repositoryName.get() : GITHUB_REPOSITORY_REGEX_1;
-        String repositoryNameRegex2 = repositoryName.isPresent() ? repositoryName.get() : GITHUB_REPOSITORY_REGEX_2;
+        final String logGitUrlFormatString = "{} {}";
+        final String githubRepositoryRegex1 = "[^\\s:]++";
+        final String githubRepositoryRegex2 = "[^\\s/]++";
+
+        String repositoryNameRegex1 = repositoryName.isPresent() ? repositoryName.get() : githubRepositoryRegex1;
+        String repositoryNameRegex2 = repositoryName.isPresent() ? repositoryName.get() : githubRepositoryRegex2;
         // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
         // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
         // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
@@ -176,9 +176,9 @@ public final class SourceCodeRepoFactory {
         String gitUsername = matcherActual.group(usernameIndex);
         String gitRepository = matcherActual.group(reponameIndex);
 
-        LOG.debug(LOG_GIT_URL_FORMAT_STRING, GIT_URL_SOURCE_KEY, source);
-        LOG.debug(LOG_GIT_URL_FORMAT_STRING, GIT_URL_USER_KEY, gitUsername);
-        LOG.debug(LOG_GIT_URL_FORMAT_STRING, GIT_URL_REPOSITORY_KEY, gitRepository);
+        LOG.debug(logGitUrlFormatString, GIT_URL_SOURCE_KEY, source);
+        LOG.debug(logGitUrlFormatString, GIT_URL_USER_KEY, gitUsername);
+        LOG.debug(logGitUrlFormatString, GIT_URL_REPOSITORY_KEY, gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put(GIT_URL_SOURCE_KEY, source);
