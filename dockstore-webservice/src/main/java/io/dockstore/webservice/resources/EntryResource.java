@@ -451,22 +451,44 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public List<Entry> updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         List<Entry> githubEntries = toolDAO.findAllGitHubGenericEntries();
+        List<Entry> entriesNotUpdatedWithUserToken = new ArrayList<>();
         List<Entry> entriesNotUpdatedWithTopic = new ArrayList<>();
-
-        // Use the GitHub token of the admin making this call
-        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
 
         for (Entry entry : githubEntries) {
             if (entry.getEntryType() == EntryType.SERVICE) {
                 continue;
             }
+
+            // Find a user that has a GitHub token
+            Optional<User> gitHubUser = entry.getUsers().stream().filter(entryUser -> !tokenDAO.findGithubByUserId(((User)entryUser).getId()).isEmpty()).findFirst();
+            // Keep track of entries without a user with a GitHub token, so we can try to update it later with the admin's GitHub token
+            if (gitHubUser.isEmpty()) {
+                entriesNotUpdatedWithUserToken.add(entry);
+                continue;
+            }
+
             try {
+                Token gitHubUserToken = tokenDAO.findGithubByUserId(gitHubUser.get().getId()).get(0);
+                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubUserToken);
                 gitHubSourceCodeRepo.syncTopic(entry);
             } catch (Exception ex) {
                 entriesNotUpdatedWithTopic.add(entry);
             }
         }
+
+        if (!entriesNotUpdatedWithUserToken.isEmpty()) {
+            // Use the GitHub token of the admin making this call for entries that don't have a user with a GitHub token
+            Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+            for (Entry entry : entriesNotUpdatedWithUserToken) {
+                try {
+                    gitHubSourceCodeRepo.syncTopic(entry);
+                } catch (Exception ex) {
+                    entriesNotUpdatedWithTopic.add(entry);
+                }
+            }
+        }
+
         return entriesNotUpdatedWithTopic;
     }
 
