@@ -78,6 +78,7 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -460,18 +461,25 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             }
 
             // Find a user that has a GitHub token
-            Optional<List<Token>> gitHubUserToken = entry.getUsers().stream().map(entryUser -> tokenDAO.findGithubByUserId(((User)entryUser).getId())).filter(gitHubTokenList -> !((List<Token>)gitHubTokenList).isEmpty()).findFirst();
-            // Keep track of entries without a user with a GitHub token, so we can try to update it later with the admin's GitHub token
-            if (gitHubUserToken.isEmpty()) {
-                entriesNotUpdatedWithUserToken.add(entry);
-                continue;
+            Set<User> entryUsers = entry.getUsers();
+            Token gitHubToken = null;
+            for (User entryUser : entryUsers) {
+                List<Token> gitHubTokenList = tokenDAO.findGithubByUserId(entryUser.getId());
+                if (!gitHubTokenList.isEmpty()) {
+                    gitHubToken = gitHubTokenList.get(0);
+                    break;
+                }
             }
 
-            try {
-                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubUserToken.get().get(0));
-                gitHubSourceCodeRepo.syncTopic(entry);
-            } catch (Exception ex) {
-                entriesNotUpdatedWithTopic.add(entry);
+            if (gitHubToken != null) {
+                try {
+                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
+                    gitHubSourceCodeRepo.syncTopic(entry);
+                } catch (Exception ex) {
+                    entriesNotUpdatedWithTopic.add(entry);
+                }
+            } else {
+                entriesNotUpdatedWithUserToken.add(entry);
             }
         }
 
