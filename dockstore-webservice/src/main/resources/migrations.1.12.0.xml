@@ -241,7 +241,7 @@
             <column name="topic" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
-    <changeSet author="svonworl" id="removeGarbageFromVersionMetadata">
+    <changeSet author="svonworl" id="cleanAndConstrainVersionMetadataDoi">
         <!-- A few 'string' string literal values somehow snuck into version_metadata.doiurl. Null any value that's not a valid DOI and set a constraint so it doesn't happen again -->
         <sql dbms="postgresql">
             update version_metadata set doiurl = null where doiurl not like '10._%/_%';
