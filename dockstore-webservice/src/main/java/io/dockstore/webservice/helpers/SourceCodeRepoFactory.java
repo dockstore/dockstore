@@ -176,9 +176,9 @@ public final class SourceCodeRepoFactory {
         String gitUsername = matcherActual.group(usernameIndex);
         String gitRepository = matcherActual.group(reponameIndex);
 
-        LOG.debug(GIT_URL_SOURCE_KEY + " " + source);
-        LOG.debug(GIT_URL_USER_KEY + " " + gitUsername);
-        LOG.debug(GIT_URL_REPOSITORY_KEY + " " + gitRepository);
+        LOG.debug("{} {}", GIT_URL_SOURCE_KEY, source);
+        LOG.debug("{} {}", GIT_URL_USER_KEY, gitUsername);
+        LOG.debug("{} {}", GIT_URL_REPOSITORY_KEY, gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put(GIT_URL_SOURCE_KEY, source);
