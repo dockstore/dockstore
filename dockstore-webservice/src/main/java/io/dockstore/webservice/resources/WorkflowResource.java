@@ -1711,13 +1711,14 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
             // Determine gitUrl
             gitUrl = tool.getGitUrl();
-            final Optional<Map<String, String>>  stringStringGitUrlMap = SourceCodeRepoFactory
+            final Optional<Map<String, String>>  stringStringGitUrlMapOpt = SourceCodeRepoFactory
                     .parseGitUrl(gitUrl);
-            if (!stringStringGitUrlMap.isEmpty()) {
+            if (!stringStringGitUrlMapOpt.isEmpty()) {
                 SourceControlConverter converter = new SourceControlConverter();
-                sourceControl = converter.convertToEntityAttribute(stringStringGitUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
-                organization = stringStringGitUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
-                repository = stringStringGitUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
+                final Map<String, String> stringStringGitUrlMap = stringStringGitUrlMapOpt.get();
+                sourceControl = converter.convertToEntityAttribute(stringStringGitUrlMap.get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
+                organization = stringStringGitUrlMap.get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
+                repository = stringStringGitUrlMap.get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
             } else {
                 throw new CustomWebApplicationException("Problem parsing git url.", HttpStatus.SC_BAD_REQUEST);
             }

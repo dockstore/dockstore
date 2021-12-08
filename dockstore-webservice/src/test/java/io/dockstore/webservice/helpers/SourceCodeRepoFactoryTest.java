@@ -16,15 +16,14 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.Map;
-import java.util.Optional;
+import static org.junit.Assert.assertEquals;
 
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Tool;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author dyuen

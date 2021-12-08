@@ -132,28 +132,28 @@ public final class SourceCodeRepoFactory {
      * Parse Git URL to retrieve source, username and repository name.
      *
      * @param url
-     * @param repositoryName fixed repository name to match in git URL
+     * @param sourceName fixed git host to match in git URL, e.g. github.com, bitbucket.org, gitlab.com
      * @return a map with keys: Source, Username, Repository
      */
-    public static Optional<Map<String, String>> parseGitUrl(String url, Optional<String> repositoryName) {
+    public static Optional<Map<String, String>> parseGitUrl(String url, Optional<String> sourceName) {
         final String logGitUrlFormatString = "{} {}";
         final String githubRepositoryRegex1 = "[^\\s:]++";
         final String githubRepositoryRegex2 = "[^\\s/]++";
 
-        String repositoryNameRegex1 = repositoryName.isPresent() ? repositoryName.get() : githubRepositoryRegex1;
-        String repositoryNameRegex2 = repositoryName.isPresent() ? repositoryName.get() : githubRepositoryRegex2;
+        String sourceNameRegex1 = sourceName.isPresent() ? sourceName.get() : githubRepositoryRegex1;
+        String sourceNameRegex2 = sourceName.isPresent() ? sourceName.get() : githubRepositoryRegex2;
         // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
         // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
         // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
         // in https://www.regular-expressions.info/catastrophic.html
         // So use more restrictive regex and possesive quantifiers '++' with atomic group '?>'
         // Can test regex at https://regex101.com/
-        // If a caller provides repositoryName the pattern matcher will expect that exact repository name in the URL,
-        // otherwise it will match any valid repository name
+        // If a caller provides sourceName the pattern matcher will expect that exact git host name in the URL,
+        // otherwise it will match any valid git host name
         // Any valid user name will be matched
         // Any valid repository name will be matched, including names with dots, e.g. my.repo.with.dots.git
-        Pattern gitUrlRegexPattern1 = Pattern.compile("^git@(" + repositoryNameRegex1 + "):([^\\s/]++)/(?>(\\S+)\\.git)$");
-        Pattern gitUrlRegexPattern2 = Pattern.compile("^git://(" + repositoryNameRegex2 + ")/([^\\s/]++)/(?>(\\S+)\\.git)$");
+        Pattern gitUrlRegexPattern1 = Pattern.compile("^git@(" + sourceNameRegex1 + "):([^\\s/]++)/(?>(\\S+)\\.git)$");
+        Pattern gitUrlRegexPattern2 = Pattern.compile("^git://(" + sourceNameRegex2 + ")/([^\\s/]++)/(?>(\\S+)\\.git)$");
 
 
         Matcher m1 = gitUrlRegexPattern1.matcher(url);
