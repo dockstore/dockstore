@@ -67,6 +67,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
@@ -709,7 +710,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicAutomatic(String topicAutomatic) {
-        this.topicAutomatic = topicAutomatic;
+        this.topicAutomatic = StringUtils.abbreviate(topicAutomatic, 150);
     }
 
     public String getTopicManual() {
