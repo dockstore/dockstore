@@ -628,7 +628,7 @@ public class GeneralWorkflowIT extends BaseIT {
         //update the forumUrl to hello.com
         final String newTopic = "newTopic";
         workflow.setForumUrl("hello.com");
-        workflow.setTopic(newTopic);
+        workflow.setTopicManual(newTopic);
         Workflow updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
         //check the workflow's forumUrl is hello.com
@@ -636,7 +636,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
         assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
 
-        Assert.assertEquals(newTopic, updatedWorkflow.getTopic());
+        Assert.assertEquals(newTopic, updatedWorkflow.getTopicManual());
     }
 
     @Test
