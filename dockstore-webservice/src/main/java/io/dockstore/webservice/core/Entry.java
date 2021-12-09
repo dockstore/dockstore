@@ -276,10 +276,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Schema(description = "Which topic to display to the public users")
     private TopicSelection topicSelection = TopicSelection.AUTOMATIC;
 
-    public TopicSelection getTopicSelection() {
-        return topicSelection;
-    }
-
     public enum TopicSelection {
         AUTOMATIC, MANUAL
     }
@@ -726,5 +722,13 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public String getTopic() {
         return this.topicSelection == TopicSelection.AUTOMATIC ? this.getTopicAutomatic() : this.getTopicManual();
+    }
+
+    public TopicSelection getTopicSelection() {
+        return topicSelection;
+    }
+
+    public void setTopicSelection(TopicSelection topicSelection) {
+        this.topicSelection = topicSelection;
     }
 }
