@@ -319,4 +319,54 @@
             EXECUTE PROCEDURE workflow_path_deletion_trigger_fnc();
         </sql>
     </changeSet>
+    <changeSet author="gluu (generated)" id="topicPhaseTwoChanges">
+        <addColumn tableName="apptool">
+            <column name="topicautomatic" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="topicautomatic" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="topicautomatic" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="topicautomatic" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="topicmanual" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="topicmanual" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="topicmanual" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="topicmanual" type="varchar(150 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="apptool">
+            <column name="topicselection" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="service">
+            <column name="topicselection" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="tool">
+            <column name="topicselection" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="topicselection" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropColumn columnName="topic" tableName="apptool"/>
+        <dropColumn columnName="topic" tableName="service"/>
+        <dropColumn columnName="topic" tableName="tool"/>
+        <dropColumn columnName="topic" tableName="workflow"/>
+    </changeSet>
 </databaseChangeLog>
