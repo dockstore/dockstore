@@ -253,9 +253,9 @@ public class DockerRepoResource
 
         // Check if tool has a valid Git URL (needed to refresh!)
         String gitUrl = tool.getGitUrl();
-        Map<String, String> gitMap = SourceCodeRepoFactory.parseGitUrl(gitUrl);
+        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(gitUrl);
 
-        if (gitMap == null) {
+        if (gitMap.isEmpty()) {
             LOG.error("Could not parse Git URL:" + gitUrl + " Unable to refresh tool!");
             throw new CustomWebApplicationException("Could not parse Git URL:" + gitUrl + " Unable to refresh tool!",
                 HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -1092,9 +1092,9 @@ public class DockerRepoResource
      * @return is url of the format git@source:gitUsername/gitRepository
      */
     private static boolean isGit(String url) {
-        Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(url);
-        return m.matches();
+        final Optional<Map<String, String>> stringStringGitUrlMap = SourceCodeRepoFactory
+                .parseGitUrl(url);
+        return !stringStringGitUrlMap.isEmpty();
     }
 
     /**

@@ -47,8 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.GenericType;
 import org.apache.commons.lang3.StringUtils;
@@ -71,13 +69,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final ApiClient apiClient;
 
-
-
     /**
      * @param gitUsername           username that owns the bitbucket token
      * @param bitbucketTokenContent bitbucket token
      */
-    BitBucketSourceCodeRepo(String gitUsername, String bitbucketTokenContent) {
+    public BitBucketSourceCodeRepo(String gitUsername, String bitbucketTokenContent) {
         this.gitUsername = gitUsername;
 
         apiClient = Configuration.getDefaultApiClient();
@@ -358,18 +354,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         String repositoryId;
         String giturl = entry.getGitUrl();
-
-        Pattern p = Pattern.compile("git@bitbucket.org:(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(giturl);
+        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(giturl, Optional.of("bitbucket.org"));
         LOG.info(gitUsername + ": " + giturl);
-
-        if (!m.find()) {
+        if (gitMap.isEmpty()) {
             LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
             return null;
         }
-
-        repositoryId = m.group(1) + "/" + m.group(2);
-
+        repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY) + "/"
+                + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
         return repositoryId;
     }
 

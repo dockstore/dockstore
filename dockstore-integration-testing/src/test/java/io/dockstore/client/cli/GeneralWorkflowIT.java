@@ -311,6 +311,30 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests adding and removing labels from a workflow
      */
     @Test
+    public void testLabelFormat() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        // Set up workflow
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl",
+                SourceControl.GITHUB, "/Dockstore.wdl", true);
+
+        // test good labels
+        workflow = workflowsApi.updateLabels(workflow.getId(), "abc,abc-abc,123-123,abc-123,123-abc-abc", "");
+        assertEquals(5, workflow.getLabels().size());
+
+        // test bad labels
+        try {
+            workflow = workflowsApi.updateLabels(workflow.getId(), "-,-abc,123-,abc--123,123-abc-", "");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Invalid label format"));
+        }
+    }
+
+    /**
+     * This tests adding and removing labels from a workflow
+     */
+    @Test
     public void testLabelEditing() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);

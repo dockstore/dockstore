@@ -973,13 +973,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         if (entry.getClass().equals(Tool.class)) {
             // Parse git url for repo
-            Pattern p = Pattern.compile("git@github.com:(\\S+)/(\\S+)\\.git");
-            Matcher m = p.matcher(entry.getGitUrl());
+            Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(entry.getGitUrl(), Optional.of("github.com"));
 
-            if (!m.find()) {
+            if (gitMap.isEmpty()) {
                 return null;
             } else {
-                return m.group(1) + "/" + m.group(2);
+                return gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY) + "/"
+                        + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
             }
         } else {
             return ((Workflow)entry).getOrganization() + '/' + ((Workflow)entry).getRepository();

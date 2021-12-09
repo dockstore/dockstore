@@ -343,12 +343,13 @@ public abstract class AbstractImageRegistry {
     }
 
     public static String getGitRepositoryFromGitUrl(String gitUrl) {
-        Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
-        if (repoUrlMap == null) {
+        Optional<Map<String, String>> repoUrlMap = parseGitUrl(gitUrl);
+        if (repoUrlMap.isEmpty()) {
             return null;
         }
-        String username = repoUrlMap.get("Username");
-        String repository = repoUrlMap.get("Repository");
+
+        String username = repoUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY);
+        String repository = repoUrlMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
         return username + '/' + repository;
     }
 

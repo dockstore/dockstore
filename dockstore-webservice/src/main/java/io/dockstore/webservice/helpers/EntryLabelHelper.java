@@ -45,7 +45,7 @@ public class EntryLabelHelper<T extends Entry> {
             entry.setLabels(new TreeSet<>());
         } else {
             Set<String> labelStringSet = new HashSet<>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
-            final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+            final String labelStringPattern = "^[a-zA-Z0-9]++(-[a-zA-Z0-9]++)*+$";
 
             // This matches the restriction on labels to 255 characters
             // if this is changed then the java object/mapped db schema needs to be changed
