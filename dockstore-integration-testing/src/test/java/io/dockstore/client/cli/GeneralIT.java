@@ -1376,13 +1376,13 @@ public class GeneralIT extends BaseIT {
         //change the forumurl
         toolTest.setForumUrl(forumUrl);
         final String newTopic = "newTopic";
-        toolTest.setTopic(newTopic);
+        toolTest.setTopicManual(newTopic);
         DockstoreTool dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
 
         //check the tool's forumurl is updated in the database
         final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
         assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
-        assertEquals(newTopic, dockstoreTool.getTopic());
+        assertEquals(newTopic, dockstoreTool.getTopicManual());
     }
 
     /**

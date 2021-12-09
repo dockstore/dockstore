@@ -45,6 +45,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -66,7 +67,6 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
@@ -98,8 +98,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "Entry.getCollectionToolsWithVersions", query = "SELECT new io.dockstore.webservice.core.CollectionEntry(t.id, t.dbUpdateDate, 'tool', t.registry, t.namespace, t.name, t.toolname, v.name, v.versionMetadata.verified) from Version v, Tool t, Collection col join col.entries as e where v.id = e.version.id and col.id = :collectionId and t.id = e.entry.id and t.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
-        @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-        @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topic IS NULL")
+        @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -264,9 +263,30 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
-    @Column()
-    @Schema(description = "Short description of the entry")
-    private String topic;
+    @Column(length = 150)
+    @Schema(description = "Short description of the entry gotten automatically")
+    private String topicAutomatic;
+
+    @Column(length = 150)
+    @Schema(description = "Short description of the entry manually updated")
+    private String topicManual;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Schema(description = "Which topic to display to the public users")
+    private TopicSelection topicSelection = TopicSelection.AUTOMATIC;
+
+    public TopicSelection getTopicSelection() {
+        return topicSelection;
+    }
+
+    public String getTopicManual() {
+        return topicManual;
+    }
+
+    public enum TopicSelection {
+        AUTOMATIC, MANUAL
+    }
 
     public Entry() {
         users = new TreeSet<>();
@@ -692,11 +712,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.categories = categories;
     }
 
-    public String getTopic() {
-        return topic;
+    public String getTopicAutomatic() {
+        return topicAutomatic;
     }
 
-    public void setTopic(String topic) {
-        this.topic = StringUtils.abbreviate(topic, 150);
+    public void setTopicAutomatic(String topicAutomatic) {
+        this.topicAutomatic = topicAutomatic;
     }
 }

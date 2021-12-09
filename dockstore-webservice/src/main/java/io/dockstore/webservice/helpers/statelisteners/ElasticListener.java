@@ -108,7 +108,7 @@ public class ElasticListener implements StateListenerInterface {
         }
         try {
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            String entryType = entry instanceof Tool || entry instanceof AppTool ? TOOLS_INDEX : WORKFLOWS_INDEX;
+            String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
             case PUBLISH:
@@ -311,7 +311,7 @@ public class ElasticListener implements StateListenerInterface {
             detachedTool.setGitUrl(tool.getGitUrl());
             detachedTool.setName(tool.getName());
             detachedTool.setToolname(tool.getToolname());
-            detachedTool.setTopic(tool.getTopic());
+            detachedTool.setTopicAutomatic(tool.getTopicAutomatic());
             detachedEntry = detachedTool;
         } else if (entry instanceof BioWorkflow) {
             BioWorkflow bioWorkflow = (BioWorkflow) entry;
@@ -322,7 +322,7 @@ public class ElasticListener implements StateListenerInterface {
             detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
 
             // These are for table
-            detachedBioWorkflow.setTopic(bioWorkflow.getTopic());
+            detachedBioWorkflow.setTopicAutomatic(bioWorkflow.getTopicAutomatic());
             detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
             detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
             detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());

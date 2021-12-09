@@ -214,7 +214,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should be a WDL workflow", io.dockstore.openapi.client.model.Workflow.DescriptorTypeEnum.WDL, workflow.getDescriptorType());
         assertEquals("Should be type DOCKSTORE_YML", io.dockstore.openapi.client.model.Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
-        assertEquals("A repo that includes .dockstore.yml", workflow.getTopic());
+        assertEquals("A repo that includes .dockstore.yml", workflow.getTopicAutomatic());
 
         // Release 0.2 on GitHub - one existing wdl workflow, one new cwl workflow
         client.handleGitHubRelease("refs/tags/0.2", installationId, workflowRepo, BasicIT.USER_2_USERNAME);

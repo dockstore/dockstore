@@ -514,7 +514,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         oldWorkflow.setForumUrl(newWorkflow.getForumUrl());
-        oldWorkflow.setTopic(newWorkflow.getTopic());
+        oldWorkflow.setTopicAutomatic(newWorkflow.getTopicAutomatic());
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
