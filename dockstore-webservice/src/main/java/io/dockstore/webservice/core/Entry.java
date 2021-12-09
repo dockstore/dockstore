@@ -272,7 +272,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private String topicManual;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(32) default 'AUTOMATIC'")
     @Schema(description = "Which topic to display to the public users")
     private TopicSelection topicSelection = TopicSelection.AUTOMATIC;
 
