@@ -21,7 +21,6 @@ import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SE
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.EntryType;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -75,10 +74,8 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -451,51 +448,12 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public List<Entry> updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
-        List<Entry> githubEntries = toolDAO.findAllGitHubGenericEntries();
-        List<Entry> entriesNotUpdatedWithUserToken = new ArrayList<>();
-        List<Entry> entriesNotUpdatedWithTopic = new ArrayList<>();
+        List<Entry> githubEntries = toolDAO.findAllGitHubGenericEntriesWithNoTopic();
 
-        for (Entry entry : githubEntries) {
-            if (entry.getEntryType() == EntryType.SERVICE) {
-                continue;
-            }
-
-            // Find a user that has a GitHub token
-            Set<User> entryUsers = entry.getUsers();
-            Token gitHubToken = null;
-            for (User entryUser : entryUsers) {
-                List<Token> gitHubTokenList = tokenDAO.findGithubByUserId(entryUser.getId());
-                if (!gitHubTokenList.isEmpty()) {
-                    gitHubToken = gitHubTokenList.get(0);
-                    break;
-                }
-            }
-
-            if (gitHubToken != null) {
-                try {
-                    GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(gitHubToken);
-                    gitHubSourceCodeRepo.syncTopic(entry);
-                } catch (Exception ex) {
-                    entriesNotUpdatedWithTopic.add(entry);
-                }
-            } else {
-                entriesNotUpdatedWithUserToken.add(entry);
-            }
-        }
-
-        if (!entriesNotUpdatedWithUserToken.isEmpty()) {
-            // Use the GitHub token of the admin making this call for entries that don't have a user with a GitHub token
-            Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
-            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-            for (Entry entry : entriesNotUpdatedWithUserToken) {
-                try {
-                    gitHubSourceCodeRepo.syncTopic(entry);
-                } catch (Exception ex) {
-                    entriesNotUpdatedWithTopic.add(entry);
-                }
-            }
-        }
-
+        // Use the GitHub token of the admin making this call
+        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+        List<Entry> entriesNotUpdatedWithTopic = gitHubSourceCodeRepo.syncTopics(githubEntries);
         return entriesNotUpdatedWithTopic;
     }
 

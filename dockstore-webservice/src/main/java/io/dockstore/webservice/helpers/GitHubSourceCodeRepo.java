@@ -104,6 +104,7 @@ import org.slf4j.LoggerFactory;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
+    public static final int MAX_TOPIC_LENGTH = 150;
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private String githubTokenUsername;
@@ -1114,19 +1115,37 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    // DO NOT USE THIS FUNCTION ELSEWHERE.
-    // This function is only for gathering topics for existing workflows and tools and only needs to be run once.
-    public void syncTopic(Entry entry) {
-        String repositoryId = getRepositoryId(entry);
-        GHRepository repository;
-        try {
-            repository = github.getRepository(repositoryId);
-        } catch (IOException e) {
-            String errorMessage = String.format("Could not get topic from: %s", repositoryId);
-            LOG.info(errorMessage, e);
-            throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_NOT_FOUND);
+    /**
+     * DO NOT USE THIS FUNCTION ELSEWHERE.
+     * This function is for gathering topics for existing entries and only needs to be run once.
+     * @param entries A list of entries to set the topic for
+     * @return A list of entries that did not have their topics updated because of a failure in retrieving their topics from GitHub
+     */
+    public List<Entry> syncTopics(List<Entry> entries) {
+        List<Entry> entriesNotUpdatedWithTopic = new ArrayList<>();
+        GHRateLimit startRateLimit = getGhRateLimitQuietly();
+
+        for (Entry entry : entries) {
+            String repositoryId = getRepositoryId(entry);
+            GHRepository repository;
+            try {
+                repository = github.getRepository(repositoryId);
+            } catch (IOException e) {
+                LOG.info(String.format("Could not get topic from: %s", repositoryId), e);
+                entriesNotUpdatedWithTopic.add(entry);
+                continue;
+            }
+            String topic = repository.getDescription();
+            if (topic != null) { // Could be null if the repo doesn't have a description
+                topic = StringUtils.abbreviate(topic, MAX_TOPIC_LENGTH);
+                entry.setTopic(topic);
+            }
         }
-        entry.setTopic(repository.getDescription()); // Could be null if the repo doesn't have a description
+
+        GHRateLimit endRateLimit = getGhRateLimitQuietly();
+        reportOnRateLimit("syncTopics", startRateLimit, endRateLimit);
+
+        return entriesNotUpdatedWithTopic;
     }
 
     public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {

@@ -303,8 +303,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return Arrays.asList(this.currentSession().getNamedQuery("Entry.findWorkflowsDescriptorTypes").setParameter("entryId", entryId).getSingleResult().toString());
     }
 
-    public List<Entry> findAllGitHubGenericEntries() {
-        return list(this.currentSession().getNamedQuery("Entry.findAllGitHubGenericEntries"));
+    public List<Entry> findAllGitHubGenericEntriesWithNoTopic() {
+        return list(this.currentSession().getNamedQuery("Entry.findAllGitHubGenericEntriesWithNoTopic"));
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {

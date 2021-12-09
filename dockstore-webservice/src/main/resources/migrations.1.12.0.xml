@@ -241,10 +241,4 @@
             <column name="topic" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
-    <changeSet author="ktran (generated)" id="changeTopicToText">
-        <modifyDataType columnName="topic" newDataType="clob" tableName="apptool"/>
-        <modifyDataType columnName="topic" newDataType="clob" tableName="service"/>
-        <modifyDataType columnName="topic" newDataType="clob" tableName="tool"/>
-        <modifyDataType columnName="topic" newDataType="clob" tableName="workflow"/>
-    </changeSet>
 </databaseChangeLog>

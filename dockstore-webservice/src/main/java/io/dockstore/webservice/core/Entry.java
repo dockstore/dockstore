@@ -98,7 +98,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
         @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-        @NamedQuery(name = "Entry.findAllGitHubGenericEntries", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE '%github.com%'")
+        @NamedQuery(name = "Entry.findAllGitHubGenericEntriesWithNoTopic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topic IS NULL")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -263,7 +263,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
-    @Column(columnDefinition = "text")
+    @Column()
     @Schema(description = "Short description of the entry")
     private String topic;
 
