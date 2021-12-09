@@ -280,10 +280,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         return topicSelection;
     }
 
-    public String getTopicManual() {
-        return topicManual;
-    }
-
     public enum TopicSelection {
         AUTOMATIC, MANUAL
     }
@@ -718,5 +714,17 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public void setTopicAutomatic(String topicAutomatic) {
         this.topicAutomatic = topicAutomatic;
+    }
+
+    public String getTopicManual() {
+        return topicManual;
+    }
+
+    public void setTopicManual(String topicManual) {
+        this.topicManual = topicManual;
+    }
+
+    public String getTopic() {
+        return this.topicSelection == TopicSelection.AUTOMATIC ? this.getTopicAutomatic() : this.getTopicManual();
     }
 }
