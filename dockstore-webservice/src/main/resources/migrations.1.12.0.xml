@@ -345,22 +345,22 @@
             <column name="topicmanual" type="varchar(150 BYTE)"/>
         </addColumn>
         <addColumn tableName="apptool">
-            <column name="topicselection" type="varchar(255 BYTE)">
+            <column defaultValue="AUTOMATIC" name="topicselection" type="varchar(32 BYTE)">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="service">
-            <column name="topicselection" type="varchar(255 BYTE)">
+            <column defaultValue="AUTOMATIC" name="topicselection" type="varchar(32 BYTE)">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="tool">
-            <column name="topicselection" type="varchar(255 BYTE)">
+            <column defaultValue="AUTOMATIC" name="topicselection" type="varchar(32 BYTE)">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
         <addColumn tableName="workflow">
-            <column name="topicselection" type="varchar(255 BYTE)">
+            <column defaultValue="AUTOMATIC" name="topicselection" type="varchar(32 BYTE)">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
