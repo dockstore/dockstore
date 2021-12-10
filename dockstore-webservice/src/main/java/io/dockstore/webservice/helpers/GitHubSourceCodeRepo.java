@@ -534,11 +534,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private String getCommitSHA(GHRef ref, GHRepository repository, String refName) throws IOException {
         String sha;
         String type = ref.getObject().getType();
-        if (Objects.equals(type, "commit")) {
+        if ("commit".equals(type)) {
             sha = ref.getObject().getSha();
-        } else if (Objects.equals(type, "tag")) {
+        } else if ("tag".equals(type)) {
             sha = repository.getTagObject(ref.getObject().getSha()).getObject().getSha();
-        } else if (Objects.equals(type, "branch")) {
+        } else if ("branch".equals(type)) {
             GHBranch branch = repository.getBranch(refName);
             sha = branch.getSHA1();
         } else {
