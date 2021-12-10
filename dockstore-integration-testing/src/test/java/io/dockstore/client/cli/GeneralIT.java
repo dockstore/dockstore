@@ -16,16 +16,14 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import javax.ws.rs.core.Response;
+import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
+import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,6 +55,15 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -74,15 +81,6 @@ import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.RateLimitHandler;
-
-import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
-import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
@@ -1053,6 +1051,45 @@ public class GeneralIT extends BaseIT {
         toolApi.refresh(tool.getId());
         List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(updatedTags);
+    }
+
+    @Test
+    public void testAnnotatedGitHubTag() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        tool.setName("simphen");
+        tool.setNamespace("uwgac");
+        tool.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
+        tool.setDefaultDockerfilePath("/Dockerfile");
+        tool.setDefaultCwlPath("/tools/allele_freq.cwl");
+        tool.setDefaultWdlPath("/Dockstore.wdl");
+        tool.setDefaultCWLTestParameterFile("/test.cwl.json");
+        tool.setDefaultWDLTestParameterFile("/test.wdl.json");
+        tool.setIsPublished(false);
+        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+        tool.setGitUrl("git@github.com:dockstore-testing/md5sum-checker.git");
+        tool.setToolname("testing");
+        tool.setPrivateAccess(false);
+
+        tool = toolApi.registerManual(tool);
+
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
+        tag.setName("0.2.2");
+        tag.setReference("annotated-tag");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        tag = tool.getWorkflowVersions().get(0);
+
+        // Test that the right commit is grabbed for an annotated tag
+        // https://github.com/dockstore-testing/md5sum-checker/releases/tag/annotated-tag
+        // https://github.com/dockstore-testing/md5sum-checker/tree/f7927a52c0583a0bb96ec23f0509683ea7f6cd38
+        assertEquals("f7927a52c0583a0bb96ec23f0509683ea7f6cd38", tag.getCommitID());
     }
 
     @Test
