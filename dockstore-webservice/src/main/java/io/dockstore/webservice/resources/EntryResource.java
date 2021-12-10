@@ -443,18 +443,16 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     @Path("/updateEntryToGetTopics")
     @Deprecated
     @Operation(operationId = "updateEntryToGetTopics", description = "Attempt to get the topic of all entries that use GitHub as the source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a list of entries we were unable to get the topic for.", content = @Content(
-            mediaType = "application/json",
-            array = @ArraySchema(schema = @Schema(implementation = Entry.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get the number of entries that failed to have their topics retrieved from GitHub.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
     @ApiOperation(value = "See OpenApi for details", hidden = true)
-    public List<Entry> updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
-        List<Entry> githubEntries = toolDAO.findAllGitHubGenericEntriesWithNoTopic();
-
+    public int updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Entry> githubEntries = toolDAO.findAllGitHubEntriesWithNoTopic();
         // Use the GitHub token of the admin making this call
         Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-        List<Entry> entriesNotUpdatedWithTopic = gitHubSourceCodeRepo.syncTopics(githubEntries);
-        return entriesNotUpdatedWithTopic;
+        int numOfEntriesNotUpdatedWithTopic = gitHubSourceCodeRepo.syncTopics(githubEntries);
+        return numOfEntriesNotUpdatedWithTopic;
     }
 
     /**

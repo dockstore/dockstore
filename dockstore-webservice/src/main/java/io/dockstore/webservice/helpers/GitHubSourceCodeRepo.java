@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1119,33 +1120,41 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * DO NOT USE THIS FUNCTION ELSEWHERE.
      * This function is for gathering topics for existing entries and only needs to be run once.
      * @param entries A list of entries to set the topic for
-     * @return A list of entries that did not have their topics updated because of a failure in retrieving their topics from GitHub
+     * @return The number of entries that did not have their topics updated because of a failure in retrieving their topics from GitHub
      */
-    public List<Entry> syncTopics(List<Entry> entries) {
-        List<Entry> entriesNotUpdatedWithTopic = new ArrayList<>();
+    public int syncTopics(List<Entry> entries) {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
+        Map<String, String> repositoryIdToTopic = new HashMap<>();
+        Set<String> erroredRepositories = new HashSet<>();
+        int numOfEntriesNotUpdatedWithTopic = 0;
 
         for (Entry entry : entries) {
             String repositoryId = getRepositoryId(entry);
-            GHRepository repository;
-            try {
-                repository = github.getRepository(repositoryId);
-            } catch (IOException e) {
-                LOG.info(String.format("Could not get topic from: %s", repositoryId), e);
-                entriesNotUpdatedWithTopic.add(entry);
-                continue;
+            String topic = null;
+            
+            // Keep track of repos that we failed to get to prevent future requests for these repos
+            if (erroredRepositories.contains(repositoryId)) {
+                numOfEntriesNotUpdatedWithTopic += 1;
+            } else if (repositoryIdToTopic.containsKey(repositoryId)) {
+                topic = repositoryIdToTopic.get(repositoryId);
+            } else {
+                try {
+                    GHRepository repository = github.getRepository(repositoryId);
+                    topic = repository.getDescription();
+                    repositoryIdToTopic.put(repositoryId, topic);
+                } catch (IOException e) {
+                    LOG.info(String.format("Could not get topic from: %s", repositoryId), e);
+                    erroredRepositories.add(repositoryId);
+                    numOfEntriesNotUpdatedWithTopic += 1;
+                }
             }
-            String topic = repository.getDescription();
-            if (topic != null) { // Could be null if the repo doesn't have a description
-                topic = StringUtils.abbreviate(topic, MAX_TOPIC_LENGTH);
-                entry.setTopic(topic);
-            }
+            entry.setTopic(topic);
         }
 
         GHRateLimit endRateLimit = getGhRateLimitQuietly();
         reportOnRateLimit("syncTopics", startRateLimit, endRateLimit);
 
-        return entriesNotUpdatedWithTopic;
+        return numOfEntriesNotUpdatedWithTopic;
     }
 
     public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {

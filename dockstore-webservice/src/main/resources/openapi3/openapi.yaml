@@ -2172,10 +2172,10 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Entry'
-          description: Get a list of entries we were unable to get the topic for.
+                type: integer
+                format: int32
+          description: Get the number of entries that failed to have their topics
+            retrieved from GitHub.
       security:
       - bearer: []
       tags:
