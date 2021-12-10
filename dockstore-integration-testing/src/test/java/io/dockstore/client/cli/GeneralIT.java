@@ -1057,6 +1057,45 @@ public class GeneralIT extends BaseIT {
     }
 
     @Test
+    public void testAnnotatedGitHubTag() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        tool.setName("simphen");
+        tool.setNamespace("uwgac");
+        tool.setRegistryString(Registry.DOCKER_HUB.getDockerPath());
+        tool.setDefaultDockerfilePath("/Dockerfile");
+        tool.setDefaultCwlPath("/tools/allele_freq.cwl");
+        tool.setDefaultWdlPath("/Dockstore.wdl");
+        tool.setDefaultCWLTestParameterFile("/test.cwl.json");
+        tool.setDefaultWDLTestParameterFile("/test.wdl.json");
+        tool.setIsPublished(false);
+        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+        tool.setGitUrl("git@github.com:dockstore-testing/md5sum-checker.git");
+        tool.setToolname("testing");
+        tool.setPrivateAccess(false);
+
+        tool = toolApi.registerManual(tool);
+
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
+        tag.setName("0.2.2");
+        tag.setReference("annotated-tag");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        tag = tool.getWorkflowVersions().get(0);
+
+        // Test that the right commit is grabbed for an annotated tag
+        // https://github.com/dockstore-testing/md5sum-checker/releases/tag/annotated-tag
+        // https://github.com/dockstore-testing/md5sum-checker/tree/f7927a52c0583a0bb96ec23f0509683ea7f6cd38
+        assertEquals("f7927a52c0583a0bb96ec23f0509683ea7f6cd38", tag.getCommitID());
+    }
+
+    @Test
     public void ga4ghImageType() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
