@@ -105,7 +105,6 @@ import org.slf4j.LoggerFactory;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
-    public static final int MAX_TOPIC_LENGTH = 150;
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
     private String githubTokenUsername;
