@@ -16,23 +16,11 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -63,6 +51,23 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -80,7 +85,6 @@ import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHTagObject;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
@@ -90,12 +94,6 @@ import org.kohsuke.github.extras.ImpatientHttpConnector;
 import org.kohsuke.github.extras.okhttp3.ObsoleteUrlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATHS;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author dyuen
@@ -534,12 +532,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     // The documentation doesn't list the possibilities https://github-api.kohsuke.org/apidocs/org/kohsuke/github/GHRef.GHObject.html#getType(),
     // but I'll assume it mirrors the 4 Git types: blobs, trees, commits, and tags.
     private String getCommitSHA(GHRef ref, GHRepository repository, String refName) throws IOException {
-        String sha = null;
+        String sha = ref.getObject().getSha();
         if ("commit".equals(ref.getObject().getType())) {
             sha = ref.getObject().getSha();
         } else if (ref.getObject().getType().equals("tag")) {
-            GHTagObject tagObject = repository.getTagObject(sha);
-            sha = tagObject.getObject().getSha();
+            sha = repository.getTagObject(ref.getObject().getSha()).getObject().getSha();
         } else if (ref.getObject().getType().equals("branch")) {
             GHBranch branch = repository.getBranch(refName);
             sha = branch.getSHA1();
@@ -547,7 +544,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // I'm not sure when this would happen.
             LOG.error("Unsupported GitHub reference object. Unable to find commit ID for type: " + ref.getObject().getType());
             // This is probably wrong, but we should mimic the behaviour from before since this is a hotfix.
-            sha = ref.getObject().getSha();
+            // sha = ref.getObject().getSha();
         }
         return sha;
     }
