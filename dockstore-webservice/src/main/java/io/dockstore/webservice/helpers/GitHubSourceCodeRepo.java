@@ -532,19 +532,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     // The documentation doesn't list the possibilities https://github-api.kohsuke.org/apidocs/org/kohsuke/github/GHRef.GHObject.html#getType(),
     // but I'll assume it mirrors the 4 Git types: blobs, trees, commits, and tags.
     private String getCommitSHA(GHRef ref, GHRepository repository, String refName) throws IOException {
+        // Sha value if commit
         String sha = ref.getObject().getSha();
-        if ("commit".equals(ref.getObject().getType())) {
-            sha = ref.getObject().getSha();
-        } else if (ref.getObject().getType().equals("tag")) {
-            sha = repository.getTagObject(ref.getObject().getSha()).getObject().getSha();
+        if (ref.getObject().getType().equals("tag")) {
+            sha = repository.getTagObject(sha).getObject().getSha();
         } else if (ref.getObject().getType().equals("branch")) {
             GHBranch branch = repository.getBranch(refName);
             sha = branch.getSHA1();
         } else {
             // I'm not sure when this would happen.
+            // Keeping the sha as-is is probably wrong, but we should mimic the behaviour from before since this is a hotfix.
             LOG.error("Unsupported GitHub reference object. Unable to find commit ID for type: " + ref.getObject().getType());
-            // This is probably wrong, but we should mimic the behaviour from before since this is a hotfix.
-            // sha = ref.getObject().getSha();
+
         }
         return sha;
     }
