@@ -87,7 +87,6 @@ import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHTagObject;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
@@ -567,20 +566,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     // The documentation doesn't list the possibilities https://github-api.kohsuke.org/apidocs/org/kohsuke/github/GHRef.GHObject.html#getType(),
     // but I'll assume it mirrors the 4 Git types: blobs, trees, commits, and tags.
     private String getCommitSHA(GHRef ref, GHRepository repository, String refName) throws IOException {
-        String sha = null;
-        if ("commit".equals(ref.getObject().getType())) {
+        String sha;
+        String type = ref.getObject().getType();
+        if ("commit".equals(type)) {
             sha = ref.getObject().getSha();
-        } else if (ref.getObject().getType().equals("tag")) {
-            GHTagObject tagObject = repository.getTagObject(sha);
-            sha = tagObject.getObject().getSha();
-        } else if (ref.getObject().getType().equals("branch")) {
+        } else if ("tag".equals(type)) {
+            sha = repository.getTagObject(ref.getObject().getSha()).getObject().getSha();
+        } else if ("branch".equals(type)) {
             GHBranch branch = repository.getBranch(refName);
             sha = branch.getSHA1();
         } else {
             // I'm not sure when this would happen.
-            LOG.error("Unsupported GitHub reference object. Unable to find commit ID for type: " + ref.getObject().getType());
-            // This is probably wrong, but we should mimic the behaviour from before since this is a hotfix.
+            // Keeping the sha as-is is probably wrong, but we should mimic the behaviour from before since this is a hotfix.
             sha = ref.getObject().getSha();
+            LOG.error("Unsupported GitHub reference object. Unable to find commit ID for type: " + ref.getObject().getType());
         }
         return sha;
     }
