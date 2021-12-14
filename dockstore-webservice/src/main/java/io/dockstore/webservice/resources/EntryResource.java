@@ -37,8 +37,10 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.database.VersionVerifiedPlatform;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -432,6 +434,25 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             @Parameter(description = "The id of the entry to add a topic to.", name = "id", in = ParameterIn.PATH, required = true)
             @PathParam("id") Long id) {
         return createAndSetDiscourseTopic(id);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateEntryToGetTopics")
+    @Deprecated
+    @Operation(operationId = "updateEntryToGetTopics", description = "Attempt to get the topic of all entries that use GitHub as the source control.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get the number of entries that failed to have their topics retrieved from GitHub.",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
+    public int updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
+        List<Entry> githubEntries = toolDAO.findAllGitHubEntriesWithNoTopic();
+        // Use the GitHub token of the admin making this call
+        Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
+        int numOfEntriesNotUpdatedWithTopic = gitHubSourceCodeRepo.syncTopics(githubEntries);
+        return numOfEntriesNotUpdatedWithTopic;
     }
 
     /**

@@ -5,6 +5,8 @@ import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ORCID_USER_1;
 import static io.dockstore.common.Hoverfly.ORCID_USER_2;
 import static io.dockstore.common.Hoverfly.PUT_CODE_USER_1;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -12,10 +14,12 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.ApiClient;
 import io.dockstore.openapi.client.ApiException;
+import io.dockstore.openapi.client.api.ContainersApi;
 import io.dockstore.openapi.client.api.EntriesApi;
 import io.dockstore.openapi.client.api.UsersApi;
 import io.dockstore.openapi.client.api.WorkflowsApi;
 import io.dockstore.openapi.client.model.DescriptionMetrics;
+import io.dockstore.openapi.client.model.DockstoreTool;
 import io.dockstore.openapi.client.model.User;
 import io.dockstore.openapi.client.model.Workflow;
 import io.dockstore.openapi.client.model.WorkflowVersion;
@@ -285,5 +289,30 @@ public class EntryResourceIT extends BaseIT {
         } catch (ApiException e) {
             fail("The version does not have a description, so metrics should be set to 0.");
         }
+    }
+
+    @Test
+    public void testUpdateEntryToGetTopics() {
+        ApiClient client = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        EntriesApi entriesApi = new EntriesApi(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        DockstoreTool existingTool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", "");
+        assertNull(existingTool.getTopic());
+
+        Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/dockstore.wdl", "",
+                DescriptorLanguage.WDL.getShortName(), "");
+        // Registering a workflow sets the topic. Set it to null in the DB so the migration can be tested
+        testingPostgres.runUpdateStatement(String.format("update workflow set topic=null where id='%s'", workflow.getId()));
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
+        assertNull(workflow.getTopic());
+
+        entriesApi.updateEntryToGetTopics();
+
+        existingTool = containersApi.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", "");
+        assertEquals("Test repo for dockstore", existingTool.getTopic());
+        workflow = workflowsApi.getWorkflow(workflow.getId(), "");
+        assertEquals("test repo for CWL and WDL workflows", workflow.getTopic());
     }
 }

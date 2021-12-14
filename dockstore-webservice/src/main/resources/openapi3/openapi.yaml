@@ -2161,6 +2161,25 @@ paths:
       - bearer: []
       tags:
       - curation
+  /entries/updateEntryToGetTopics:
+    get:
+      deprecated: true
+      description: Attempt to get the topic of all entries that use GitHub as the
+        source control.
+      operationId: updateEntryToGetTopics
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int32
+          description: Get the number of entries that failed to have their topics
+            retrieved from GitHub.
+      security:
+      - bearer: []
+      tags:
+      - entries
   /entries/{entryId}/exportToOrcid:
     post:
       description: Export entry to ORCID. DOI is required
