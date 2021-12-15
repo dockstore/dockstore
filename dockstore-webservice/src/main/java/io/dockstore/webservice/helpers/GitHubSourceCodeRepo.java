@@ -1162,7 +1162,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     numOfEntriesNotUpdatedWithTopic += 1;
                 }
             }
-            entry.setTopic(topic);
+            entry.setTopicAutomatic(topic);
         }
 
         GHRateLimit endRateLimit = getGhRateLimitQuietly();
