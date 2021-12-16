@@ -851,6 +851,7 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
@@ -862,6 +863,10 @@ public class WebhookIT extends BaseIT {
 
         assertEquals(1, appTool.getWorkflowVersions().size());
         assertEquals(1, workflow.getWorkflowVersions().size());
+
+        Long userId = usersApi.getUser().getId();
+        List<io.dockstore.openapi.client.model.Workflow> usersAppTools = usersApi.userAppTools(userId);
+        assertEquals(1, usersAppTools.size());
 
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
         appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, APPTOOL, "versions,validations");

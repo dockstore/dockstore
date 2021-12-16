@@ -4525,6 +4525,28 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/{userId}/appTools:
+    get:
+      tags:
+      - "users"
+      operationId: "userAppTools"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
   /users/{userId}/containers:
     get:
       tags:
@@ -5293,12 +5315,15 @@ paths:
           \ images, versions, authors, orcidputcodes"
         required: false
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
       - name: "versionName"
         in: "query"
         description: "Version name"

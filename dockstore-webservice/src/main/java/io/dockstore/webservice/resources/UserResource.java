@@ -36,6 +36,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.api.Limits;
 import io.dockstore.webservice.api.PrivilegeRequest;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
@@ -65,6 +66,7 @@ import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -152,6 +154,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
     private final BioWorkflowDAO bioWorkflowDAO;
+    private final AppToolDAO appToolDAO;
     private final ServiceDAO serviceDAO;
     private final EventDAO eventDAO;
     private final LambdaEventDAO lambdaEventDAO;
@@ -170,6 +173,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.appToolDAO = new AppToolDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
         this.bioWorkflowDAO = new BioWorkflowDAO(sessionFactory);
         this.serviceDAO = new ServiceDAO(sessionFactory);
@@ -597,6 +601,25 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         final User fetchedUser = this.userDAO.findById(userId);
         checkUserExists(fetchedUser);
         return convertMyWorkflowsToWorkflow(this.bioWorkflowDAO.findUserBioWorkflows(fetchedUser.getId()));
+    }
+
+    @GET
+    @Path("/{userId}/appTools")
+    @Timed
+    @UnitOfWork
+    @Operation(operationId = "userAppTools", description = "List all appTools owned by the authenticated user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK
+        + "", description = "A list of GitHub App tools owned by the user", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
+    public List<Workflow> userAppTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Parameter(name = "userId", description = "User ID", required = true, in = ParameterIn.PATH) @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        checkUser(user, userId);
+        final User fetchedUser = this.userDAO.findById(userId);
+        checkUserExists(fetchedUser);
+        List<Workflow> appTools = appToolDAO.findMyEntries(fetchedUser.getId()).stream().map(AppTool.class::cast).collect(Collectors.toList());
+        EntryVersionHelper.stripContentFromEntries(appTools, this.userDAO);
+        return appTools;
     }
 
     private List<Workflow> convertMyWorkflowsToWorkflow(List<MyWorkflows> myWorkflows) {

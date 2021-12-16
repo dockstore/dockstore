@@ -5056,6 +5056,35 @@ paths:
       - bearer: []
       tags:
       - users
+  /users/{userId}/appTools:
+    get:
+      description: List all appTools owned by the authenticated user.
+      operationId: userAppTools
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+          description: A list of GitHub App tools owned by the user
+        "403":
+          description: Forbidden
+        "404":
+          description: User not found
+      security:
+      - bearer: []
+      tags:
+      - users
   /users/{userId}/cloudInstances:
     get:
       description: Get all cloud instances belonging to the user
@@ -5982,7 +6011,8 @@ paths:
       description: Does not require workflow name.
       operationId: getPublishedWorkflowByPath
       parameters:
-      - in: path
+      - description: Repository path
+        in: path
         name: repository
         required: true
         schema:
@@ -5993,12 +6023,14 @@ paths:
         name: include
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to retrieve.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
-      - in: query
+          $ref: '#/components/schemas/WorkflowSubClass'
+      - description: Version name
+        in: query
         name: versionName
         schema:
           type: string

@@ -613,7 +613,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null, false, null);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         workflowsApi.starEntry(workflowId, STAR_REQUEST);
@@ -634,7 +634,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null, false, null);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", BIOWORKFLOW, null, null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         thrown.expect(ApiException.class);

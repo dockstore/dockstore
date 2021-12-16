@@ -1041,11 +1041,18 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Path("/path/workflow/{repository}/published")
     @Operation(operationId = "getPublishedWorkflowByPath", summary = "Get a published workflow by path", description = "Does not require workflow name.")
     @ApiOperation(nickname = "getPublishedWorkflowByPath", value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
-    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-            @Parameter(name = "include", description = INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = INCLUDE_MESSAGE) @QueryParam("include") String include,
-            @Parameter(name = "services", in = ParameterIn.QUERY) @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services,
-            @Parameter(name = "versionName", in = ParameterIn.QUERY) @ApiParam(value = "Version name") @QueryParam("versionName") String versionName) {
-        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+    public Workflow getPublishedWorkflowByPath(
+        @Parameter(name = "repository", description = "Repository path", required = true, in = ParameterIn.PATH) @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @Parameter(name = "include", description = INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = INCLUDE_MESSAGE) @QueryParam("include") String include,
+        @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+        @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services,
+        @Parameter(name = "versionName", description = "Version name", in = ParameterIn.QUERY) @ApiParam(value = "Version name") @QueryParam("versionName") String versionName) {
+        final Class<? extends Workflow> targetClass;
+        if (services != null) {
+            targetClass = services ? Service.class : BioWorkflow.class;
+        } else {
+            targetClass = getSubClass(subclass);
+        }
         Workflow workflow = workflowDAO.findByPath(path, true, targetClass).orElse(null);
         checkEntry(workflow);
 

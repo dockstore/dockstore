@@ -23,6 +23,7 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CollectionOrganization;
@@ -485,6 +486,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         } else if (entry instanceof Service) {
             title += ((Service)(entry)).getWorkflowPath();
             entryLink += "services/";
+        } else if (entry instanceof AppTool) {
+            title += ((AppTool)(entry)).getWorkflowPath();
+            entryLink += "tools/";
         } else {
             title += ((Tool)(entry)).getToolPath();
             entryLink += "tools/";

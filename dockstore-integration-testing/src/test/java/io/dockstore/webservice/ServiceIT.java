@@ -302,8 +302,8 @@ public class ServiceIT extends BaseIT {
         testingPostgres.runUpdateStatement("update service set ispublished = 't'");
 
         // test retrieval
-        final io.swagger.client.model.Workflow returnedWorkflow = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, "", false, null);
-        final io.swagger.client.model.Workflow returnedService = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, "", true, null);
+        final io.swagger.client.model.Workflow returnedWorkflow = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, BIOWORKFLOW, "",  null);
+        final io.swagger.client.model.Workflow returnedService = client.getPublishedWorkflowByPath(github + "/" + serviceRepo, SERVICE, "",  null);
         assertNotSame(returnedWorkflow.getId(), returnedService.getId());
 
         // test GA4GH retrieval
