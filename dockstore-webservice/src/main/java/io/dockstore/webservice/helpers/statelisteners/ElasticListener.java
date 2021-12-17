@@ -323,8 +323,6 @@ public class ElasticListener implements StateListenerInterface {
             detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
 
             // These are for table
-            // This is some weird hack to always use topicAutomatic for search table
-            detachedBioWorkflow.setTopicAutomatic(bioWorkflow.getTopic());
             detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
             detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
             detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());
@@ -339,6 +337,8 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
         Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
         detachedEntry.setWorkflowVersions(detachedVersions);
+        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
+        detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
         String defaultVersion = entry.getDefaultVersion();
