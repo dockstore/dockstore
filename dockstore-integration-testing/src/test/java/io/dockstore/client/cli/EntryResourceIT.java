@@ -304,7 +304,7 @@ public class EntryResourceIT extends BaseIT {
         Workflow workflow = workflowsApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser2/hello-dockstore-workflow", "/dockstore.wdl", "",
                 DescriptorLanguage.WDL.getShortName(), "");
         // Registering a workflow sets the topic. Set it to null in the DB so the migration can be tested
-        testingPostgres.runUpdateStatement(String.format("update workflow set topic=null where id='%s'", workflow.getId()));
+        testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic=null where id='%s'", workflow.getId()));
         workflow = workflowsApi.getWorkflow(workflow.getId(), "");
         assertNull(workflow.getTopic());
 
