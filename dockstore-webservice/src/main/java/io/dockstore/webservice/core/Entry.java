@@ -100,7 +100,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
         @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-        @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL")
+        @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -118,6 +118,8 @@ import org.hibernate.annotations.UpdateTimestamp;
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE"),
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;") })
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
+
+    private static final int TOPIC_LENGTH = 150;
 
     /**
      * re-use existing generator for backwards compatibility
@@ -265,11 +267,11 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
-    @Column(length = 150)
+    @Column(length = TOPIC_LENGTH)
     @Schema(description = "Short description of the entry gotten automatically")
     private String topicAutomatic;
 
-    @Column(length = 150)
+    @Column(length = TOPIC_LENGTH)
     @Schema(description = "Short description of the entry manually updated")
     private String topicManual;
 
@@ -711,7 +713,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     }
 
     public void setTopicAutomatic(String topicAutomatic) {
-        this.topicAutomatic = StringUtils.abbreviate(topicAutomatic, 150);
+        this.topicAutomatic = StringUtils.abbreviate(topicAutomatic, TOPIC_LENGTH);
     }
 
     public String getTopicManual() {
