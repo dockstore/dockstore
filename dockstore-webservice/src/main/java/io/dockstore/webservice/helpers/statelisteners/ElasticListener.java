@@ -338,6 +338,7 @@ public class ElasticListener implements StateListenerInterface {
         Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
         detachedEntry.setWorkflowVersions(detachedVersions);
         // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
+        // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
         detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
