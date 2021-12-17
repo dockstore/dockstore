@@ -60,7 +60,7 @@ public class VersionMetadata {
     protected String verifiedSource;
 
     @Column()
-    @Pattern(regexp = "10\\..+/.+")
+    @Pattern(regexp = "10\\.[^/]++/.++")
     protected String doiURL;
 
     @Column()
