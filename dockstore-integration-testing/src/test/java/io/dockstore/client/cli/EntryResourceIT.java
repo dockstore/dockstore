@@ -204,7 +204,7 @@ public class EntryResourceIT extends BaseIT {
 
         // Give the workflow version a DOI url
         testingPostgres.runUpdateStatement(String.format("update version_metadata set doistatus='%s' where id=%s", Version.DOIStatus.CREATED.name(), workflowVersionId));
-        testingPostgres.runUpdateStatement(String.format("update version_metadata set doiurl='dummyurl' where id=%s", workflowVersionId));
+        testingPostgres.runUpdateStatement(String.format("update version_metadata set doiurl='10.foo/bar' where id=%s", workflowVersionId));
 
         // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
         try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {

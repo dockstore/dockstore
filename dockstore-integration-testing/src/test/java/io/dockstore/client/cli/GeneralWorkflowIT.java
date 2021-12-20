@@ -68,6 +68,8 @@ import org.junit.experimental.categories.Category;
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class GeneralWorkflowIT extends BaseIT {
 
+    private static final String DUMMY_DOI = "10.foo/bar";
+
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -702,10 +704,10 @@ public class GeneralWorkflowIT extends BaseIT {
         // but should be able to change doi stuff
         master.setFrozen(true);
         master.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
-        master.setDoiURL("foo");
+        master.setDoiURL(DUMMY_DOI);
         workflowVersions = workflowsApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
-        assertEquals("foo", master.getDoiURL());
+        assertEquals(DUMMY_DOI, master.getDoiURL());
         assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // refresh should skip over the frozen version
@@ -786,12 +788,12 @@ public class GeneralWorkflowIT extends BaseIT {
             workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
         version.setFrozen(true);
         version.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
-        version.setDoiURL("foo");
+        version.setDoiURL(DUMMY_DOI);
         assertFalse("Double check that this version is in fact invalid", version.isValid());
         List<WorkflowVersion> workflowVersions = workflowsApi
             .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(version));
         version = workflowVersions.stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
-        assertEquals("foo", version.getDoiURL());
+        assertEquals(DUMMY_DOI, version.getDoiURL());
         assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, version.getDoiStatus());
     }
 

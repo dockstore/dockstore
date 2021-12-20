@@ -100,6 +100,8 @@ public class GeneralIT extends BaseIT {
 
     private static final String QUAY_TOOL_PATH = "quay.io/dockstoretestuser2/dockstore-tool-imports/test5";
 
+    private static final String DUMMY_DOI = "10.foo/bar";
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -1274,10 +1276,10 @@ public class GeneralIT extends BaseIT {
         // but should be able to change doi stuff
         master.setFrozen(true);
         master.setDoiStatus(Tag.DoiStatusEnum.REQUESTED);
-        master.setDoiURL("foo");
+        master.setDoiURL(DUMMY_DOI);
         tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
         master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
-        assertEquals("foo", master.getDoiURL());
+        assertEquals(DUMMY_DOI, master.getDoiURL());
         assertEquals(Tag.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // try modifying sourcefiles

@@ -37,6 +37,7 @@ import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.Pattern;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -59,6 +60,7 @@ public class VersionMetadata {
     protected String verifiedSource;
 
     @Column()
+    @Pattern(regexp = "10\\.[^/]++/.++")
     protected String doiURL;
 
     @Column()
