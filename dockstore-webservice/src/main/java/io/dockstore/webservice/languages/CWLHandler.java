@@ -43,6 +43,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,6 +76,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with " + CWLHandler.CWL_VERSION_PREFIX + ", detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
     public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
+    public static final List<String> CWL_IMPORT_KEYS = Arrays.asList("$import", "import");
+    public static final List<String> CWL_INCLUDE_KEYS = Arrays.asList("$include", "include");
+    public static final List<String> CWL_MIXIN_KEYS = Arrays.asList("$include", "include");
+    public static final int MAX_FILE_DEPTH = 8;
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -263,6 +269,102 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
     }
 
+    private void expandImportsEtc(Map<String, Object> map, Set<SourceFile> secondarySourceFiles, int depth) {
+        map.replaceAll((k, v) -> expandImportsEtc(v, secondarySourceFiles, depth));
+    }
+
+    private void expandImportsEtc(List<Object> list, Set<SourceFile> secondarySourceFiles, int depth) {
+        list.replaceAll(v -> expandImportsEtc(v, secondarySourceFiles, depth));
+    }
+
+    private Object expandImportsEtc(Object obj, Set<SourceFile> secondarySourceFiles, int depth) {
+
+        if (obj instanceof Map) {
+
+            Map map = (Map<String, Object>)obj;
+
+            String importPath = findValue(CWL_IMPORT_KEYS, map);
+            if (importPath != null) {
+                return loadParseExpandContent(importPath, secondarySourceFiles, depth + 1);
+            }
+
+            String includePath = findValue(CWL_INCLUDE_KEYS, map);
+            if (includePath != null) {
+                return loadContent(includePath, secondarySourceFiles, depth);
+            }
+
+            String mixinPath = findValue(CWL_MIXIN_KEYS, map);
+            if (mixinPath != null) {
+                Object mixin = loadParseExpandContent(mixinPath, secondarySourceFiles, depth + 1);
+                if (mixin instanceof Map) {
+                    applyMixin(map, (Map<String, Object>)mixin);
+                    removeKey(CWL_MIXIN_KEYS, map);
+                } else {
+                    throw new RuntimeException("a mixin must be a map");
+                }
+            }
+
+            expandImportsEtc(map, secondarySourceFiles, depth);
+
+        } else if (obj instanceof List) {
+
+            expandImportsEtc((List<Object>)obj, secondarySourceFiles, depth);
+
+        }
+
+        return obj;
+    }
+
+    private String findValue(Collection<String> keys, Map<String, Object> map) {
+        for (String key: keys) {
+            Object value = map.get(key);
+            if (value != null) {
+                if (value instanceof String) {
+                    return (String)value;
+                } else {
+                    throw new RuntimeException("value must be a string");
+                }
+            }
+        }
+        return (null);
+    }
+
+    private void removeKey(Collection<String> keys, Map<String, Object> map) {
+        for (String key: keys) {
+            if (map.remove(key) != null) {
+                return;
+            }
+        }
+    }
+
+    private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
+        mixin.forEach((k, v) -> {
+            to.putIfAbsent(k, v);
+        });
+    }
+
+    private Object parseYaml(String value) {
+        return new Yaml(new SafeConstructor()).load(value);
+    }
+
+    private String loadContent(String fromPath, Set<SourceFile> secondarySourceFiles, int depth) {
+        if (depth > MAX_FILE_DEPTH) { // TODO
+            throw new RuntimeException("exceeded maximum file depth");
+        }
+        for (SourceFile sourceFile: secondarySourceFiles) {
+            if (sourceFile.getPath().endsWith(fromPath)) {
+                return sourceFile.getContent();
+            }
+        }
+        throw new RuntimeException("file not found: " + fromPath);
+    }
+
+    private Object loadParseExpandContent(String fromPath, Set<SourceFile> secondarySourceFiles, int depth) {
+        String content = loadContent(fromPath, secondarySourceFiles, depth);
+        Object parsed = parseYaml(content);
+        return expandImportsEtc(parsed, secondarySourceFiles, depth + 1);
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
     //TODO: Occassionally misses dockerpulls. One case is when a dockerPull is nested within a run that's within a step. There are other missed cases though that are TBD.
@@ -284,6 +386,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
+
+            // Expand $import and $include
+            expandImportsEtc(mapping, secondarySourceFiles, 0);
 
             // verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
