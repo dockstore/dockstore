@@ -76,10 +76,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with " + CWLHandler.CWL_VERSION_PREFIX + ", detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
     public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
-    public static final List<String> CWL_IMPORT_KEYS = Arrays.asList("$import", "import");
-    public static final List<String> CWL_INCLUDE_KEYS = Arrays.asList("$include", "include");
-    public static final List<String> CWL_MIXIN_KEYS = Arrays.asList("$include", "include");
-    public static final int MAX_FILE_DEPTH = 8;
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -269,101 +265,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
     }
 
-    private void expandImportsEtc(Map<String, Object> map, Set<SourceFile> secondarySourceFiles, int depth) {
-        map.replaceAll((k, v) -> expandImportsEtc(v, secondarySourceFiles, depth));
-    }
-
-    private void expandImportsEtc(List<Object> list, Set<SourceFile> secondarySourceFiles, int depth) {
-        list.replaceAll(v -> expandImportsEtc(v, secondarySourceFiles, depth));
-    }
-
-    private Object expandImportsEtc(Object obj, Set<SourceFile> secondarySourceFiles, int depth) {
-
-        if (obj instanceof Map) {
-
-            Map map = (Map<String, Object>)obj;
-
-            String importPath = findValue(CWL_IMPORT_KEYS, map);
-            if (importPath != null) {
-                return loadParseExpandContent(importPath, secondarySourceFiles, depth + 1);
-            }
-
-            String includePath = findValue(CWL_INCLUDE_KEYS, map);
-            if (includePath != null) {
-                return loadContent(includePath, secondarySourceFiles, depth);
-            }
-
-            String mixinPath = findValue(CWL_MIXIN_KEYS, map);
-            if (mixinPath != null) {
-                Object mixin = loadParseExpandContent(mixinPath, secondarySourceFiles, depth + 1);
-                if (mixin instanceof Map) {
-                    applyMixin(map, (Map<String, Object>)mixin);
-                    removeKey(CWL_MIXIN_KEYS, map);
-                } else {
-                    throw new RuntimeException("a mixin must be a map");
-                }
-            }
-
-            expandImportsEtc(map, secondarySourceFiles, depth);
-
-        } else if (obj instanceof List) {
-
-            expandImportsEtc((List<Object>)obj, secondarySourceFiles, depth);
-
-        }
-
-        return obj;
-    }
-
-    private String findValue(Collection<String> keys, Map<String, Object> map) {
-        for (String key: keys) {
-            Object value = map.get(key);
-            if (value != null) {
-                if (value instanceof String) {
-                    return (String)value;
-                } else {
-                    throw new RuntimeException("value must be a string");
-                }
-            }
-        }
-        return (null);
-    }
-
-    private void removeKey(Collection<String> keys, Map<String, Object> map) {
-        for (String key: keys) {
-            if (map.remove(key) != null) {
-                return;
-            }
-        }
-    }
-
-    private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
-        mixin.forEach((k, v) -> {
-            to.putIfAbsent(k, v);
-        });
-    }
-
-    private Object parseYaml(String value) {
-        return new Yaml(new SafeConstructor()).load(value);
-    }
-
-    private String loadContent(String fromPath, Set<SourceFile> secondarySourceFiles, int depth) {
-        if (depth > MAX_FILE_DEPTH) { // TODO
-            throw new RuntimeException("exceeded maximum file depth");
-        }
-        for (SourceFile sourceFile: secondarySourceFiles) {
-            if (sourceFile.getPath().endsWith(fromPath)) {
-                return sourceFile.getContent();
-            }
-        }
-        throw new RuntimeException("file not found: " + fromPath);
-    }
-
-    private Object loadParseExpandContent(String fromPath, Set<SourceFile> secondarySourceFiles, int depth) {
-        String content = loadContent(fromPath, secondarySourceFiles, depth);
-        Object parsed = parseYaml(content);
-        return expandImportsEtc(parsed, secondarySourceFiles, depth + 1);
-    }
 
     @Override
     @SuppressWarnings("checkstyle:methodlength")
@@ -388,7 +289,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
 
             // Expand $import and $include
-            expandImportsEtc(mapping, secondarySourceFiles, 0);
+            mapping = preprocess(mapping, secondarySourceFiles, mainDescriptorPath);
 
             // verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
@@ -1000,5 +901,138 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
+    }
+
+    private Map<String, Object> preprocess(Map<String, Object> mapping, Set<SourceFile> secondarySourceFiles, String currentPath) {
+        Object preprocessed = new Preprocessor(secondarySourceFiles).preprocess(mapping, currentPath, 0);
+        if (!(preprocessed instanceof Map)) {
+            return (mapping);
+        }
+        return (Map<String, Object>)preprocessed;
+    }
+
+    public static class Preprocessor {
+        private static final List<String> IMPORT_KEYS = Arrays.asList("$import", "import");
+        private static final List<String> INCLUDE_KEYS = Arrays.asList("$include", "include");
+        private static final List<String> MIXIN_KEYS = Arrays.asList("$mixin", "mixin");
+        private static final int DEFAULT_MAX_DEPTH = 8;
+
+        private final Set<SourceFile> secondarySourceFiles;
+        private final int maxDepth;
+
+        public Preprocessor(Set<SourceFile> secondarySourceFiles, int maxDepth) {
+            this.secondarySourceFiles = secondarySourceFiles;
+            this.maxDepth = maxDepth;
+        }
+
+        public Preprocessor(Set<SourceFile> secondarySourceFiles) {
+            this(secondarySourceFiles, DEFAULT_MAX_DEPTH);
+        }
+
+        private void preprocessMapValues(Map<String, Object> map, String currentPath, int depth) {
+            map.replaceAll((k, v) -> preprocess(v, currentPath, depth));
+        }
+    
+        private void preprocessListValues(List<Object> list, String currentPath, int depth) {
+            list.replaceAll(v -> preprocess(v, currentPath, depth));
+        }
+   
+        // TODO add current file path 
+        public Object preprocess(Object obj, String currentPath, int depth) {
+    
+            if (obj instanceof Map) {
+    
+                Map map = (Map<String, Object>)obj;
+    
+                String importUri = findValue(IMPORT_KEYS, map);
+                if (importUri != null) {
+                    return loadFileAndPreprocess(importUri, currentPath, depth);
+                }
+    
+                String includeUri = findValue(INCLUDE_KEYS, map);
+                if (includeUri != null) {
+                    return loadFile(includeUri, currentPath, depth);
+                }
+    
+                String mixinUri = findValue(MIXIN_KEYS, map);
+                if (mixinUri != null) {
+                    Object mixin = loadFileAndPreprocess(mixinUri, currentPath, depth);
+                    if (mixin instanceof Map) {
+                        applyMixin(map, (Map<String, Object>)mixin);
+                        removeKey(MIXIN_KEYS, map);
+                    } else {
+                        error("a mixin must be a map");
+                    }
+                }
+    
+                preprocessMapValues(map, currentPath, depth);
+    
+            } else if (obj instanceof List) {
+    
+                preprocessListValues((List<Object>)obj, currentPath, depth);
+    
+            }
+    
+            return obj;
+        }
+    
+        // TODO make case insensitive 
+        private String findValue(Collection<String> keys, Map<String, Object> map) {
+            for (String key: keys) {
+                Object value = map.get(key);
+                if (value != null) {
+                    if (value instanceof String) {
+                        return (String)value;
+                    } else {
+                        error("value must be a string");
+                    }
+                }
+            }
+            return null;
+        }
+   
+        // TODO make case insensitive 
+        private void removeKey(Collection<String> keys, Map<String, Object> map) {
+            for (String key: keys) {
+                if (map.remove(key) != null) {
+                    return;
+                }
+            }
+        }
+    
+        private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
+            mixin.forEach((k, v) -> {
+                to.putIfAbsent(k, v);
+            });
+        }
+    
+        private Object parse(String content) {
+            new Yaml(new SafeConstructor()).load(content);
+            return new Yaml().load(content);
+        }
+    
+        private String loadFile(String loadUri, String currentPath, int depth) {
+            if (depth + 1 > maxDepth) {
+                error("exceeded maximum file depth");
+                return "";
+            }
+            // TODO make this work right
+            for (SourceFile sourceFile: secondarySourceFiles) {
+                if (sourceFile.getPath().endsWith(loadUri)) {
+                    return sourceFile.getContent();
+                }
+            }
+            error("file not found: " + loadUri);
+            return "";
+        }
+    
+        private Object loadFileAndPreprocess(String loadUri, String currentPath, int depth) {
+            String content = loadFile(loadUri, currentPath, depth);
+            return preprocess(parse(content), currentPath, depth + 1);
+        }
+
+        public void error(String message) {
+            LOG.info(message);
+        }
     }
 }
