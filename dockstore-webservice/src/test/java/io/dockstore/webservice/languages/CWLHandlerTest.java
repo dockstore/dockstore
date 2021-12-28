@@ -316,4 +316,24 @@ public class CWLHandlerTest {
             assertThat(e.getErrorMessage()).contains(CWLHandler.CWL_PARSE_SECONDARY_ERROR);
         }
     }
+
+    @Test
+    public void testImport() {
+        // TODO relative and absolute
+    }
+
+    @Test
+    public void testInclude() {
+        // TODO relative and absolute
+    }
+
+    @Test
+    public void testMixin() {
+        // TODO relative and absolute
+    }
+
+    @Test
+    public void testImportsIntoSubdirectories() {
+        // TODO relative and absolute
+    }
 }

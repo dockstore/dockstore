@@ -31,6 +31,7 @@ import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
@@ -271,6 +272,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     //TODO: Occassionally misses dockerpulls. One case is when a dockerPull is nested within a run that's within a step. There are other missed cases though that are TBD.
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
+        LOG.error("GETCONTENT");
         Yaml yaml = new Yaml();
         try {
             Yaml safeYaml = new Yaml(new SafeConstructor());
@@ -288,7 +290,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
 
-            // Expand $import and $include
+            // Expand $imports, $includes, and $mixins
             mapping = preprocess(mapping, secondarySourceFiles, mainDescriptorPath);
 
             // verify cwl version is correctly specified
@@ -905,9 +907,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     private Map<String, Object> preprocess(Map<String, Object> mapping, Set<SourceFile> secondarySourceFiles, String currentPath) {
         Object preprocessed = new Preprocessor(secondarySourceFiles).preprocess(mapping, currentPath, 0);
+        // If the result of preprocessing is a map, return it
         if (!(preprocessed instanceof Map)) {
             return (mapping);
         }
+        // Otherwise, return the original map
         return (Map<String, Object>)preprocessed;
     }
 
@@ -939,27 +943,36 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
    
         // TODO add current file path 
         public Object preprocess(Object obj, String currentPath, int depth) {
-    
+  
+            LOG.error("PREPROCESS " + currentPath + " " + depth + ": " + obj);
+ 
+            if (depth > maxDepth) {
+                error("maximum file depth exceeded");
+                return obj;
+            }
+ 
             if (obj instanceof Map) {
     
                 Map map = (Map<String, Object>)obj;
     
-                String importUri = findValue(IMPORT_KEYS, map);
-                if (importUri != null) {
-                    return loadFileAndPreprocess(importUri, currentPath, depth);
+                String importPath = findValue(IMPORT_KEYS, map);
+                if (importPath != null) {
+                    LOG.error("import " + importPath + " " + currentPath);
+                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), depth);
                 }
     
-                String includeUri = findValue(INCLUDE_KEYS, map);
-                if (includeUri != null) {
-                    return loadFile(includeUri, currentPath, depth);
+                String includePath = findValue(INCLUDE_KEYS, map);
+                if (includePath != null) {
+                    LOG.error("include " + includePath + " " + currentPath);
+                    return loadFile(resolvePath(includePath, currentPath));
                 }
     
-                String mixinUri = findValue(MIXIN_KEYS, map);
-                if (mixinUri != null) {
-                    Object mixin = loadFileAndPreprocess(mixinUri, currentPath, depth);
+                String mixinPath = findValue(MIXIN_KEYS, map);
+                if (mixinPath != null) {
+                    Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), depth);
                     if (mixin instanceof Map) {
-                        applyMixin(map, (Map<String, Object>)mixin);
                         removeKey(MIXIN_KEYS, map);
+                        applyMixin(map, (Map<String, Object>)mixin);
                     } else {
                         error("a mixin must be a map");
                     }
@@ -1006,29 +1019,30 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             });
         }
     
-        private Object parse(String content) {
-            new Yaml(new SafeConstructor()).load(content);
-            return new Yaml().load(content);
+        private Object parse(String yaml) {
+            new Yaml(new SafeConstructor()).load(yaml);
+            return new Yaml().load(yaml);
         }
-    
-        private String loadFile(String loadUri, String currentPath, int depth) {
-            if (depth + 1 > maxDepth) {
-                error("exceeded maximum file depth");
-                return "";
-            }
-            // TODO make this work right
+
+        private String resolvePath(String childPath, String parentPath) {
+            LOG.error("resolve " + childPath + " " + parentPath + " " + LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath));
+            return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath);
+        }
+
+        private String loadFile(String loadPath) {
             for (SourceFile sourceFile: secondarySourceFiles) {
-                if (sourceFile.getPath().endsWith(loadUri)) {
+                if (sourceFile.getAbsolutePath().equals(loadPath)) {
+                    LOG.error("loaded " + loadPath);
                     return sourceFile.getContent();
                 }
             }
-            error("file not found: " + loadUri);
+            LOG.error("not found " + loadPath);
+            error("file not found: " + loadPath);
             return "";
         }
     
-        private Object loadFileAndPreprocess(String loadUri, String currentPath, int depth) {
-            String content = loadFile(loadUri, currentPath, depth);
-            return preprocess(parse(content), currentPath, depth + 1);
+        private Object loadFileAndPreprocess(String loadPath, int depth) {
+            return preprocess(parse(loadFile(loadPath)), loadPath, depth + 1);
         }
 
         public void error(String message) {
