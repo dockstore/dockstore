@@ -322,6 +322,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Set up GSON for JSON parsing
             Gson gson = CWL.getTypeSafeCWLToolDocument();
 
+            LOG.error("full workflow " + cwlJson.toString());
+
             final Workflow workflow = gson.fromJson(cwlJson.toString(), Workflow.class);
 
             if (workflow == null) {
@@ -387,6 +389,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // Check for docker requirement within workflow step file
                 String secondaryFile = null;
                 Object run = workflowStep.getRun();
+                LOG.error("runClass: " + run.getClass().getName());
+                LOG.error("run: " + run);
                 String runAsJson = gson.toJson(gson.toJsonTree(run));
                 LOG.error("runAsJson " + runAsJson);
 
@@ -664,6 +668,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 entryJson.put(keyName, reqArray);
             }
         }
+        // Recursively convert child JSONObjects.
+        // TODO: This won't convert JSONObjects that are nested inside an array,
+        // such as when the workflow steps are expressed as an array, rather than a map.
+        for (String key: entryJson.keySet()) {
+            Object value = entryJson.get(key);
+            if (value instanceof JSONObject) {
+                convertJSONObjectToArray(keyName, (JSONObject)value);
+            }
+        }
         return entryJson;
     }
 
@@ -907,11 +920,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private Map<String, Object> preprocess(Map<String, Object> mapping, Set<SourceFile> secondarySourceFiles, String currentPath) {
-        Object preprocessed = new Preprocessor(secondarySourceFiles).preprocess(mapping, currentPath, 0);
+        Preprocessor preprocessor = new Preprocessor(secondarySourceFiles);
+        Object preprocessed = preprocessor.preprocess(mapping, currentPath, 0);
         // If the result of preprocessing is a map, return it
         if (!(preprocessed instanceof Map)) {
             return (mapping);
         }
+        LOG.error("TOOLS");
+        for (String id: preprocessor.getToolIds()) {
+            LOG.error(id + " " + preprocessor.getPath(id));
+        }
+
         // Otherwise, return the original map
         return (Map<String, Object>)preprocessed;
     }
@@ -924,10 +943,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         private final Set<SourceFile> secondarySourceFiles;
         private final int maxDepth;
+        private final Map<String, String> idToPath;
 
         public Preprocessor(Set<SourceFile> secondarySourceFiles, int maxDepth) {
             this.secondarySourceFiles = secondarySourceFiles;
             this.maxDepth = maxDepth;
+            this.idToPath = new HashMap<>();
         }
 
         public Preprocessor(Set<SourceFile> secondarySourceFiles) {
@@ -936,10 +957,25 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         private void preprocessMapValues(Map<String, Object> map, String currentPath, int depth) {
             map.replaceAll((k, v) -> preprocess(v, currentPath, depth));
+            Object runValue = map.get("run");
+            if (runValue instanceof String) {
+                LOG.error("RUN " + currentPath + " " + depth + ": " + runValue);
+                String runPath = (String)runValue;
+                map.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), depth));
+            }
         }
     
         private void preprocessListValues(List<Object> list, String currentPath, int depth) {
             list.replaceAll(v -> preprocess(v, currentPath, depth));
+        }
+
+        private boolean isTool(Map<String, Object> map) {
+            return Objects.equals(map.get("class"), "CommandLineTool");
+        }
+
+        private String addId(Map<String, Object> map) {
+            map.putIfAbsent("id", java.util.UUID.randomUUID().toString());
+            return (String)map.get("id"); // TODO fix?
         }
    
         // TODO add current file path 
@@ -955,6 +991,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             if (obj instanceof Map) {
     
                 Map map = (Map<String, Object>)obj;
+
+                if (isTool(map)) {
+                    idToPath.put(addId(map), currentPath);
+                }
     
                 String importPath = findValue(IMPORT_KEYS, map);
                 if (importPath != null) {
@@ -1053,6 +1093,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         public void error(String message) {
             LOG.info(message);
+        }
+
+        public String getPath(String id) {
+            return idToPath.get(id);
+        }
+
+        public Set<String> getToolIds() {
+            return idToPath.keySet();
         }
     }
 }
