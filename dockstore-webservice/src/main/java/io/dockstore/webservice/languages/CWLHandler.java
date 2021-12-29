@@ -388,6 +388,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 String secondaryFile = null;
                 Object run = workflowStep.getRun();
                 String runAsJson = gson.toJson(gson.toJsonTree(run));
+                LOG.error("runAsJson " + runAsJson);
 
                 if (run instanceof String) {
                     secondaryFile = (String)run;
@@ -989,28 +990,33 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return obj;
         }
     
-        // TODO make case insensitive 
         private String findValue(Collection<String> keys, Map<String, Object> map) {
-            for (String key: keys) {
-                Object value = map.get(key);
-                if (value != null) {
-                    if (value instanceof String) {
-                        return (String)value;
-                    } else {
-                        error("value must be a string");
-                    }
-                }
+            String key = findKey(keys, map);
+            if (key == null) {
+                return null;
             }
+            Object value = map.get(key);
+            if (value instanceof String) {
+                return (String)value;
+            }
+            error("value must be a string");
             return null;
         }
    
-        // TODO make case insensitive 
         private void removeKey(Collection<String> keys, Map<String, Object> map) {
-            for (String key: keys) {
-                if (map.remove(key) != null) {
-                    return;
+            String key = findKey(keys, map);
+            if (key != null) {
+                map.remove(key);
+            }
+        }
+
+        private String findKey(Collection<String> keys, Map<String, Object> map) {
+            for (String mapKey: map.keySet()) {
+                if (keys.contains(mapKey.toLowerCase())) {
+                    return (mapKey);
                 }
             }
+            return null;
         }
     
         private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
