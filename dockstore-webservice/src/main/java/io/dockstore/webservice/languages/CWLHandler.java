@@ -290,9 +290,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
 
-            // Expand $imports, $includes, and $mixins
-            mapping = preprocess(mapping, secondarySourceFiles, mainDescriptorPath);
+            // Expand $imports, $includes, $mixins, and run: <string>
 
+            Preprocessor preprocessor = new Preprocessor(secondarySourceFiles);
+            Object preprocessed = preprocessor.preprocess(mapping, mainDescriptorPath, 0);
+            // If the result of preprocessing is not a map, the CWL is not valid.
+            if (!(preprocessed instanceof Map)) {
+                LOG.error("malformed cwl");
+                throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            }
+            mapping = (Map<String, Object>)preprocessed;
+ 
             // verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
             if (cwlVersion != null) {
@@ -331,144 +339,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.empty();
             }
 
-            // Determine default docker path (Check requirement first and then hint)
-            defaultDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), defaultDockerPath);
-
-            // Store workflow steps in json and then read it into map <String, WorkflowStep>
-            Object steps = workflow.getSteps();
-            String stepJson = gson.toJson(steps);
-            Map<String, WorkflowStep> workflowStepMap;
-            if (steps instanceof ArrayList) {
-                ArrayList<WorkflowStep> workflowStepList = gson.fromJson(stepJson, new TypeToken<ArrayList<WorkflowStep>>() {
-                }.getType());
-                workflowStepMap = new LinkedTreeMap<>();
-                workflowStepList.forEach(workflowStep -> workflowStepMap.put(workflowStep.getId().toString(), workflowStep));
-            } else {
-                workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
-                }.getType());
-            }
-
-            if (stepJson == null) {
-                LOG.error("Could not find any steps for the workflow.");
-                return Optional.empty();
-            }
-
-            if (workflowStepMap == null) {
-                LOG.error("Error deserializing workflow steps");
-                return Optional.empty();
-            }
-
-            // Iterate through steps to find dependencies and docker requirements
-            for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
-                WorkflowStep workflowStep = entry.getValue();
-                String workflowStepId = nodePrefix + entry.getKey();
-
-                ArrayList<String> stepDependencies = new ArrayList<>();
-
-                // Iterate over source and get the dependencies
-                if (workflowStep.getIn() != null) {
-                    for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
-                        Object sources = workflowStepInput.getSource();
-
-                        processDependencies(nodePrefix, stepDependencies, sources);
-                    }
-                    if (stepDependencies.size() > 0) {
-                        toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
-                            toolInfo.toolDependencyList.addAll(stepDependencies);
-                            return toolInfo;
-                        });
-                        toolInfoMap.computeIfAbsent(workflowStepId, toolId -> new ToolInfo(null, stepDependencies));
-                    }
-                }
-
-                // Check workflow step for docker requirement and hints
-                String stepDockerRequirement = defaultDockerPath;
-                stepDockerRequirement = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(),
-                    stepDockerRequirement);
-
-                // Check for docker requirement within workflow step file
-                String secondaryFile = null;
-                Object run = workflowStep.getRun();
-                LOG.error("runClass: " + run.getClass().getName());
-                LOG.error("run: " + run);
-                String runAsJson = gson.toJson(gson.toJsonTree(run));
-                LOG.error("runAsJson " + runAsJson);
-
-                if (run instanceof String) {
-                    secondaryFile = (String)run;
-                } else if (isTool(runAsJson, yaml)) {
-                    CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
-                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(),
-                        stepDockerRequirement);
-                    stepToType.put(workflowStepId, toolType);
-                } else if (isWorkflow(runAsJson, yaml)) {
-                    Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
-                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
-                        stepDockerRequirement);
-                    stepToType.put(workflowStepId, workflowType);
-                } else if (isExpressionTool(runAsJson, yaml)) {
-                    ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
-                    stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
-                        stepDockerRequirement);
-                    stepToType.put(workflowStepId, expressionToolType);
-                } else if (run instanceof Map) {
-                    // must be import or include
-                    Object importVal = ((Map)run).containsKey("$import") ? ((Map)run).get("$import") : ((Map)run).get("import");
-                    if (importVal != null) {
-                        secondaryFile = importVal.toString();
-                    }
-
-                    Object includeVal = ((Map)run).containsKey("$include") ? ((Map)run).get("$include") : ((Map)run).get("include");
-                    if (includeVal != null) {
-                        secondaryFile = includeVal.toString();
-                    }
-
-                    if (secondaryFile == null) {
-                        LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
-                        throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-                    }
-                }
-
-                // Check secondary file for docker pull
-                if (secondaryFile != null) {
-                    String finalSecondaryFile = secondaryFile;
-                    final Optional<SourceFile> sourceFileOptional = secondarySourceFiles.stream()
-                            .filter(sf -> sf.getPath().equals(finalSecondaryFile)).findFirst();
-                    final String content = sourceFileOptional.map(SourceFile::getContent).orElse(null);
-                    Yaml safeSecondaryYaml = new Yaml(new SafeConstructor());
-                    // This should throw an exception if there are unexpected blocks
-                    safeSecondaryYaml.load(finalSecondaryFile);
-                    stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
-                    if (isExpressionTool(content, yaml)) {
-                        stepToType.put(workflowStepId, expressionToolType);
-                    } else if (isTool(content, yaml)) {
-                        stepToType.put(workflowStepId, toolType);
-                    } else if (isWorkflow(content, yaml)) {
-                        stepToType.put(workflowStepId, workflowType);
-                    } else {
-                        stepToType.put(workflowStepId, "n/a");
-                    }
-                }
-
-                DockerSpecifier dockerSpecifier = null;
-                String dockerUrl = null;
-                if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
-                    // CWL doesn't support parameterized docker pulls. Must be a string.
-                    dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerRequirement, DockerImageReference.LITERAL);
-                    dockerUrl = getURLFromEntry(stepDockerRequirement, dao, dockerSpecifier);
-                }
-
-                if (type == LanguageHandlerInterface.Type.DAG) {
-                    nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
-                }
-
-                if (secondaryFile != null) {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(secondaryFile, stepDockerRequirement, dockerUrl, dockerSpecifier));
-                } else {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(mainDescriptorPath, stepDockerRequirement, dockerUrl, dockerSpecifier));
-                }
-
-            }
+            processWorkflow(workflow, null, 0, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             if (type == LanguageHandlerInterface.Type.DAG) {
                 // Determine steps that point to end
@@ -500,6 +371,127 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
     }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    private void processWorkflow(Workflow workflow, String defaultDockerPath, int depth, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+        LOG.error("processWorkflow " + depth);
+        Yaml yaml = new Yaml();
+
+        // Other useful variables
+        String nodePrefix = "dockstore_";
+        String toolType = "tool";
+        String workflowType = "workflow";
+        String expressionToolType = "expressionTool";
+
+        Gson gson = CWL.getTypeSafeCWLToolDocument();
+
+        // Determine default docker path (Check requirement first and then hint)
+        defaultDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), defaultDockerPath);
+
+        // Store workflow steps in json and then read it into map <String, WorkflowStep>
+        Object steps = workflow.getSteps();
+        String stepJson = gson.toJson(steps);
+        Map<String, WorkflowStep> workflowStepMap;
+        if (steps instanceof ArrayList) {
+            ArrayList<WorkflowStep> workflowStepList = gson.fromJson(stepJson, new TypeToken<ArrayList<WorkflowStep>>() {
+            }.getType());
+            workflowStepMap = new LinkedTreeMap<>();
+            workflowStepList.forEach(workflowStep -> workflowStepMap.put(workflowStep.getId().toString(), workflowStep));
+        } else {
+            workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
+            }.getType());
+        }
+
+        if (stepJson == null) {
+            LOG.error("Could not find any steps for the workflow.");
+            return; // TODO what is appropriate here?
+        }
+
+        if (workflowStepMap == null) {
+            LOG.error("Error deserializing workflow steps");
+            return; // TODO what is appropriate here?
+        }
+
+        // Iterate through steps to find dependencies and docker requirements
+        for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
+            WorkflowStep workflowStep = entry.getValue();
+            String workflowStepId = nodePrefix + entry.getKey();
+
+            if (depth == 0) {
+                ArrayList<String> stepDependencies = new ArrayList<>();
+    
+                // Iterate over source and get the dependencies
+                if (workflowStep.getIn() != null) {
+                    for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
+                        Object sources = workflowStepInput.getSource();
+    
+                        processDependencies(nodePrefix, stepDependencies, sources);
+                    }
+                    if (stepDependencies.size() > 0) {
+                        toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
+                            toolInfo.toolDependencyList.addAll(stepDependencies);
+                            return toolInfo;
+                        });
+                        toolInfoMap.computeIfAbsent(workflowStepId, toolId -> new ToolInfo(null, stepDependencies));
+                    }
+                }
+            }
+
+            // Check workflow step for docker requirement and hints
+            String stepDockerRequirement = defaultDockerPath;
+            stepDockerRequirement = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(),
+                stepDockerRequirement);
+
+            // Check for docker requirement within workflow step file
+            Object run = workflowStep.getRun();
+            LOG.error("runClass: " + run.getClass().getName());
+            LOG.error("run: " + run);
+            String runAsJson = gson.toJson(gson.toJsonTree(run));
+            LOG.error("runAsJson " + runAsJson);
+
+            String toolPath = null;
+         
+
+            if (isTool(runAsJson, yaml)) {
+                CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
+                stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(),
+                    stepDockerRequirement);
+                stepToType.put(workflowStepId, toolType);
+                toolPath = preprocessor.getPath(clTool.getId().toString());
+            } else if (isWorkflow(runAsJson, yaml)) {
+                Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
+                stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
+                    stepDockerRequirement);
+                stepToType.put(workflowStepId, workflowType);
+                processWorkflow(stepWorkflow, stepDockerRequirement, depth + 1, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+            } else if (isExpressionTool(runAsJson, yaml)) {
+                ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
+                stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
+                    stepDockerRequirement);
+                stepToType.put(workflowStepId, expressionToolType);
+            } else {
+                LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
+                throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            }
+
+            DockerSpecifier dockerSpecifier = null;
+            String dockerUrl = null;
+            if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
+                // CWL doesn't support parameterized docker pulls. Must be a string.
+                dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerRequirement, DockerImageReference.LITERAL);
+                dockerUrl = getURLFromEntry(stepDockerRequirement, dao, dockerSpecifier);
+            }
+
+            if (depth == 0 && type == LanguageHandlerInterface.Type.DAG) {
+                nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
+            }
+
+            if (toolPath != null) {
+                nodeDockerInfo.put(workflowStepId, new DockerInfo(toolPath, stepDockerRequirement, dockerUrl, dockerSpecifier));
+            }
+        }
+    }
+
 
     private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources) {
         if (sources != null) {
@@ -917,22 +909,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
-    }
-
-    private Map<String, Object> preprocess(Map<String, Object> mapping, Set<SourceFile> secondarySourceFiles, String currentPath) {
-        Preprocessor preprocessor = new Preprocessor(secondarySourceFiles);
-        Object preprocessed = preprocessor.preprocess(mapping, currentPath, 0);
-        // If the result of preprocessing is a map, return it
-        if (!(preprocessed instanceof Map)) {
-            return (mapping);
-        }
-        LOG.error("TOOLS");
-        for (String id: preprocessor.getToolIds()) {
-            LOG.error(id + " " + preprocessor.getPath(id));
-        }
-
-        // Otherwise, return the original map
-        return (Map<String, Object>)preprocessed;
     }
 
     public static class Preprocessor {
