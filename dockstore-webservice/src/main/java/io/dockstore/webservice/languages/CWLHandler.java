@@ -300,7 +300,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
             mapping = (Map<String, Object>)preprocessed;
- 
+
             // verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
             if (cwlVersion != null) {
@@ -419,12 +419,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             if (depth == 0) {
                 ArrayList<String> stepDependencies = new ArrayList<>();
-    
+
                 // Iterate over source and get the dependencies
                 if (workflowStep.getIn() != null) {
                     for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
                         Object sources = workflowStepInput.getSource();
-    
                         processDependencies(nodePrefix, stepDependencies, sources);
                     }
                     if (stepDependencies.size() > 0) {
@@ -450,7 +449,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             LOG.error("runAsJson " + runAsJson);
 
             String toolPath = null;
-         
 
             if (isTool(runAsJson, yaml)) {
                 CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
@@ -940,7 +938,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 map.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), depth));
             }
         }
-    
+
         private void preprocessListValues(List<Object> list, String currentPath, int depth) {
             list.replaceAll(v -> preprocess(v, currentPath, depth));
         }
@@ -953,37 +951,36 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             map.putIfAbsent("id", java.util.UUID.randomUUID().toString());
             return (String)map.get("id"); // TODO fix?
         }
-   
-        // TODO add current file path 
+
         public Object preprocess(Object obj, String currentPath, int depth) {
-  
+
             LOG.error("PREPROCESS " + currentPath + " " + depth + ": " + obj);
- 
+
             if (depth > maxDepth) {
                 error("maximum file depth exceeded");
                 return obj;
             }
- 
+
             if (obj instanceof Map) {
-    
+
                 Map map = (Map<String, Object>)obj;
 
                 if (isTool(map)) {
                     idToPath.put(addId(map), currentPath);
                 }
-    
+
                 String importPath = findValue(IMPORT_KEYS, map);
                 if (importPath != null) {
                     LOG.error("import " + importPath + " " + currentPath);
                     return loadFileAndPreprocess(resolvePath(importPath, currentPath), depth);
                 }
-    
+
                 String includePath = findValue(INCLUDE_KEYS, map);
                 if (includePath != null) {
                     LOG.error("include " + includePath + " " + currentPath);
                     return loadFile(resolvePath(includePath, currentPath));
                 }
-    
+
                 String mixinPath = findValue(MIXIN_KEYS, map);
                 if (mixinPath != null) {
                     Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), depth);
@@ -994,18 +991,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         error("a mixin must be a map");
                     }
                 }
-    
+
                 preprocessMapValues(map, currentPath, depth);
-    
+
             } else if (obj instanceof List) {
-    
+
                 preprocessListValues((List<Object>)obj, currentPath, depth);
-    
+
             }
-    
+
             return obj;
         }
-    
+
         private String findValue(Collection<String> keys, Map<String, Object> map) {
             String key = findKey(keys, map);
             if (key == null) {
@@ -1018,7 +1015,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             error("value must be a string");
             return null;
         }
-   
+
         private void removeKey(Collection<String> keys, Map<String, Object> map) {
             String key = findKey(keys, map);
             if (key != null) {
@@ -1034,13 +1031,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
             return null;
         }
-    
+
         private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
             mixin.forEach((k, v) -> {
                 to.putIfAbsent(k, v);
             });
         }
-    
+
         private Object parse(String yaml) {
             new Yaml(new SafeConstructor()).load(yaml);
             return new Yaml().load(yaml);
@@ -1062,7 +1059,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             error("file not found: " + loadPath);
             return "";
         }
-    
+
         private Object loadFileAndPreprocess(String loadPath, int depth) {
             return preprocess(parse(loadFile(loadPath)), loadPath, depth + 1);
         }
