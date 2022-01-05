@@ -1346,7 +1346,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                         SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
                         if (mainDescriptor != null) {
                             // Store tool table json
-                            toolsJSONTable = lInterface.getContent(w.getWorkflowPath(), mainDescriptor.getContent(),
+                            toolsJSONTable = lInterface.getContent(existingTag.getWorkflowPath(), mainDescriptor.getContent(),
                                     extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.TOOLS, toolDAO);
                             toolsJSONTable.ifPresent(existingTag::setToolTableJson);
                         }
@@ -1364,7 +1364,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
                     if (existingTag.getDagJson() == null) {
                         SourceFile mainDescriptor = getMainDescriptorFile(existingTag);
                         if (mainDescriptor != null) {
-                            String dagJson = lInterface.getCleanDAG(w.getWorkflowPath(), mainDescriptor.getContent(),
+                            String dagJson = lInterface.getCleanDAG(existingTag.getWorkflowPath(), mainDescriptor.getContent(),
                                     extractDescriptorAndSecondaryFiles(existingTag), LanguageHandlerInterface.Type.DAG, toolDAO);
                             existingTag.setDagJson(dagJson);
                         }

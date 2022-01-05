@@ -448,30 +448,36 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String runAsJson = gson.toJson(gson.toJsonTree(run));
             LOG.error("runAsJson " + runAsJson);
 
-            String runId;
+            String currentPath;
 
-            if (isTool(runAsJson, yaml)) {
-                CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
-                stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(),
-                    stepDockerRequirement);
-                stepToType.put(workflowStepId, toolType);
-                runId = convertToString(clTool.getId());
-            } else if (isWorkflow(runAsJson, yaml)) {
-                Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
-                stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
-                    stepDockerRequirement);
-                stepToType.put(workflowStepId, workflowType);
-                runId = convertToString(stepWorkflow.getId());
-                processWorkflow(stepWorkflow, stepDockerRequirement, depth + 1, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
-            } else if (isExpressionTool(runAsJson, yaml)) {
-                ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
-                stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
-                    stepDockerRequirement);
-                stepToType.put(workflowStepId, expressionToolType);
-                runId = convertToString(expressionTool.getId());
+            if (run instanceof Map) {
+                if (isTool(runAsJson, yaml)) {
+                    CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
+                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(),
+                        stepDockerRequirement);
+                    stepToType.put(workflowStepId, toolType);
+                    currentPath = preprocessor.getPath(convertToString(clTool.getId()));
+                } else if (isWorkflow(runAsJson, yaml)) {
+                    Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
+                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
+                        stepDockerRequirement);
+                    stepToType.put(workflowStepId, workflowType);
+                    currentPath = preprocessor.getPath(convertToString(stepWorkflow.getId()));
+                    processWorkflow(stepWorkflow, stepDockerRequirement, depth + 1, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                } else if (isExpressionTool(runAsJson, yaml)) {
+                    ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
+                    stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
+                        stepDockerRequirement);
+                    stepToType.put(workflowStepId, expressionToolType);
+                    currentPath = preprocessor.getPath(convertToString(expressionTool.getId()));
+                } else {
+                    // TODO handle error
+                    LOG.error("oh no!");
+                    throw new RuntimeException();
+                }
             } else {
-                LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
-                throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+                stepToType.put(workflowStepId, "n/a");
+                currentPath = run.toString();
             }
 
             DockerSpecifier dockerSpecifier = null;
@@ -486,7 +492,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
             }
 
-            String currentPath = preprocessor.getPath(runId);
             if (currentPath == null) {
                 currentPath = "";
             }
@@ -921,6 +926,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private static final List<String> IMPORT_KEYS = Arrays.asList("$import", "import");
         private static final List<String> INCLUDE_KEYS = Arrays.asList("$include", "include");
         private static final List<String> MIXIN_KEYS = Arrays.asList("$mixin", "mixin");
+        private static final String EMPTY_STRING = "";
+        private static final Map<String, Object> EMPTY_MAP = Collections.emptyMap();
         private static final int DEFAULT_MAX_DEPTH = 8;
 
         private final Set<SourceFile> secondarySourceFiles;
@@ -938,12 +945,27 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         private void preprocessMapValues(Map<String, Object> map, String currentPath, int depth) {
+
+            // convert "run: {$import: <file>}" to "run: <file>"
+            if (map.containsKey("run")) {
+                Object value = map.get("run");
+                if (value instanceof Map) {
+                    String importValue = findValue(IMPORT_KEYS, (Map<String, Object>)value);
+                    if (importValue != null) {
+                        map.put("run", importValue);
+                    }
+                }
+            }
+            // preprocess all values in the map
+            // TODO combine with previous statement?
             map.replaceAll((k, v) -> preprocess(v, currentPath, depth));
+
+            // load and preprocess "run: <file>", leaving it unchanged if file does not exist
             Object runValue = map.get("run");
             if (runValue instanceof String) {
                 LOG.error("RUN " + currentPath + " " + depth + ": " + runValue);
                 String runPath = (String)runValue;
-                map.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), depth));
+                map.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, depth));
             }
         }
 
@@ -963,7 +985,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         public Object preprocess(Object obj, String currentPath, int depth) {
 
-            LOG.error("PREPROCESS " + currentPath + " " + depth + ": " + obj);
+            // LOG.error("PREPROCESS " + currentPath + " " + depth + ": " + obj);
 
             if (depth > maxDepth) {
                 error("maximum file depth exceeded");
@@ -981,18 +1003,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 String importPath = findValue(IMPORT_KEYS, map);
                 if (importPath != null) {
                     LOG.error("import " + importPath + " " + currentPath);
-                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), depth);
+                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), EMPTY_MAP, depth);
                 }
 
                 String includePath = findValue(INCLUDE_KEYS, map);
                 if (includePath != null) {
                     LOG.error("include " + includePath + " " + currentPath);
-                    return loadFile(resolvePath(includePath, currentPath));
+                    return loadFile(resolvePath(includePath, currentPath), EMPTY_STRING);
                 }
 
                 String mixinPath = findValue(MIXIN_KEYS, map);
                 if (mixinPath != null) {
-                    Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), depth);
+                    Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), EMPTY_MAP, depth);
                     if (mixin instanceof Map) {
                         removeKey(MIXIN_KEYS, map);
                         applyMixin(map, (Map<String, Object>)mixin);
@@ -1057,7 +1079,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath);
         }
 
-        private String loadFile(String loadPath) {
+        private String loadFile(String loadPath, String notFoundValue) {
             for (SourceFile sourceFile: secondarySourceFiles) {
                 if (sourceFile.getAbsolutePath().equals(loadPath)) {
                     LOG.error("loaded " + loadPath);
@@ -1066,11 +1088,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
             LOG.error("not found " + loadPath);
             error("file not found: " + loadPath);
-            return "";
+            return notFoundValue;
         }
 
-        private Object loadFileAndPreprocess(String loadPath, int depth) {
-            return preprocess(parse(loadFile(loadPath)), loadPath, depth + 1);
+        private Object loadFileAndPreprocess(String loadPath, Object notFoundValue, int depth) {
+            String content = loadFile(loadPath, null);
+            if (content == null) {
+                return notFoundValue;
+            }
+            return preprocess(parse(content), loadPath, depth + 1);
         }
 
         public void error(String message) {
