@@ -448,25 +448,27 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String runAsJson = gson.toJson(gson.toJsonTree(run));
             LOG.error("runAsJson " + runAsJson);
 
-            String toolPath = null;
+            String runId;
 
             if (isTool(runAsJson, yaml)) {
                 CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
                 stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(),
                     stepDockerRequirement);
                 stepToType.put(workflowStepId, toolType);
-                toolPath = preprocessor.getPath(clTool.getId().toString());
+                runId = convertToString(clTool.getId());
             } else if (isWorkflow(runAsJson, yaml)) {
                 Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
                 stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
                     stepDockerRequirement);
                 stepToType.put(workflowStepId, workflowType);
+                runId = convertToString(stepWorkflow.getId());
                 processWorkflow(stepWorkflow, stepDockerRequirement, depth + 1, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
             } else if (isExpressionTool(runAsJson, yaml)) {
                 ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
                 stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
                     stepDockerRequirement);
                 stepToType.put(workflowStepId, expressionToolType);
+                runId = convertToString(expressionTool.getId());
             } else {
                 LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
                 throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
@@ -484,12 +486,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
             }
 
-            if (toolPath != null) {
-                nodeDockerInfo.put(workflowStepId, new DockerInfo(toolPath, stepDockerRequirement, dockerUrl, dockerSpecifier));
+            String currentPath = preprocessor.getPath(runId);
+            if (currentPath == null) {
+                currentPath = "";
             }
+
+            nodeDockerInfo.put(workflowStepId, new DockerInfo(currentPath, stepDockerRequirement, dockerUrl, dockerSpecifier));
         }
     }
 
+    private String convertToString(Object object) {
+        return object != null ? object.toString() : null;
+    }
 
     private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources) {
         if (sources != null) {
@@ -943,13 +951,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             list.replaceAll(v -> preprocess(v, currentPath, depth));
         }
 
-        private boolean isTool(Map<String, Object> map) {
-            return Objects.equals(map.get("class"), "CommandLineTool");
+        private boolean needsId(Map<String, Object> map) {
+            String c = (String)map.get("class");
+            return Objects.equals(c, "CommandLineTool") || Objects.equals(c, "ExpressionTool") || Objects.equals(c, "Workflow");
         }
 
         private String addId(Map<String, Object> map) {
             map.putIfAbsent("id", java.util.UUID.randomUUID().toString());
-            return (String)map.get("id"); // TODO fix?
+            return (String)map.get("id");
         }
 
         public Object preprocess(Object obj, String currentPath, int depth) {
@@ -965,7 +974,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 Map map = (Map<String, Object>)obj;
 
-                if (isTool(map)) {
+                if (needsId(map)) {
                     idToPath.put(addId(map), currentPath);
                 }
 
