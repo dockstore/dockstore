@@ -58,7 +58,7 @@ POM as their parent.
         <powermock.version>2.0.4</powermock.version>
         <postgresql.version>42.2.23</postgresql.version>
         <mockito.version>3.12.4</mockito.version>
-        <cwlavro.version>2.0.4.6</cwlavro.version>
+        <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.7.0</okhttp.version>
         <slf4j.version>1.7.32</slf4j.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
