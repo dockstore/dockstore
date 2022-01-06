@@ -54,7 +54,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -319,8 +318,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             JSONObject cwlJson = new JSONObject(mapping);
 
             // CWLAvro only supports requirements and hints as an array, must be converted
-            cwlJson = convertJSONObjectToArray("requirements", this::canHaveRequirementsOrHints, cwlJson);
-            cwlJson = convertJSONObjectToArray("hints", this::canHaveRequirementsOrHints, cwlJson);
+            convertRequirementsAndHintsToArray(cwlJson);
 
             // Other useful variables
             String nodePrefix = "dockstore_";
@@ -624,12 +622,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     /**
      * Converts a JSON Object in CWL to JSON Array
      * @param keyName Name of key to convert (Ex. requirements, hints)
-     * @param ifMatches Criteria that the JSON Object must meet to be converted
      * @param entryJson JSON representation of file
      * @return Updated JSON representation of file
      */
-    private JSONObject convertJSONObjectToArray(String keyName, Predicate<JSONObject> ifMatches, JSONObject entryJson) {
-        if (entryJson.has(keyName) && (ifMatches == null || ifMatches.test(entryJson))) {
+    private void convertJSONObjectToArray(String keyName, JSONObject entryJson) {
+        if (entryJson.has(keyName)) {
             if (entryJson.get(keyName) instanceof JSONObject) {
                 JSONArray reqArray = new JSONArray();
                 JSONObject requirements = (JSONObject)entryJson.get(keyName);
@@ -641,24 +638,39 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 entryJson.put(keyName, reqArray);
             }
         }
+    }
 
-        // Recursively convert child JSONObjects.
-        // This code will not reach JSONObjects contained by a JSONArray that's contained by a JSONArray, but per my reading of the CWL grammar, that's ok.
-        for (String key: entryJson.keySet()) {
-            Object value = entryJson.get(key);
-            if (value instanceof JSONObject) {
-                convertJSONObjectToArray(keyName, ifMatches, (JSONObject)value);
-            } else if (value instanceof JSONArray) {
-                JSONArray array = (JSONArray)value;
-                for (int i = 0; i < array.length(); i++) {
-                    Object arrayValue = array.get(i);
-                    if (arrayValue instanceof JSONObject) {
-                        convertJSONObjectToArray(keyName, ifMatches, (JSONObject)arrayValue);
+    private void convertRequirementsAndHintsToArray(JSONObject entryJson) {
+
+        convertJSONObjectToArray("hints", entryJson);
+        convertJSONObjectToArray("requirements", entryJson);
+
+        // for each step, convert the hints and requirements in each step and in the entry that the step runs.
+        if (entryJson.has("steps")) {
+            Object steps = entryJson.get("steps");
+            List<Object> stepValues;
+            if (steps instanceof JSONObject) {
+                JSONObject stepsObject = (JSONObject)steps;
+                stepValues = stepsObject.keySet().stream().map(k -> stepsObject.get(k)).collect(Collectors.toList());
+            } else if (steps instanceof JSONArray) {
+                stepValues = ((JSONArray)steps).toList();
+            } else {
+                stepValues = Collections.emptyList();
+            }
+            for (Object stepValue: stepValues) {
+                if (stepValue instanceof JSONObject) {
+                    JSONObject stepObject = (JSONObject)stepValue;
+                    convertJSONObjectToArray("hints", stepObject);
+                    convertJSONObjectToArray("requirements", stepObject);
+                    if (stepObject.has("run")) {
+                        Object runValue = stepObject.get("run");
+                        if (runValue instanceof JSONObject) {
+                            convertRequirementsAndHintsToArray((JSONObject)runValue);
+                        }
                     }
                 }
             }
         }
-        return entryJson;
     }
 
     /**
