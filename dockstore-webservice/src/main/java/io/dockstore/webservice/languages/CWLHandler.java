@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -363,7 +364,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 return Optional.of(setupJSONDAG(nodePairs, toolInfoMap, stepToType, nodeDockerInfo));
             } else {
-                return Optional.of(getJSONTableToolContent(nodeDockerInfo));
+                Map<String, DockerInfo> toolDockerInfo = nodeDockerInfo.entrySet().stream().filter(e -> "tool".equals(stepToType.get(e.getKey()))).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                return Optional.of(getJSONTableToolContent(toolDockerInfo));
             }
         } catch (ClassCastException | YAMLException | JsonParseException ex) {
             final String exMsg = CWLHandler.CWL_PARSE_ERROR + ex.getMessage();
@@ -457,29 +459,25 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             String currentPath;
 
             if (run instanceof Map) {
-                if (isTool(runAsJson, yaml)) {
-                    CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
-                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(),
-                        stepDockerRequirement);
-                    stepToType.put(workflowStepId, toolType);
-                    currentPath = preprocessor.getPath(convertToString(clTool.getId()));
-                } else if (isWorkflow(runAsJson, yaml)) {
+                if (isWorkflow(runAsJson, yaml)) {
                     Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
-                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
-                        stepDockerRequirement);
+                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), stepDockerRequirement);
                     stepToType.put(workflowStepId, workflowType);
                     currentPath = preprocessor.getPath(convertToString(stepWorkflow.getId()));
                     processWorkflow(stepWorkflow, stepDockerRequirement, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                } else if (isTool(runAsJson, yaml)) {
+                    CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
+                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), stepDockerRequirement);
+                    stepToType.put(workflowStepId, toolType);
+                    currentPath = preprocessor.getPath(convertToString(clTool.getId()));
                 } else if (isExpressionTool(runAsJson, yaml)) {
                     ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
-                    stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
-                        stepDockerRequirement);
+                    stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), stepDockerRequirement);
                     stepToType.put(workflowStepId, expressionToolType);
                     currentPath = preprocessor.getPath(convertToString(expressionTool.getId()));
                 } else {
-                    // TODO handle error
-                    LOG.error("oh no!");
-                    throw new RuntimeException();
+                    LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
+                    throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
                 }
             } else {
                 stepToType.put(workflowStepId, "n/a");
