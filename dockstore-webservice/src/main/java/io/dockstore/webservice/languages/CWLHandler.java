@@ -339,7 +339,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.empty();
             }
 
-            processWorkflow(workflow, null, 0, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+            processWorkflow(workflow, null, 0, null, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             if (type == LanguageHandlerInterface.Type.DAG) {
                 // Determine steps that point to end
@@ -373,7 +373,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    private void processWorkflow(Workflow workflow, String defaultDockerPath, int depth, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+    private void processWorkflow(Workflow workflow, String defaultDockerPath, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         LOG.error("processWorkflow " + depth);
         Yaml yaml = new Yaml();
 
@@ -415,7 +415,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         // Iterate through steps to find dependencies and docker requirements
         for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
             WorkflowStep workflowStep = entry.getValue();
-            String workflowStepId = nodePrefix + entry.getKey();
+            String workflowStepId;
+            if (parentStepId == null) {
+                workflowStepId = nodePrefix + entry.getKey();
+            } else {
+                workflowStepId = parentStepId + "." + entry.getKey();
+            }
+            LOG.error("STEP " + workflowStepId);
 
             if (depth == 0) {
                 ArrayList<String> stepDependencies = new ArrayList<>();
@@ -463,7 +469,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                         stepDockerRequirement);
                     stepToType.put(workflowStepId, workflowType);
                     currentPath = preprocessor.getPath(convertToString(stepWorkflow.getId()));
-                    processWorkflow(stepWorkflow, stepDockerRequirement, depth + 1, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    processWorkflow(stepWorkflow, stepDockerRequirement, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 } else if (isExpressionTool(runAsJson, yaml)) {
                     ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
                     stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
@@ -480,6 +486,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 currentPath = run.toString();
             }
 
+            LOG.error("STEPDOCKERREQUIREMENT " + stepDockerRequirement);
             DockerSpecifier dockerSpecifier = null;
             String dockerUrl = null;
             if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
@@ -997,7 +1004,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 Map map = (Map<String, Object>)obj;
 
                 if (needsId(map)) {
-                    idToPath.put(addId(map), currentPath);
+                    idToPath.put(addId(map), stripLeadingSlash(currentPath));
                 }
 
                 String importPath = findValue(IMPORT_KEYS, map);
@@ -1032,6 +1039,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
 
             return obj;
+        }
+
+        private String stripLeadingSlash(String value) {
+            if (value.startsWith("/")) {
+                return value.substring(1);
+            }
+            return value;
         }
 
         private String findValue(Collection<String> keys, Map<String, Object> map) {
