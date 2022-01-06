@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -291,11 +292,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
 
-            // Expand $imports, $includes, $mixins, and run: <string>
-
+            // Expand $import, $include, etc.
             Preprocessor preprocessor = new Preprocessor(secondarySourceFiles);
             Object preprocessed = preprocessor.preprocess(mapping, mainDescriptorPath, 0);
-            // If the result of preprocessing is not a map, the CWL is not valid.
+            // If the preprocessed result is not a map, the CWL is not valid.
             if (!(preprocessed instanceof Map)) {
                 LOG.error("malformed cwl");
                 throw new CustomWebApplicationException("malformed cwl", HttpStatus.SC_UNPROCESSABLE_ENTITY);
@@ -319,8 +319,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             JSONObject cwlJson = new JSONObject(mapping);
 
             // CWLAvro only supports requirements and hints as an array, must be converted
-            cwlJson = convertJSONObjectToArray("requirements", cwlJson);
-            cwlJson = convertJSONObjectToArray("hints", cwlJson);
+            cwlJson = convertJSONObjectToArray("requirements", this::canHaveRequirementsOrHints, cwlJson);
+            cwlJson = convertJSONObjectToArray("hints", this::canHaveRequirementsOrHints, cwlJson);
 
             // Other useful variables
             String nodePrefix = "dockstore_";
@@ -617,54 +617,19 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return dockerPull;
     }
 
-    /**
-     * Checks secondary file for docker pull information
-     *
-     * @param stepDockerRequirement
-     * @param secondaryFileContents
-     * @param gson
-     * @param yaml
-     * @return
-     */
-    private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) {
-        if (secondaryFileContents != null) {
-            Map<String, Object> entryMapping = yaml.loadAs(secondaryFileContents, Map.class);
-            JSONObject entryJson = new JSONObject(entryMapping);
-
-            List<Object> cltRequirements = null;
-            List<Object> cltHints = null;
-
-            // CWLAvro only supports requirements and hints as an array, must be converted
-            entryJson = convertJSONObjectToArray("requirements", entryJson);
-            entryJson = convertJSONObjectToArray("hints", entryJson);
-
-            if (isExpressionTool(secondaryFileContents, yaml)) {
-                final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), ExpressionTool.class);
-                cltRequirements = expressionTool.getRequirements();
-                cltHints = expressionTool.getHints();
-            } else if (isTool(secondaryFileContents, yaml)) {
-                final CommandLineTool commandLineTool = gson.fromJson(entryJson.toString(), CommandLineTool.class);
-                cltRequirements = commandLineTool.getRequirements();
-                cltHints = commandLineTool.getHints();
-            } else if (isWorkflow(secondaryFileContents, yaml)) {
-                final Workflow workflow = gson.fromJson(entryJson.toString(), Workflow.class);
-                cltRequirements = workflow.getRequirements();
-                cltHints = workflow.getHints();
-            }
-            // Check requirements and hints for docker pull info
-            stepDockerRequirement = getRequirementOrHint(cltRequirements, cltHints, stepDockerRequirement);
-        }
-        return stepDockerRequirement;
+    private boolean canHaveRequirementsOrHints(JSONObject object) {
+        return object.has("class") || object.has("run");
     }
 
     /**
      * Converts a JSON Object in CWL to JSON Array
      * @param keyName Name of key to convert (Ex. requirements, hints)
+     * @param ifMatches Criteria that the JSON Object must meet to be converted
      * @param entryJson JSON representation of file
      * @return Updated JSON representation of file
      */
-    private JSONObject convertJSONObjectToArray(String keyName, JSONObject entryJson) {
-        if (entryJson.has(keyName)) {
+    private JSONObject convertJSONObjectToArray(String keyName, Predicate<JSONObject> ifMatches, JSONObject entryJson) {
+        if (entryJson.has(keyName) && (ifMatches == null || ifMatches.test(entryJson))) {
             if (entryJson.get(keyName) instanceof JSONObject) {
                 JSONArray reqArray = new JSONArray();
                 JSONObject requirements = (JSONObject)entryJson.get(keyName);
@@ -676,13 +641,21 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 entryJson.put(keyName, reqArray);
             }
         }
+
         // Recursively convert child JSONObjects.
-        // TODO: This won't convert JSONObjects that are nested inside an array,
-        // such as when the workflow steps are expressed as an array, rather than a map.
+        // This code will not reach JSONObjects contained by a JSONArray that's contained by a JSONArray, but per my reading of the CWL grammar, that's ok.
         for (String key: entryJson.keySet()) {
             Object value = entryJson.get(key);
             if (value instanceof JSONObject) {
-                convertJSONObjectToArray(keyName, (JSONObject)value);
+                convertJSONObjectToArray(keyName, ifMatches, (JSONObject)value);
+            } else if (value instanceof JSONArray) {
+                JSONArray array = (JSONArray)value;
+                for (int i = 0; i < array.length(); i++) {
+                    Object arrayValue = array.get(i);
+                    if (arrayValue instanceof JSONObject) {
+                        convertJSONObjectToArray(keyName, ifMatches, (JSONObject)arrayValue);
+                    }
+                }
             }
         }
         return entryJson;

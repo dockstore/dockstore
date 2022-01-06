@@ -100,7 +100,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         // Repo: test_workflow_cwl
         // Branch: master
         // Test: normal cwl workflow DAG
-        // Return: JSON string with two tools, in grep-and-count.cwl and arguments.cwl
+        // Return: JSON string with three tools, in arguments.cwl, grep.cwl, and wc.cwl
 
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
         int countNode = countToolInJSON(strings);
