@@ -110,12 +110,11 @@ public class ToolsWorkflowTestIT extends BaseIT {
         Assert.assertFalse("tool should not have untar since it has no docker image", strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
-            "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","
-                + "\"link\":\"https://hub.docker.com/_/java\""));
-        Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
-                "\"id\":\"wrkflow\"," + "\"file\":\"grep-and-count.cwl\"," + "\"docker\":\"java:7\","
-                        + "\"link\":\"https://hub.docker.com/_/java\""));
-
+            "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\",\"link\":\"https://hub.docker.com/_/java\""));
+        Assert.assertTrue("workflow.wc docker and link should not be blank" + strings.get(0), strings.get(0).contains(
+            "\"id\":\"wrkflow.wc\"," + "\"file\":\"wc.cwl\"," + "\"docker\":\"java:7\",\"link\":\"https://hub.docker.com/_/java\""));
+        Assert.assertTrue("workflow.grep docker and link should not be blank" + strings.get(0), strings.get(0).contains(
+            "\"id\":\"wrkflow.grep\"," + "\"file\":\"grep.cwl\"," + "\"docker\":\"java:7\",\"link\":\"https://hub.docker.com/_/java\""));
     }
 
     @Test

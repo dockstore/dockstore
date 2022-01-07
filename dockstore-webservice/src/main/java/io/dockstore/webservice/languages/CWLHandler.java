@@ -951,7 +951,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // convert "run: {$import: <file>}" to "run: <file>"
             Object runValue = map.get("run");
             if (runValue instanceof Map) {
-                String importValue = findValue(IMPORT_KEYS, (Map<String, Object>)runValue);
+                String importValue = findString(IMPORT_KEYS, (Map<String, Object>)runValue);
                 if (importValue != null) {
                     map.put("run", importValue);
                 }
@@ -973,19 +973,17 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             list.replaceAll(v -> preprocess(v, currentPath, depth));
         }
 
-        private boolean needsId(Map<String, Object> map) {
+        private boolean isEntry(Map<String, Object> map) {
             String c = (String)map.get("class");
             return Objects.equals(c, "CommandLineTool") || Objects.equals(c, "ExpressionTool") || Objects.equals(c, "Workflow");
         }
 
-        private String addId(Map<String, Object> map) {
+        private String addIdIfAbsent(Map<String, Object> map) {
             map.putIfAbsent("id", java.util.UUID.randomUUID().toString());
             return (String)map.get("id");
         }
 
         public Object preprocess(Object obj, String currentPath, int depth) {
-
-            // LOG.error("PREPROCESS " + currentPath + " " + depth + ": " + obj);
 
             if (depth > maxDepth) {
                 handleMax("maximum file depth exceeded");
@@ -996,23 +994,21 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 Map map = (Map<String, Object>)obj;
 
-                if (needsId(map)) {
-                    idToPath.put(addId(map), stripLeadingSlash(currentPath));
+                if (isEntry(map)) {
+                    idToPath.put(addIdIfAbsent(map), stripLeadingSlash(currentPath));
                 }
 
-                String importPath = findValue(IMPORT_KEYS, map);
+                String importPath = findString(IMPORT_KEYS, map);
                 if (importPath != null) {
-                    LOG.error("import " + importPath + " " + currentPath);
                     return loadFileAndPreprocess(resolvePath(importPath, currentPath), EMPTY_MAP, depth);
                 }
 
-                String includePath = findValue(INCLUDE_KEYS, map);
+                String includePath = findString(INCLUDE_KEYS, map);
                 if (includePath != null) {
-                    LOG.error("include " + includePath + " " + currentPath);
                     return loadFile(resolvePath(includePath, currentPath), EMPTY_STRING);
                 }
 
-                String mixinPath = findValue(MIXIN_KEYS, map);
+                String mixinPath = findString(MIXIN_KEYS, map);
                 if (mixinPath != null) {
                     Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), EMPTY_MAP, depth);
                     if (mixin instanceof Map) {
@@ -1039,7 +1035,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return value;
         }
 
-        private String findValue(Collection<String> keys, Map<String, Object> map) {
+        private String findString(Collection<String> keys, Map<String, Object> map) {
             String key = findKey(keys, map);
             if (key == null) {
                 return null;
@@ -1068,9 +1064,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
-            mixin.forEach((k, v) -> {
-                to.putIfAbsent(k, v);
-            });
+            mixin.forEach((k, v) -> to.putIfAbsent(k, v));
         }
 
         private Object parse(String yaml) {
@@ -1079,7 +1073,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         private String resolvePath(String childPath, String parentPath) {
-            LOG.error("resolve " + childPath + " " + parentPath + " " + LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath));
+            if (childPath.startsWith("http://") || childPath.startsWith("https://") || childPath.startsWith("file://")) {
+                return null;
+            }
+            if (childPath.startsWith("file:")) {
+                childPath = childPath.substring("file:".length());
+            }
             return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath);
         }
 
