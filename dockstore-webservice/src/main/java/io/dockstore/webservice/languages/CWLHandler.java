@@ -662,7 +662,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             List<Object> stepValues;
             if (steps instanceof JSONObject) {
                 JSONObject stepsObject = (JSONObject)steps;
-                stepValues = stepsObject.keySet().stream().map(k -> stepsObject.get(k)).collect(Collectors.toList());
+                stepValues = stepsObject.keySet().stream().map(stepsObject::get).collect(Collectors.toList());
             } else if (steps instanceof JSONArray) {
                 stepValues = ((JSONArray)steps).toList();
             } else {
@@ -1073,7 +1073,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
-            mixin.forEach((k, v) -> to.putIfAbsent(k, v));
+            mixin.forEach(to::putIfAbsent);
         }
 
         private Object parse(String yaml) {
@@ -1082,11 +1082,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         private String resolvePath(String childPath, String parentPath) {
-            if (childPath.startsWith("http://") || childPath.startsWith("https://") || childPath.startsWith("file://")) {
+            if (childPath.startsWith("http://") || childPath.startsWith("https://")) {
                 return null;
             }
             if (childPath.startsWith("file:")) {
-                childPath = childPath.substring("file:".length());
+                // the path in a file url is always absolute
+                // see https://datatracker.ietf.org/doc/html/rfc8089
+                childPath = childPath.replaceFirst("^file:/*+", "/");
             }
             return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath);
         }
