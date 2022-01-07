@@ -920,39 +920,48 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private static final List<String> MIXIN_KEYS = Arrays.asList("$mixin", "mixin");
         private static final String EMPTY_STRING = "";
         private static final Map<String, Object> EMPTY_MAP = Collections.emptyMap();
-        private static final int DEFAULT_MAX_DEPTH = 8;
+        private static final int DEFAULT_MAX_DEPTH = 100;
+        private static final long DEFAULT_MAX_CHAR_COUNT = 16L * 1024L * 1024L;
+        private static final long DEFAULT_MAX_FILE_COUNT = 10000L;
 
         private final Set<SourceFile> secondarySourceFiles;
-        private final int maxDepth;
         private final Map<String, String> idToPath;
+        private long charCount;
+        private long fileCount;
+        private final int maxDepth;
+        private final long maxCharCount;
+        private final long maxFileCount;
 
-        public Preprocessor(Set<SourceFile> secondarySourceFiles, int maxDepth) {
+        public Preprocessor(Set<SourceFile> secondarySourceFiles, int maxDepth, long maxCharCount, long maxFileCount) {
             this.secondarySourceFiles = secondarySourceFiles;
-            this.maxDepth = maxDepth;
             this.idToPath = new HashMap<>();
+            this.charCount = 0;
+            this.fileCount = 0;
+            this.maxDepth = maxDepth;
+            this.maxCharCount = maxCharCount;
+            this.maxFileCount = maxFileCount;
         }
 
         public Preprocessor(Set<SourceFile> secondarySourceFiles) {
-            this(secondarySourceFiles, DEFAULT_MAX_DEPTH);
+            this(secondarySourceFiles, DEFAULT_MAX_DEPTH, DEFAULT_MAX_CHAR_COUNT, DEFAULT_MAX_FILE_COUNT);
         }
 
         private void preprocessMapValues(Map<String, Object> map, String currentPath, int depth) {
 
             // convert "run: {$import: <file>}" to "run: <file>"
-            if (map.containsKey("run")) {
-                Object value = map.get("run");
-                if (value instanceof Map) {
-                    String importValue = findValue(IMPORT_KEYS, (Map<String, Object>)value);
-                    if (importValue != null) {
-                        map.put("run", importValue);
-                    }
+            Object runValue = map.get("run");
+            if (runValue instanceof Map) {
+                String importValue = findValue(IMPORT_KEYS, (Map<String, Object>)runValue);
+                if (importValue != null) {
+                    map.put("run", importValue);
                 }
             }
+
             // preprocess all values in the map
             map.replaceAll((k, v) -> preprocess(v, currentPath, depth));
 
             // load and preprocess "run: <file>", leaving it unchanged if the file does not exist
-            Object runValue = map.get("run");
+            runValue = map.get("run");
             if (runValue instanceof String) {
                 LOG.error("RUN " + currentPath + " " + depth + ": " + runValue);
                 String runPath = (String)runValue;
@@ -979,7 +988,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // LOG.error("PREPROCESS " + currentPath + " " + depth + ": " + obj);
 
             if (depth > maxDepth) {
-                error("maximum file depth exceeded");
+                handleMax("maximum file depth exceeded");
                 return obj;
             }
 
@@ -1009,8 +1018,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     if (mixin instanceof Map) {
                         removeKey(MIXIN_KEYS, map);
                         applyMixin(map, (Map<String, Object>)mixin);
-                    } else {
-                        error("a mixin must be a map");
                     }
                 }
 
@@ -1041,7 +1048,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             if (value instanceof String) {
                 return (String)value;
             }
-            error("value must be a string");
             return null;
         }
 
@@ -1078,14 +1084,25 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         private String loadFile(String loadPath, String notFoundValue) {
+            fileCount++;
+            if (fileCount > maxFileCount) {
+                handleMax("maximum file count exceeded");
+                return notFoundValue;
+            }
+
             for (SourceFile sourceFile: secondarySourceFiles) {
                 if (sourceFile.getAbsolutePath().equals(loadPath)) {
-                    LOG.error("loaded " + loadPath);
-                    return sourceFile.getContent();
+                    String content = sourceFile.getContent();
+                    charCount += content.length();
+                    if (charCount > maxCharCount) {
+                        handleMax("maximum character count exceeded");
+                        return notFoundValue;
+                    }
+                    LOG.debug("loaded " + loadPath);
+                    return content;
                 }
             }
             LOG.error("not found " + loadPath);
-            error("file not found: " + loadPath);
             return notFoundValue;
         }
 
@@ -1097,16 +1114,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return preprocess(parse(content), loadPath, depth + 1);
         }
 
-        public void error(String message) {
-            LOG.info(message);
+        public void handleMax(String message) {
+            String fullMessage = "CWL might be recursive: " + message;
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
 
         public String getPath(String id) {
             return idToPath.get(id);
-        }
-
-        public Set<String> getToolIds() {
-            return idToPath.keySet();
         }
     }
 }
