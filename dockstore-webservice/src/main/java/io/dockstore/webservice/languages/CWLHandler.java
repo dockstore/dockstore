@@ -204,6 +204,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> imports = new HashMap<>();
+        processImport(repositoryId, content, version, sourceCodeRepoInterface, workingDirectoryForFile, imports);
+        return imports;
+    }
+
+    private void processImport(String repositoryId, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile, Map<String, SourceFile> imports) {
+
+        LOG.error("PROCESSIMPORT " + workingDirectoryForFile);
         Yaml yaml = new Yaml();
         try {
             Yaml safeYaml = new Yaml(new SafeConstructor());
@@ -214,15 +222,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         } catch (YAMLException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml", e);
         }
-
-        Map<String, SourceFile> recursiveImports = new HashMap<>();
-        for (Map.Entry<String, SourceFile> importFile : imports.entrySet()) {
-            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, importFile.getValue().getContent(), version, sourceCodeRepoInterface, importFile.getKey());
-            recursiveImports.putAll(sourceFiles);
-        }
-
-        recursiveImports.putAll(imports);
-        return recursiveImports;
     }
 
     /**
@@ -546,7 +545,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (mapValue instanceof String) {
                     setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
                     absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
-                    handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
+                    handleAndProcessImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
                 // for workflows, bare files may be referenced. See https://github.com/dockstore/dockstore/issues/208
@@ -556,13 +555,23 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (mapValue instanceof String) {
                     setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
                     absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
-                    handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
+                    handleAndProcessImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used
                     handleMap(repositoryId, parentFilePath, version, imports, (Map)mapValue, sourceCodeRepoInterface);
                 }
             } else {
                 handleMapValue(repositoryId, parentFilePath, version, imports, mapValue, sourceCodeRepoInterface);
+            }
+        }
+    }
+
+    private void handleAndProcessImport(String repositoryId, Version version, Map<String, SourceFile> imports, String relativePath, SourceCodeRepoInterface sourceCodeRepoInterface, String absolutePath) {
+        if (!imports.containsKey(absolutePath)) {
+            handleImport(repositoryId, version, imports, relativePath, sourceCodeRepoInterface, absolutePath);
+            SourceFile imported = imports.get(absolutePath);
+            if (imported != null) {
+                processImport(repositoryId, imported.getContent(), version, sourceCodeRepoInterface, absolutePath, imports);
             }
         }
     }
@@ -920,7 +929,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private static final List<String> MIXIN_KEYS = Arrays.asList("$mixin", "mixin");
         private static final String EMPTY_STRING = "";
         private static final Map<String, Object> EMPTY_MAP = Collections.emptyMap();
-        private static final int DEFAULT_MAX_DEPTH = 100;
+        private static final int DEFAULT_MAX_DEPTH = 20;
         private static final long DEFAULT_MAX_CHAR_COUNT = 16L * 1024L * 1024L;
         private static final long DEFAULT_MAX_FILE_COUNT = 10000L;
 
@@ -1115,8 +1124,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
         public void handleMax(String message) {
             String fullMessage = "CWL might be recursive: " + message;
-            LOG.error(message);
-            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            LOG.error(fullMessage);
+            throw new CustomWebApplicationException(fullMessage, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
 
         public String getPath(String id) {
