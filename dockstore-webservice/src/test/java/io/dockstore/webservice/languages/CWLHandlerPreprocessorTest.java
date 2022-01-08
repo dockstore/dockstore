@@ -1,11 +1,11 @@
 package io.dockstore.webservice.languages;
 
-import static io.dockstore.webservice.languages.CWLHandler.Preprocessor;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.languages.CWLHandler.Preprocessor;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,76 +36,85 @@ public class CWLHandlerPreprocessorTest {
         return new Yaml().load(yaml);
     }
 
+    private Object preprocess(String content, Set<SourceFile> files) {
+        Preprocessor pre = new Preprocessor(files);
+        return pre.preprocess(parse(content), "/a", 0);
+    }
+
     @Test
     public void testImport() {
         final String imported = "test: value";
-        Preprocessor pre = new Preprocessor(set(file("/b", imported)));
-        Object result = pre.preprocess(parse("$import: b"), "/a", 0);
-        Assert.assertEquals(parse(imported), result);
+        Assert.assertEquals(parse(imported), preprocess("$import: b", set(file("/b", imported))));
     }
 
     @Test
     public void testInclude() {
         final String included = "abcde";
-        Preprocessor pre = new Preprocessor(set(file("/b", included)));
-        Object result = pre.preprocess(parse("$import: b"), "/a", 0);
-        Assert.assertEquals(included, result);
+        Assert.assertEquals(included, preprocess("$import: b", set(file("/b", included))));
     }
 
     @Test
     public void testMixin() {
-        Preprocessor pre = new Preprocessor(set(file("/b", "a: x\nb: y")));
-        Object result = pre.preprocess(parse("a: z\n$mixin: b"), "/a", 0);
-        Assert.assertEquals(parse("a: z\nb: y"), result);
+        Assert.assertEquals(parse("a: z\nb: y"), preprocess("a: z\n$mixin: b", set(file("/b", "a: x\nb: y"))));
     }
 
     @Test
     public void testRun() {
         final String runContent = "something: torun";
-        Preprocessor pre = new Preprocessor(set(file("/b", runContent)));
-        Object result = pre.preprocess(parse("run: b"), "/a", 0);
-        Assert.assertEquals(parse("run:\n  " + runContent), result);
+        Assert.assertEquals(parse("run:\n  " + runContent), preprocess("run: b", set(file("/b", runContent))));
     }
 
     @Test
     public void testMissingFile() {
         Preprocessor pre = new Preprocessor(set());
-        Assert.assertEquals(Collections.emptyMap(), pre.preprocess(parse("$import: b"), "/a", 0));
-        Assert.assertEquals("", pre.preprocess(parse("$include: b"), "/a", 0));
-        Assert.assertEquals(parse("a: x"), pre.preprocess(parse("a: x\n$mixin: b"), "/a", 0));
+        Assert.assertEquals(Collections.emptyMap(), preprocess("$import: b", set()));
+        Assert.assertEquals("", preprocess("$include: b", set()));
+        Assert.assertEquals(parse("a: x"), preprocess("a: x\n$mixin: b", set()));
     }
 
     @Test
     public void testMultilevelImports() {
         final String imported = "levels: two";
-        Preprocessor pre = new Preprocessor(set(file("/b", "$import: c"), file("/c", imported)));
-        Object result = pre.preprocess(parse("$import: b"), "/a", 0);
-        Assert.assertEquals(parse(imported), result);
+        Assert.assertEquals(parse(imported), preprocess("$import: b", set(file("/b", "$import: c"), file("/c", imported))));
     }
 
     @Test
     public void testHttpUrlImport() {
-        Assert.assertEquals(Collections.emptyMap(), new Preprocessor(set()).preprocess(parse("$import: http://www.foo.com/bar"), "/a", 0));
-        Assert.assertEquals(Collections.emptyMap(), new Preprocessor(set()).preprocess(parse("$import: https://www.foo.com/bar"), "/a", 0));
+        Assert.assertEquals(Collections.emptyMap(), preprocess("$import: http://www.foo.com/bar", set()));
+        Assert.assertEquals(Collections.emptyMap(), preprocess("$import: https://www.foo.com/bar", set()));
     }
 
     @Test
     public void testFileUrlImport() {
         final String imported = "some: thing";
-        Preprocessor pre = new Preprocessor(set(file("/b", imported)));
-        Object result = pre.preprocess(parse("$import: file://b"), "/a", 0);
-        Assert.assertEquals(parse(imported), result);
+        Assert.assertEquals(parse(imported), preprocess("$import: file://b", set(file("/b", imported))));
     }
 
-    @Test
+    @Test(expected = CustomWebApplicationException.class)
     public void testMaxDepth() {
+        // preprocess a file that recursively imports itself
+        preprocess("$import: a", set(file("/a", "$import: a")));
     }
 
-    @Test
+    private void preprocessManyIncludes(int includeCount, int includeSize) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < includeCount; i++) {
+            builder.append("a" + i + ":\n  $include: b\n");
+        }
+        char[] chars = new char[includeSize];
+        Arrays.fill(chars, 'x');
+        preprocess(builder.toString(), set(file("/b", new String(chars))));
+    }
+
+    @Test(expected = CustomWebApplicationException.class)
     public void testMaxCharCount() {
+        // preprocess a moderate number of very large includes, which add up to >1GB
+        preprocessManyIncludes(100, 16 * 1024 * 1024);
     }
 
-    @Test
+    @Test(expected = CustomWebApplicationException.class)
     public void testMaxFileCount() {
+        // preprocess a very large number of zero-length includes
+        preprocessManyIncludes(100000, 0);
     }
 }
