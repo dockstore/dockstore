@@ -42,6 +42,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.TopicSelectionEnum;
 import io.swagger.client.model.WorkflowVersion;
 import java.util.ArrayList;
 import java.util.List;
@@ -624,11 +625,14 @@ public class GeneralWorkflowIT extends BaseIT {
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
                         "test-update-workflow", DescriptorLanguage.CWL.toString(),
                         "/test.json");
+
+        Assert.assertEquals("Should default to automatic", TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
         
         //update the forumUrl to hello.com
         final String newTopic = "newTopic";
         workflow.setForumUrl("hello.com");
         workflow.setTopicManual(newTopic);
+        workflow.setTopicSelection(TopicSelectionEnum.MANUAL);
         Workflow updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
         //check the workflow's forumUrl is hello.com
@@ -637,6 +641,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
 
         Assert.assertEquals(newTopic, updatedWorkflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, updatedWorkflow.getTopicSelection());
     }
 
     @Test
