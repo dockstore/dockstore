@@ -19,7 +19,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * Tests CWLHandler.Preprocessor
  */
 public class CWLHandlerPreprocessorTest {
-   
+
     private SourceFile file(String absolutePath, String content) {
         SourceFile sourceFile = mock(SourceFile.class);
         when(sourceFile.getAbsolutePath()).thenReturn(absolutePath);
@@ -37,8 +37,12 @@ public class CWLHandlerPreprocessorTest {
     }
 
     private Object preprocess(String content, Set<SourceFile> files) {
+        return preprocess(content, files, "/a");
+    }
+
+    private Object preprocess(String content, Set<SourceFile> files, String rootPath) {
         Preprocessor pre = new Preprocessor(files);
-        return pre.preprocess(parse(content), "/a", 0);
+        return pre.preprocess(parse(content), rootPath, 0);
     }
 
     @Test
@@ -76,6 +80,18 @@ public class CWLHandlerPreprocessorTest {
     public void testMultilevelImports() {
         final String imported = "levels: two";
         Assert.assertEquals(parse(imported), preprocess("$import: b", set(file("/b", "$import: c"), file("/c", imported))));
+    }
+
+    @Test
+    public void testRelativeImport() {
+        final String imported = "some: content";
+        Assert.assertEquals(parse(imported), preprocess("$import: subsub/b", set(file("/sub/subsub/b", imported)), "/sub/a"));
+    }
+
+    @Test
+    public void testAbsoluteImport() {
+        final String imported = "some: content";
+        Assert.assertEquals(parse(imported), preprocess("$import: /b", set(file("/b", imported)), "/sub/a"));
     }
 
     @Test
