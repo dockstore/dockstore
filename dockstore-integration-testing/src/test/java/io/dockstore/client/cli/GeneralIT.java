@@ -1389,7 +1389,7 @@ public class GeneralIT extends BaseIT {
 
         // check the tool's topicManual and topicSelection
         assertEquals(newTopic, dockstoreTool.getTopicManual());
-        assertEquals("Should default to automatic", TopicSelectionEnum.AUTOMATIC, toolTest.getTopicSelection());
+        assertEquals(TopicSelectionEnum.MANUAL, toolTest.getTopicSelection());
     }
 
     /**
