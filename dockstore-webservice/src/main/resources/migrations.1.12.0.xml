@@ -248,4 +248,10 @@
             alter table version_metadata add constraint check_valid_doi check (doiurl like '10._%/_%' or doiurl is null);
         </sql>
     </changeSet>
+    <changeSet author="svonworl" id="clearCwlToolTableJson">
+        <!-- DOCK-1548 improves CWL parsing, so clear the tool table json from all CWL workflow versions so that it will be recalculated. -->
+        <sql dbms="postgresql">
+            update workflowversion set tooltablejson = null where workflowpath like '%.cwl';
+        </sql>
+    </changeSet>
 </databaseChangeLog>

@@ -957,7 +957,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 Map map = (Map<String, Object>)obj;
 
                 if (isEntry(map)) {
-                    idToPath.put(addIdIfAbsent(map), stripLeadingSlash(currentPath));
+                    idToPath.put(setUniqueIdIfAbsent(map), stripLeadingSlash(currentPath));
                 }
 
                 String importPath = findString(IMPORT_KEYS, map);
@@ -1021,8 +1021,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return Objects.equals(c, "CommandLineTool") || Objects.equals(c, "ExpressionTool") || Objects.equals(c, "Workflow");
         }
 
-        private String addIdIfAbsent(Map<String, Object> map) {
-            map.putIfAbsent("id", java.util.UUID.randomUUID().toString());
+        private String setUniqueIdIfAbsent(Map<String, Object> map) {
+            String currentId = (String)map.get("id");
+            if (currentId == null || idToPath.containsKey(currentId)) {
+                map.put("id", java.util.UUID.randomUUID().toString());
+            }
             return (String)map.get("id");
         }
 
