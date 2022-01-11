@@ -77,6 +77,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with " + CWLHandler.CWL_VERSION_PREFIX + ", detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
     public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
+    private static final String NODE_PREFIX = "dockstore_";
+    private static final String TOOL_TYPE = "tool";
+    private static final String WORKFLOW_TYPE = "workflow";
+    private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
+
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
@@ -321,12 +326,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             // CWLAvro only supports requirements and hints as an array, must be converted
             convertRequirementsAndHintsToArray(cwlJson);
 
-            // Other useful variables
-            String nodePrefix = "dockstore_";
-            String toolType = "tool";
-            String workflowType = "workflow";
-            String expressionToolType = "expressionTool";
-
             // Set up GSON for JSON parsing
             Gson gson = CWL.getTypeSafeCWLToolDocument();
 
@@ -345,7 +344,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
                     Object sources = workflowOutputParameter.getOutputSource();
-                    processDependencies(nodePrefix, endDependencies, sources);
+                    processDependencies(NODE_PREFIX, endDependencies, sources);
                 }
 
                 toolInfoMap.put("UniqueEndKey", new ToolInfo(null, endDependencies));
@@ -374,12 +373,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     private void processWorkflow(Workflow workflow, String defaultDockerPath, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         Yaml yaml = new Yaml();
-
-        // Other useful variables
-        String nodePrefix = "dockstore_";
-        String toolType = "tool";
-        String workflowType = "workflow";
-        String expressionToolType = "expressionTool";
 
         Gson gson = CWL.getTypeSafeCWLToolDocument();
 
@@ -415,7 +408,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             WorkflowStep workflowStep = entry.getValue();
             String workflowStepId;
             if (parentStepId == null) {
-                workflowStepId = nodePrefix + entry.getKey();
+                workflowStepId = NODE_PREFIX + entry.getKey();
             } else {
                 workflowStepId = parentStepId + "." + entry.getKey();
             }
@@ -427,7 +420,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (workflowStep.getIn() != null) {
                     for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
                         Object sources = workflowStepInput.getSource();
-                        processDependencies(nodePrefix, stepDependencies, sources);
+                        processDependencies(NODE_PREFIX, stepDependencies, sources);
                     }
                     if (stepDependencies.size() > 0) {
                         toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
@@ -452,18 +445,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (isWorkflow(runAsJson, yaml)) {
                     Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
                     stepDockerPath = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), stepDockerPath);
-                    stepToType.put(workflowStepId, workflowType);
+                    stepToType.put(workflowStepId, WORKFLOW_TYPE);
                     currentPath = preprocessor.getPath(convertToString(stepWorkflow.getId()));
                     processWorkflow(stepWorkflow, stepDockerPath, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 } else if (isTool(runAsJson, yaml)) {
                     CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
                     stepDockerPath = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), stepDockerPath);
-                    stepToType.put(workflowStepId, toolType);
+                    stepToType.put(workflowStepId, TOOL_TYPE);
                     currentPath = preprocessor.getPath(convertToString(clTool.getId()));
                 } else if (isExpressionTool(runAsJson, yaml)) {
                     ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
                     stepDockerPath = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), stepDockerPath);
-                    stepToType.put(workflowStepId, expressionToolType);
+                    stepToType.put(workflowStepId, EXPRESSION_TOOL_TYPE);
                     currentPath = preprocessor.getPath(convertToString(expressionTool.getId()));
                 } else {
                     LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
@@ -476,7 +469,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
             DockerSpecifier dockerSpecifier = null;
             String dockerUrl = null;
-            if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerPath)) {
+            String stepType = stepToType.get(workflowStepId);
+            if ((stepType.equals(WORKFLOW_TYPE) || stepType.equals(TOOL_TYPE)) && !Strings.isNullOrEmpty(stepDockerPath)) {
                 // CWL doesn't support parameterized docker pulls. Must be a string.
                 dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerPath, DockerImageReference.LITERAL);
                 dockerUrl = getURLFromEntry(stepDockerPath, dao, dockerSpecifier);
