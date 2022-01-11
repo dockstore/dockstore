@@ -192,7 +192,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
             ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
-            AppTool.class, Category.class) {
+            AppTool.class, Category.class, FullWorkflowPath.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();

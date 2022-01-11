@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -152,7 +153,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     /**
-     * Finds a BioWorkflow or Service matching the given path.
+     * Finds a BioWorkflow, Apptool, or Service matching the given path.
      *
      * Initial implementation currently calls findByPath and filters the result; would ideally do it as a query with
      * no filtering instead.
@@ -174,6 +175,32 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             throw new CustomWebApplicationException("Entries with the same path exist", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
+    }
+
+    /**
+     * Find if a path already exists in the BioWorkflow or Apptool table since we do not want duplicate names between them.
+     * If creating an apptool, check the workflow table and vice versa.
+     *
+     * @param path
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    public <T extends Workflow> void checkForDuplicateAcrossTables(String path, Class<T> clazz) {
+        final List<Workflow> workflows = findByPath(path, false);
+        final List<T> filteredWorkflows = workflows.stream()
+            .filter(workflow -> workflow.getClass().equals(clazz))
+            .map(clazz::cast)
+            .collect(Collectors.toList());
+        if (filteredWorkflows.size() > 0) {
+            String workflowType;
+            if (clazz == AppTool.class) {
+                workflowType = "tool";
+            } else {
+                workflowType = "workflow";
+            }
+            throw new CustomWebApplicationException("A " + workflowType + " with the same path already exists. Add the 'name' field to the new or already existing entry.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})

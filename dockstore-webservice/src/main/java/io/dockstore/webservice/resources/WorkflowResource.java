@@ -1950,6 +1950,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (duplicate.isPresent()) {
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
+
+        // Check that there isn't a duplicate in the Apptool table.
+        workflowDAO.checkForDuplicateAcrossTables(workflow.getWorkflowPath(), AppTool.class);
         final long workflowID = workflowDAO.create(workflow);
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
         workflowFromDB.getUsers().add(user);
