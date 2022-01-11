@@ -848,71 +848,71 @@ public class WebhookIT extends BaseIT {
     }
 
     // .dockstore.yml in test repo needs to change to add a 'name' field to one of them. Should also include another branch that doesn't keep the name field
-        @Test
-        public void testTools() throws Exception {
-            CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-            final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-            final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-            io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
-            WorkflowsApi client = new WorkflowsApi(webClient);
+    @Test
+    public void testTools() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+        WorkflowsApi client = new WorkflowsApi(webClient);
 
-            client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/feature/seab-3734/addNameField", installationId);
-            Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
-            Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions");
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/feature/seab-3734/addNameField", installationId);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
+        Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions");
 
-            assertNotNull(workflow);
-            assertNotNull(appTool);
+        assertNotNull(workflow);
+        assertNotNull(appTool);
 
-            assertEquals(1, appTool.getWorkflowVersions().size());
-            assertEquals(1, workflow.getWorkflowVersions().size());
+        assertEquals(1, appTool.getWorkflowVersions().size());
+        assertEquals(1, workflow.getWorkflowVersions().size());
 
-            Long userId = usersApi.getUser().getId();
-            List<io.dockstore.openapi.client.model.Workflow> usersAppTools = usersApi.userAppTools(userId);
-            assertEquals(1, usersAppTools.size());
+        Long userId = usersApi.getUser().getId();
+        List<io.dockstore.openapi.client.model.Workflow> usersAppTools = usersApi.userAppTools(userId);
+        assertEquals(1, usersAppTools.size());
 
-            client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
-            appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
-            workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");
-            assertEquals(2, appTool.getWorkflowVersions().size());
-            assertEquals(2, workflow.getWorkflowVersions().size());
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
+        workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");
+        assertEquals(2, appTool.getWorkflowVersions().size());
+        assertEquals(2, workflow.getWorkflowVersions().size());
 
-            WorkflowVersion invalidVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
-            invalidVersion.getValidations();
-            Validation workflowValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
-            assertFalse(workflowValidation.isValid());
-            assertTrue(workflowValidation.getMessage().contains("Did you mean to register a tool"));
-            appTool.getWorkflowVersions().stream().forEach(workflowVersion -> {
-                if (!workflowVersion.isValid()) {
-                    fail("Tool should be valid for both versions");
-                }
-            });
+        WorkflowVersion invalidVersion = workflow.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
+        invalidVersion.getValidations();
+        Validation workflowValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
+        assertFalse(workflowValidation.isValid());
+        assertTrue(workflowValidation.getMessage().contains("Did you mean to register a tool"));
+        appTool.getWorkflowVersions().stream().forEach(workflowVersion -> {
+            if (!workflowVersion.isValid()) {
+                fail("Tool should be valid for both versions");
+            }
+        });
 
-            client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidTool", installationId);
-            appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
-            workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");
-            assertEquals(3, appTool.getWorkflowVersions().size());
-            assertEquals(3, workflow.getWorkflowVersions().size());
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidTool", installationId);
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
+        workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");
+        assertEquals(3, appTool.getWorkflowVersions().size());
+        assertEquals(3, workflow.getWorkflowVersions().size());
 
-            invalidVersion = appTool.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
-            Validation toolValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
-            assertFalse(toolValidation.isValid());
-            assertTrue(toolValidation.getMessage().contains("Did you mean to register a workflow"));
+        invalidVersion = appTool.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.isValid()).findFirst().get();
+        Validation toolValidation = invalidVersion.getValidations().stream().filter(validation -> validation.getType().equals(Validation.TypeEnum.DOCKSTORE_CWL)).findFirst().get();
+        assertFalse(toolValidation.isValid());
+        assertTrue(toolValidation.getMessage().contains("Did you mean to register a workflow"));
 
-            testingPostgres.runUpdateStatement("update apptool set ispublished = 't' where id = " + appTool.getId());
-            testingPostgres.runUpdateStatement("update workflow set ispublished = 't' where id = " + workflow.getId());
+        testingPostgres.runUpdateStatement("update apptool set ispublished = 't' where id = " + appTool.getId());
+        testingPostgres.runUpdateStatement("update workflow set ispublished = 't' where id = " + workflow.getId());
 
-            Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
-            final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
-            assertEquals(2, tools.size());
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
+        final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        assertEquals(2, tools.size());
 
-            final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools");
-            assertNotNull(tool);
-            assertEquals("CommandLineTool", tool.getToolclass().getDescription());
+        final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools");
+        assertNotNull(tool);
+        assertEquals("CommandLineTool", tool.getToolclass().getDescription());
 
-            final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/github.com/DockstoreTestUser2/test-workflows-and-tools");
-            assertNotNull(trsWorkflow);
-            assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
-        }
+        final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/github.com/DockstoreTestUser2/test-workflows-and-tools");
+        assertNotNull(trsWorkflow);
+        assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
+    }
 
     @Test
     public void testDuplicatePathsAcrossTables() throws Exception {
