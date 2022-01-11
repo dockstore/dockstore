@@ -461,7 +461,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @param dockstoreYml
      */
-    //
     private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml, boolean isOneStepWorkflow) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
@@ -551,7 +550,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitHubSourceCodeRepo Source Code Repo
      * @return New or updated workflow
      */
-    //
     private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
