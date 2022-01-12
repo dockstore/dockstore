@@ -9623,6 +9623,9 @@ components:
         tagName:
           type: string
   securitySchemes:
+    BEARER:
+      scheme: bearer
+      type: http
     bearer:
       scheme: bearer
       type: http

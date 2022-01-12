@@ -8795,8 +8795,8 @@ definitions:
       sourceControl:
         type: "string"
         position: 17
-        description: "This is a specific source control provider like github or bitbucket\
-          \ or n/a?, required: GA4GH"
+        description: "This is a specific source control provider like github, bitbucket,\
+          \ gitlab, etc."
       descriptorType:
         type: "string"
         position: 18
