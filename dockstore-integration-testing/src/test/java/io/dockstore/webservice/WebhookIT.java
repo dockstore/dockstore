@@ -92,6 +92,7 @@ public class WebhookIT extends BaseIT {
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
     private final String installationId = "1179416";
     private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
+    private final String toolAndWorkflowRepoToolPath = "DockstoreTestUser2/test-workflows-and-tools/md5sum";
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
     private FileDAO fileDAO;
 
@@ -846,6 +847,7 @@ public class WebhookIT extends BaseIT {
         }
     }
 
+    // .dockstore.yml in test repo needs to change to add a 'name' field to one of them. Should also include another branch that doesn't keep the name field
     @Test
     public void testTools() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
@@ -855,7 +857,7 @@ public class WebhookIT extends BaseIT {
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
-        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, APPTOOL, "versions");
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
         Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions");
 
         assertNotNull(workflow);
@@ -869,7 +871,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, usersAppTools.size());
 
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
-        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, APPTOOL, "versions,validations");
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
         workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");
         assertEquals(2, appTool.getWorkflowVersions().size());
         assertEquals(2, workflow.getWorkflowVersions().size());
@@ -886,7 +888,7 @@ public class WebhookIT extends BaseIT {
         });
 
         client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidTool", installationId);
-        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, APPTOOL, "versions,validations");
+        appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
         workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");
         assertEquals(3, appTool.getWorkflowVersions().size());
         assertEquals(3, workflow.getWorkflowVersions().size());
@@ -900,15 +902,47 @@ public class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update workflow set ispublished = 't' where id = " + workflow.getId());
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
-        final List<Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertEquals(2, tools.size());
 
-        final Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools");
+        final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools/md5sum");
         assertNotNull(tool);
         assertEquals("CommandLineTool", tool.getToolclass().getDescription());
 
         final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/github.com/DockstoreTestUser2/test-workflows-and-tools");
         assertNotNull(trsWorkflow);
         assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
+    }
+
+    @Test
+    public void testDuplicatePathsAcrossTables() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        try {
+            client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/duplicate-paths", installationId);
+            fail("Should not be able to create a workflow and apptool with the same path.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains("with the same path already exists."));
+        }
+
+        // Check that the database trigger created an entry in fullworkflowpath table
+        long pathCount = testingPostgres.runSelectStatement("select count(*) from fullworkflowpath", long.class);
+        assertEquals(0, pathCount);
+        client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        pathCount = testingPostgres.runSelectStatement("select count(*) from fullworkflowpath", long.class);
+        assertTrue(pathCount >= 3);
+
+        try {
+            testingPostgres.runUpdateStatement("INSERT INTO fullworkflowpath(id, organization, repository, sourcecontrol, workflowname) VALUES (1010, 'DockstoreTestUser2', 'dockstoreyml-github-filters-test', 'github.com', 'filternone')");
+            fail("Database should prevent duplicate paths between tables");
+        } catch (Exception ex) {
+            assertTrue(ex.getMessage().contains("duplicate key value violates"));
+        }
+
+        // Should be able to have service with duplicate name
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/addService", installationId);
     }
 }
