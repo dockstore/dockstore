@@ -905,26 +905,27 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Implements a preprocessor which "expands" a CWL, replacing $import, $include, $mixin, and "run" directives with the content
-     * of the referenced source files, with the exception of a "run" directive that points to a missing source file, which is
-     * normalized to the "run: <file>" syntax and otherwise left unchanged.
+     * Implements a preprocessor which "expands" a CWL, replacing $import, $include, $mixin, and "run" directives per the CWL
+     * spec https://www.commonwl.org/v1.2/Workflow.html, using the content of the referenced source files, with the exception
+     * of a "run" directive that points to a missing source file, which is normalized to the "run: file" syntax and otherwise
+     * left unchanged.
      *
      * <p>To facilitate the extraction of information from a CWL that is missing files, if an $import references a missing file,
      * it is replaced by the empty Map.  If an $include references a missing file, it is replaced by the empty string.
      *
-     * <p>Typically, a Preprocessor instance is one-time-use: a new Preprocessor instance is created to expand a each root CWL
+     * <p>Typically, a Preprocessor instance is one-time-use: a new Preprocessor instance is created to expand each root CWL
      * descriptor.
      *
      * <p>As the preprocessor expands the CWL, it tracks the current file, and for each entry (workflow or tool) it encounters,
      * it first ensures that the entry has a unique id (by assigning the missing or duplicate id to a UUID), then adds the
-     * (id -> current file path) relationship to a Map.  Later, a parser can query the Map via the getPath method to determine
+     * id-to-current-file-path relationship to a Map.  Later, a parser can query the Map via the getPath method to determine
      * what file the entry came from.
      *
      * <p>During expansion, the preprocessor tracks three quantities to prevent denial-of-service attacks or infinite
-     * loops due to a recursive CWL: the file depth, the (approximate) total length of the expanded CWL in characters, and total
-     * number of files expanded (incremented for each $import, $include, $mixin, and "run" directive).  If any of those quantities
-     * exceed the maximum value, the preprocessor will call the handleMax function, the base implementation of which will throw
-     * an exception.
+     * loops due to a recursive CWL: the file import depth, the (approximate) total length of the expanded CWL in characters, and
+     * total number of files expanded (incremented for each $import, $include, $mixin, and "run" directive).  If any of those
+     * quantities exceed the maximum value, the preprocessor will call the handleMax function, the base implementation of which
+     * will throw an exception.
      */
     public static class Preprocessor {
         private static final List<String> IMPORT_KEYS = Arrays.asList("$import", "import");
