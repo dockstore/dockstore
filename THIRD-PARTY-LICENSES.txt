@@ -1,5 +1,5 @@
 
-Lists of 356 third-party dependencies.
+Lists of 355 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.12:2.5.31 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.12:2.5.31 - https://akka.io/)
@@ -281,7 +281,6 @@ Lists of 356 third-party dependencies.
      (Apache License 2.0) Metrics Integration with JMX (io.dropwizard.metrics:metrics-jmx:4.1.25 - https://metrics.dropwizard.io/metrics-jmx)
      (Apache License 2.0) Metrics Utility Servlets (io.dropwizard.metrics:metrics-servlets:4.1.25 - https://metrics.dropwizard.io/metrics-servlets)
      (Apache 2) metrics-scala (nl.grons:metrics-scala_2.12:4.0.0 - https://github.com/erikvanoosten/metrics-scala)
-     (WDL License https://github.com/openwdl/wdl/blob/master/LICENSE) metrics-statsd-common (com.readytalk:metrics-statsd-common:4.2.0 - no url defined)
      (The Apache Software License, Version 2.0) metrics3-statsd (com.readytalk:metrics3-statsd:4.2.0 - no url defined)
      (Prior BSD License) MiG Base64 (com.brsanthu:migbase64:2.2 - http://sourceforge.net/projects/migbase64/)
      (Eclipse Distribution License - v 1.0) MIME streaming extension (org.jvnet.mimepull:mimepull:1.9.13 - https://github.com/eclipse-ee4j/metro-mimepull)
