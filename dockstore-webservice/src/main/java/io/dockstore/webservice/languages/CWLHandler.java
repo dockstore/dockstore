@@ -411,6 +411,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             if (parentStepId == null) {
                 workflowStepId = NODE_PREFIX + entry.getKey();
             } else {
+                // If there's a parent workflow, prefix the step id with the parent step id and a period.
                 workflowStepId = parentStepId + "." + entry.getKey();
             }
 
@@ -449,6 +450,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     stepDockerPath = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), stepDockerPath);
                     stepToType.put(workflowStepId, WORKFLOW_TYPE);
                     entryId = convertToString(stepWorkflow.getId());
+                    // Process the subworkflow
                     processWorkflow(stepWorkflow, stepDockerPath, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 } else if (isTool(runAsJson, yaml)) {
                     CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
@@ -902,6 +904,28 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
     }
 
+    /**
+     * Implements a preprocessor which "expands" a CWL, replacing $import, $include, $mixin, and "run" directives with the content
+     * of the referenced source files, with the exception of a "run" directive that points to a missing source file, which is
+     * normalized to the "run: <file>" syntax and otherwise left unchanged.
+     *
+     * <p>To facilitate the extraction of information from a CWL that is missing files, if an $import references a missing file,
+     * it is replaced by the empty Map.  If an $include references a missing file, it is replaced by the empty string.
+     *
+     * <p>Typically, a Preprocessor instance is one-time-use: a new Preprocessor instance is created to expand a each root CWL
+     * descriptor.
+     *
+     * <p>As the preprocessor expands the CWL, it tracks the current file, and for each entry (workflow or tool) it encounters,
+     * it first ensures that the entry has a unique id (by assigning the missing or duplicate id to a UUID), then adds the
+     * (id -> current file path) relationship to a Map.  Later, a parser can query the Map via the getPath method to determine
+     * what file the entry came from.
+     *
+     * <p>During expansion, the preprocessor tracks three quantities to prevent denial-of-service attacks or infinite
+     * loops due to a recursive CWL: the file depth, the (approximate) total length of the expanded CWL in characters, and total
+     * number of files expanded (incremented for each $import, $include, $mixin, and "run" directive).  If any of those quantities
+     * exceed the maximum value, the preprocessor will call the handleMax function, the base implementation of which will throw
+     * an exception.
+     */
     public static class Preprocessor {
         private static final List<String> IMPORT_KEYS = Arrays.asList("$import", "import");
         private static final List<String> INCLUDE_KEYS = Arrays.asList("$include", "include");
@@ -912,7 +936,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private static final long DEFAULT_MAX_CHAR_COUNT = 4L * 1024L * 1024L;
         private static final long DEFAULT_MAX_FILE_COUNT = 2000L;
 
-        private final Set<SourceFile> secondarySourceFiles;
+        private final Set<SourceFile> sourceFiles;
         private final Map<String, String> idToPath;
         private long charCount;
         private long fileCount;
@@ -920,8 +944,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private final long maxCharCount;
         private final long maxFileCount;
 
-        public Preprocessor(Set<SourceFile> secondarySourceFiles, int maxDepth, long maxCharCount, long maxFileCount) {
-            this.secondarySourceFiles = secondarySourceFiles;
+        /**
+         * Create a CWL Preprocessor with specified "max" values.  See the class javadoc regarding the meaning of the "max" arguments.
+         * @param sourceFiles files to search when expanding $import, $include, etc
+         * @param maxDepth the maximum file depth
+         * @param maxCharCount the maximum number of expanded characters (approximate)
+         * @param maxFileCount the maximum number of files expanded
+         */
+        public Preprocessor(Set<SourceFile> sourceFiles, int maxDepth, long maxCharCount, long maxFileCount) {
+            this.sourceFiles = sourceFiles;
             this.idToPath = new HashMap<>();
             this.charCount = 0;
             this.fileCount = 0;
@@ -930,35 +961,50 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             this.maxFileCount = maxFileCount;
         }
 
-        public Preprocessor(Set<SourceFile> secondarySourceFiles) {
-            this(secondarySourceFiles, DEFAULT_MAX_DEPTH, DEFAULT_MAX_CHAR_COUNT, DEFAULT_MAX_FILE_COUNT);
+        /**
+         * Create a CWL Preprocessor with default "max" values.
+         */
+        public Preprocessor(Set<SourceFile> sourceFiles) {
+            this(sourceFiles, DEFAULT_MAX_DEPTH, DEFAULT_MAX_CHAR_COUNT, DEFAULT_MAX_FILE_COUNT);
         }
 
-        public Object preprocess(Object obj, String currentPath, int depth) {
+        /**
+         * Preprocess the specified CWL, recursively expanding various directives as noted in the class javadoc.
+         * This method may, but does not necessarily, process the specified CWL in place.
+         * @param cwl a representation of a CWL file or portion thereof, typically a Map, List, or String and the result of new Yaml().load(content)
+         * @param currentPath the path of the file containing the CWL represented by obj
+         * @param depth the current file depth, where the root file is at depth 0, and the depth is incremented on each file expansion
+         * @return the preprocessed CWL
+         */
+        public Object preprocess(Object cwl, String currentPath, int depth) {
 
             if (depth > maxDepth) {
                 handleMax("maximum file depth exceeded");
-                return obj;
             }
 
-            if (obj instanceof Map) {
+            if (cwl instanceof Map) {
 
-                Map<String, Object> map = (Map<String, Object>)obj;
+                Map<String, Object> map = (Map<String, Object>)cwl;
 
+                // If the map represents a workflow or tool, ensure that it has a unique ID, then record the ID->path relationship
                 if (isEntry(map)) {
                     idToPath.put(setUniqueIdIfAbsent(map), stripLeadingSlash(currentPath));
                 }
 
+                // Process $import, which is replaced by the parsed+preprocessed file content
                 String importPath = findString(IMPORT_KEYS, map);
                 if (importPath != null) {
                     return loadFileAndPreprocess(resolvePath(importPath, currentPath), EMPTY_MAP, depth);
                 }
 
+                // Process $include, which is replaced by the literal string representation of the file content
                 String includePath = findString(INCLUDE_KEYS, map);
                 if (includePath != null) {
                     return loadFile(resolvePath(includePath, currentPath), EMPTY_STRING);
                 }
 
+                // Process $mixin, the referenced file content should parse and preprocess to a map
+                // then, for each (key,value) entry in the mixin map, (key,value) is added to the the containing map if key does not already exist
                 String mixinPath = findString(MIXIN_KEYS, map);
                 if (mixinPath != null) {
                     Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), EMPTY_MAP, depth);
@@ -968,54 +1014,56 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
                 }
 
+                // Process each value of the Map
                 preprocessMapValues(map, currentPath, depth);
 
-            } else if (obj instanceof List) {
+            } else if (cwl instanceof List) {
 
-                preprocessListValues((List<Object>)obj, currentPath, depth);
+                // Process each value of the List
+                preprocessListValues((List<Object>)cwl, currentPath, depth);
 
             }
 
-            return obj;
+            return cwl;
         }
 
-        private void preprocessMapValues(Map<String, Object> map, String currentPath, int depth) {
+        private void preprocessMapValues(Map<String, Object> cwl, String currentPath, int depth) {
 
-            // convert "run: {$import: <file>}" to "run: <file>"
-            Object runValue = map.get("run");
+            // Convert "run: {$import: <file>}" to "run: <file>"
+            Object runValue = cwl.get("run");
             if (runValue instanceof Map) {
                 String importValue = findString(IMPORT_KEYS, (Map<String, Object>)runValue);
                 if (importValue != null) {
-                    map.put("run", importValue);
+                    cwl.put("run", importValue);
                 }
             }
 
-            // preprocess all values in the map
-            map.replaceAll((k, v) -> preprocess(v, currentPath, depth));
+            // Preprocess all values in the map
+            cwl.replaceAll((k, v) -> preprocess(v, currentPath, depth));
 
-            // load and preprocess "run: <file>", leaving it unchanged if the file does not exist
-            runValue = map.get("run");
+            // Expand "run: <file>", leaving it unchanged if the file does not exist
+            runValue = cwl.get("run");
             if (runValue instanceof String) {
                 String runPath = (String)runValue;
-                map.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, depth));
+                cwl.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, depth));
             }
         }
 
-        private void preprocessListValues(List<Object> list, String currentPath, int depth) {
-            list.replaceAll(v -> preprocess(v, currentPath, depth));
+        private void preprocessListValues(List<Object> cwl, String currentPath, int depth) {
+            cwl.replaceAll(v -> preprocess(v, currentPath, depth));
         }
 
-        private boolean isEntry(Map<String, Object> map) {
-            String c = (String)map.get("class");
+        private boolean isEntry(Map<String, Object> cwl) {
+            String c = (String)cwl.get("class");
             return Objects.equals(c, "CommandLineTool") || Objects.equals(c, "ExpressionTool") || Objects.equals(c, "Workflow");
         }
 
-        private String setUniqueIdIfAbsent(Map<String, Object> map) {
-            String currentId = (String)map.get("id");
+        private String setUniqueIdIfAbsent(Map<String, Object> entryCwl) {
+            String currentId = (String)entryCwl.get("id");
             if (currentId == null || idToPath.containsKey(currentId)) {
-                map.put("id", java.util.UUID.randomUUID().toString());
+                entryCwl.put("id", java.util.UUID.randomUUID().toString());
             }
-            return (String)map.get("id");
+            return (String)entryCwl.get("id");
         }
 
         private String stripLeadingSlash(String value) {
@@ -1067,8 +1115,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return null;
             }
             if (childPath.startsWith("file:")) {
-                // the path in a file url is always absolute
-                // see https://datatracker.ietf.org/doc/html/rfc8089
+                // The path in a file url is always absolute
+                // See https://datatracker.ietf.org/doc/html/rfc8089
                 childPath = childPath.replaceFirst("^file:/*+", "/");
             }
             return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath);
@@ -1078,16 +1126,14 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             fileCount++;
             if (fileCount > maxFileCount) {
                 handleMax("maximum file count exceeded");
-                return notFoundValue;
             }
 
-            for (SourceFile sourceFile: secondarySourceFiles) {
+            for (SourceFile sourceFile: sourceFiles) {
                 if (sourceFile.getAbsolutePath().equals(loadPath)) {
                     String content = sourceFile.getContent();
                     charCount += content.length();
                     if (charCount > maxCharCount) {
                         handleMax("maximum character count exceeded");
-                        return notFoundValue;
                     }
                     return content;
                 }
@@ -1103,12 +1149,22 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return preprocess(parse(content), loadPath, depth + 1);
         }
 
+        /**
+         * Invoked by the preprocessor when one of the "max" conditions (excessive file depth, size, or number of files expanded) is detected.
+         * This method can be overidden to implement alternative behavior, such as returning instead of throwing, allowing preprocessing to continue.
+         * @param message a message decribing which "max" condition was met
+         */
         public void handleMax(String message) {
             String fullMessage = "CWL might be recursive: " + message;
             LOG.error(fullMessage);
             throw new CustomWebApplicationException(fullMessage, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
 
+        /**
+         * Determine the path of the file that contained the specified entry.
+         * @param id entry identifier
+         * @returns file path
+         */
         public String getPath(String id) {
             return idToPath.get(id);
         }
