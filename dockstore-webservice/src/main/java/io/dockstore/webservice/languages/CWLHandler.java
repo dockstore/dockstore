@@ -615,10 +615,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return dockerPull;
     }
 
-    private boolean canHaveRequirementsOrHints(JSONObject object) {
-        return object.has("class") || object.has("run");
-    }
-
     /**
      * Converts a JSON Object in CWL to JSON Array
      * @param keyName Name of key to convert (Ex. requirements, hints)
