@@ -1,0 +1,15 @@
+on: [push]
+
+
+jobs:
+  test_swagger_editor_validator_remote:
+    runs-on: ubuntu-latest
+    name: Swagger Editor Validator Remote
+
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Validate OpenAPI definition
+        uses: char0n/swagger-editor-validate@v1.2.1
+        with:
+          definition-file: dockstore-webservice/src/main/resources/openapi3/openapi.yaml
