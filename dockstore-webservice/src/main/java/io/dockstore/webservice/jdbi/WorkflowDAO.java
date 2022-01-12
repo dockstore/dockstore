@@ -20,6 +20,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -182,16 +183,15 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * If creating an apptool, check the workflow table and vice versa.
      *
      * @param path
-     * @param clazz
-     * @param <T>
+     * @param clazz the table you want to check for a duplicate for
      * @return
      */
     public <T extends Workflow> void checkForDuplicateAcrossTables(String path, Class<T> clazz) {
         final List<Workflow> workflows = findByPath(path, false);
-        final List<T> filteredWorkflows = workflows.stream()
-            .filter(workflow -> workflow.getClass().equals(clazz))
-            .map(clazz::cast)
+        final List<Workflow> filteredWorkflows = workflows.stream()
+            .filter(workflow -> workflow.getClass() != Service.class)
             .collect(Collectors.toList());
+
         if (filteredWorkflows.size() > 0) {
             String workflowType;
             if (clazz == AppTool.class) {
@@ -199,7 +199,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             } else {
                 workflowType = "workflow";
             }
-            throw new CustomWebApplicationException("A " + workflowType + " with the same path already exists. Add the 'name' field to the new or already existing entry.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("A " + workflowType + " with the same path already exists. Add the 'name' field to the entry you are currently trying to register to give it a unique path.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 

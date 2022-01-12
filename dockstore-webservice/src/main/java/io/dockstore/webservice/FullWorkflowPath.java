@@ -23,8 +23,6 @@ import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -41,9 +39,8 @@ import javax.persistence.Table;
 public class FullWorkflowPath implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty(value = "Implementation specific ID for the full workflow path in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the full workflow path in this web service.")
     private long id;
 
     @Column(columnDefinition = "text")
@@ -59,7 +56,7 @@ public class FullWorkflowPath implements Serializable {
     private String repository;
 
     @Column(nullable = false, columnDefinition = "text")
-    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, dataType = "string")
+    @ApiModelProperty(value = "This is a specific source control provider like github, bitbucket, gitlab, etc.", required = true, dataType = "string")
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 

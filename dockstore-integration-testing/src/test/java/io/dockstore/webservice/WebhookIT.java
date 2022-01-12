@@ -941,5 +941,8 @@ public class WebhookIT extends BaseIT {
         } catch (Exception ex) {
             assertTrue(ex.getMessage().contains("duplicate key value violates"));
         }
+
+        // Should be able to have service with duplicate name
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/addService", installationId);
     }
 }
