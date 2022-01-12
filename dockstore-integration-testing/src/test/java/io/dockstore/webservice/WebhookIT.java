@@ -905,7 +905,7 @@ public class WebhookIT extends BaseIT {
         final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertEquals(2, tools.size());
 
-        final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools");
+        final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools/md5sum");
         assertNotNull(tool);
         assertEquals("CommandLineTool", tool.getToolclass().getDescription());
 
