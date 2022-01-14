@@ -49,7 +49,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Provider
 //TODO clean this up, preferably by destroying swagger
 @OpenAPIDefinition(tags = {@io.swagger.v3.oas.annotations.tags.Tag (name = "NIHdatacommons", description = ResourceConstants.NIHDATACOMMONS)}, servers = {@Server(url = "/api", description = "Current server when hosted on AWS"), @Server(url = "/", description = "When working locally"), @Server(url = "https://dockstore.org/api", description = "Production server"), @Server(url = "https://staging.dockstore.org/api", description = "Staging server"), @Server(url = "https://dev.dockstore.net/api", description = "Nightly build server")},
-    info = @io.swagger.v3.oas.annotations.info.Info(description = Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @io.swagger.v3.oas.annotations.info.Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @io.swagger.v3.oas.annotations.info.License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = "TBD")
+    info = @io.swagger.v3.oas.annotations.info.Info(description = Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @io.swagger.v3.oas.annotations.info.Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @io.swagger.v3.oas.annotations.info.License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = Description.TOS_LOCATION)
 )
 @SwaggerDefinition(info = @Info(description =
     Description.DESCRIPTION, version = "${project.version}", title = "Dockstore API", contact = @Contact(name = Description.NAME, email = Description.EMAIL, url = Description.CONTACT_URL), license = @License(name = Description.APACHE_LICENSE_VERSION_2_0, url = Description.LICENSE_LOCATION), termsOfService = "TBD"), tags = {
@@ -79,6 +79,7 @@ public class Description implements ReaderListener {
     public static final String CONTACT_URL = "https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506";
     public static final String APACHE_LICENSE_VERSION_2_0 = "Apache License Version 2.0";
     public static final String LICENSE_LOCATION = "https://github.com/dockstore/dockstore/blob/develop/LICENSE";
+    public static final String TOS_LOCATION = "https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf";
 
     @Override
     public void beforeScan(Reader reader, Swagger swagger) {
