@@ -20,6 +20,10 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  */
 public class CWLHandlerPreprocessorTest {
 
+    private static final String V1_0 = "cwlVersion: v1.0\n";
+    private static final String V1_1 = "cwlVersion: v1.1\n";
+    private static final String WORKFLOW = "class: Workflow\nid: foo\n";
+
     private SourceFile file(String absolutePath, String content) {
         SourceFile sourceFile = mock(SourceFile.class);
         when(sourceFile.getAbsolutePath()).thenReturn(absolutePath);
@@ -41,8 +45,12 @@ public class CWLHandlerPreprocessorTest {
     }
 
     private Object preprocess(String content, Set<SourceFile> files, String rootPath) {
-        Preprocessor pre = new Preprocessor(files);
-        return pre.preprocess(parse(content), rootPath, 0);
+        return new Preprocessor(files).preprocess(parse(content), rootPath);
+    }
+
+    public void testNoSubsitutions() {
+        final String arrayOfMaps = "-\n  a: b\n-\n  d: e";
+        Assert.assertEquals(parse(arrayOfMaps), preprocess(arrayOfMaps, set()));
     }
 
     @Test
@@ -59,21 +67,22 @@ public class CWLHandlerPreprocessorTest {
 
     @Test
     public void testMixin() {
-        Assert.assertEquals(parse("a: z\nb: y"), preprocess("a: z\n$mixin: b", set(file("/b", "a: x\nb: y"))));
+        Assert.assertEquals(parse(V1_0 + WORKFLOW + "a: z\nb: y"), preprocess(V1_0 + WORKFLOW + "a: z\n$mixin: b", set(file("/b", "a: x\nb: y"))));
+        Assert.assertEquals(parse(V1_1 + WORKFLOW + "$mixin: v"), preprocess(V1_1 + WORKFLOW + "$mixin: v", set()));
     }
 
     @Test
     public void testRun() {
         final String runContent = "something: torun";
         Assert.assertEquals(parse("run:\n  " + runContent), preprocess("run: b", set(file("/b", runContent))));
+        Assert.assertEquals(parse("run:\n  " + runContent), preprocess("run:\n  $import: b", set(file("/b", runContent))));
     }
 
     @Test
     public void testMissingFile() {
-        Preprocessor pre = new Preprocessor(set());
         Assert.assertEquals(Collections.emptyMap(), preprocess("$import: b", set()));
         Assert.assertEquals("", preprocess("$include: b", set()));
-        Assert.assertEquals(parse("a: x"), preprocess("a: x\n$mixin: b", set()));
+        Assert.assertEquals(parse(V1_0 + WORKFLOW + "a: x"), preprocess(V1_0 + WORKFLOW + "a: x\n$mixin: b", set()));
     }
 
     @Test
@@ -106,6 +115,14 @@ public class CWLHandlerPreprocessorTest {
         Assert.assertEquals(parse(imported), preprocess("$import: file://b", set(file("/b", imported))));
     }
 
+    @Test
+    public void testRunOfNonexistentFile() {
+        final String runImport = "run:\n  $import: filename";
+        final String runReduced = "run: filename";
+        Assert.assertEquals(parse(runReduced), preprocess(runImport, set()));
+        Assert.assertEquals(parse(runReduced), preprocess(runReduced, set()));
+    }
+
     @Test(expected = CustomWebApplicationException.class)
     public void testMaxDepth() {
         // preprocess a file that recursively imports itself
@@ -117,9 +134,7 @@ public class CWLHandlerPreprocessorTest {
         for (int i = 0; i < includeCount; i++) {
             builder.append("a" + i + ":\n  $include: b\n");
         }
-        char[] chars = new char[includeSize];
-        Arrays.fill(chars, 'x');
-        preprocess(builder.toString(), set(file("/b", new String(chars))));
+        preprocess(builder.toString(), set(file("/b", "x".repeat(includeSize))));
     }
 
     @Test(expected = CustomWebApplicationException.class)

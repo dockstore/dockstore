@@ -275,7 +275,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     private Map<String, Object> preprocess(Map<String, Object> mapping, String mainDescriptorPath, Preprocessor preprocessor) {
-        Object preprocessed = preprocessor.preprocess(mapping, mainDescriptorPath, 0);
+        Object preprocessed = preprocessor.preprocess(mapping, mainDescriptorPath, null, 0);
         // If the preprocessed result is not a map, the CWL is not valid.
         if (!(preprocessed instanceof Map)) {
             String message = "CWL file is malformed";
@@ -965,14 +965,26 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         }
 
         /**
-         * Preprocess the specified CWL, recursively expanding various directives as noted in the class javadoc.
+         * Preprocess the specified root-level CWL, recursively expanding various directives as noted in the class javadoc.
          * This method may, but does not necessarily, process the specified CWL in place.
-         * @param cwl a representation of a CWL file or portion thereof, typically a Map, List, or String and the result of new Yaml().load(content)
-         * @param currentPath the path of the file containing the CWL represented by obj
-         * @param depth the current file depth, where the root file is at depth 0, and the depth is incremented on each file expansion
+         * @param cwl a representation of the CWL file content, typically a Map, List, or String and the result of new Yaml().load(content)
+         * @param currentPath the path of the CWL file
          * @return the preprocessed CWL
          */
-        public Object preprocess(Object cwl, String currentPath, int depth) {
+        public Object preprocess(Object cwl, String currentPath) {
+            return preprocess(cwl, currentPath, null, 0);
+        }
+
+        /**
+         * Preprocess the specified CWL, recursively expanding various directives as noted in the class javadoc.
+         * This method may, but does not necessarily, process the specified CWL in place.
+         * @param cwl a representation of the CWL file content or portion thereof, typically a Map, List, or String and the result of new Yaml().load(content)
+         * @param currentPath the path of the CWL file
+         * @param version the CWL version of the parent entry, null if there is no parent entry
+         * @param depth the current file depth, where the root file is at depth 0, and the depth increases by one for each $import or $mixin
+         * @return the preprocessed CWL
+         */
+        private Object preprocess(Object cwl, String currentPath, String version, int depth) {
 
             if (depth > maxDepth) {
                 handleMax(String.format("maximum file depth (%d) exceeded", maxDepth));
@@ -982,15 +994,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 Map<String, Object> map = (Map<String, Object>)cwl;
 
-                // If the map represents a workflow or tool, ensure that it has a unique ID, then record the ID->path relationship
+                // If the map represents a workflow or tool, ensure that it has a unique ID, record the ID->path relationship, and determine the CWL version
                 if (isEntry(map)) {
                     idToPath.put(setUniqueIdIfAbsent(map), stripLeadingSlash(currentPath));
+                    version = (String)map.getOrDefault("cwlVersion", version);
                 }
 
                 // Process $import, which is replaced by the parsed+preprocessed file content
                 String importPath = findString(IMPORT_KEYS, map);
                 if (importPath != null) {
-                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), emptyMap(), depth);
+                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), emptyMap(), version, depth);
                 }
 
                 // Process $include, which is replaced by the literal string representation of the file content
@@ -999,31 +1012,34 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     return loadFile(resolvePath(includePath, currentPath), "");
                 }
 
-                // Process $mixin, the referenced file content should parse and preprocess to a map
+                // Process $mixin, if supported by the current version
+                // The referenced file content should parse and preprocess to a map
                 // Then, for each (key,value) entry in the mixin map, (key,value) is added to the containing map if key does not already exist
-                String mixinPath = findString(MIXIN_KEYS, map);
-                if (mixinPath != null) {
-                    Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), emptyMap(), depth);
-                    if (mixin instanceof Map) {
-                        removeKey(MIXIN_KEYS, map);
-                        applyMixin(map, (Map<String, Object>)mixin);
+                if (supportsMixin(version)) {
+                    String mixinPath = findString(MIXIN_KEYS, map);
+                    if (mixinPath != null) {
+                        Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), emptyMap(), version, depth);
+                        if (mixin instanceof Map) {
+                            removeKey(MIXIN_KEYS, map);
+                            applyMixin(map, (Map<String, Object>)mixin);
+                        }
                     }
                 }
 
                 // Process each value of the Map
-                preprocessMapValues(map, currentPath, depth);
+                preprocessMapValues(map, currentPath, version, depth);
 
             } else if (cwl instanceof List) {
 
                 // Process each value of the List
-                preprocessListValues((List<Object>)cwl, currentPath, depth);
+                preprocessListValues((List<Object>)cwl, currentPath, version, depth);
 
             }
 
             return cwl;
         }
 
-        private void preprocessMapValues(Map<String, Object> cwl, String currentPath, int depth) {
+        private void preprocessMapValues(Map<String, Object> cwl, String currentPath, String version, int depth) {
 
             // Convert "run: {$import: <file>}" to "run: <file>"
             Object runValue = cwl.get("run");
@@ -1035,18 +1051,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
 
             // Preprocess all values in the map
-            cwl.replaceAll((k, v) -> preprocess(v, currentPath, depth));
+            cwl.replaceAll((k, v) -> preprocess(v, currentPath, version, depth));
 
             // Expand "run: <file>", leaving it unchanged if the file does not exist
             runValue = cwl.get("run");
             if (runValue instanceof String) {
                 String runPath = (String)runValue;
-                cwl.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, depth));
+                cwl.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, version, depth));
             }
         }
 
-        private void preprocessListValues(List<Object> cwl, String currentPath, int depth) {
-            cwl.replaceAll(v -> preprocess(v, currentPath, depth));
+        private void preprocessListValues(List<Object> cwl, String currentPath, String version, int depth) {
+            cwl.replaceAll(v -> preprocess(v, currentPath, version, depth));
         }
 
         private boolean isEntry(Map<String, Object> cwl) {
@@ -1060,6 +1076,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 entryCwl.put("id", java.util.UUID.randomUUID().toString());
             }
             return (String)entryCwl.get("id");
+        }
+
+        private boolean supportsMixin(String version) {
+            return version != null && version.startsWith("v1.0");
         }
 
         private String stripLeadingSlash(String value) {
@@ -1141,12 +1161,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return notFoundValue;
         }
 
-        private Object loadFileAndPreprocess(String loadPath, Object notFoundValue, int depth) {
+        private Object loadFileAndPreprocess(String loadPath, Object notFoundValue, String version, int depth) {
             String content = loadFile(loadPath, null);
             if (content == null) {
                 return notFoundValue;
             }
-            return preprocess(parse(content), loadPath, depth + 1);
+            return preprocess(parse(content), loadPath, version, depth + 1);
         }
 
         /**
