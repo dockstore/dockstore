@@ -49,6 +49,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -927,11 +928,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private static final List<String> IMPORT_KEYS = Arrays.asList("$import", "import");
         private static final List<String> INCLUDE_KEYS = Arrays.asList("$include", "include");
         private static final List<String> MIXIN_KEYS = Arrays.asList("$mixin", "mixin");
-        private static final String EMPTY_STRING = "";
-        private static final Map<String, Object> EMPTY_MAP = Collections.emptyMap();
         private static final int DEFAULT_MAX_DEPTH = 10;
         private static final long DEFAULT_MAX_CHAR_COUNT = 4L * 1024L * 1024L;
-        private static final long DEFAULT_MAX_FILE_COUNT = 2000L;
+        private static final long DEFAULT_MAX_FILE_COUNT = 1000L;
 
         private final Set<SourceFile> sourceFiles;
         private final Map<String, String> idToPath;
@@ -976,7 +975,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         public Object preprocess(Object cwl, String currentPath, int depth) {
 
             if (depth > maxDepth) {
-                handleMax("maximum file depth exceeded");
+                handleMax(String.format("maximum file depth (%d) exceeded", maxDepth));
             }
 
             if (cwl instanceof Map) {
@@ -991,20 +990,20 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // Process $import, which is replaced by the parsed+preprocessed file content
                 String importPath = findString(IMPORT_KEYS, map);
                 if (importPath != null) {
-                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), EMPTY_MAP, depth);
+                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), emptyMap(), depth);
                 }
 
                 // Process $include, which is replaced by the literal string representation of the file content
                 String includePath = findString(INCLUDE_KEYS, map);
                 if (includePath != null) {
-                    return loadFile(resolvePath(includePath, currentPath), EMPTY_STRING);
+                    return loadFile(resolvePath(includePath, currentPath), "");
                 }
 
                 // Process $mixin, the referenced file content should parse and preprocess to a map
-                // then, for each (key,value) entry in the mixin map, (key,value) is added to the the containing map if key does not already exist
+                // Then, for each (key,value) entry in the mixin map, (key,value) is added to the containing map if key does not already exist
                 String mixinPath = findString(MIXIN_KEYS, map);
                 if (mixinPath != null) {
-                    Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), EMPTY_MAP, depth);
+                    Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), emptyMap(), depth);
                     if (mixin instanceof Map) {
                         removeKey(MIXIN_KEYS, map);
                         applyMixin(map, (Map<String, Object>)mixin);
@@ -1070,6 +1069,10 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return value;
         }
 
+        private Map<String, Object> emptyMap() {
+            return new LinkedHashMap<>();
+        }
+
         private String findString(Collection<String> keys, Map<String, Object> map) {
             String key = findKey(keys, map);
             if (key == null) {
@@ -1122,7 +1125,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         private String loadFile(String loadPath, String notFoundValue) {
             fileCount++;
             if (fileCount > maxFileCount) {
-                handleMax("maximum file count exceeded");
+                handleMax(String.format("maximum file count (%d) exceeded", maxFileCount));
             }
 
             for (SourceFile sourceFile: sourceFiles) {
@@ -1130,7 +1133,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     String content = sourceFile.getContent();
                     charCount += content.length();
                     if (charCount > maxCharCount) {
-                        handleMax("maximum character count exceeded");
+                        handleMax(String.format("maximum character count (%d) exceeded", maxCharCount));
                     }
                     return content;
                 }
