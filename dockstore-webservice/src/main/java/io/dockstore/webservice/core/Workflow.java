@@ -113,7 +113,7 @@ public abstract class Workflow extends Entry<Workflow, WorkflowVersion> {
     private String repository;
 
     @Column(nullable = false, columnDefinition = "text")
-    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 17, dataType = "string")
+    @ApiModelProperty(value = "This is a specific source control provider like github, bitbucket, gitlab, etc.", required = true, position = 17, dataType = "string")
     @Convert(converter = SourceControlConverter.class)
     private SourceControl sourceControl;
 

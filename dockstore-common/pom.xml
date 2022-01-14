@@ -223,6 +223,10 @@
                     <artifactId>guava</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>com.readytalk</groupId>
+                    <artifactId>metrics-statsd-common</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>eu.timepit</groupId>
                     <artifactId>refined_2.12</artifactId>
                 </exclusion>

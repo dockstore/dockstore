@@ -248,6 +248,77 @@
             alter table version_metadata add constraint check_valid_doi check (doiurl like '10._%/_%' or doiurl is null);
         </sql>
     </changeSet>
+    <changeSet id="add_constraints_triggers_for_apptools" author="natalieperez">
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX if not exists full_apptool_name ON apptool USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
+            CREATE UNIQUE INDEX if not exists partial_apptool_name ON apptool USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+        </sql>
+        <createTable tableName="fullworkflowpath">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="fullworkflowpath_pkey"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcecontrol" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+        </createTable>
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX full_workflow_name_masterlist ON fullworkflowpath USING btree (sourcecontrol, organization, repository, workflowname) WHERE workflowname IS NOT NULL;
+            CREATE UNIQUE INDEX partial_workflow_name_masterlist ON fullworkflowpath USING btree (sourcecontrol, organization, repository) WHERE workflowname IS NULL;
+
+            CREATE OR REPLACE FUNCTION workflow_path_insert_trigger_fnc()
+            RETURNS trigger AS
+            '
+            BEGIN
+            INSERT INTO fullworkflowpath(id, organization, repository, sourcecontrol, workflowname)
+            VALUES (NEW.id, NEW.organization, NEW.repository, NEW.sourcecontrol, NEW.workflowname);
+            RETURN NEW;
+            END;
+            '
+            LANGUAGE 'plpgsql';
+
+            CREATE TRIGGER workflow_path_trigger
+            AFTER INSERT
+            ON workflow
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_insert_trigger_fnc();
+
+            CREATE TRIGGER apptool_path_trigger
+            AFTER INSERT
+            ON apptool
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_insert_trigger_fnc();
+
+            CREATE OR REPLACE FUNCTION workflow_path_deletion_trigger_fnc()
+            RETURNS trigger AS
+            '
+            BEGIN
+            DELETE FROM fullworkflowpath
+            WHERE OLD.id = fullworkflowpath.id;
+            RETURN NEW;
+            END;
+            '
+            LANGUAGE 'plpgsql';
+
+            CREATE TRIGGER workflow_path_deletion_trigger
+            AFTER DELETE
+            ON workflow
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_deletion_trigger_fnc();
+
+            CREATE TRIGGER apptool_path_deletion_trigger
+            AFTER DELETE
+            ON apptool
+            FOR EACH ROW
+            EXECUTE PROCEDURE workflow_path_deletion_trigger_fnc();
+        </sql>
+    </changeSet>
     <changeSet author="svonworl" id="clearCwlToolTableJson">
         <!-- DOCK-1548 improves CWL parsing, so clear the tool table json from all CWL workflow versions so that it will be recalculated. -->
         <sql dbms="postgresql">
