@@ -108,7 +108,7 @@ public class ElasticListener implements StateListenerInterface {
         }
         try {
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            String entryType = entry instanceof Tool || entry instanceof AppTool ? TOOLS_INDEX : WORKFLOWS_INDEX;
+            String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
             case PUBLISH:
@@ -311,7 +311,8 @@ public class ElasticListener implements StateListenerInterface {
             detachedTool.setGitUrl(tool.getGitUrl());
             detachedTool.setName(tool.getName());
             detachedTool.setToolname(tool.getToolname());
-            detachedTool.setTopic(tool.getTopic());
+            // This is some weird hack to always use topicAutomatic for search table
+            detachedTool.setTopicAutomatic(tool.getTopic());
             detachedEntry = detachedTool;
         } else if (entry instanceof BioWorkflow) {
             BioWorkflow bioWorkflow = (BioWorkflow) entry;
@@ -322,7 +323,6 @@ public class ElasticListener implements StateListenerInterface {
             detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
 
             // These are for table
-            detachedBioWorkflow.setTopic(bioWorkflow.getTopic());
             detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
             detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
             detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());
@@ -337,6 +337,9 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
         Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
         detachedEntry.setWorkflowVersions(detachedVersions);
+        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
+        // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
+        detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
         String defaultVersion = entry.getDefaultVersion();

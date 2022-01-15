@@ -408,7 +408,8 @@ public class DockerRepoResource
 
         originalTool.setGitUrl(newTool.getGitUrl());
         originalTool.setForumUrl(newTool.getForumUrl());
-        originalTool.setTopic(newTool.getTopic());
+        originalTool.setTopicManual(newTool.getTopicManual());
+        originalTool.setTopicSelection(newTool.getTopicSelection());
 
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());

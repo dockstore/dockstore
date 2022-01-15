@@ -11,7 +11,7 @@ info:
   license:
     name: Apache License Version 2.0
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
-  termsOfService: TBD
+  termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
   version: 1.12.0-alpha.1-SNAPSHOT
 servers:
@@ -7655,10 +7655,21 @@ components:
           type: string
         topic:
           type: string
-          description: Short description of the entry
+        topicAutomatic:
+          type: string
+          description: Short description of the entry gotten automatically
         topicId:
           type: integer
           format: int64
+        topicManual:
+          type: string
+          description: Short description of the entry manually updated
+        topicSelection:
+          type: string
+          description: Which topic to display to the public users
+          enum:
+          - AUTOMATIC
+          - MANUAL
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -7747,10 +7758,21 @@ components:
           uniqueItems: true
         topic:
           type: string
-          description: Short description of the entry
+        topicAutomatic:
+          type: string
+          description: Short description of the entry gotten automatically
         topicId:
           type: integer
           format: int64
+        topicManual:
+          type: string
+          description: Short description of the entry manually updated
+        topicSelection:
+          type: string
+          description: Which topic to display to the public users
+          enum:
+          - AUTOMATIC
+          - MANUAL
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -7840,10 +7862,21 @@ components:
           uniqueItems: true
         topic:
           type: string
-          description: Short description of the entry
+        topicAutomatic:
+          type: string
+          description: Short description of the entry gotten automatically
         topicId:
           type: integer
           format: int64
+        topicManual:
+          type: string
+          description: Short description of the entry manually updated
+        topicSelection:
+          type: string
+          description: Which topic to display to the public users
+          enum:
+          - AUTOMATIC
+          - MANUAL
         userIdToOrcidPutCode:
           type: object
           additionalProperties:
@@ -9457,10 +9490,21 @@ components:
           uniqueItems: true
         topic:
           type: string
-          description: Short description of the entry
+        topicAutomatic:
+          type: string
+          description: Short description of the entry gotten automatically
         topicId:
           type: integer
           format: int64
+        topicManual:
+          type: string
+          description: Short description of the entry manually updated
+        topicSelection:
+          type: string
+          description: Which topic to display to the public users
+          enum:
+          - AUTOMATIC
+          - MANUAL
         type:
           type: string
         userIdToOrcidPutCode:

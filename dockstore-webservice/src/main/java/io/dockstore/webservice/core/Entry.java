@@ -45,6 +45,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -99,7 +100,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Entry.findLabelByEntryId", query = "SELECT e.labels FROM Entry e WHERE e.id = :entryId"),
         @NamedQuery(name = "Entry.findToolsDescriptorTypes", query = "SELECT t.descriptorType FROM Tool t WHERE t.id = :entryId"),
         @NamedQuery(name = "Entry.findWorkflowsDescriptorTypes", query = "SELECT w.descriptorType FROM Workflow w WHERE w.id = :entryId"),
-        @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topic IS NULL")
+        @NamedQuery(name = "Entry.findAllGitHubEntriesWithNoTopicAutomatic", query = "SELECT e FROM Entry e WHERE e.gitUrl LIKE 'git@github.com%' AND e.topicAutomatic IS NULL")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
@@ -117,6 +118,8 @@ import org.hibernate.annotations.UpdateTimestamp;
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE"),
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;") })
 public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
+
+    private static final int TOPIC_LENGTH = 150;
 
     /**
      * re-use existing generator for backwards compatibility
@@ -264,9 +267,22 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @JsonIgnore
     private List<Category> categories = new ArrayList<>();
 
-    @Column()
-    @Schema(description = "Short description of the entry")
-    private String topic;
+    @Column(length = TOPIC_LENGTH)
+    @Schema(description = "Short description of the entry gotten automatically")
+    private String topicAutomatic;
+
+    @Column(length = TOPIC_LENGTH)
+    @Schema(description = "Short description of the entry manually updated")
+    private String topicManual;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(32) default 'AUTOMATIC'")
+    @Schema(description = "Which topic to display to the public users")
+    private TopicSelection topicSelection = TopicSelection.AUTOMATIC;
+
+    public enum TopicSelection {
+        AUTOMATIC, MANUAL
+    }
 
     public Entry() {
         users = new TreeSet<>();
@@ -692,11 +708,31 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.categories = categories;
     }
 
-    public String getTopic() {
-        return topic;
+    public String getTopicAutomatic() {
+        return topicAutomatic;
     }
 
-    public void setTopic(String topic) {
-        this.topic = StringUtils.abbreviate(topic, 150);
+    public void setTopicAutomatic(String topicAutomatic) {
+        this.topicAutomatic = StringUtils.abbreviate(topicAutomatic, TOPIC_LENGTH);
+    }
+
+    public String getTopicManual() {
+        return topicManual;
+    }
+
+    public void setTopicManual(String topicManual) {
+        this.topicManual = topicManual;
+    }
+
+    public String getTopic() {
+        return this.topicSelection == TopicSelection.AUTOMATIC ? this.getTopicAutomatic() : this.getTopicManual();
+    }
+
+    public TopicSelection getTopicSelection() {
+        return topicSelection;
+    }
+
+    public void setTopicSelection(TopicSelection topicSelection) {
+        this.topicSelection = topicSelection;
     }
 }

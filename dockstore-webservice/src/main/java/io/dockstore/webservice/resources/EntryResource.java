@@ -448,7 +448,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
             content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Integer.class)))
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     public int updateEntryToGetTopics(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
-        List<Entry> githubEntries = toolDAO.findAllGitHubEntriesWithNoTopic();
+        List<Entry> githubEntries = toolDAO.findAllGitHubEntriesWithNoTopicAutomatic();
         // Use the GitHub token of the admin making this call
         Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);

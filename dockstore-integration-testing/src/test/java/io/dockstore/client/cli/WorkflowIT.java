@@ -1071,7 +1071,7 @@ public class WorkflowIT extends BaseIT {
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
             .manualRegister("github", DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.wdl", "altname", "wdl", "/test.json");
-        Assert.assertEquals("test repo for CWL and WDL workflows", githubWorkflow.getTopic());
+        Assert.assertEquals("test repo for CWL and WDL workflows", githubWorkflow.getTopicAutomatic());
 
         // Manually register workflow bitbucket
         Workflow bitbucketWorkflow = workflowApi

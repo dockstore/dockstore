@@ -55,6 +55,7 @@ import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.DockstoreTool.TopicSelectionEnum;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -1373,16 +1374,22 @@ public class GeneralIT extends BaseIT {
         DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
+        assertEquals("Should default to automatic", TopicSelectionEnum.AUTOMATIC, toolTest.getTopicSelection());
+
         //change the forumurl
         toolTest.setForumUrl(forumUrl);
         final String newTopic = "newTopic";
-        toolTest.setTopic(newTopic);
+        toolTest.setTopicManual(newTopic);
+        toolTest.setTopicSelection(TopicSelectionEnum.MANUAL);
         DockstoreTool dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
 
         //check the tool's forumurl is updated in the database
         final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
         assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
-        assertEquals(newTopic, dockstoreTool.getTopic());
+
+        // check the tool's topicManual and topicSelection
+        assertEquals(newTopic, dockstoreTool.getTopicManual());
+        assertEquals(TopicSelectionEnum.MANUAL, toolTest.getTopicSelection());
     }
 
     /**
