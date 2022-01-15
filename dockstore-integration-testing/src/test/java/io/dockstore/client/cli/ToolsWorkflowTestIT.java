@@ -106,7 +106,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have three tools with docker images, has " + countNode, 3, countNode);
+        Assert.assertEquals("JSON should have tools with docker images, has " + countNode, 3, countNode);
         Assert.assertFalse("tool should not have untar since it has no docker image", strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(

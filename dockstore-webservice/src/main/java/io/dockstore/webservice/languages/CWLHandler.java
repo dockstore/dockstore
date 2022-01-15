@@ -56,6 +56,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -996,7 +997,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 // If the map represents a workflow or tool, ensure that it has a unique ID, record the ID->path relationship, and determine the CWL version
                 if (isEntry(map)) {
-                    idToPath.put(setUniqueIdIfAbsent(map), stripLeadingSlash(currentPath));
+                    idToPath.put(setUniqueIdIfAbsent(map), stripLeadingSlashes(currentPath));
                     version = (String)map.getOrDefault("cwlVersion", version);
                 }
 
@@ -1082,11 +1083,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             return version != null && version.startsWith("v1.0");
         }
 
-        private String stripLeadingSlash(String value) {
-            if (value.startsWith("/")) {
-                return value.substring(1);
-            }
-            return value;
+        private String stripLeadingSlashes(String value) {
+            return StringUtils.stripStart(value, "/");
         }
 
         private Map<String, Object> emptyMap() {
