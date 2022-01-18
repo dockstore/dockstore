@@ -69,8 +69,8 @@ POM as their parent.
         <netty.version>4.1.68.Final</netty.version>
         <scala.version>2.12.13</scala.version>
         <cromwell.version>60</cromwell.version>
-        <jackson.version>2.12.3</jackson.version>
-        <jackson.major.version>2.12.3</jackson.major.version>
+        <jackson.version>2.13.1</jackson.version>
+        <jackson.major.version>2.13.1</jackson.major.version>
         <docker-client.version>3.2.8</docker-client.version>
 
         <skipTests>false</skipTests>
@@ -817,7 +817,7 @@ POM as their parent.
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.27</version>
+                <version>1.28</version>
             </dependency>
 
             <dependency>
