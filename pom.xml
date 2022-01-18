@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.12.0-alpha.1-SNAPSHOT</version>
+    <version>1.12.0-beta.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
