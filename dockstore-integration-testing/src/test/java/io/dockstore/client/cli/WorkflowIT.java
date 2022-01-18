@@ -20,6 +20,7 @@ import static io.dockstore.common.DescriptorLanguage.CWL;
 import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -1326,6 +1327,17 @@ public class WorkflowIT extends BaseIT {
         // Test TRS conversion
         io.dockstore.openapi.client.model.FileWrapper fileWrapper = ga4Ghv20Api.toolsIdVersionsVersionIdTypeDescriptorGet(DescriptorLanguage.CWL.toString(), "#workflow/github.com/dockstore-testing/hello_world", "1.0.1");
         verifyTRSSourcefileConversion(fileWrapper);
+
+        testingPostgres.runUpdateStatement("update sourcefile set content = null");
+        // Make sure the above worked
+        final Long nullContentCount = testingPostgres.runSelectStatement(
+            "select count(*) from sourcefile where content is null", Long.class);
+        assertNotEquals(0, nullContentCount.longValue());
+
+        // Test that null content has a checksum
+        final Long nullSha256Count = testingPostgres.runSelectStatement(
+            "select count(*) from sourcefile where sha256 is null", Long.class);
+        assertEquals(0, nullSha256Count.longValue());
 
     }
 
