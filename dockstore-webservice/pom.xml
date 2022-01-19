@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.12.0-beta.0-SNAPSHOT</version>
+        <version>1.12.0-beta.0</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -73,12 +73,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.12.0-beta.0-SNAPSHOT</version>
+            <version>1.12.0-beta.0</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.12.0-beta.0-SNAPSHOT</version>
+            <version>1.12.0-beta.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
@@ -538,7 +538,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.12.0-beta.0-SNAPSHOT</version>
+            <version>1.12.0-beta.0</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
