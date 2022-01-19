@@ -375,4 +375,16 @@
             update workflowversion set tooltablejson = null where workflowpath like '%.cwl';
         </sql>
     </changeSet>
+    <changeSet id="checksumsForNullContent" author="coverbeck">
+        <sql dbms="postgresql">
+            alter table sourcefile disable row level security;
+        </sql>
+        <dropColumn tableName="sourcefile" columnName="sha256"></dropColumn>
+        <sql dbms="postgresql">
+            alter table sourcefile add column sha256 text generated always as (digest(coalesce(content, ''), 'sha256')) stored;
+        </sql>
+        <sql dbms="postgresql">
+            alter table sourcefile enable row level security;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
