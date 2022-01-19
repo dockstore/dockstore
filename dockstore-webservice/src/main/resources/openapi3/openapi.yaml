@@ -5884,11 +5884,12 @@ paths:
         required: true
         schema:
           type: string
-      - in: query
-        name: services
+      - description: Which Workflow subclass to retrieve.
+        in: query
+        name: subclass
+        required: true
         schema:
-          type: boolean
-          default: false
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
