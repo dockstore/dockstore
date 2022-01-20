@@ -444,6 +444,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    /**
+     * Updates workflow info that may change between GitHub app releases for an existing bioworkflow, apptool, or service.
+     * @param workflow Existing workflow (bioworkflow, apptool, or service) to update
+     * @param repositoryId Organization and repository (ex. dockstore/dockstore-ui2)
+     */
+    public void updateWorkflowInfo(final Workflow workflow, final String repositoryId) {
+        setLicenseInformation(workflow, repositoryId);
+        workflow.setTopicAutomatic(getTopic(repositoryId));
+    }
+
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults, Optional<String> versionName, boolean hardRefresh) {

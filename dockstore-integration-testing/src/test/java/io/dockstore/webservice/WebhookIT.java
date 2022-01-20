@@ -233,6 +233,8 @@ public class WebhookIT extends BaseIT {
 
         // Unset the license information to simulate license change
         testingPostgres.runUpdateStatement("update workflow set licensename=null");
+        // Unset topicAutomatic to simulate a topicAutomatic change
+        testingPostgres.runUpdateStatement("update workflow set topicAutomatic=null");
         // Branch master on GitHub - updates two existing workflows
         client.handleGitHubRelease("refs/heads/master", installationId, workflowRepo, BasicIT.USER_2_USERNAME);
         List<io.dockstore.openapi.client.model.Workflow> workflows = new ArrayList<>();
@@ -241,6 +243,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should only have two workflows", 2, workflows.size());
         workflows.forEach(workflowIndividual -> {
             assertEquals("Should be able to get license after manual GitHub App version update", "Apache License 2.0", workflowIndividual.getLicenseInformation().getLicenseName());
+            assertEquals("Should be able to get topic from GitHub after GitHub App version update", "A repo that includes .dockstore.yml", workflowIndividual.getTopicAutomatic());
         });
 
         workflow = getFoobar1Workflow(client);
