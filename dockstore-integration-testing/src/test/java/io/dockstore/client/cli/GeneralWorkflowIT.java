@@ -658,13 +658,14 @@ public class GeneralWorkflowIT extends BaseIT {
         Assert.assertEquals(null, workflow.getTopicManual());
         Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
 
-        // set the automatic topic to the empty string, change the manual topic, and select it
+        // set the automatic topic to a garbage string, change the manual topic, and select it
         final String topicManual = "a user-specified manual topic!";
-        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", "", topicManual, "MANUAL", workflow.getId())));
+        final String garbage = "fooooo";
+        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", workflow.getId())));
 
         // confirm the new topic settings
         workflow = workflowsApi.getWorkflow(workflow.getId(), null);
-        Assert.assertEquals("", workflow.getTopicAutomatic());
+        Assert.assertEquals(garbage, workflow.getTopicAutomatic());
         Assert.assertEquals(topicManual, workflow.getTopicManual());
         Assert.assertEquals(TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
 
