@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.11.9-SNAPSHOT</version>
+    <version>1.11.11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -129,7 +129,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.11.9-SNAPSHOT</version>
+                 <version>1.11.11-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>
@@ -306,6 +306,7 @@
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5.3</version>
                     <configuration>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
                         <releaseProfiles>skipForRelease</releaseProfiles>
                     </configuration>
