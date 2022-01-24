@@ -369,4 +369,22 @@
         <dropColumn columnName="topic" tableName="tool"/>
         <dropColumn columnName="topic" tableName="workflow"/>
     </changeSet>
+    <changeSet author="svonworl" id="clearCwlToolTableJson">
+        <!-- DOCK-1548 improves CWL parsing, so clear the tool table json from all CWL workflow versions so that it will be recalculated. -->
+        <sql dbms="postgresql">
+            update workflowversion set tooltablejson = null where workflowpath like '%.cwl';
+        </sql>
+    </changeSet>
+    <changeSet id="checksumsForNullContent" author="coverbeck">
+        <sql dbms="postgresql">
+            alter table sourcefile disable row level security;
+        </sql>
+        <dropColumn tableName="sourcefile" columnName="sha256"></dropColumn>
+        <sql dbms="postgresql">
+            alter table sourcefile add column sha256 text generated always as (digest(coalesce(content, ''), 'sha256')) stored;
+        </sql>
+        <sql dbms="postgresql">
+            alter table sourcefile enable row level security;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

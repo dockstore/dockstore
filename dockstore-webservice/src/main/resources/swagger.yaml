@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.12.0-alpha.1-SNAPSHOT"
+  version: "1.12.0-beta.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -5165,12 +5165,15 @@ paths:
         description: "repository path"
         required: true
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
       responses:
         200:
           description: "successful operation"
