@@ -583,7 +583,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         } else {
             workflowToUpdate = workflow.get();
-            gitHubSourceCodeRepo.setLicenseInformation(workflowToUpdate, repository);
+            gitHubSourceCodeRepo.updateWorkflowInfo(workflowToUpdate, repository); // Update info that can change between GitHub releases
+
             if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
                 LOG.info("Converting workflow to DOCKSTORE_YML");
                 workflowToUpdate.setMode(DOCKSTORE_YML);
