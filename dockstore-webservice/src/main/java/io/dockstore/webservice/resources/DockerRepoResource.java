@@ -594,7 +594,7 @@ public class DockerRepoResource
         setToolLicenseInformation(user, tool);
 
         // Set the automatic topic
-        new TopicHarvester(user, tokenDAO).setTopic(tool);
+        new TopicHarvester(user, tokenDAO).harvestAndSetTopic(tool);
 
         return toolDAO.findById(id);
     }

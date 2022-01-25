@@ -200,7 +200,7 @@ public abstract class AbstractImageRegistry {
 
     private void setTopic(List<Tool> tools, Token githubToken) {
         TopicHarvester topicHarvester = new TopicHarvester(githubToken);
-        tools.forEach(topicHarvester::setTopic);
+        tools.forEach(topicHarvester::harvestAndSetTopic);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")

@@ -29,7 +29,7 @@ public class TopicHarvester {
         return list.get(0);
     }
 
-    public void setTopic(Entry<?, ?> entry) {
+    public void harvestAndSetTopic(Entry<?, ?> entry) {
         if (repo == null) {
             return;
         }
