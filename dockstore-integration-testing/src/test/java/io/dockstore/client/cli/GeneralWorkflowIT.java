@@ -649,7 +649,7 @@ public class GeneralWorkflowIT extends BaseIT {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
 
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "cwl",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", DescriptorLanguage.CWL.toString(),
             SourceControl.GITHUB, "/Dockstore.cwl", false);
 
         // confirm the default workflow topic settings
