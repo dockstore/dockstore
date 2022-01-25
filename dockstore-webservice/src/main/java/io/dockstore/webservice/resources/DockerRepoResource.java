@@ -52,6 +52,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
+import io.dockstore.webservice.helpers.TopicHarvester;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -283,7 +284,7 @@ public class DockerRepoResource
             throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
                 HttpStatus.SC_NOT_FOUND);
         }
-        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo, eventDAO, dashboardPrefix);
+        return abstractImageRegistry.refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, githubToken, sourceCodeRepo, eventDAO, dashboardPrefix);
     }
 
     @GET
@@ -591,6 +592,9 @@ public class DockerRepoResource
 
         // Can't set tool license information here, far too many tests register a tool without a GitHub token
         setToolLicenseInformation(user, tool);
+
+        // Set the automatic topic
+        new TopicHarvester(user, tokenDAO).setTopic(tool);
 
         return toolDAO.findById(id);
     }
