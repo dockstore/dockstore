@@ -5,12 +5,9 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TopicHarvester {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TopicHarvester.class);
     private final GitHubSourceCodeRepo repo;
 
     public TopicHarvester(GitHubSourceCodeRepo repo) {
