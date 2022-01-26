@@ -1392,6 +1392,39 @@ public class GeneralIT extends BaseIT {
         assertEquals(TopicSelectionEnum.MANUAL, toolTest.getTopicSelection());
     }
 
+    @Test
+    public void testTopicAfterRegisterAndRefresh() throws ApiException {
+        ContainersApi toolsApi = setupWebService();
+
+        DockstoreTool tool = toolsApi.registerManual(createManualTool());
+
+        // confirm the tool topic settings
+        final String topicAutomatic = tool.getTopicAutomatic();
+        Assert.assertEquals("Test repo for dockstore", topicAutomatic);
+        Assert.assertEquals(null, tool.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, tool.getTopicSelection());
+
+        // set the automatic topic to a garbage string, change the manual topic, and select it
+        final String topicManual = "a user-specified manual topic!";
+        final String garbage = "fooooo";
+        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update tool set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", tool.getId())));
+
+        // confirm the new topic settings
+        tool = toolsApi.getContainer(tool.getId(), null);
+        Assert.assertEquals(garbage, tool.getTopicAutomatic());
+        Assert.assertEquals(topicManual, tool.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, tool.getTopicSelection());
+
+        // refresh the Tool
+        DockstoreTool refreshedTool = toolsApi.refresh(tool.getId());
+
+        // make sure the automatic topic was refreshed, and that the manual topic and selection are the same
+        Assert.assertEquals(tool.getId(), refreshedTool.getId());
+        Assert.assertEquals(topicAutomatic, refreshedTool.getTopicAutomatic());
+        Assert.assertEquals(topicManual, refreshedTool.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, refreshedTool.getTopicSelection());
+    }
+
     /**
      * Creates a basic Manual Tool with Quay
      *
