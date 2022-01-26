@@ -1293,7 +1293,9 @@
                 <configuration>
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5_gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+<!--                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5_gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>-->
+<!--                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/GALAXY2.0.1/openapi/ga4gh-tool-discovery.yaml</inputSpec>-->
+                    <inputSpec>${pom.basedir}/walt-ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
                         <dateLibrary>legacy</dateLibrary>
@@ -1330,7 +1332,7 @@
                     <!-- DOCKSTORE-2428 - demo how to add new workflow language -->
                     <!--  <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.5/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec> -->
                     <!--  Change "serviceType.setVersion("2.0.1");" in ServiceInfoApiServiceImpl.java also -->
-                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.5_GALAXY/openapi/ga4gh-tool-discovery.yaml</inputSpec>
+                    <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/GALAXY2.0.1/openapi/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
                         <dateLibrary>legacy</dateLibrary>

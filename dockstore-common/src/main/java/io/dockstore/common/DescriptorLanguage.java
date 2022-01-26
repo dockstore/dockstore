@@ -16,11 +16,12 @@
 
 package io.dockstore.common;
 
-import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -31,6 +32,13 @@ import org.apache.commons.lang3.StringUtils;
 // @Schema(enumAsRef = true)
 public enum DescriptorLanguage {
     // Add new descriptor language here
+    SMK("SMK", "Snakemake", FileType.DOCKSTORE_SMK, null, false, true,
+            Set.of("smk", ""), true, true) {
+        @Override
+        public boolean isRelevantFileType(FileType type) {
+            return super.isRelevantFileType(type) || type == FileType.DOCKERFILE || type == FileType.DOCKSTORE_YML;
+        }
+    },
     CWL("CWL", "Common Workflow Language", FileType.DOCKSTORE_CWL, FileType.CWL_TEST_JSON, false, false,
         Set.of("cwl", "yaml", "yml"), true, true) {
         @Override
@@ -208,6 +216,7 @@ public enum DescriptorLanguage {
      */
     public enum FileType {
         // Add supported descriptor types here
+        DOCKSTORE_SMK(FileTypeCategory.GENERIC_DESCRIPTOR),
         DOCKSTORE_CWL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKSTORE_WDL(FileTypeCategory.GENERIC_DESCRIPTOR), DOCKERFILE(FileTypeCategory.CONTAINERFILE), CWL_TEST_JSON(FileTypeCategory.TEST_FILE), WDL_TEST_JSON(FileTypeCategory.TEST_FILE), NEXTFLOW(FileTypeCategory.GENERIC_DESCRIPTOR), NEXTFLOW_CONFIG(FileTypeCategory.PRIMARY_DESCRIPTOR), NEXTFLOW_TEST_PARAMS(FileTypeCategory.TEST_FILE), DOCKSTORE_YML(FileTypeCategory.OTHER), DOCKSTORE_SERVICE_YML(FileTypeCategory.PRIMARY_DESCRIPTOR), DOCKSTORE_SERVICE_TEST_JSON(FileTypeCategory.TEST_FILE), DOCKSTORE_SERVICE_OTHER(FileTypeCategory.OTHER), DOCKSTORE_GXFORMAT2(FileTypeCategory.GENERIC_DESCRIPTOR), GXFORMAT2_TEST_FILE(FileTypeCategory.TEST_FILE),
         DOCKSTORE_SWL(FileTypeCategory.GENERIC_DESCRIPTOR), SWL_TEST_JSON(FileTypeCategory.TEST_FILE);
         // DOCKSTORE-2428 - demo how to add new workflow language
@@ -225,6 +234,8 @@ public enum DescriptorLanguage {
 
     public static String getDefaultDescriptorPath(DescriptorLanguage descriptorLanguage) {
         switch (descriptorLanguage) {
+        case SMK:
+            return "/Snakefile";
         case CWL:
             return "/Dockstore.cwl";
         case WDL:

@@ -15,6 +15,17 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
@@ -28,16 +39,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
@@ -113,6 +114,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
             MinimalLanguageInterface.GenericFileType fileType;
             switch (file.getType()) {
+            case DOCKSTORE_SMK:
             case DOCKSTORE_CWL:
             case DOCKSTORE_WDL:
             case NEXTFLOW_CONFIG:
@@ -176,6 +178,10 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+            }
+            // For some reason this has not been set when we get here
+            if (minimalLanguageInterface.getDescriptorLanguage().getShortName().equals("SMK")) {
+                sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SMK);
             }
             sourceFile.setAbsolutePath(entry.getKey());
             results.put(entry.getKey(), sourceFile);
