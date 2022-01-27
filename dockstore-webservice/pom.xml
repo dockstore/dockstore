@@ -1424,6 +1424,27 @@
                             </sources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>add_api_yaml</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>src/main/resources/openapi3/openapi.yaml</file>
+                                    <type>openapi.yaml</type>
+                                    <classifier>dist</classifier>
+                                </artifact>
+                                <artifact>
+                                    <file>src/main/resources/swagger.yaml</file>
+                                    <type>swagger.yaml</type>
+                                    <classifier>dist</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
