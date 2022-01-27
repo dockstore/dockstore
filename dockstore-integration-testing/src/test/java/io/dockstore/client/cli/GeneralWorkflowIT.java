@@ -645,6 +645,41 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testTopicAfterRefresh() throws ApiException {
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", DescriptorLanguage.CWL.toString(),
+            SourceControl.GITHUB, "/Dockstore.cwl", false);
+
+        // confirm the default workflow topic settings
+        final String topicAutomatic = workflow.getTopicAutomatic();
+        Assert.assertEquals("test repo for CWL and WDL workflows", topicAutomatic);
+        Assert.assertEquals(null, workflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
+
+        // set the automatic topic to a garbage string, change the manual topic, and select it
+        final String topicManual = "a user-specified manual topic!";
+        final String garbage = "fooooo";
+        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", workflow.getId())));
+
+        // confirm the new topic settings
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        Assert.assertEquals(garbage, workflow.getTopicAutomatic());
+        Assert.assertEquals(topicManual, workflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
+
+        // refresh the workflow
+        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
+
+        // make sure the automatic topic was refreshed, and that the manual topic and selection are the same
+        Assert.assertEquals(workflow.getId(), refreshedWorkflow.getId());
+        Assert.assertEquals(topicAutomatic, refreshedWorkflow.getTopicAutomatic());
+        Assert.assertEquals(topicManual, refreshedWorkflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, refreshedWorkflow.getTopicSelection());
+    }
+
+    @Test
     public void testWorkflowFreezingWithNoFiles() {
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);

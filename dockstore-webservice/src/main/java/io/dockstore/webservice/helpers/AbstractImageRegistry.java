@@ -182,6 +182,7 @@ public abstract class AbstractImageRegistry {
 
         // Update db tools by copying over from api tools
         List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
+        setTopic(newDBTools, githubToken);
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
@@ -195,6 +196,11 @@ public abstract class AbstractImageRegistry {
         }
 
         return newDBTools;
+    }
+
+    private void setTopic(List<Tool> tools, Token githubToken) {
+        TopicHarvester topicHarvester = new TopicHarvester(githubToken);
+        tools.forEach(topicHarvester::harvestAndSetTopic);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -228,6 +234,7 @@ public abstract class AbstractImageRegistry {
 
         // Update db tools by copying over from api tools
         List<Tool> newDBTools = updateTools(apiTools, notManualTools, user, toolDAO);
+        setTopic(newDBTools, githubToken);
 
         List<String> exceptionMessages = new ArrayList<>();
 
@@ -258,7 +265,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO, String dashboardPrefix) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final Token githubToken, SourceCodeRepoInterface sourceCodeRepoInterface, EventDAO eventDAO, String dashboardPrefix) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
@@ -309,7 +316,8 @@ public abstract class AbstractImageRegistry {
 
         // Update db tools by copying over from api tools
         final User user = userDAO.findById(userId);
-        updateTools(apiTools, dbTools, user, toolDAO);
+        List<Tool> tools = updateTools(apiTools, dbTools, user, toolDAO);
+        setTopic(tools, githubToken);
 
         // Grab updated tool from the database
         final List<Tool> newDBTools = new ArrayList<>();

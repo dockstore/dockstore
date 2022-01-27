@@ -934,8 +934,15 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services) {
-        final Class<? extends Workflow> targetClass = services ? Service.class : BioWorkflow.class;
+        @Parameter(name = "subclass", description = "Which Workflow subclass to retrieve.", in = ParameterIn.QUERY, required = true) @ApiParam(value = "Which Workflow subclass to retrieve.", required = true) @QueryParam("subclass") WorkflowSubClass subclass,
+        @Parameter(name = "services", description = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow", in = ParameterIn.QUERY, hidden = true, deprecated = true) @ApiParam(value = "services", hidden = true) @QueryParam("services") Boolean services) {
+        final Class<? extends Workflow> targetClass;
+        if (services != null) {
+            targetClass = services ? Service.class : BioWorkflow.class;
+        } else {
+            targetClass = getSubClass(subclass);
+        }
+
         Workflow workflow = workflowDAO.findByPath(path, false, targetClass).orElse(null);
         checkEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);

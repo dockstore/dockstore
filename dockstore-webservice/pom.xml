@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.12.0-alpha.2-SNAPSHOT</version>
+        <version>1.12.0-beta.1-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -73,12 +73,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.12.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-beta.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-language-plugin-parent</artifactId>
-            <version>1.12.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-beta.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
@@ -538,7 +538,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.12.0-alpha.2-SNAPSHOT</version>
+            <version>1.12.0-beta.1-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -1423,6 +1423,27 @@
                             <sources>
                                 <source>src/test/java</source>
                             </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add_api_yaml</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>src/main/resources/openapi3/openapi.yaml</file>
+                                    <type>openapi.yaml</type>
+                                    <classifier>dist</classifier>
+                                </artifact>
+                                <artifact>
+                                    <file>src/main/resources/swagger.yaml</file>
+                                    <type>swagger.yaml</type>
+                                    <classifier>dist</classifier>
+                                </artifact>
+                            </artifacts>
                         </configuration>
                     </execution>
                 </executions>

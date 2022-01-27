@@ -1,13 +1,13 @@
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc446ce0a9bd4f81b3258c50f95e01b5)](https://app.codacy.com/app/dockstore/dockstore?utm_source=github.com&utm_medium=referral&utm_content=dockstore/dockstore&utm_campaign=Badge_Grade_Dashboard)
-[![Build Status](https://travis-ci.org/dockstore/dockstore.svg?branch=develop)](https://travis-ci.org/dockstore/dockstore) 
+[![CircleCI](https://circleci.com/gh/dockstore/dockstore.svg?style=svg)](https://circleci.com/gh/dockstore/dockstore)
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/dockstore/dockstore.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/dockstore/dockstore/context:java)
 [![codecov](https://codecov.io/gh/dockstore/dockstore/branch/develop/graph/badge.svg)](https://codecov.io/gh/dockstore/dockstore)
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4289328.svg)](https://doi.org/10.5281/zenodo.4289328)
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5781764.svg)](https://doi.org/10.5281/zenodo.5781764)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
 [![CircleCI](https://circleci.com/gh/dockstore/dockstore/tree/develop.svg?style=svg)](https://circleci.com/gh/dockstore/dockstore/tree/develop)
-[![Documentation Status](https://readthedocs.org/projects/dockstore/badge/?version=develop)](https://dockstore.readthedocs.io/en/develop/?badge=develop)
+[![Documentation Status](https://readthedocs.org/projects/dockstore/badge/?version=stable)](https://dockstore.readthedocs.io/en/stable/?badge=stable)
 
 
 # Dockstore
@@ -92,9 +92,9 @@ The following section is useful for Dockstore developers (e.g. those that want t
 ### Dependencies
 
 The dependency environment for Dockstore is described by our 
-[Travis-CI config](https://github.com/dockstore/dockstore/blob/develop/.travis.yml). In addition to the dependencies for 
+[CircleCI config](https://github.com/dockstore/dockstore/blob/develop/.circleci/config.yml) or [docker compose](docker-compose.yml). In addition to the dependencies for 
 Dockstore users, note the setup instructions for postgres. Specifically, you will need to have postgres installed 
-and setup with the database user specified in [.travis.yml](https://github.com/dockstore/dockstore/blob/develop/.travis.yml#L26) (ideally, postgres is need only for integration tests but not unit tests).
+and setup with the database user specified in [.circleci/config.yml](https://github.com/dockstore/dockstore/blob/1.11.10/.circleci/config.yml#L279) (ideally, postgres is needed only for integration tests but not unit tests).
 
 ### Building
 
@@ -110,16 +110,15 @@ If you maven build in the root directory this will build not only the web servic
     # or
     mvn clean install -Punit-tests
     
-If you're running tests on Travis-CI (or otherwise have access to the confidential data bundle) Run them via:
+If you're running tests on CircleCI (or otherwise have access to the confidential data bundle) Run them via:
 
     mvn clean install -Pintegration-tests
     
 There are also certain categories for tests that they can be added to when writing new tests. 
 Categories include:
 
-1. `ToilOnlyTest` are tests that can only be run by Toil (which also installs a different version of cwltool)
-2. `ToilCompatibleTest` are tests that can be run with our default cwltool and with Toil
-3. `ConfidentialTest` are tests that require access to our confidential testing bundle (ask a member of the development team if you're on the team)
+1. `ToilCompatibleTest` are tests that can be run with our default cwltool and with Toil
+2. `ConfidentialTest` are tests that require access to our confidential testing bundle (ask a member of the development team if you're on the team)
 
 ### Running Locally
 
@@ -131,7 +130,9 @@ Refer to the linked document to setup httpClient and database.
 3. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
 4. If you need integration with GitHub.com, Quay.io. or Bitbucket for your work, you will need to follow the appropriate 
 sections below and then fill out the corresponding fields in your 
-[dockstore.yml](https://github.com/dockstore/dockstore/blob/develop/dockstore.yml#L2). 
+[dockstore.yml](https://github.com/dockstore/dockstore/blob/develop/dockstore-integration-testing/src/test/resources/dockstore.yml). 
+
+One alternative if you prefer running things in containers would be using [docker-compose](docker-compose.yml)
 
 ### View Swagger UI
 
@@ -175,18 +176,17 @@ If you are working with a custom-built or updated dockstore client you will need
 
 We use the swagger-codegen-maven-plugin to generate several sections of code which are not checked in. 
 These include
-1. All of swagger-java-client (talks to our webservice for the CLI)
-2. All of swagger-java-quay-client (talks to Quay.io for our webservice)
+1. All of swagger-java-client (talks to our webservice for the CLI via Swagger 2.0)
+2. All of openapi-java-client (talks to our webservice for the CLI, but in OpenAPI 3.0)
 3. The Tool Registry Server components (serves up the TRS endpoints)
 
 To update these, you will need to point at a new version of the swagger.yaml provided by a service. For example, update the equivalent of [inputSpec](https://github.com/dockstore/dockstore/blob/0afe35682bdfb6fa7285b2acab8f80648346e835/dockstore-webservice/pom.xml#L854) in your branch.  
 
-### Encrypted Documents for Travis-CI
+### Encrypted Documents for CircleCI
 
-Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
-[files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
+Encrypted documents necessary for confidential testing are decrypted via [decrypt.sh](scripts/decrypt.sh) with access being granted to developers at UCSC and OICR.
 
-A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. When using this script you will likely want to alter the [CUSTOM\_DIR\_NAME](https://github.com/dockstore/dockstore/blob/0b59791440af6e3d383d1aede1774c0675b50404/encrypt.sh#L13). This is necessary since running the script will overwrite the existing encryption keys, instantly breaking existing builds using that key. Our current workaround is to use a new directory when providing a new bundle. 
+A convenience script is provided as [encrypt.sh](encrypt.sh) which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. When using this script you will likely want to alter the [CUSTOM\_DIR\_NAME](https://github.com/dockstore/dockstore/blob/0b59791440af6e3d383d1aede1774c0675b50404/encrypt.sh#L13). This is necessary since running the script will overwrite the existing encryption keys, instantly breaking existing builds using that key. Our current workaround is to use a new directory when providing a new bundle. 
 
 ### Adding Copyright header to all files with IntelliJ
 

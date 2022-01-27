@@ -533,6 +533,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
         this.author = entry.getAuthor();
         this.description = entry.getDescription();
         this.email = entry.getEmail();
+        setTopicAutomatic(entry.getTopicAutomatic());
     }
 
     public void setMetadataFromVersion(Version version) {
