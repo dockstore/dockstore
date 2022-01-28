@@ -1809,6 +1809,7 @@ paths:
             type: string
             enum:
             - DOCKSTORE_SMK
+            - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
             - DOCKSTORE_WDL
             - DOCKERFILE
@@ -2303,6 +2304,7 @@ paths:
                   type: string
                   enum:
                   - DOCKSTORE_SMK
+                  - SMK_TEST_PARAMS
                   - DOCKSTORE_CWL
                   - DOCKSTORE_WDL
                   - DOCKERFILE
@@ -7113,6 +7115,7 @@ paths:
             type: string
             enum:
             - DOCKSTORE_SMK
+            - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
             - DOCKSTORE_WDL
             - DOCKERFILE
@@ -8558,6 +8561,7 @@ components:
           description: Enumerates the type of file
           enum:
           - DOCKSTORE_SMK
+          - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
           - DOCKSTORE_WDL
           - DOCKERFILE
@@ -9208,6 +9212,7 @@ components:
           type: string
           enum:
           - DOCKSTORE_SMK
+          - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
           - DOCKSTORE_WDL
           - DOCKERFILE

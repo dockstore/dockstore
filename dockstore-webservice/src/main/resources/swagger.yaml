@@ -7750,6 +7750,7 @@ definitions:
         description: "Enumerates the type of file"
         enum:
         - "DOCKSTORE_SMK"
+        - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
         - "DOCKSTORE_WDL"
         - "DOCKERFILE"
@@ -8440,6 +8441,7 @@ definitions:
         description: "Enumerates the type of file"
         enum:
         - "DOCKSTORE_SMK"
+        - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
         - "DOCKSTORE_WDL"
         - "DOCKERFILE"

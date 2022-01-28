@@ -123,6 +123,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             case DOCKSTORE_YML:
                 fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
                 break;
+            case SMK_TEST_PARAMS:
             case CWL_TEST_JSON:
             case WDL_TEST_JSON:
             case NEXTFLOW_TEST_PARAMS:
