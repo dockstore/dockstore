@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 public class LanguagePluginHandler implements LanguageHandlerInterface {
 
+    public static final String SNAKEMAKE_SHORTNAME = "SMK";
     public static final Logger LOG = LoggerFactory.getLogger(LanguagePluginHandler.class);
     private final MinimalLanguageInterface minimalLanguageInterface;
     private final Gson gson = new Gson();
@@ -180,7 +181,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
             }
             // For some reason this has not been set when we get here
-            if (minimalLanguageInterface.getDescriptorLanguage().getShortName().equals("SMK")) {
+            if (minimalLanguageInterface.getDescriptorLanguage().getShortName().equals(SNAKEMAKE_SHORTNAME)) {
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SMK);
             }
             sourceFile.setAbsolutePath(entry.getKey());
