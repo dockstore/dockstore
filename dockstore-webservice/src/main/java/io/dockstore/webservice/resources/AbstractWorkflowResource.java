@@ -484,7 +484,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                     try {
-                        publishWorkflow(workflow, publish);
+                        publishWorkflow(workflow, publish, user);
                     } catch (CustomWebApplicationException ex) {
                         LOG.warn("Could not set publish state from YML.", ex);
                         lambdaEvent.setSuccess(false);
@@ -529,7 +529,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                 try {
-                    publishWorkflow(workflow, publish);
+                    publishWorkflow(workflow, publish, user);
                 } catch (CustomWebApplicationException ex) {
                     LOG.warn("Could not set publish state from YML.", ex);
                     lambdaEvent.setSuccess(false);
@@ -553,7 +553,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
-        Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
+        Optional<T> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
 
         Workflow workflowToUpdate = null;
         // Create workflow if one does not exist
@@ -803,9 +803,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * Publish or unpublish given workflow, if necessary.
      * @param workflow
      * @param publish
+     * @param user
      * @return
      */
-    protected Workflow publishWorkflow(Workflow workflow, final boolean publish) {
+    protected Workflow publishWorkflow(Workflow workflow, final boolean publish, User user) {
         if (workflow.getIsPublished() == publish) {
             return workflow;
         }
@@ -831,6 +832,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
                 workflow.setIsPublished(true);
                 if (checker != null) {
+                    // In theory checker should always be in sync with the workflow, but we've seen cases where they're not
+                    if (!checker.getIsPublished()) {
+                        eventDAO.publishEvent(true, user, checker);
+                    }
                     checker.setIsPublished(true);
                 }
             } else {
@@ -848,10 +853,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } else {
             workflow.setIsPublished(false);
             if (checker != null) {
+                // In theory checker should always be in sync with the workflow, but we've seen cases where they're not
+                if (checker.getIsPublished()) {
+                    eventDAO.publishEvent(false, user, checker);
+                }
                 checker.setIsPublished(false);
             }
             PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         }
+        eventDAO.publishEvent(publish, user, workflow);
         return workflow;
     }
+
 }

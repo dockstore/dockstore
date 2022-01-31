@@ -1,8 +1,14 @@
 package io.dockstore.webservice.jdbi;
 
 import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Event.Builder;
+import io.dockstore.webservice.core.Event.EventType;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
@@ -18,10 +24,13 @@ import javax.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
     public static final String PAGINATION_RANGE = "range[1,100]";
+    private static final Logger LOG = LoggerFactory.getLogger(EventDAO.class);
 
     public EventDAO(SessionFactory factory) {
         super(factory);
@@ -128,5 +137,26 @@ public class EventDAO extends AbstractDAO<Event> {
             Event event = entry.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).withVersion(version).build();
             create(event);
         }
+    }
+
+    public void publishEvent(boolean publish, User user, Entry entry) {
+        Class clazz = entry.getClass();
+        final Builder builder = new Builder()
+            .withType(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY)
+            .withUser(user);
+        // Ugh
+        if (clazz == BioWorkflow.class) {
+            builder.withBioWorkflow((BioWorkflow) entry);
+        } else if (clazz == AppTool.class) {
+            builder.withAppTool((AppTool) entry);
+        } else if (clazz == Service.class) {
+            builder.withService((Service) entry);
+        } else if (clazz == Tool.class) {
+            builder.withTool((Tool) entry);
+        } else {
+            LOG.error("Unexpected entry type: " + entry.getClass());
+        }
+        final Event event = builder.build();
+        create(event);
     }
 }

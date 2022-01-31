@@ -684,8 +684,13 @@ public class DockerRepoResource
 
         checkUserOwnsEntry(user, tool);
 
+        if (tool.getIsPublished() == request.getPublish()) {
+            return tool;
+        }
+
         Workflow checker = tool.getCheckerWorkflow();
 
+        final User foundUser = userDAO.findById(user.getId());
         if (request.getPublish()) {
             boolean validTag = false;
 
@@ -709,6 +714,9 @@ public class DockerRepoResource
             if (validTag && (!tool.getGitUrl().isEmpty()) || Objects.equals(tool.getMode(), ToolMode.HOSTED)) {
                 tool.setIsPublished(true);
                 if (checker != null) {
+                    if (!checker.getIsPublished()) {
+                        eventDAO.publishEvent(true, foundUser, checker);
+                    }
                     checker.setIsPublished(true);
                 }
             } else {
@@ -717,6 +725,9 @@ public class DockerRepoResource
         } else {
             tool.setIsPublished(false);
             if (checker != null) {
+                if (checker.getIsPublished()) {
+                    eventDAO.publishEvent(false, foundUser, checker);
+                }
                 checker.setIsPublished(false);
             }
         }
@@ -735,6 +746,7 @@ public class DockerRepoResource
         } else {
             PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.DELETE);
         }
+        eventDAO.publishEvent(request.getPublish(), foundUser, tool);
         return tool;
     }
 
