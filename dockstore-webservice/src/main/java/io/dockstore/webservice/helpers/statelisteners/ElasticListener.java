@@ -317,33 +317,15 @@ public class ElasticListener implements StateListenerInterface {
         } else if (entry instanceof BioWorkflow) {
             BioWorkflow bioWorkflow = (BioWorkflow) entry;
             BioWorkflow detachedBioWorkflow = new BioWorkflow();
-            // These are for facets
-            detachedBioWorkflow.setDescriptorType(bioWorkflow.getDescriptorType());
-            detachedBioWorkflow.setSourceControl(bioWorkflow.getSourceControl());
-            detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
-
-            // These are for table
-            detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
-            detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
-            detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());
-            detachedEntry = detachedBioWorkflow;
+            detachedEntry = detachWorkflow(detachedBioWorkflow, bioWorkflow);
+        } else if (entry instanceof AppTool) {
+            AppTool appTool = (AppTool) entry;
+            AppTool detachedAppTool = new AppTool();
+            detachedEntry = detachWorkflow(detachedAppTool, appTool);
         } else {
             return entry;
         }
-        //        else if (entry instanceof AppTool) {
-        //            AppTool appTool = (AppTool) entry;
-        //            BioWorkflow detachedAppTool = new BioWorkflow();
-        //            // These are for facets
-        //            detachedAppTool.setDescriptorType(appTool.getDescriptorType());
-        //            detachedAppTool.setSourceControl(appTool.getSourceControl());
-        //            detachedAppTool.setOrganization(appTool.getOrganization());
-        //
-        //            // These are for table
-        //            detachedAppTool.setWorkflowName(appTool.getWorkflowName());
-        //            detachedAppTool.setRepository(appTool.getRepository());
-        //            detachedAppTool.setGitUrl(appTool.getGitUrl());
-        //            detachedEntry = detachedAppTool;
-        //        }
+
 
         detachedEntry.setDescription(entry.getDescription());
         detachedEntry.setAuthor(entry.getAuthor());
@@ -397,6 +379,19 @@ public class ElasticListener implements StateListenerInterface {
             detachedVersions.add(detatchedVersion);
         });
         return detachedVersions;
+    }
+
+    public static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
+        // These are for facets
+        detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
+        detachedWorkflow.setSourceControl(workflow.getSourceControl());
+        detachedWorkflow.setOrganization(workflow.getOrganization());
+
+        // These are for table
+        detachedWorkflow.setWorkflowName(workflow.getWorkflowName());
+        detachedWorkflow.setRepository(workflow.getRepository());
+        detachedWorkflow.setGitUrl(workflow.getGitUrl());
+        return detachedWorkflow;
     }
 
 
