@@ -29,6 +29,9 @@ import org.jdbi.v3.core.statement.Query;
  * @since 1.7.0
  */
 public class TestingPostgres {
+
+    private static final String SELECT_COUNT_FROM_EVENT_E_WHERE_E_TYPE =
+        "select count(*) from event e where e.type = ";
     private Jdbi jdbi;
 
     public TestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
@@ -55,5 +58,23 @@ public class TestingPostgres {
             Query query = handle.select(statement);
             return query.mapTo(handler).list();
         });
+    }
+
+    public long getPublishEventCount() {
+        return runSelectStatement(SELECT_COUNT_FROM_EVENT_E_WHERE_E_TYPE + "'PUBLISH_ENTRY'", Long.class);
+    }
+
+    public long getUnpublishEventCount() {
+        return runSelectStatement(SELECT_COUNT_FROM_EVENT_E_WHERE_E_TYPE + "'UNPUBLISH_ENTRY'", Long.class);
+    }
+
+    public long getPublishEventCountForWorkflow(long workflowId) {
+        return runSelectStatement(
+            SELECT_COUNT_FROM_EVENT_E_WHERE_E_TYPE + "'PUBLISH_ENTRY' and workflowId = " + workflowId, Long.class);
+    }
+
+    public long getUnpublishEventCountForWorkflow(long workflowId) {
+        return runSelectStatement(
+            SELECT_COUNT_FROM_EVENT_E_WHERE_E_TYPE + "'UNPUBLISH_ENTRY' and workflowId = " + workflowId, Long.class);
     }
 }

@@ -615,18 +615,13 @@ public class BasicIT extends BaseIT {
 
     @Test
     public void testPublishToolEvents() {
-        final long pubAndUnpubEventsCount = testingPostgres.runSelectStatement(
-            "select count(*) from event e where e.type = 'PUBLISH_ENTRY' or e.type = 'UNPUBLISH_ENTRY'",
-            Long.class
-        );
-        Assert.assertEquals("There should be no publish/unpublish events", 0, pubAndUnpubEventsCount);
+        Assert.assertEquals("There should be no publish events", 0, testingPostgres.getPublishEventCount());
+        Assert.assertEquals("There should be no publish events", 0, testingPostgres.getUnpublishEventCount());
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgithub");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandbitbucket");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgitlab");
-        final long pubEventsCount = testingPostgres.runSelectStatement(
-            "select count(*) from event e where e.type = 'PUBLISH_ENTRY'", Long.class);
-        final long unpubEventsCount = testingPostgres.runSelectStatement(
-            "select count(*) from event e where e.type = 'UNPUBLISH_ENTRY'", Long.class);
+        final long pubEventsCount = testingPostgres.getPublishEventCount();
+        final long unpubEventsCount = testingPostgres.getUnpublishEventCount();
         Assert.assertEquals("There should be 3 publish events", 3, pubEventsCount);
         Assert.assertEquals("There should be 3 unpublish events", 3, unpubEventsCount);
     }

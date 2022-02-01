@@ -192,6 +192,7 @@ public class WorkflowIT extends BaseIT {
      */
     private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
         SourceControl sourceControl, String descriptorPath, boolean toPublish) {
+        Assert.assertEquals(0, testingPostgres.getPublishEventCount());
         // Manually register
         Workflow workflow = workflowsApi
             .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
@@ -207,6 +208,7 @@ public class WorkflowIT extends BaseIT {
             workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         }
         assertEquals(workflow.isIsPublished(), toPublish);
+        Assert.assertEquals(1, testingPostgres.getPublishEventCount());
         return workflow;
     }
 
@@ -758,7 +760,10 @@ public class WorkflowIT extends BaseIT {
         workflowApi.getWorkflowZip(refresh.getId(), versionId);
 
         // Publish the workflow
+        final long publishEventCount = testingPostgres.getPublishEventCount();
         workflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(true));
+        // The checker workflow also gets published
+        assertEquals(2 + publishEventCount, testingPostgres.getPublishEventCount());
 
         // Owner should still have access
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
@@ -766,8 +771,11 @@ public class WorkflowIT extends BaseIT {
         // should be able to download properly with incorrect credentials because the entry is published
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
 
+        final long unpublishEventCount = testingPostgres.getUnpublishEventCount();
         // Unpublish the workflow
         workflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(false));
+        // The checker workflow also gets unpublished
+        Assert.assertEquals(2 + unpublishEventCount, testingPostgres.getUnpublishEventCount());
 
         // should not be able to download properly with incorrect credentials because the entry is not published
         try {
