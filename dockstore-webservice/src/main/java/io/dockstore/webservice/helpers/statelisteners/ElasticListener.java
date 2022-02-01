@@ -330,6 +330,21 @@ public class ElasticListener implements StateListenerInterface {
         } else {
             return entry;
         }
+        //        else if (entry instanceof AppTool) {
+        //            AppTool appTool = (AppTool) entry;
+        //            BioWorkflow detachedAppTool = new BioWorkflow();
+        //            // These are for facets
+        //            detachedAppTool.setDescriptorType(appTool.getDescriptorType());
+        //            detachedAppTool.setSourceControl(appTool.getSourceControl());
+        //            detachedAppTool.setOrganization(appTool.getOrganization());
+        //
+        //            // These are for table
+        //            detachedAppTool.setWorkflowName(appTool.getWorkflowName());
+        //            detachedAppTool.setRepository(appTool.getRepository());
+        //            detachedAppTool.setGitUrl(appTool.getGitUrl());
+        //            detachedEntry = detachedAppTool;
+        //        }
+
         detachedEntry.setDescription(entry.getDescription());
         detachedEntry.setAuthor(entry.getAuthor());
         detachedEntry.setAliases(entry.getAliases());
