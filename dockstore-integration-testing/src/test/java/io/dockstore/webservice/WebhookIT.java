@@ -901,12 +901,13 @@ public class WebhookIT extends BaseIT {
         assertFalse(toolValidation.isValid());
         assertTrue(toolValidation.getMessage().contains("Did you mean to register a workflow"));
 
-        // publish endpoint updates elasticsearch index, but this doesn't actually fail if the ES update fails
+        // publish endpoint updates elasticsearch index
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.isValid()).findFirst().get();
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
         client.publish(appTool.getId(), publishRequest);
         client.publish(workflow.getId(), publishRequest);
+        Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
         final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
@@ -923,6 +924,7 @@ public class WebhookIT extends BaseIT {
         publishRequest.setPublish(false);
         client.publish(appTool.getId(), publishRequest);
         client.publish(workflow.getId(), publishRequest);
+        Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
     }
 
     @Test
