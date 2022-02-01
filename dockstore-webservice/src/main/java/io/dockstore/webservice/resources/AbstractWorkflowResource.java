@@ -811,32 +811,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return workflow;
         }
 
-        Workflow checker = workflow.getCheckerWorkflow();
-
         if (workflow.isIsChecker()) {
             String msg = "Cannot directly publish/unpublish a checker workflow.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
+        final Workflow checker = workflow.getCheckerWorkflow();
+
         if (publish) {
-            boolean validTag = false;
-            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
-            for (WorkflowVersion workflowVersion : versions) {
-                if (workflowVersion.isValid()) {
-                    validTag = true;
-                    break;
-                }
-            }
+            final boolean validTag = workflow.getWorkflowVersions().stream().anyMatch(wv -> wv.isValid());
 
             if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
                 workflow.setIsPublished(true);
-                if (checker != null) {
-                    // In theory checker should always be in sync with the workflow, but we've seen cases where they're not
-                    if (!checker.getIsPublished()) {
-                        eventDAO.publishEvent(true, user, checker);
-                    }
+                if (checker != null && !checker.getIsPublished()) {
                     checker.setIsPublished(true);
+                    eventDAO.publishEvent(true, user, checker);
                 }
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
@@ -852,12 +842,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         } else {
             workflow.setIsPublished(false);
-            if (checker != null) {
-                // In theory checker should always be in sync with the workflow, but we've seen cases where they're not
-                if (checker.getIsPublished()) {
-                    eventDAO.publishEvent(false, user, checker);
-                }
+            if (checker != null && checker.getIsPublished()) {
                 checker.setIsPublished(false);
+                eventDAO.publishEvent(false, user, checker);
             }
             PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
         }
