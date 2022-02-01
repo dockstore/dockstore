@@ -208,7 +208,7 @@ public class WorkflowIT extends BaseIT {
             workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         }
         assertEquals(workflow.isIsPublished(), toPublish);
-        Assert.assertEquals(1, testingPostgres.getPublishEventCount());
+        Assert.assertEquals(toPublish ? 1 : 0, testingPostgres.getPublishEventCount());
         return workflow;
     }
 
