@@ -192,11 +192,11 @@ public class WorkflowIT extends BaseIT {
      */
     private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
         SourceControl sourceControl, String descriptorPath, boolean toPublish) {
-        Assert.assertEquals(0, testingPostgres.getPublishEventCount());
         // Manually register
         Workflow workflow = workflowsApi
             .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
                 "/test.json");
+        Assert.assertEquals(0, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
         assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
 
         // Refresh
@@ -208,7 +208,7 @@ public class WorkflowIT extends BaseIT {
             workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         }
         assertEquals(workflow.isIsPublished(), toPublish);
-        Assert.assertEquals(toPublish ? 1 : 0, testingPostgres.getPublishEventCount());
+        Assert.assertEquals(toPublish ? 1 : 0, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
         return workflow;
     }
 
