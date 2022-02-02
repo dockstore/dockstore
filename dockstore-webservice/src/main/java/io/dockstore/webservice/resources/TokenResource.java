@@ -642,9 +642,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         if (githubToken == null) {
-            if (user == null) {
-                throw loginFailedException();
-            }
             LOG.info("Could not find user's github token. Making new one...");
             // CREATE GITHUB TOKEN
             githubToken = new Token();
