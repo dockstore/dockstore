@@ -31,6 +31,9 @@ import org.apache.commons.lang3.StringUtils;
 // @Schema(enumAsRef = true)
 public enum DescriptorLanguage {
     // Add new descriptor language here
+    // RE: Snakemake defaultPrimaryDescriptorExtensions: The root descriptor for Snakemake
+    // should be called 'Snakefile' (no suffix), the other descriptors should have the '.smk' suffix.
+    // https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html
     SMK("SMK", "Snakemake", FileType.DOCKSTORE_SMK, FileType.SMK_TEST_PARAMS, false, true,
             Set.of("smk", ""), true, true) {
         @Override
