@@ -381,7 +381,7 @@ public class ElasticListener implements StateListenerInterface {
         return detachedVersions;
     }
 
-    public static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
+    private static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
         // These are for facets
         detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
         detachedWorkflow.setSourceControl(workflow.getSourceControl());
