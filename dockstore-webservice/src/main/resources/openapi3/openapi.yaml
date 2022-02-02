@@ -969,6 +969,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -1620,6 +1621,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -1806,6 +1808,8 @@ paths:
           items:
             type: string
             enum:
+            - DOCKSTORE_SMK
+            - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
             - DOCKSTORE_WDL
             - DOCKERFILE
@@ -1894,6 +1898,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -2298,6 +2303,8 @@ paths:
                 items:
                   type: string
                   enum:
+                  - DOCKSTORE_SMK
+                  - SMK_TEST_PARAMS
                   - DOCKSTORE_CWL
                   - DOCKSTORE_WDL
                   - DOCKERFILE
@@ -2533,6 +2540,7 @@ paths:
           - NFL
           - SERVICE
           - GALAXY
+          - SMK
       - description: The image registry that contains the image.
         in: query
         name: registry
@@ -2774,7 +2782,8 @@ paths:
       - description: "The output type of the descriptor. Plain types return the bare\
           \ descriptor while the \"non-plain\" types return a descriptor wrapped with\
           \ metadata. Allowable values include \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"\
-          , \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"."
+          , \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"\
+          , \"PLAIN_SMK\"."
         in: path
         name: type
         required: true
@@ -2833,8 +2842,8 @@ paths:
           \ to the underlying implementation to determine which output type to return.\
           \ Plain types return the bare descriptor while the \"non-plain\" types return\
           \ a descriptor wrapped with metadata. Allowable values are \"CWL\", \"WDL\"\
-          , \"NFL\", \"GALAXY\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\", \"PLAIN_GALAXY\"\
-          ."
+          , \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"PLAIN_NFL\"\
+          , \"PLAIN_GALAXY\", \"PLAIN_SMK\"."
         in: path
         name: type
         required: true
@@ -2896,7 +2905,7 @@ paths:
       operationId: toolsIdVersionsVersionIdTypeFilesGet
       parameters:
       - description: "The output type of the descriptor. Examples of allowable values\
-          \ are \"CWL\", \"WDL\", \"NFL\", \"GALAXY\"."
+          \ are \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\"."
         in: path
         name: type
         required: true
@@ -2951,10 +2960,10 @@ paths:
       operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
       - description: "The type of the underlying descriptor. Allowable values include\
-          \ \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"PLAIN_CWL\", \"PLAIN_WDL\", \"\
-          PLAIN_NFL\", \"PLAIN_GALAXY\". For example, \"CWL\" would return an list\
-          \ of ToolTests objects while \"PLAIN_CWL\" would return a bare JSON list\
-          \ with the content of the tests."
+          \ \"CWL\", \"WDL\", \"NFL\", \"GALAXY\", \"SMK\", \"PLAIN_CWL\", \"PLAIN_WDL\"\
+          , \"PLAIN_NFL\", \"PLAIN_GALAXY\", \"PLAIN_SMK\". For example, \"CWL\" would\
+          \ return an list of ToolTests objects while \"PLAIN_CWL\" would return a\
+          \ bare JSON list with the content of the tests."
         in: path
         name: type
         required: true
@@ -5620,6 +5629,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6303,6 +6313,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6454,6 +6465,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6488,6 +6500,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -6759,6 +6772,7 @@ paths:
         schema:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -7100,6 +7114,8 @@ paths:
           items:
             type: string
             enum:
+            - DOCKSTORE_SMK
+            - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
             - DOCKSTORE_WDL
             - DOCKERFILE
@@ -8125,6 +8141,7 @@ components:
         language:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -8144,6 +8161,7 @@ components:
           type: string
           description: The language of the workflow
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -8373,6 +8391,7 @@ components:
         descriptorLanguage:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2
@@ -8541,6 +8560,8 @@ components:
           type: string
           description: Enumerates the type of file
           enum:
+          - DOCKSTORE_SMK
+          - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
           - DOCKSTORE_WDL
           - DOCKERFILE
@@ -8912,6 +8933,7 @@ components:
         type:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - NFL
@@ -9032,6 +9054,7 @@ components:
             - NFL
             - SERVICE
             - GALAXY
+            - SMK
         id:
           type: string
           description: An identifier of the version of this tool for this particular
@@ -9188,6 +9211,8 @@ components:
         type:
           type: string
           enum:
+          - DOCKSTORE_SMK
+          - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
           - DOCKSTORE_WDL
           - DOCKERFILE
@@ -9397,6 +9422,7 @@ components:
         descriptorType:
           type: string
           enum:
+          - SMK
           - CWL
           - WDL
           - gxformat2

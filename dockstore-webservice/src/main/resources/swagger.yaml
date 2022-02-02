@@ -1348,6 +1348,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -2053,6 +2054,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -2239,6 +2241,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -4889,6 +4892,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -5585,6 +5589,7 @@ paths:
         required: true
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -5746,6 +5751,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -6038,6 +6044,7 @@ paths:
         required: false
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -7603,6 +7610,7 @@ definitions:
       descriptorLanguage:
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "GXFORMAT2"
@@ -7741,6 +7749,8 @@ definitions:
         position: 1
         description: "Enumerates the type of file"
         enum:
+        - "DOCKSTORE_SMK"
+        - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
         - "DOCKSTORE_WDL"
         - "DOCKERFILE"
@@ -8141,6 +8151,7 @@ definitions:
       type:
         type: "string"
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"
@@ -8266,6 +8277,7 @@ definitions:
         items:
           type: "string"
           enum:
+          - "SMK"
           - "CWL"
           - "WDL"
           - "NFL"
@@ -8428,6 +8440,8 @@ definitions:
         position: 1
         description: "Enumerates the type of file"
         enum:
+        - "DOCKSTORE_SMK"
+        - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
         - "DOCKSTORE_WDL"
         - "DOCKERFILE"
@@ -8831,8 +8845,9 @@ definitions:
         type: "string"
         position: 18
         description: "This is a descriptor type for the workflow, by default either\
-          \ CWL, WDL, NFL, or gxformat2 (Defaults to CWL)."
+          \ SMK, CWL, WDL, NFL, or gxformat2 (Defaults to CWL)."
         enum:
+        - "SMK"
         - "CWL"
         - "WDL"
         - "NFL"

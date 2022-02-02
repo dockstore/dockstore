@@ -191,6 +191,9 @@ public final class ToolsImplCommon {
             final Set<SourceFile> sourceFiles = version.getSourceFiles();
             for (SourceFile file : sourceFiles) {
                 switch (file.getType()) {
+                case DOCKSTORE_SMK:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.SMK);
+                    break;
                 case DOCKSTORE_CWL:
                     toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
                     break;

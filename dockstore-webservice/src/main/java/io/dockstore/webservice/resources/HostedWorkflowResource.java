@@ -260,6 +260,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
         DescriptorLanguage.FileType testParameterType = null;
         switch (identifiedType) {
+        case DOCKSTORE_SMK:
+            testParameterType = DescriptorLanguage.FileType.SMK_TEST_PARAMS;
+            break;
         case DOCKSTORE_CWL:
             testParameterType = DescriptorLanguage.FileType.CWL_TEST_JSON;
             break;

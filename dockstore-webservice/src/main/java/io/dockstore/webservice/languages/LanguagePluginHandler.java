@@ -113,6 +113,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
             MinimalLanguageInterface.GenericFileType fileType;
             switch (file.getType()) {
+            case DOCKSTORE_SMK:
             case DOCKSTORE_CWL:
             case DOCKSTORE_WDL:
             case NEXTFLOW_CONFIG:
@@ -122,6 +123,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             case DOCKSTORE_YML:
                 fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
                 break;
+            case SMK_TEST_PARAMS:
             case CWL_TEST_JSON:
             case WDL_TEST_JSON:
             case NEXTFLOW_TEST_PARAMS:
@@ -176,6 +178,10 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             if (minimalLanguageInterface.getDescriptorLanguage().isServiceLanguage()) {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
+            }
+            // For some reason this has not been set when we get here
+            if (minimalLanguageInterface.getDescriptorLanguage().getShortName().equals(DescriptorLanguage.SMK.toString())) {
+                sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SMK);
             }
             sourceFile.setAbsolutePath(entry.getKey());
             results.put(entry.getKey(), sourceFile);
