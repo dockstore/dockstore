@@ -616,7 +616,7 @@ public class BasicIT extends BaseIT {
     @Test
     public void testPublishToolEvents() {
         Assert.assertEquals("There should be no publish events", 0, testingPostgres.getPublishEventCount());
-        Assert.assertEquals("There should be no publish events", 0, testingPostgres.getUnpublishEventCount());
+        Assert.assertEquals("There should be no unpublish events", 0, testingPostgres.getUnpublishEventCount());
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgithub");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandbitbucket");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgitlab");
