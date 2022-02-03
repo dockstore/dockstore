@@ -901,8 +901,13 @@ public class WebhookIT extends BaseIT {
         assertFalse(toolValidation.isValid());
         assertTrue(toolValidation.getMessage().contains("Did you mean to register a workflow"));
 
-        testingPostgres.runUpdateStatement("update apptool set ispublished = 't' where id = " + appTool.getId());
-        testingPostgres.runUpdateStatement("update workflow set ispublished = 't' where id = " + workflow.getId());
+        // publish endpoint updates elasticsearch index
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(workflowVersion -> workflowVersion.isValid()).findFirst().get();
+        testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
+        client.publish(appTool.getId(), publishRequest);
+        client.publish(workflow.getId(), publishRequest);
+        Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
 
         Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
         final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
@@ -915,6 +920,11 @@ public class WebhookIT extends BaseIT {
         final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/github.com/DockstoreTestUser2/test-workflows-and-tools");
         assertNotNull(trsWorkflow);
         assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
+
+        publishRequest.setPublish(false);
+        client.publish(appTool.getId(), publishRequest);
+        client.publish(workflow.getId(), publishRequest);
+        Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
     }
 
     @Test
