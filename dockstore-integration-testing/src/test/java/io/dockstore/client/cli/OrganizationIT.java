@@ -1487,6 +1487,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals(organization.getId(), collectionOrganization.getOrganizationId());
         assertEquals(organization.getName(), collectionOrganization.getOrganizationName());
         assertEquals(organization.getDisplayName(), collectionOrganization.getOrganizationDisplayName());
+        assertEquals(organization.getAvatarUrl(), collectionOrganization.getOrganizationAvatarUrl());
         assertEquals(collection.getId(), collectionOrganization.getCollectionId());
         assertEquals(collection.getName(), collectionOrganization.getCollectionName());
         assertEquals(collection.getDisplayName(), collectionOrganization.getCollectionDisplayName());

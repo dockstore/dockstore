@@ -30,13 +30,15 @@ public class CollectionOrganization {
     public final long organizationId;
     public final String organizationName;
     public final String organizationDisplayName;
+    public final String organizationAvatarUrl;
 
-    public CollectionOrganization(long collectionId, String collectionName, String collectionDisplayName, long organizationId, String organizationName, String organizationDisplayName)  {
+    public CollectionOrganization(long collectionId, String collectionName, String collectionDisplayName, long organizationId, String organizationName, String organizationDisplayName, String organizationAvatarUrl)  {
         this.collectionId = collectionId;
         this.collectionName = collectionName;
         this.collectionDisplayName = collectionDisplayName;
         this.organizationId = organizationId;
         this.organizationName = organizationName;
         this.organizationDisplayName = organizationDisplayName;
+        this.organizationAvatarUrl = organizationAvatarUrl;
     }
 }
