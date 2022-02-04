@@ -9,6 +9,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -26,6 +27,7 @@ public class QuayImageRegistryTest {
      * This tests that when there are over 500 tags, we can use the paginated endpoint to retrieve all of them instead.
      * Using calico/node because it has over 3838 tags
      */
+    @Ignore("https://github.com/dockstore/dockstore/issues/4663")
     @Test
     public void getOver500TagsTest() {
         Token token = new Token();
