@@ -54,8 +54,7 @@ server-url = https://www.dockstore.org/api
 
 By default, cwltool reads input files from the local filesystem. Dockstore also adds support for additional file systems
 such as http, https, and ftp. Through a plug-in system, Dockstore also supports 
-the Amazon S3, [Synapse](http://docs.synapse.org/articles/downloading_data.html), and 
-[ICGC Storage Client](http://docs.icgc.org/cloud/guide/#storage-client-usage) via [plugins](https://github.com/dockstore).
+the Amazon S3 and [Synapse](http://docs.synapse.org/articles/downloading_data.html) via [plugins](https://github.com/dockstore).
 
 Download the above set of default plugins via: 
 ```
@@ -83,7 +82,7 @@ client = /media/large_volume/icgc-storage-client-1.0.23/bin/icgc-storage-client
 ```
 
 Additional plugins can be created by taking one of the repos in [plugins](https://github.com/dockstore) as a model and 
-using [pf4j](https://github.com/decebals/pf4j) as a reference. See [additional documentation](dockstore-file-plugin-parent) for more details. 
+using [pf4j](https://github.com/decebals/pf4j) as a reference. See [additional documentation](https://github.com/dockstore/dockstore-cli/tree/develop/dockstore-file-plugin-parent) for more details. 
 
 ## For Dockstore Developers
 
@@ -125,7 +124,7 @@ Categories include:
 You can also run it on your local computer but will need to setup postgres separately.
 
 1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. The dockstore.yml is mostly a standard [Dropwizard configuration file](http://www.dropwizard.io/1.3.9/docs/manual/configuration.html). 
+2. The dockstore.yml is mostly a standard [Dropwizard configuration file](https://www.dropwizard.io/en/release-2.0.x/manual/configuration.html). 
 Refer to the linked document to setup httpClient and database. 
 3. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
 4. If you need integration with GitHub.com, Quay.io. or Bitbucket for your work, you will need to follow the appropriate 
