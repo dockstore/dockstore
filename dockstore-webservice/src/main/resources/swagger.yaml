@@ -6531,6 +6531,8 @@ definitions:
         format: "int64"
       collectionName:
         type: "string"
+      organizationAvatarUrl:
+        type: "string"
       organizationDisplayName:
         type: "string"
       organizationId:
