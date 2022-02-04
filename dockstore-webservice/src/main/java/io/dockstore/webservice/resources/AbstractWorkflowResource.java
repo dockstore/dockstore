@@ -843,7 +843,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     private void publishChecker(Workflow checker, boolean publish, User user) {
         if (checker != null && checker.getIsPublished() != publish) {
-            checker.setIsPublished(true);
+            checker.setIsPublished(publish);
             eventDAO.publishEvent(publish, user, checker);
         }
     }
