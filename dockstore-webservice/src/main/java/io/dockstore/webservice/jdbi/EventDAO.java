@@ -132,7 +132,7 @@ public class EventDAO extends AbstractDAO<Event> {
         }
     }
 
-    public void publishEvent(boolean publish, User user, Entry entry) {
+    public <T extends Entry> void publishEvent(boolean publish, User user, T entry) {
         final Builder builder = entry.getEventBuilder()
             .withType(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY)
             .withUser(user);

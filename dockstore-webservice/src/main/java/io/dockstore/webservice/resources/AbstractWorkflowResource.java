@@ -810,46 +810,50 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (workflow.getIsPublished() == publish) {
             return workflow;
         }
+        checkNotChecker(workflow);
+        final Workflow checker = workflow.getCheckerWorkflow();
+        if (publish) {
+            final boolean validTag = workflow.getWorkflowVersions().stream().anyMatch(Version::isValid);
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+                workflow.setIsPublished(true);
+                publishChecker(checker, true, user);
+            } else {
+                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
+            }
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
+            createAndSetDiscourseTopic(workflow);
+        } else {
+            workflow.setIsPublished(false);
+            publishChecker(checker, false, user);
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
+        }
+        eventDAO.publishEvent(publish, user, workflow);
+        return workflow;
+    }
 
+    private void createAndSetDiscourseTopic(Workflow workflow) {
+        if (workflow.getTopicId() == null) {
+            try {
+                entryResource.createAndSetDiscourseTopic(workflow.getId());
+            } catch (CustomWebApplicationException ex) {
+                LOG.error("Error adding discourse topic.", ex);
+            }
+        }
+    }
+
+    private void publishChecker(Workflow checker, boolean publish, User user) {
+        if (checker != null && checker.getIsPublished() != publish) {
+            checker.setIsPublished(true);
+            eventDAO.publishEvent(publish, user, checker);
+        }
+    }
+
+    private void checkNotChecker(Workflow workflow) {
         if (workflow.isIsChecker()) {
             String msg = "Cannot directly publish/unpublish a checker workflow.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-
-        final Workflow checker = workflow.getCheckerWorkflow();
-
-        if (publish) {
-            final boolean validTag = workflow.getWorkflowVersions().stream().anyMatch(wv -> wv.isValid());
-
-            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
-                workflow.setIsPublished(true);
-                if (checker != null && !checker.getIsPublished()) {
-                    checker.setIsPublished(true);
-                    eventDAO.publishEvent(true, user, checker);
-                }
-            } else {
-                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
-            if (workflow.getTopicId() == null) {
-                try {
-                    entryResource.createAndSetDiscourseTopic(workflow.getId());
-                } catch (CustomWebApplicationException ex) {
-                    LOG.error("Error adding discourse topic.", ex);
-                }
-            }
-        } else {
-            workflow.setIsPublished(false);
-            if (checker != null && checker.getIsPublished()) {
-                checker.setIsPublished(false);
-                eventDAO.publishEvent(false, user, checker);
-            }
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
-        }
-        eventDAO.publishEvent(publish, user, workflow);
-        return workflow;
     }
 
 }
