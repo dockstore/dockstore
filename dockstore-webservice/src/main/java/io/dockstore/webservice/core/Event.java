@@ -220,7 +220,9 @@ public class Event {
         DELETE_COLLECTION,
         REMOVE_FROM_COLLECTION,
         ADD_TO_COLLECTION,
-        ADD_VERSION_TO_ENTRY
+        ADD_VERSION_TO_ENTRY,
+        PUBLISH_ENTRY,
+        UNPUBLISH_ENTRY
     }
 
     public static class Builder {

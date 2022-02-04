@@ -16,12 +16,14 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.EventsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Event;
+import io.swagger.client.model.Event.TypeEnum;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -129,7 +131,9 @@ public class EventResourceIT extends BaseIT {
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0)
+            .stream().filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY && e.getType() != TypeEnum.UNPUBLISH_ENTRY)
+            .collect(Collectors.toList());
         Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
         // Add and update tag 101 times
         Set<String> randomTagNames = new HashSet<>();

@@ -748,10 +748,14 @@ public class WebhookIT extends BaseIT {
 
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/publish", installationId);
         Workflow workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "");
+        assertEquals(1, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
+        assertEquals(0, testingPostgres.getUnpublishEventCountForWorkflow(workflow.getId()));
         assertTrue(workflow.isIsPublished());
         client.handleGitHubRelease(githubFiltersRepo, BasicIT.USER_2_USERNAME, "refs/heads/unpublish", installationId);
         workflow = client.getWorkflowByPath("github.com/" + githubFiltersRepo + "/filternone", BIOWORKFLOW, "");
         assertFalse(workflow.isIsPublished());
+        assertEquals(1, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
+        assertEquals(1, testingPostgres.getUnpublishEventCountForWorkflow(workflow.getId()));
     }
 
     /**

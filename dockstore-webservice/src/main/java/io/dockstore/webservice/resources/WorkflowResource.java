@@ -734,7 +734,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         checkCanShareWorkflow(user, workflow);
 
-        Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish());
+        Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
         return publishedWorkflow;
     }
@@ -1801,6 +1801,9 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         checkerWorkflow.addUser(user);
         checkerWorkflow = (BioWorkflow)workflowDAO.findById(id);
         PublicStateManager.getInstance().handleIndexUpdate(checkerWorkflow, StateManagerMode.UPDATE);
+        if (isPublished) {
+            eventDAO.publishEvent(true, userDAO.findById(user.getId()), checkerWorkflow);
+        }
 
         // Update original entry with checker id
         entry.setCheckerWorkflow(checkerWorkflow);

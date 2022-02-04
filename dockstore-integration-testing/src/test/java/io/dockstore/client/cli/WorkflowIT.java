@@ -196,6 +196,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = workflowsApi
             .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
                 "/test.json");
+        Assert.assertEquals(0, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
         assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
 
         // Refresh
@@ -207,6 +208,7 @@ public class WorkflowIT extends BaseIT {
             workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
         }
         assertEquals(workflow.isIsPublished(), toPublish);
+        Assert.assertEquals(toPublish ? 1 : 0, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
         return workflow;
     }
 
@@ -758,7 +760,10 @@ public class WorkflowIT extends BaseIT {
         workflowApi.getWorkflowZip(refresh.getId(), versionId);
 
         // Publish the workflow
+        final long publishEventCount = testingPostgres.getPublishEventCount();
         workflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(true));
+        // The checker workflow also gets published
+        assertEquals(2 + publishEventCount, testingPostgres.getPublishEventCount());
 
         // Owner should still have access
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
@@ -766,8 +771,11 @@ public class WorkflowIT extends BaseIT {
         // should be able to download properly with incorrect credentials because the entry is published
         workflowApiNoAccess.getWorkflowZip(refresh.getId(), versionId);
 
+        final long unpublishEventCount = testingPostgres.getUnpublishEventCount();
         // Unpublish the workflow
         workflowApi.publish(refresh.getId(), CommonTestUtilities.createPublishRequest(false));
+        // The checker workflow also gets unpublished
+        Assert.assertEquals(2 + unpublishEventCount, testingPostgres.getUnpublishEventCount());
 
         // should not be able to download properly with incorrect credentials because the entry is not published
         try {
