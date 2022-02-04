@@ -95,6 +95,10 @@ jobs:
       - setup_machine
       - setup_test
       - setup_postgres_docker
+      - install-pip
+      - run:
+          name: install pip dependencies
+          command: scripts/install-tests.sh
       - setup_integration_test
       - save_test_results
   integration-tests:
