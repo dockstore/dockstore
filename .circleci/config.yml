@@ -50,33 +50,33 @@ workflows:
     jobs:
       - build:
           <<: *common_filters
-#      - unit_test:
-#          <<: *common_filters
-#          requires:
-#            - build
-#          context:
-#            - sonarcloud
-#            - aws
-#      - workflow-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#          context: sonarcloud
-#      - language-parsing-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#          context: sonarcloud
-#      - tool-integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#          context: sonarcloud
-#      - integration-tests:
-#          <<: *common_filters
-#          requires:
-#            - build
-#          context: sonarcloud
+      - unit_test:
+          <<: *common_filters
+          requires:
+            - build
+          context:
+            - sonarcloud
+            - aws
+      - workflow-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
+      - language-parsing-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
+      - tool-integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
+      - integration-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
       - regression-integration-tests:
           filters:
             branches:
