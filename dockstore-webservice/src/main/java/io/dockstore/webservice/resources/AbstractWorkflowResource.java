@@ -659,6 +659,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflow.setActualDefaultVersion(updatedWorkflowVersion);
             }
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
+            // Update index if default version was updated
+            // verified and verified platforms are the only versions-level properties unrelated to default version that affect the index but GitHub Apps do not update it
+            if (workflow.getActualDefaultVersion() != null && updatedWorkflowVersion.getName() != null && workflow.getActualDefaultVersion().getName().equals(updatedWorkflowVersion.getName())) {
+                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+            }
         } catch (IOException ex) {
             final String message = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
             LOG.error(message, ex);
