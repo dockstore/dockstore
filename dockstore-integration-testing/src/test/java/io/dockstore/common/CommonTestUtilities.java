@@ -351,7 +351,7 @@ public final class CommonTestUtilities {
     public static void checkToolList(String log) {
         Assert.assertTrue(log.contains("NAME"));
         Assert.assertTrue(log.contains("DESCRIPTION"));
-        Assert.assertTrue(log.contains("Git Repo"));
+        Assert.assertTrue(log.toLowerCase().contains("git repo"));
     }
 
     public static void restartElasticsearch() throws Exception {
