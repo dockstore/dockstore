@@ -89,14 +89,14 @@ public class ClientRegressionIT extends BaseIT {
 
     @Test
     public void testListEntriesOld() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
+        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }
 
     @Test
     public void testDebugModeListEntriesOld() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
+        String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }

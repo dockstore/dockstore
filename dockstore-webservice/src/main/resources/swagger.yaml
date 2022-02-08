@@ -6538,6 +6538,8 @@ definitions:
         format: "int64"
       collectionName:
         type: "string"
+      organizationAvatarUrl:
+        type: "string"
       organizationDisplayName:
         type: "string"
       organizationId:
@@ -7174,6 +7176,8 @@ definitions:
         - "REMOVE_FROM_COLLECTION"
         - "ADD_TO_COLLECTION"
         - "ADD_VERSION_TO_ENTRY"
+        - "PUBLISH_ENTRY"
+        - "UNPUBLISH_ENTRY"
       version:
         position: 8
         description: "Version associated with the event."

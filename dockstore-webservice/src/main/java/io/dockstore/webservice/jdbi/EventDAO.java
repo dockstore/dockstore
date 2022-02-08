@@ -3,6 +3,8 @@ package io.dockstore.webservice.jdbi;
 import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Event.Builder;
+import io.dockstore.webservice.core.Event.EventType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
@@ -128,5 +130,13 @@ public class EventDAO extends AbstractDAO<Event> {
             Event event = entry.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).withVersion(version).build();
             create(event);
         }
+    }
+
+    public <T extends Entry> void publishEvent(boolean publish, User user, T entry) {
+        final Builder builder = entry.getEventBuilder()
+            .withType(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY)
+            .withUser(user);
+        final Event event = builder.build();
+        create(event);
     }
 }

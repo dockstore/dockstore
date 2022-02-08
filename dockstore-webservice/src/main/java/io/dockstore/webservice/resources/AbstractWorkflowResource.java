@@ -484,7 +484,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                     try {
-                        publishWorkflow(workflow, publish);
+                        publishWorkflow(workflow, publish, user);
                     } catch (CustomWebApplicationException ex) {
                         LOG.warn("Could not set publish state from YML.", ex);
                         lambdaEvent.setSuccess(false);
@@ -529,7 +529,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                 try {
-                    publishWorkflow(workflow, publish);
+                    publishWorkflow(workflow, publish, user);
                 } catch (CustomWebApplicationException ex) {
                     LOG.warn("Could not set publish state from YML.", ex);
                     lambdaEvent.setSuccess(false);
@@ -553,7 +553,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
-        Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
+        Optional<T> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
 
         Workflow workflowToUpdate = null;
         // Create workflow if one does not exist
@@ -659,6 +659,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 workflow.setActualDefaultVersion(updatedWorkflowVersion);
             }
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
+            // Update index if default version was updated
+            // verified and verified platforms are the only versions-level properties unrelated to default version that affect the index but GitHub Apps do not update it
+            if (workflow.getActualDefaultVersion() != null && updatedWorkflowVersion.getName() != null && workflow.getActualDefaultVersion().getName().equals(updatedWorkflowVersion.getName())) {
+                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+            }
         } catch (IOException ex) {
             final String message = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
             LOG.error(message, ex);
@@ -803,55 +808,57 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * Publish or unpublish given workflow, if necessary.
      * @param workflow
      * @param publish
+     * @param user
      * @return
      */
-    protected Workflow publishWorkflow(Workflow workflow, final boolean publish) {
+    protected Workflow publishWorkflow(Workflow workflow, final boolean publish, User user) {
         if (workflow.getIsPublished() == publish) {
             return workflow;
         }
+        checkNotChecker(workflow);
+        final Workflow checker = workflow.getCheckerWorkflow();
+        if (publish) {
+            final boolean validTag = workflow.getWorkflowVersions().stream().anyMatch(Version::isValid);
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+                workflow.setIsPublished(true);
+                publishChecker(checker, true, user);
+            } else {
+                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
+            }
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
+            createAndSetDiscourseTopic(workflow);
+        } else {
+            workflow.setIsPublished(false);
+            publishChecker(checker, false, user);
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
+        }
+        eventDAO.publishEvent(publish, user, workflow);
+        return workflow;
+    }
 
-        Workflow checker = workflow.getCheckerWorkflow();
+    private void createAndSetDiscourseTopic(Workflow workflow) {
+        if (workflow.getTopicId() == null) {
+            try {
+                entryResource.createAndSetDiscourseTopic(workflow.getId());
+            } catch (CustomWebApplicationException ex) {
+                LOG.error("Error adding discourse topic.", ex);
+            }
+        }
+    }
 
+    private void publishChecker(Workflow checker, boolean publish, User user) {
+        if (checker != null && checker.getIsPublished() != publish) {
+            checker.setIsPublished(publish);
+            eventDAO.publishEvent(publish, user, checker);
+        }
+    }
+
+    private void checkNotChecker(Workflow workflow) {
         if (workflow.isIsChecker()) {
             String msg = "Cannot directly publish/unpublish a checker workflow.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-
-        if (publish) {
-            boolean validTag = false;
-            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
-            for (WorkflowVersion workflowVersion : versions) {
-                if (workflowVersion.isValid()) {
-                    validTag = true;
-                    break;
-                }
-            }
-
-            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
-                workflow.setIsPublished(true);
-                if (checker != null) {
-                    checker.setIsPublished(true);
-                }
-            } else {
-                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
-            if (workflow.getTopicId() == null) {
-                try {
-                    entryResource.createAndSetDiscourseTopic(workflow.getId());
-                } catch (CustomWebApplicationException ex) {
-                    LOG.error("Error adding discourse topic.", ex);
-                }
-            }
-        } else {
-            workflow.setIsPublished(false);
-            if (checker != null) {
-                checker.setIsPublished(false);
-            }
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
-        }
-        return workflow;
     }
+
 }

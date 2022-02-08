@@ -42,6 +42,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Event;
+import io.swagger.client.model.Event.TypeEnum;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
@@ -51,6 +52,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Before;
@@ -295,7 +297,8 @@ public class BasicIT extends BaseIT {
         StarRequest starRequest = new StarRequest();
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).stream()
+            .filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY).collect(Collectors.toList());
         Assert.assertTrue("Should not be an event for the non-tag version that was automatically created for the newly registered tool", events.isEmpty());
         // Add a tag
         Tag tag = new Tag();
@@ -307,7 +310,8 @@ public class BasicIT extends BaseIT {
         tags.add(tag);
 
         tags = toolTagsApi.addTags(tool.getId(), tags);
-        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0).stream()
+            .filter(e -> e.getType() != TypeEnum.PUBLISH_ENTRY).collect(Collectors.toList());
         Assert.assertEquals("Should have created an event for the new tag", 1, events.size());
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be one tag", 1, count);
@@ -607,6 +611,19 @@ public class BasicIT extends BaseIT {
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgithub");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandbitbucket");
         publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgitlab");
+    }
+
+    @Test
+    public void testPublishToolEvents() {
+        Assert.assertEquals("There should be no publish events", 0, testingPostgres.getPublishEventCount());
+        Assert.assertEquals("There should be no unpublish events", 0, testingPostgres.getUnpublishEventCount());
+        publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgithub");
+        publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandbitbucket");
+        publishAndUnpublishToolHelper("quay.io/dockstoretestuser/quayandgitlab");
+        final long pubEventsCount = testingPostgres.getPublishEventCount();
+        final long unpubEventsCount = testingPostgres.getUnpublishEventCount();
+        Assert.assertEquals("There should be 3 publish events", 3, pubEventsCount);
+        Assert.assertEquals("There should be 3 unpublish events", 3, unpubEventsCount);
     }
 
     private void publishAndUnpublishToolHelper(String toolPath) {

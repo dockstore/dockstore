@@ -603,14 +603,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         User user = userDAO.findByGitHubUserId(String.valueOf(gitHubId));
         long userID;
         if (registerUser) {
-            // check that there was no previous user, but by default use the github login
-            String username = githubLogin;
-            int count = 1;
-            while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
-                username = githubLogin + count++;
-            }
-
             if (user == null && authUser == null) {
+                final String username = uniqueNewUsername(githubLogin);
                 User newUser = new User();
                 newUser.setUsername(username);
                 newUser.setUsernameChangeRequired(shouldRestricUser(username));
@@ -626,7 +620,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             } else if (user != null) {
                 userID = user.getId();
             } else {
-                throw new CustomWebApplicationException("Login failed, you may need to register an account", HttpStatus.SC_UNAUTHORIZED);
+                throw loginFailedException();
             }
             List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
             if (!tokens.isEmpty()) {
@@ -640,6 +634,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         if (dockstoreToken == null) {
+            if (user == null) {
+                throw loginFailedException();
+            }
             LOG.info("Could not find user's dockstore token. Making new one...");
             dockstoreToken = createDockstoreToken(userID, user.getUsername());
         }
@@ -660,6 +657,20 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             gitHubSourceCodeRepo.syncUserMetadataFromGitHub(user, Optional.empty());
         }
         return dockstoreToken;
+    }
+
+    private CustomWebApplicationException loginFailedException() {
+        return new CustomWebApplicationException("Login failed, you may need to register an account", HttpStatus.SC_UNAUTHORIZED);
+    }
+
+    private String uniqueNewUsername(final String githubLogin) {
+        // check that there was no previous user, but by default use the github login
+        String username = githubLogin;
+        int count = 1;
+        while (userDAO.findByUsername(username) != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
+            username = githubLogin + count++;
+        }
+        return username;
     }
 
     private Token createDockstoreToken(long userID, String githubLogin) {
