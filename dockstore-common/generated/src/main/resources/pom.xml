@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.dockstore</groupId>
   <artifactId>dockstore-common</artifactId>
-  <version>1.11.11-SNAPSHOT</version>
+  <version>1.11.12-SNAPSHOT</version>
   <licenses>
     <license>
       <name>Apache Software License, Version 2.0</name>
@@ -106,12 +106,12 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>httpclient-osgi</artifactId>
           <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient-osgi</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>httpcore-osgi</artifactId>
           <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore-osgi</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -140,20 +140,20 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>cats-effect_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>cats-core_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>alleycats-core_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>refined_2.12</artifactId>
           <groupId>eu.timepit</groupId>
+          <artifactId>refined_2.12</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -164,28 +164,28 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>cats-effect_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>cats-core_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>alleycats-core_2.12</artifactId>
           <groupId>org.typelevel</groupId>
+          <artifactId>alleycats-core_2.12</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>refined_2.12</artifactId>
           <groupId>eu.timepit</groupId>
+          <artifactId>refined_2.12</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-text</artifactId>
           <groupId>org.apache.commons</groupId>
+          <artifactId>commons-text</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -196,28 +196,28 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>cats-effect_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>cats-core_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>alleycats-core_2.12</artifactId>
           <groupId>org.typelevel</groupId>
+          <artifactId>alleycats-core_2.12</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>refined_2.12</artifactId>
           <groupId>eu.timepit</groupId>
+          <artifactId>refined_2.12</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>commons-text</artifactId>
           <groupId>org.apache.commons</groupId>
+          <artifactId>commons-text</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -228,8 +228,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>cats-effect_2.12</artifactId>
           <groupId>org.typelevel</groupId>
+          <artifactId>cats-effect_2.12</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -246,32 +246,32 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>guava</artifactId>
           <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>refined_2.12</artifactId>
           <groupId>eu.timepit</groupId>
+          <artifactId>refined_2.12</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>circe-core_2.12</artifactId>
           <groupId>io.circe</groupId>
+          <artifactId>circe-core_2.12</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>cats-core_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
+          <groupId>org.typelevel</groupId>
           <artifactId>alleycats-core_2.12</artifactId>
-          <groupId>org.typelevel</groupId>
         </exclusion>
         <exclusion>
+          <groupId>com.google.cloud</groupId>
           <artifactId>google-cloud-resourcemanager</artifactId>
-          <groupId>com.google.cloud</groupId>
         </exclusion>
         <exclusion>
-          <artifactId>google-cloud-monitoring</artifactId>
           <groupId>com.google.cloud</groupId>
+          <artifactId>google-cloud-monitoring</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -282,8 +282,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>refined_2.12</artifactId>
           <groupId>eu.timepit</groupId>
+          <artifactId>refined_2.12</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -294,8 +294,8 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
-          <artifactId>refined_2.12</artifactId>
           <groupId>eu.timepit</groupId>
+          <artifactId>refined_2.12</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
