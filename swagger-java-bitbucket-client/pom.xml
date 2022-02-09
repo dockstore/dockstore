@@ -9,7 +9,7 @@
     <parent>
         <artifactId>dockstore</artifactId>
         <groupId>io.dockstore</groupId>
-        <version>1.11.11</version>
+        <version>1.11.12-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
