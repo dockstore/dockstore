@@ -37,7 +37,7 @@ POM as their parent.
 
     <groupId>io.dockstore</groupId>
     <artifactId>bom-internal</artifactId>
-    <version>1.11.11-SNAPSHOT</version>
+    <version>1.11.12-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>bom-internal</name>
@@ -56,7 +56,7 @@ POM as their parent.
         <logback.version>1.2.3</logback.version>
         <aws.version>2.16.22</aws.version>
         <powermock.version>2.0.4</powermock.version>
-        <postgresql.version>42.2.19</postgresql.version>
+        <postgresql.version>42.2.25</postgresql.version>
         <mockito.version>2.28.2</mockito.version>
         <cwlavro.version>2.0.4.4</cwlavro.version>
         <okhttp.version>4.7.0</okhttp.version>
@@ -290,7 +290,12 @@ POM as their parent.
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
-                <version>1.12.25</version>
+                <version>1.12.108</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>1.12.108</version>
             </dependency>
 
             <dependency>
