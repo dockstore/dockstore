@@ -41,12 +41,9 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -92,7 +89,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static final String GITHUB_PREFIX = "git@github.com:";
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
-    private static final int DEFAULT_PAGE_SIZE = 1000;
+    private static final int DEFAULT_PAGE_SIZE = 100;
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
@@ -293,9 +290,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return trsResponses.get().build();
         }
 
+        final int actualLimit = Math.min(limit, DEFAULT_PAGE_SIZE);
+        int offsetInteger = 0;
+        if (offset != null) {
+            offsetInteger = Integer.parseInt(offset);
+        }
+        // note, there's a subtle change in definition here, TRS uses offset to indicate the page number, JPA uses index in the result set
+        int startIndex = offsetInteger * actualLimit;
+
         final List<Entry<?, ?>> all;
         try {
-            all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user);
+            all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user, actualLimit, startIndex);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_RESPONSE;
         }
@@ -342,18 +347,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         }
 
-        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
 
-        List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
-        int offsetInteger = 0;
-        if (offset != null) {
-            offsetInteger = Integer.parseInt(offset);
-        }
-        if (offsetInteger >= pagedResults.size()) {
-            results = new ArrayList<>();
-        } else {
-            results = pagedResults.get(offsetInteger);
-        }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", actualLimit);
@@ -374,15 +368,19 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             handleParameter(registry, "registry", filters);
             handleParameter(String.valueOf(actualLimit), "limit", filters);
 
-            if (offsetInteger + 1 < pagedResults.size()) {
+            final long numTools = toolDAO.countAllPublished(Optional.empty());
+            final long numWorkflows = workflowDAO.countAllPublished(Optional.empty());
+            final long numPages = (numTools + numWorkflows) / actualLimit;
+
+            if (startIndex + actualLimit < numTools + numWorkflows) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath()
                         + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
-                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath()
+                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + numPages, null).normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
@@ -392,9 +390,28 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return responseBuilder.build();
     }
 
+    /**
+     *
+     * @param id
+     * @param alias
+     * @param toolClass
+     * @param descriptorType
+     * @param registry
+     * @param organization
+     * @param name
+     * @param toolname
+     * @param description
+     * @param author
+     * @param checker
+     * @param user
+     * @param actualLimit page size
+     * @param offset index to start at
+     * @throws UnsupportedEncodingException
+     * @return
+     */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     private List<Entry<?, ?>> getEntries(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
-            String description, String author, Boolean checker, Optional<User> user) throws UnsupportedEncodingException {
+        String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
 
         final List<Entry<?, ?>> all = new ArrayList<>();
 
@@ -421,18 +438,39 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 }
             }
 
-            // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
-            // Add tools if user didn't provide a tool class or the tool class provided matches to tools, AND
-            // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
-            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
-                if (descriptorType == null  || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
-                    all.addAll(toolDAO.findAllPublished());
+            // calculate whether we want a page of tools, a page of workflows, or a page that includes both
+            final long numTools = toolDAO.countAllPublished(Optional.empty());
+            final long numWorkflows = workflowDAO.countAllPublished(Optional.empty());
+            int startIndex = offset;
+            int pageRemaining = actualLimit;
+
+            if (startIndex < numTools) {
+                // then we want at least some tools
+                // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
+                // Add tools if user didn't provide a tool class or the tool class provided matches to tools, AND
+                // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
+                if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+                    if (descriptorType == null  || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
+                        all.addAll(toolDAO.findAllPublished(Integer.toString(startIndex), pageRemaining, null, null, null));
+                    }
+
                 }
 
             }
-            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
-                // filter published workflows using criteria builder
-                all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker));
+            if (!all.isEmpty()) {
+                // if we got any tools, overflow into the very start of workflows
+                startIndex = 0;
+                pageRemaining = Math.max(pageRemaining - all.size(), 0);
+            } else {
+                // on the other hand, if we skipped all tools then, adjust the start index accordingly
+                // TODO: conversion might bite us much later
+                startIndex = startIndex - Math.toIntExact(numTools);
+            }
+            if (startIndex < numWorkflows) {
+                if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+                    // filter published workflows using criteria builder
+                    all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining));
+                }
             }
         }
         return all;

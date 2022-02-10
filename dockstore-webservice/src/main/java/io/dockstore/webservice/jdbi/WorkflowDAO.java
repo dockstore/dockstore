@@ -55,6 +55,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         super(factory);
     }
 
+    public List<String> getAllPublishedOrganizations() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getPublishedOrganizations"));
+    }
+
     /**
      * Finds all workflows with the given path (ignores workflow name)
      * When findPublished is true, will only look at published workflows
@@ -180,7 +184,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public List<Workflow> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
-            String description, String author, Boolean checker) {
+        String description, String author, Boolean checker, int startIndex, int pageRemaining) {
 
         final SourceControlConverter converter = new SourceControlConverter();
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
@@ -207,7 +211,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
         q.where(predicate);
         TypedQuery<Workflow> query = currentSession().createQuery(q);
-
+        query.setFirstResult(startIndex);
+        query.setMaxResults(pageRemaining);
         List<Workflow> workflows = query.getResultList();
         return workflows;
     }

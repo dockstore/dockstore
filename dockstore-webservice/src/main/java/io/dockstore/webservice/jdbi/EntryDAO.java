@@ -215,6 +215,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return typedQuery.getResultList();
     }
 
+    @Deprecated
     public List<T> findAllPublished() {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }

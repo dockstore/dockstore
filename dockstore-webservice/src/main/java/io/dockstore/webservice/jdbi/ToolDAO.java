@@ -51,6 +51,10 @@ public class ToolDAO extends EntryDAO<Tool> {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findAllPublishedPathsOrderByDbupdatedate").setMaxResults(RSS_ENTRY_LIMIT));
     }
 
+    public List<String> getAllPublishedNamespaces() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.getPublishedNamespaces"));
+    }
+
     /**
      * Finds all tools with the given path (ignores tool name)
      * When findPublished is true, will only look at published tools

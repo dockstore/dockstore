@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -105,8 +106,11 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     /**
      * Avoid using this one, this is quite slow
      *
+     * @deprecated as of 1.11, avoid this one and hopefully delete it
+     * <p></p>
      * @return
      */
+    @Deprecated
     private List<Entry> getPublished() {
         final List<Entry> published = new ArrayList<>();
         published.addAll(toolDAO.findAllPublished());
@@ -156,19 +160,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     @Override
     public Response organizationsGet(SecurityContext securityContext) {
-        List<String> organizations = new ArrayList<>();
-        for (Entry c : getPublished()) {
-            String org;
-            if (c instanceof Workflow) {
-                org = ((Workflow)c).getOrganization().toLowerCase();
-            } else {
-                org = ((Tool)c).getNamespace().toLowerCase();
-            }
-            if (!organizations.contains(org)) {
-                organizations.add(org);
-            }
-        }
-        return Response.ok(organizations).build();
+        Set<String> organizations = new HashSet<>();
+        organizations.addAll(toolDAO.getAllPublishedNamespaces());
+        organizations.addAll(workflowDAO.getAllPublishedOrganizations());
+        return Response.ok(new ArrayList<>(organizations)).build();
     }
 
     @Override
