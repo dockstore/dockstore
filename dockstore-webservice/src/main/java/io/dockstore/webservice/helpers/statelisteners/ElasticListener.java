@@ -108,7 +108,7 @@ public class ElasticListener implements StateListenerInterface {
         }
         try {
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
+            String entryType = entry instanceof Tool || entry instanceof AppTool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
             case PUBLISH:
