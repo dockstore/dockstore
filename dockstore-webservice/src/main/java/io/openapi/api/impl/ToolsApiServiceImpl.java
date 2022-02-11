@@ -73,6 +73,7 @@ import io.swagger.api.impl.ToolsImplCommon;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static final String GITHUB_PREFIX = "git@github.com:";
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
+    //TODO this is also a maximum page size, may want to rename/split out the two concepts
     private static final int DEFAULT_PAGE_SIZE = 100;
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
@@ -307,9 +309,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         // note, there's a subtle change in definition here, TRS uses offset to indicate the page number, JPA uses index in the result set
         int startIndex = offsetInteger * actualLimit;
 
-        final List<Entry<?, ?>> all;
+        final List<Entry<?, ?>> all = new ArrayList<>();
+        long numTools;
+        long numWorkflows;
         try {
-            all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user, actualLimit, startIndex);
+            final ImmutablePair<Long, Long> entries = getEntries(all, id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user, actualLimit,
+                startIndex);
+            numTools = entries.left;
+            numWorkflows = entries.right;
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_RESPONSE;
         }
@@ -345,19 +352,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             handleParameter(registry, "registry", filters);
             handleParameter(String.valueOf(actualLimit), "limit", filters);
 
-            final long numTools = toolDAO.countAllPublished(Optional.empty());
-            final long numWorkflows = workflowDAO.countAllPublished(Optional.empty());
             final long numPages = (numTools + numWorkflows) / actualLimit;
 
             if (startIndex + actualLimit < numTools + numWorkflows) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath()
-                        + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
+                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath()
-                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + numPages, null).normalize();
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(), Joiner.on('&').join(filters) + "&offset=" + numPages, null)
+                .normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
@@ -384,13 +389,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param actualLimit page size
      * @param offset index to start at
      * @throws UnsupportedEncodingException
-     * @return
+     * @return number of tools, number of workflows we're working with
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    private List<Entry<?, ?>> getEntries(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
+    private ImmutablePair<Long, Long> getEntries(List<Entry<?, ?>> all, String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
-
-        final List<Entry<?, ?>> all = new ArrayList<>();
+        long numTools = 0;
+        long numWorkflows = 0;
 
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
@@ -418,13 +423,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 } catch (UnsupportedOperationException ex) {
                     // If unable to match descriptor language, do not return any entries.
                     LOG.info(ex.getMessage());
-                    return all;
+                    return ImmutablePair.of(numTools, numWorkflows);
                 }
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            long numTools = WORKFLOW.equalsIgnoreCase(toolClass) ? 0 : toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            long numWorkflows = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) ? 0 : bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
+            numTools = WORKFLOW.equalsIgnoreCase(toolClass) ? 0 : toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
+            numWorkflows = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) ? 0 : bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
 
             int startIndex = offset;
             int pageRemaining = actualLimit;
@@ -456,7 +461,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 }
             }
         }
-        return all;
+        return ImmutablePair.of(numTools, numWorkflows);
     }
 
 

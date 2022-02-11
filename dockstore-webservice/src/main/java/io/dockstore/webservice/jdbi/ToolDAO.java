@@ -202,7 +202,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public List<Tool> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, int startIndex, int pageRemaining) {
-        //TODO: probably a better way of doing this with the predicate builder
+        //TODO: probably a better way of doing this with the predicate builder, we can short circuit since tools are never checkers
         if (checker != null && checker) {
             return new ArrayList<>();
         }
@@ -213,7 +213,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     @Override
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
-        //TODO: probably a better way of doing this with the predicate builder
+        //TODO: probably a better way of doing this with the predicate builder, we can short circuit since tools are never checkers
         if (checker != null && checker) {
             return 0;
         }
