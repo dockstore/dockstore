@@ -18,6 +18,11 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.database.WorkflowPath;
 import org.hibernate.SessionFactory;
@@ -40,5 +45,12 @@ public class ServiceDAO extends EntryDAO<Service> {
 
     public List<WorkflowPath> findAllPublishedPaths() {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths"));
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("only supported for tools and workflows for now");
     }
 }

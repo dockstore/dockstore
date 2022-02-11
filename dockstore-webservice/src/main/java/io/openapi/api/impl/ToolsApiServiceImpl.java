@@ -290,7 +290,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return trsResponses.get().build();
         }
 
-        final int actualLimit = Math.min(limit, DEFAULT_PAGE_SIZE);
+        final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
         int offsetInteger = 0;
         if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
@@ -308,38 +308,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
         for (Entry<?, ?> c : all) {
-            // filter tools
-            if (c instanceof Tool) {
-                Tool tool = (Tool)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
-                    continue;
-                }
-                if (organization != null && (tool.getNamespace() == null || !tool.getNamespace().contains(organization))) {
-                    continue;
-                }
-                if (name != null && (tool.getName() == null || !tool.getName().contains(name))) {
-                    continue;
-                }
-                if (toolname != null && (tool.getToolname() == null || !tool.getToolname().contains(toolname))) {
-                    continue;
-                }
-                if (descriptorType != null && !tool.getDescriptorType().contains(descriptorType)) {
-                    continue;
-                }
-                if (checker != null && checker) {
-                    // tools are never checker workflows
-                    continue;
-                }
-                // description and author exists for both tools and workflows, but workflows have already been filtered above.
-                if (description != null && (c.getDescription() == null || !c.getDescription().contains(description))) {
-                    continue;
-                }
-                if (author != null && (c.getAuthor() == null || !c.getAuthor().contains(author))) {
-                    continue;
-                }
-            }
-
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
@@ -439,8 +407,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            final long numTools = toolDAO.countAllPublished(Optional.empty());
-            final long numWorkflows = workflowDAO.countAllPublished(Optional.empty());
+            final long numTools = toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
+            final long numWorkflows = workflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
             int startIndex = offset;
             int pageRemaining = actualLimit;
 
@@ -450,12 +418,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 // Add tools if user didn't provide a tool class or the tool class provided matches to tools, AND
                 // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
                 if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
-                    if (descriptorType == null  || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
-                        all.addAll(toolDAO.findAllPublished(Integer.toString(startIndex), pageRemaining, null, null, null));
+                    if (descriptorType == null || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
+                        all.addAll(toolDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining));
                     }
-
                 }
-
             }
             if (!all.isEmpty()) {
                 // if we got any tools, overflow into the very start of workflows

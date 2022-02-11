@@ -17,6 +17,11 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
@@ -45,5 +50,12 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
 
     public List<MyWorkflows> findUserBioWorkflows(long userId) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.BioWorkflow.findUserBioWorkflows").setParameter("userId", userId));
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected Root<BioWorkflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("only supported for tools and workflows directly for now");
     }
 }

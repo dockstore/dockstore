@@ -23,10 +23,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -183,12 +181,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public List<Workflow> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
-        String description, String author, Boolean checker, int startIndex, int pageRemaining) {
+    protected Root<Workflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, CriteriaQuery<?> q) {
 
         final SourceControlConverter converter = new SourceControlConverter();
-        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
         final Root<Workflow> entryRoot = q.from(Workflow.class);
 
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
@@ -210,20 +206,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
 
         q.where(predicate);
-        TypedQuery<Workflow> query = currentSession().createQuery(q);
-        query.setFirstResult(startIndex);
-        query.setMaxResults(pageRemaining);
-        List<Workflow> workflows = query.getResultList();
-        return workflows;
-    }
-
-    private Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
-        return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
-                .orElse(existingPredicate);
-    }
-
-    private String wildcardLike(String value) {
-        return '%' + value + '%';
+        return entryRoot;
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {

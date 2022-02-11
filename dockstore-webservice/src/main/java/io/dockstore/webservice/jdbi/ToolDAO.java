@@ -16,8 +16,16 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
@@ -31,16 +39,19 @@ import static io.dockstore.webservice.resources.MetadataResource.RSS_ENTRY_LIMIT
  * @author xliu
  */
 public class ToolDAO extends EntryDAO<Tool> {
+
     public ToolDAO(SessionFactory factory) {
         super(factory);
     }
 
     public List<Tool> findByUserRegistryNamespace(final long userId, final String registry, final String namespace) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespace").setParameter("userId", userId).setParameter("registry", registry)
+            .setParameter("namespace", namespace));
     }
 
     public List<Tool> findByUserRegistryNamespaceRepository(final long userId, final String registry, final String namespace, final String repository) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry).setParameter("namespace", namespace).setParameter("repository", repository));
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findByUserRegistryNamespaceRepository").setParameter("userId", userId).setParameter("registry", registry)
+            .setParameter("namespace", namespace).setParameter("repository", repository));
     }
 
     public List<ToolPath> findAllPublishedPaths() {
@@ -56,8 +67,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     /**
-     * Finds all tools with the given path (ignores tool name)
-     * When findPublished is true, will only look at published tools
+     * Finds all tools with the given path (ignores tool name) When findPublished is true, will only look at published tools
      *
      * @param path
      * @param findPublished
@@ -95,8 +105,7 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     /**
-     * Finds the tool matching the given tool path
-     * When findPublished is true, will only look at published tools
+     * Finds the tool matching the given tool path When findPublished is true, will only look at published tools
      *
      * @param path
      * @param findPublished
@@ -115,7 +124,6 @@ public class ToolDAO extends EntryDAO<Tool> {
         String namespace = splitPath[orgIndex];
         String name = splitPath[repoIndex];
         String toolname = splitPath[entryNameIndex];
-
 
         // Create full query name
         String fullQueryName = "io.dockstore.webservice.core.Tool.";
@@ -151,9 +159,10 @@ public class ToolDAO extends EntryDAO<Tool> {
     public List<Tool> findPublishedByNamespace(String namespace) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
     }
-  
+
     /**
      * Return map containing schema.org info retrieved from the specified tool's descriptor cwl
+     *
      * @param id of specified tool
      * @return map containing schema.org info to be used as json-ld data
      */
@@ -164,5 +173,48 @@ public class ToolDAO extends EntryDAO<Tool> {
 
     public Tool findByAlias(String alias) {
         return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Tool.getByAlias").setParameter("alias", alias));
+    }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected Root<Tool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, CriteriaQuery<?> q) {
+
+        final Root<Tool> entryRoot = q.from(Tool.class);
+
+        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
+        predicate = andLike(cb, predicate, entryRoot.get("namespace"), Optional.ofNullable(organization));
+        predicate = andLike(cb, predicate, entryRoot.get("name"), Optional.ofNullable(name));
+        predicate = andLike(cb, predicate, entryRoot.get("toolname"), Optional.ofNullable(toolname));
+        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
+        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+
+        if (descriptorLanguage != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
+        }
+        predicate = andLike(cb, predicate, entryRoot.get("registry"), Optional.ofNullable(registry));
+
+        q.where(predicate);
+        return entryRoot;
+    }
+
+    //TODO there's probably a better way of doing these overrides when checker is not relevant for tools in generatePredicate
+
+    @Override
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    public List<Tool> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
+        String description, String author, Boolean checker, int startIndex, int pageRemaining) {
+        if (checker != null && checker) {
+            return new ArrayList<>();
+        }
+        return super.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining);
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
+        if (checker != null && checker) {
+            return 0;
+        }
+        return super.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
     }
 }
