@@ -34,8 +34,8 @@ public class ServiceEntryDAO extends EntryDAO<Service> {
 
     @Override
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, CriteriaQuery<?> q) {
-        throw new UnsupportedOperationException("only supported for tools and workflows for now");
+    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
     }
 }

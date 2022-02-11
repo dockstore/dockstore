@@ -53,6 +53,13 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         super(factory);
     }
 
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @Override
+    protected Root<Workflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
+    }
+
     public List<String> getAllPublishedOrganizations() {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getPublishedOrganizations"));
     }
@@ -178,35 +185,6 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             throw new CustomWebApplicationException("Entries with the same path exist", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
         return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
-    }
-
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
-    protected Root<Workflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, CriteriaQuery<?> q) {
-
-        final SourceControlConverter converter = new SourceControlConverter();
-        final Root<Workflow> entryRoot = q.from(Workflow.class);
-
-        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
-        predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
-        predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
-        predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
-        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
-        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
-
-        if (descriptorLanguage != null) {
-            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
-        }
-        if (registry != null) {
-            predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
-        }
-
-        if (checker != null) {
-            predicate = cb.and(predicate, cb.isTrue(entryRoot.get("isChecker")));
-        }
-
-        q.where(predicate);
-        return entryRoot;
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {

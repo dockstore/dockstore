@@ -57,6 +57,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -100,6 +101,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
     private static TRSListener trsListener = null;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
+    private static BioWorkflowDAO bioWorkflowDAO;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -109,6 +111,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static void setWorkflowDAO(WorkflowDAO workflowDAO) {
         ToolsApiServiceImpl.workflowDAO = workflowDAO;
         ToolsApiServiceImpl.workflowHelper = () -> workflowDAO;
+    }
+
+
+    public static void setBioWorkflowDAO(BioWorkflowDAO bioWorkflowDAO) {
+        ToolsApiServiceImpl.bioWorkflowDAO = bioWorkflowDAO;
+        // TODO; look into this
+        //ToolsApiServiceImpl.bioWorkflowHelper = () -> bioWorkflowDAO;
     }
 
     public static void setFileDAO(FileDAO fileDAO) {
@@ -386,9 +395,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
             Entry<?, ?> entry = getEntry(parsedID, user);
-            all.add(entry);
+            entry = filterOldSchool(entry, descriptorType, registry, organization, name, toolname, description, author, checker);
+            if (entry != null) {
+                all.add(entry);
+            }
         } else if (alias != null) {
-            all.add(toolDAO.getGenericEntryByAlias(alias));
+            Entry<?, ?> entry = toolDAO.getGenericEntryByAlias(alias);
+            entry = filterOldSchool(entry, descriptorType, registry, organization, name, toolname, description, author, checker);
+            if (entry != null) {
+                all.add(entry);
+            }
         } else {
             DescriptorLanguage descriptorLanguage = null;
             if (descriptorType != null) {
@@ -407,8 +423,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
 
             // calculate whether we want a page of tools, a page of workflows, or a page that includes both
-            final long numTools = toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
-            final long numWorkflows = workflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
+            long numTools = WORKFLOW.equalsIgnoreCase(toolClass) ? 0 : toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
+            long numWorkflows = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) ? 0 : bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
+
             int startIndex = offset;
             int pageRemaining = actualLimit;
 
@@ -435,11 +452,61 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (startIndex < numWorkflows) {
                 if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
                     // filter published workflows using criteria builder
-                    all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining));
+                    all.addAll(bioWorkflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining));
                 }
             }
         }
         return all;
+    }
+
+
+    /**
+     * single tools are still filtered old school, that's probably wrong (should be done in DB and expanded to workflows)
+     *
+     * @param entry
+     * @param descriptorType
+     * @param registry
+     * @param organization
+     * @param name
+     * @param toolname
+     * @param description
+     * @param author
+     * @param checker
+     * @deprecated
+     */
+    @Deprecated
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    private Entry<?, ?> filterOldSchool(Entry<?, ?> entry, String descriptorType, String registry, String organization, String name, String toolname,
+        String description, String author, Boolean checker) {
+        if (entry instanceof Tool) {
+            Tool tool = (Tool) entry;
+            if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
+                return null;
+            }
+            if (organization != null && (tool.getNamespace() == null || !tool.getNamespace().contains(organization))) {
+                return null;
+            }
+            if (name != null && (tool.getName() == null || !tool.getName().contains(name))) {
+                return null;
+            }
+            if (toolname != null && (tool.getToolname() == null || !tool.getToolname().contains(toolname))) {
+                return null;
+            }
+            if (descriptorType != null && !tool.getDescriptorType().contains(descriptorType)) {
+                return null;
+            }
+            if (checker != null && checker) {
+                // tools are never checker workflows
+                return null;
+            }
+            if (description != null && (tool.getDescription() == null || !tool.getDescription().contains(description))) {
+                return null;
+            }
+            if (author != null && (tool.getAuthor() == null || !tool.getAuthor().contains(author))) {
+                return null;
+            }
+        }
+        return entry;
     }
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {

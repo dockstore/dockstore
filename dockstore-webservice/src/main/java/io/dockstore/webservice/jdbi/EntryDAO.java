@@ -225,6 +225,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return ((BigInteger)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult()).longValueExact();
     }
 
+    // TODO: these methods should be merged with the proprietary version in EntryDAO, but should be a major version refactoring.
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<Long> q = cb.createQuery(Long.class);
+
+        Root<T> entryRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
+
+        q.select(cb.count(entryRoot));
+        return currentSession().createQuery(q).getSingleResult();
+    }
+
     public long countAllPublished(Optional<String> filter) {
         if (filter.isEmpty()) {
             return countAllPublished();
@@ -239,18 +251,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     private long countAllPublished() {
         return (long)this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
-    }
-
-    // TODO: this should be merged with the proprietary version in EntryDAO, but should be a major version refactoring
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
-        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<Long> q = cb.createQuery(Long.class);
-
-        Root<T> entryRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
-
-        q.select(cb.count(entryRoot));
-        return currentSession().createQuery(q).getSingleResult();
     }
 
     public List<Label> getLabelByEntryId(long entryId) {
@@ -316,7 +316,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     private String wildcardLike(String value) {
         return '%' + value + '%';
     }
-
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public List<T> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,

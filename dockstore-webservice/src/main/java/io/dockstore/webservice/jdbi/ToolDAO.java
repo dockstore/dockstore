@@ -189,7 +189,8 @@ public class ToolDAO extends EntryDAO<Tool> {
         predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
 
         if (descriptorLanguage != null) {
-            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
+            // not quite right, this probably doesn't deal with tools that have both but https://hibernate.atlassian.net/browse/HHH-9991 is kicking my butt
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType").as(String.class), descriptorLanguage.getShortName()));
         }
         predicate = andLike(cb, predicate, entryRoot.get("registry"), Optional.ofNullable(registry));
 
@@ -197,21 +198,22 @@ public class ToolDAO extends EntryDAO<Tool> {
         return entryRoot;
     }
 
-    //TODO there's probably a better way of doing these overrides when checker is not relevant for tools in generatePredicate
-
     @Override
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public List<Tool> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
         String description, String author, Boolean checker, int startIndex, int pageRemaining) {
+        //TODO: probably a better way of doing this with the predicate builder
         if (checker != null && checker) {
             return new ArrayList<>();
         }
-        return super.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining);
+        return super.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname,
+            description, author, checker, startIndex, pageRemaining);
     }
 
     @Override
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
+        //TODO: probably a better way of doing this with the predicate builder
         if (checker != null && checker) {
             return 0;
         }

@@ -43,14 +43,14 @@ public class ServiceDAO extends EntryDAO<Service> {
         return persist(file).getId();
     }
 
-    public List<WorkflowPath> findAllPublishedPaths() {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths"));
-    }
-
     @Override
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
-        CriteriaBuilder cb, CriteriaQuery<?> q) {
-        throw new UnsupportedOperationException("only supported for tools and workflows for now");
+    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
+    }
+
+    public List<WorkflowPath> findAllPublishedPaths() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Service.findAllPublishedPaths"));
     }
 }
