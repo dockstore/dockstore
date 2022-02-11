@@ -125,7 +125,7 @@ public class ToolsImplCommonTest {
         Tag tag = new Tag();
         tag.setImageId("sampleImageId");
         tag.setName("sampleTag");
-        tag.setSize(0);
+        tag.setSize(0L);
         tag.setDockerfilePath("/Dockerfile");
         tag.setCwlPath("/Dockstore.cwl");
         tag.setAutomated(true);
@@ -137,7 +137,7 @@ public class ToolsImplCommonTest {
         Tag hiddenTag = new Tag();
         hiddenTag.setImageId("hiddenImageId");
         hiddenTag.setName("hiddenName");
-        hiddenTag.setSize(9001);
+        hiddenTag.setSize(9001L);
         hiddenTag.setDockerfilePath("/Dockerfile");
         hiddenTag.setCwlPath("HiddenDockstore.cwl");
         hiddenTag.setAutomated(true);
