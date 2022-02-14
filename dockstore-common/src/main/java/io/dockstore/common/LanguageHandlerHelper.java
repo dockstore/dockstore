@@ -21,7 +21,7 @@ public final class LanguageHandlerHelper {
             return relativePath;
         }
 
-        Path workDir = Paths.get(parentPath);
+        Path workDir = Paths.get(parentPath); // lgtm[java/path-injection]
 
         // If the workDir is the root, leave it. If it is not the root, set workDir to the parent of parentPath
         workDir = !Objects.equals(parentPath, workDir.getRoot().toString()) ? workDir.getParent() : workDir;
