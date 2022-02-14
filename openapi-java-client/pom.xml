@@ -22,7 +22,7 @@
     <name>openapi-java-client</name>
 
     <parent>
-        <version>1.11.12-SNAPSHOT</version>
+        <version>1.11.12</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -325,7 +325,7 @@
             <!-- used just for ordering since this uses the swagger.json created by dockstore-webservice during the build -->
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.11.12-SNAPSHOT</version>
+            <version>1.11.12</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
