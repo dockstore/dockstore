@@ -30,10 +30,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.apache.http.HttpStatus;
@@ -53,6 +51,17 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public WorkflowDAO(SessionFactory factory) {
         super(factory);
+    }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    @Override
+    protected Root<Workflow> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
+    }
+
+    public List<String> getAllPublishedOrganizations() {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getPublishedOrganizations"));
     }
 
     /**
@@ -201,49 +210,6 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             }
             throw new CustomWebApplicationException("A " + workflowType + " with the same path already exists. Add the 'name' field to the entry you are currently trying to register to give it a unique path.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public <T extends Workflow> List<T> filterTrsToolsGet(Class<T> workflowType, DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
-            String description, String author, Boolean checker) {
-
-        final SourceControlConverter converter = new SourceControlConverter();
-        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
-        final CriteriaQuery<T> q = cb.createQuery(workflowType);
-        final Root<T> entryRoot = q.from(workflowType);
-
-        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
-        predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
-        predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
-        predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
-        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
-        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
-
-        if (descriptorLanguage != null) {
-            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
-        }
-        if (registry != null) {
-            predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
-        }
-
-        if (checker != null) {
-            predicate = cb.and(predicate, cb.isTrue(entryRoot.get("isChecker")));
-        }
-
-        q.where(predicate);
-        TypedQuery<T> query = currentSession().createQuery(q);
-
-        List<T> workflows = query.getResultList();
-        return workflows;
-    }
-
-    private Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
-        return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
-                .orElse(existingPredicate);
-    }
-
-    private String wildcardLike(String value) {
-        return '%' + value + '%';
     }
 
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {

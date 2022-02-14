@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.CategorySummary;
 import io.dockstore.webservice.core.CollectionEntry;
@@ -266,12 +267,25 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return typedQuery.getResultList();
     }
 
+    @Deprecated
     public List<T> findAllPublished() {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }
 
     public long countAllHosted(long userid) {
         return ((BigInteger)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult()).longValueExact();
+    }
+
+    // TODO: these methods should be merged with the proprietary version in EntryDAO, but should be a major version refactoring.
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<Long> q = cb.createQuery(Long.class);
+
+        Root<T> entryRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
+
+        q.select(cb.count(entryRoot));
+        return currentSession().createQuery(q).getSingleResult();
     }
 
     public long countAllPublished(Optional<String> filter) {
@@ -348,4 +362,30 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         }
         query.where(predicates.toArray(new Predicate[]{}));
     }
+
+    protected Predicate andLike(CriteriaBuilder cb, Predicate existingPredicate, Path<String> column, Optional<String> value) {
+        return value.map(val -> cb.and(existingPredicate, cb.like(column, wildcardLike(val))))
+            .orElse(existingPredicate);
+    }
+
+    private String wildcardLike(String value) {
+        return '%' + value + '%';
+    }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    public List<T> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
+        String description, String author, Boolean checker, int startIndex, int pageRemaining) {
+
+        final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        final CriteriaQuery<T> q = cb.createQuery(typeOfT);
+        generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
+        TypedQuery<T> query = currentSession().createQuery(q);
+        query.setFirstResult(startIndex);
+        query.setMaxResults(pageRemaining);
+        return query.getResultList();
+    }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected abstract Root<T> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, CriteriaQuery<?> q);
 }

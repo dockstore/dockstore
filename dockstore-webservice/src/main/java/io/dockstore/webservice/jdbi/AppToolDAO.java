@@ -16,13 +16,24 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.AppTool;
 import java.util.List;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 public class AppToolDAO extends EntryDAO<AppTool> {
     public AppToolDAO(SessionFactory factory) {
         super(factory);
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected Root<AppTool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
     }
 
     public List<AppTool> finalAllPublished() {
