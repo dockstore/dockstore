@@ -17,15 +17,31 @@
 package io.dockstore.webservice.helpers;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.languages.LanguageHandlerInterface.formatImageInfo;
 
 import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.docker.DockerBlob;
+import io.dockstore.webservice.core.docker.DockerImageManifest;
+import io.dockstore.webservice.core.docker.DockerLayer;
+import io.dockstore.webservice.core.docker.DockerManifestList;
+import io.dockstore.webservice.core.docker.DockerPlatform;
+import io.dockstore.webservice.core.docker.DockerPlatformManifest;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response.Status.Family;
 import okhttp3.OkHttpClient;
@@ -46,6 +62,139 @@ public final class DockerRegistryAPIHelper {
     public static final String OCI_IMAGE_INDEX_MEDIA_TYPE = "application/vnd.oci.image.index.v1+json";
 
     private DockerRegistryAPIHelper() {
+    }
+
+
+    /**
+     * Gets images from a registry by retrieving image metadata, including the checksum, using the Docker Registry HTTP API V2.
+     * A work-around solution to harvest checksums for images belonging to registries that require authentication to their API.
+     *
+     * @param registry
+     * @param repo
+     * @param specifierType
+     * @param specifierName
+     * @return
+     */
+    public static Set<Image> getImages(Registry registry, String repo, LanguageHandlerInterface.DockerSpecifier specifierType, String specifierName) {
+        Set<Image> images = new HashSet<>();
+        String imageNameMessage = String.format("%s image %s specified by %s %s", registry.getFriendlyName(), repo, specifierType, specifierName);
+
+        // Get token with pull access to use for subsequent Docker Registry HTTP API V2 calls
+        Optional<String> token = DockerRegistryAPIHelper.getDockerToken(registry.getDockerPath(), repo);
+        if (token.isEmpty()) {
+            LOG.error("Could not retrieve token for {} repository {}", registry.getFriendlyName(), repo);
+            return images;
+        }
+
+        // Get manifest for image. There are two types of manifests: image manifest and manifest list. Manifest list is used for multi-arch images.
+        Optional<Response> manifestResponse = DockerRegistryAPIHelper.getDockerManifest(token.get(), registry.getDockerPath(), repo, specifierName);
+        if (manifestResponse.isEmpty()) {
+            LOG.error("Could not retrieve manifest for {}", imageNameMessage);
+            return images;
+        }
+
+        // Check what type of manifest was returned and whether the image is multi-arch
+        String contentTypeHeader = manifestResponse.get().headers().get(HttpHeaders.CONTENT_TYPE);
+        if (contentTypeHeader == null) {
+            LOG.error("Could not retrieve Content-Type header from manifest response for {}", imageNameMessage);
+            return images;
+        }
+
+        String contentType = contentTypeHeader;
+        Reader manifestJson = manifestResponse.get().body().charStream();
+        String digest;
+
+        if (contentType.equals(DockerRegistryAPIHelper.DOCKER_V2_IMAGE_MANIFEST_MEDIA_TYPE) || contentType.equals(DockerRegistryAPIHelper.OCI_IMAGE_MANIFEST_MEDIA_TYPE)) {
+            DockerImageManifest imageManifest = GSON.fromJson(manifestJson, DockerImageManifest.class);
+
+            // Check that the image manifest is using schema version 2 because schema version 1 is deprecated and the JSON response is
+            // formatted differently, thus requiring some pre-processing before calculating the image digest
+            if (imageManifest.getSchemaVersion() != 2) {
+                LOG.error("The image manifest for {} is using schema version {}, not schema version 2", imageNameMessage, imageManifest.getSchemaVersion());
+                return images;
+            }
+
+            // The manifest response may include a Docker-Content-Digest header, which is the digest of the image
+            String digestHeader = manifestResponse.get().headers().get("docker-content-digest");
+            if (digestHeader == null) {
+                // Manually calculate the digest if not given in the header
+                digest = DockerRegistryAPIHelper.calculateDockerImageDigest(manifestResponse.get());
+
+                if (digest.isEmpty()) {
+                    LOG.error("Could not calculate digest for {}", imageNameMessage);
+                    return images;
+                }
+            } else {
+                digest = digestHeader.split(":")[1];
+            }
+            Checksum checksum = new Checksum("sha256", digest);
+            List<Checksum> checksums = Collections.singletonList(checksum);
+
+            // An image's size is the sum of the size of its layers
+            List<DockerLayer> imageLayers = Arrays.asList(imageManifest.getLayers());
+            long imageSize = imageLayers.stream().mapToLong(DockerLayer::getSize).sum();
+
+            // Download the blob for the config to get architecture and os information
+            String configDigest = imageManifest.getConfig().getDigest();
+            Optional<Response> configBlobResponse = DockerRegistryAPIHelper.getDockerBlob(token.get(), registry.getDockerPath(), repo, configDigest);
+            if (configBlobResponse.isEmpty()) {
+                LOG.error("Could not retrieve the config blob for {}", imageNameMessage);
+                return images;
+            }
+            DockerBlob configBlob = GSON.fromJson(configBlobResponse.get().body().charStream(), DockerBlob.class);
+            String arch = configBlob.getArchitecture();
+            String os = configBlob.getOs();
+
+            // imageTag is null if the image is specified by digest because the corresponding tag is not provided in the image manifest
+            String imageTag = null;
+            if (specifierType != LanguageHandlerInterface.DockerSpecifier.DIGEST) {
+                imageTag = specifierName;
+            }
+
+            // Note: Unable to get imageID and imageUpdateDate from the image's manifest
+            Image image = new Image(checksums, repo, imageTag, null, registry, imageSize, null);
+            image.setSpecifier(specifierType);
+            image.setArchitecture(arch);
+            image.setOs(os);
+            images.add(image);
+        } else { // multi-arch image
+            // The manifest list is only supported in schema version 2, don't need to check schema version
+            DockerManifestList manifestList = GSON.fromJson(manifestJson, DockerManifestList.class);
+            List<DockerPlatformManifest> manifests = Arrays.asList(manifestList.getManifests());
+
+            for (DockerPlatformManifest manifest : manifests) {
+                String manifestDigest = manifest.getDigest();
+                Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
+                List<Checksum> checksums = Collections.singletonList(checksum);
+
+                // Get manifest of each arch image to calculate the image's size. An image's size is the sum of the size of its layers
+                Optional<Response> archImageManifestResponse = DockerRegistryAPIHelper.getDockerManifest(token.get(), registry.getDockerPath(), repo, manifestDigest);
+                if (archImageManifestResponse.isEmpty()) {
+                    LOG.error("Could not get the arch image manifest for {}", imageNameMessage);
+                    continue;
+                }
+                DockerImageManifest archImageManifest = GSON.fromJson(archImageManifestResponse.get().body().charStream(), DockerImageManifest.class);
+                List<DockerLayer> imageLayers = Arrays.asList(archImageManifest.getLayers());
+                long imageSize = imageLayers.stream().mapToLong(DockerLayer::getSize).sum();
+
+                // imageTag is null if the image is specified by digest because the corresponding tag is not provided in the image manifest
+                String imageTag = null;
+                if (specifierType == LanguageHandlerInterface.DockerSpecifier.TAG) {
+                    imageTag = specifierName;
+                }
+
+                // Note: Unable to get imageID and imageUpdateDate from the image's manifest
+                Image archImage = new Image(checksums, repo, imageTag, null, registry, imageSize, null);
+                DockerPlatform platform = manifest.getPlatform();
+                String osInfo = formatImageInfo(platform.getOs(), platform.getOsVersion());
+                String archInfo = formatImageInfo(platform.getArchitecture(), platform.getVariant());
+                archImage.setOs(osInfo);
+                archImage.setArchitecture(archInfo);
+                archImage.setSpecifier(specifierType);
+                images.add(archImage);
+            }
+        }
+        return images;
     }
 
     /**
