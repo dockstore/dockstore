@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.11.12-SNAPSHOT</version>
+        <version>1.11.13-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
@@ -63,12 +63,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.11.12-SNAPSHOT</version>
+            <version>1.11.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.11.12-SNAPSHOT</version>
+            <version>1.11.13-SNAPSHOT</version>
             <!-- looks like these are excluded because they bring in duplicate liquibase.build.properties -->
             <exclusions>
                 <exclusion>
@@ -80,7 +80,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.11.12-SNAPSHOT</version>
+            <version>1.11.13-SNAPSHOT</version>
             <!-- looks like these are excluded because they bring in duplicate liquibase.build.properties -->
             <exclusions>
                 <exclusion>
@@ -93,7 +93,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>openapi-java-client</artifactId>
-            <version>1.11.12-SNAPSHOT</version>
+            <version>1.11.13-SNAPSHOT</version>
         </dependency>
 
         <dependency>

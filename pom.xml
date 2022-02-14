@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.11.12-SNAPSHOT</version>
+    <version>1.11.13-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -129,7 +129,7 @@
                  <groupId>io.dockstore</groupId>
                  <artifactId>bom-internal</artifactId>
                  <type>pom</type>
-                 <version>1.11.12-SNAPSHOT</version>
+                 <version>1.11.13-SNAPSHOT</version>
                  <scope>import</scope>
              </dependency>
         </dependencies>

@@ -41,12 +41,9 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
@@ -60,6 +57,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -75,6 +73,7 @@ import io.swagger.api.impl.ToolsImplCommon;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +91,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static final String GITHUB_PREFIX = "git@github.com:";
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
-    private static final int DEFAULT_PAGE_SIZE = 1000;
+    //TODO this is also a maximum page size, may want to rename/split out the two concepts
+    private static final int DEFAULT_PAGE_SIZE = 100;
     private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
@@ -103,6 +103,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
     private static TRSListener trsListener = null;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
+    private static BioWorkflowDAO bioWorkflowDAO;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -112,6 +113,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public static void setWorkflowDAO(WorkflowDAO workflowDAO) {
         ToolsApiServiceImpl.workflowDAO = workflowDAO;
         ToolsApiServiceImpl.workflowHelper = () -> workflowDAO;
+    }
+
+
+    public static void setBioWorkflowDAO(BioWorkflowDAO bioWorkflowDAO) {
+        ToolsApiServiceImpl.bioWorkflowDAO = bioWorkflowDAO;
+        // TODO; look into this
+        //ToolsApiServiceImpl.bioWorkflowHelper = () -> bioWorkflowDAO;
     }
 
     public static void setFileDAO(FileDAO fileDAO) {
@@ -293,9 +301,22 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return trsResponses.get().build();
         }
 
-        final List<Entry<?, ?>> all;
+        final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
+        int offsetInteger = 0;
+        if (offset != null) {
+            offsetInteger = Integer.parseInt(offset);
+        }
+        // note, there's a subtle change in definition here, TRS uses offset to indicate the page number, JPA uses index in the result set
+        int startIndex = offsetInteger * actualLimit;
+
+        final List<Entry<?, ?>> all = new ArrayList<>();
+        long numTools;
+        long numWorkflows;
         try {
-            all = getEntries(id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user);
+            final ImmutablePair<Long, Long> entries = getEntries(all, id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user, actualLimit,
+                startIndex);
+            numTools = entries.left;
+            numWorkflows = entries.right;
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_RESPONSE;
         }
@@ -303,38 +324,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         List<io.openapi.model.Tool> results = new ArrayList<>();
 
         for (Entry<?, ?> c : all) {
-            // filter tools
-            if (c instanceof Tool) {
-                Tool tool = (Tool)c;
-                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
-                    continue;
-                }
-                if (organization != null && (tool.getNamespace() == null || !tool.getNamespace().contains(organization))) {
-                    continue;
-                }
-                if (name != null && (tool.getName() == null || !tool.getName().contains(name))) {
-                    continue;
-                }
-                if (toolname != null && (tool.getToolname() == null || !tool.getToolname().contains(toolname))) {
-                    continue;
-                }
-                if (descriptorType != null && !tool.getDescriptorType().contains(descriptorType)) {
-                    continue;
-                }
-                if (checker != null && checker) {
-                    // tools are never checker workflows
-                    continue;
-                }
-                // description and author exists for both tools and workflows, but workflows have already been filtered above.
-                if (description != null && (c.getDescription() == null || !c.getDescription().contains(description))) {
-                    continue;
-                }
-                if (author != null && (c.getAuthor() == null || !c.getAuthor().contains(author))) {
-                    continue;
-                }
-            }
-
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.openapi.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
@@ -342,18 +331,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             }
         }
 
-        final int actualLimit = MoreObjects.firstNonNull(limit, DEFAULT_PAGE_SIZE);
 
-        List<List<io.openapi.model.Tool>> pagedResults = Lists.partition(results, actualLimit);
-        int offsetInteger = 0;
-        if (offset != null) {
-            offsetInteger = Integer.parseInt(offset);
-        }
-        if (offsetInteger >= pagedResults.size()) {
-            results = new ArrayList<>();
-        } else {
-            results = pagedResults.get(offsetInteger);
-        }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", actualLimit);
@@ -374,15 +352,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             handleParameter(registry, "registry", filters);
             handleParameter(String.valueOf(actualLimit), "limit", filters);
 
-            if (offsetInteger + 1 < pagedResults.size()) {
+            final long numPages = (numTools + numWorkflows) / actualLimit;
+
+            if (startIndex + actualLimit < numTools + numWorkflows) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
-                        + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
+                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA
-                    + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(), Joiner.on('&').join(filters) + "&offset=" + numPages, null)
+                .normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
@@ -392,18 +372,44 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return responseBuilder.build();
     }
 
+    /**
+     *
+     * @param id
+     * @param alias
+     * @param toolClass
+     * @param descriptorType
+     * @param registry
+     * @param organization
+     * @param name
+     * @param toolname
+     * @param description
+     * @param author
+     * @param checker
+     * @param user
+     * @param actualLimit page size
+     * @param offset index to start at
+     * @throws UnsupportedEncodingException
+     * @return number of tools, number of workflows we're working with
+     */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    private List<Entry<?, ?>> getEntries(String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
-            String description, String author, Boolean checker, Optional<User> user) throws UnsupportedEncodingException {
-
-        final List<Entry<?, ?>> all = new ArrayList<>();
+    private ImmutablePair<Long, Long> getEntries(List<Entry<?, ?>> all, String id, String alias, String toolClass, String descriptorType, String registry, String organization, String name, String toolname,
+        String description, String author, Boolean checker, Optional<User> user, int actualLimit, int offset) throws UnsupportedEncodingException {
+        long numTools = 0;
+        long numWorkflows = 0;
 
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
             Entry<?, ?> entry = getEntry(parsedID, user);
-            all.add(entry);
+            entry = filterOldSchool(entry, descriptorType, registry, organization, name, toolname, description, author, checker);
+            if (entry != null) {
+                all.add(entry);
+            }
         } else if (alias != null) {
-            all.add(toolDAO.getGenericEntryByAlias(alias));
+            Entry<?, ?> entry = toolDAO.getGenericEntryByAlias(alias);
+            entry = filterOldSchool(entry, descriptorType, registry, organization, name, toolname, description, author, checker);
+            if (entry != null) {
+                all.add(entry);
+            }
         } else {
             DescriptorLanguage descriptorLanguage = null;
             if (descriptorType != null) {
@@ -417,25 +423,95 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 } catch (UnsupportedOperationException ex) {
                     // If unable to match descriptor language, do not return any entries.
                     LOG.info(ex.getMessage());
-                    return all;
+                    return ImmutablePair.of(numTools, numWorkflows);
                 }
             }
 
-            // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
-            // Add tools if user didn't provide a tool class or the tool class provided matches to tools, AND
-            // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
-            if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
-                if (descriptorType == null  || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
-                    all.addAll(toolDAO.findAllPublished());
-                }
+            // calculate whether we want a page of tools, a page of workflows, or a page that includes both
+            numTools = WORKFLOW.equalsIgnoreCase(toolClass) ? 0 : toolDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
+            numWorkflows = COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass) ? 0 : bioWorkflowDAO.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
 
+            int startIndex = offset;
+            int pageRemaining = actualLimit;
+
+            if (startIndex < numTools) {
+                // then we want at least some tools
+                // TODO: Have DescriptorLanguage indicate whether the language supports tools. Make this less hack-ish
+                // Add tools if user didn't provide a tool class or the tool class provided matches to tools, AND
+                // user didn't provide a descriptor type or the one they provided matches to CWL or WDL
+                if (toolClass == null || COMMAND_LINE_TOOL.equalsIgnoreCase(toolClass)) {
+                    if (descriptorType == null || descriptorLanguage == DescriptorLanguage.WDL || descriptorLanguage == DescriptorLanguage.CWL) {
+                        all.addAll(toolDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining));
+                    }
+                }
             }
-            if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
-                // filter published workflows using criteria builder
-                all.addAll(workflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker));
+            if (!all.isEmpty()) {
+                // if we got any tools, overflow into the very start of workflows
+                startIndex = 0;
+                pageRemaining = Math.max(pageRemaining - all.size(), 0);
+            } else {
+                // on the other hand, if we skipped all tools then, adjust the start index accordingly
+                // TODO: conversion might bite us much later
+                startIndex = startIndex - Math.toIntExact(numTools);
+            }
+            if (startIndex < numWorkflows) {
+                if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
+                    // filter published workflows using criteria builder
+                    all.addAll(bioWorkflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining));
+                }
             }
         }
-        return all;
+        return ImmutablePair.of(numTools, numWorkflows);
+    }
+
+
+    /**
+     * single tools are still filtered old school, that's probably wrong (should be done in DB and expanded to workflows)
+     *
+     * @param entry
+     * @param descriptorType
+     * @param registry
+     * @param organization
+     * @param name
+     * @param toolname
+     * @param description
+     * @param author
+     * @param checker
+     * @deprecated
+     */
+    @Deprecated
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    private Entry<?, ?> filterOldSchool(Entry<?, ?> entry, String descriptorType, String registry, String organization, String name, String toolname,
+        String description, String author, Boolean checker) {
+        if (entry instanceof Tool) {
+            Tool tool = (Tool) entry;
+            if (registry != null && (tool.getRegistry() == null || !tool.getRegistry().contains(registry))) {
+                return null;
+            }
+            if (organization != null && (tool.getNamespace() == null || !tool.getNamespace().contains(organization))) {
+                return null;
+            }
+            if (name != null && (tool.getName() == null || !tool.getName().contains(name))) {
+                return null;
+            }
+            if (toolname != null && (tool.getToolname() == null || !tool.getToolname().contains(toolname))) {
+                return null;
+            }
+            if (descriptorType != null && !tool.getDescriptorType().contains(descriptorType)) {
+                return null;
+            }
+            if (checker != null && checker) {
+                // tools are never checker workflows
+                return null;
+            }
+            if (description != null && (tool.getDescription() == null || !tool.getDescription().contains(description))) {
+                return null;
+            }
+            if (author != null && (tool.getAuthor() == null || !tool.getAuthor().contains(author))) {
+                return null;
+            }
+        }
+        return entry;
     }
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {
