@@ -1014,38 +1014,39 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @PUT
     @Timed
     @UnitOfWork
-    @RolesAllowed({"admin", "curator"})
+    @RolesAllowed({"admin"})
     @Path("/{userId}/privileges")
     @Consumes("application/json")
-    @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, usable by ADMINs only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully updated user to admin or curator status", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
-    @ApiOperation(value = "Updates the provided userID to admin or curator status, ADMIN or CURATOR only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
+    @ApiOperation(value = "Updates the provided userID to admin or curator status, usable by ADMINs only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, hidden = true)
     public User setUserPrivilege(@Parameter(hidden = true, name = "user")@Auth User authUser,
                                  @Parameter(name = "User ID", required = true) @PathParam("userId") Long userID,
                                  @Parameter(name = "Set privilege for a user", required = true) PrivilegeRequest privilegeRequest) {
-        User user = userDAO.findById(userID);
-        checkUserExists(user);
+        User targetUser = userDAO.findById(userID);
+        checkUserExists(targetUser);
 
         // This ensures that the user cannot modify their own privileges.
-        if (authUser.getId() == user.getId()) {
+        if (authUser.getId() == targetUser.getId()) {
             throw new CustomWebApplicationException("You cannot modify your own privileges", HttpStatus.SC_FORBIDDEN);
         }
 
-        // If the request's admin setting is different than the admin status of the user that is being modified, and the auth user is not an admin: Throw an error.
-        // This ensures that a curator cannot modify the admin status of any user.
-        if (privilegeRequest.isAdmin() != user.getIsAdmin() && !authUser.getIsAdmin()) {
+        // If the authorized user is not an admin, fail gracefully.
+        // This is a backup test for the @RolesAllowed annotation above, to prevent anarchy in case it is somehow disabled.
+        if (!authUser.getIsAdmin()) {
             throw new CustomWebApplicationException("You do not have privileges to modify administrative rights", HttpStatus.SC_FORBIDDEN);
         }
 
-        // Else if the request's settings is different from the privileges of the user that is being modified: update the privileges with the request
-        if (privilegeRequest.isAdmin() != user.getIsAdmin() || privilegeRequest.isCurator() != user.isCurator()) {
-            user.setIsAdmin(privilegeRequest.isAdmin());
-            user.setCurator(privilegeRequest.isCurator());
-            tokenDAO.findByUserId(user.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
-        }
-        return user;
+        // Set the new privileges.
+        targetUser.setIsAdmin(privilegeRequest.isAdmin());
+        targetUser.setCurator(privilegeRequest.isCurator());
+
+        // Invalidate any tokens corresponding to the target user.
+        tokenDAO.findByUserId(targetUser.getId()).stream().forEach(token -> this.cachingAuthenticator.invalidate(token.getContent()));
+
+        return targetUser;
     }
 
     @GET
