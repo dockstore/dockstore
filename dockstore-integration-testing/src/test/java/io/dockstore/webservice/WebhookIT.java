@@ -913,8 +913,8 @@ public class WebhookIT extends BaseIT {
         client.publish(workflow.getId(), publishRequest);
         Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
 
-        boolean apptoolTRSbroken = true;
-        if (apptoolTRSbroken) {
+        boolean apptoolTRSworking = false;
+        if (apptoolTRSworking) {
             //TODO; need to fix this, we need app tools in TRS but with paging as well to get this working right
 
             Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
