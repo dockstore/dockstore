@@ -1211,7 +1211,7 @@ public class GeneralIT extends BaseIT {
         refreshAfterDeletedTag(toolApi, tool, tags);
 
         // mimic getting a registry being slow/not responding and verify we do not delete the image information we already have by going to an invalid url.
-        testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where giturl = 'git@gitlab.com:NatalieEO/dockstore-tool-bamstats.git'");
+        testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where id=" + tool.getId());
         toolApi.refresh(tool.getId());
         List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(updatedTags);

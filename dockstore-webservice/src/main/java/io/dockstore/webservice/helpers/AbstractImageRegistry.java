@@ -720,7 +720,7 @@ public abstract class AbstractImageRegistry {
 
             Set<Image> images = DockerRegistryAPIHelper.getImages(registry, repo, specifier, tag.getName());
             if (images.isEmpty()) {
-                LOG.error("Could not get image and checksum information for {}/{}:{} from {}", tool.getNamespace(), tool.getName(), tag.getName(), registry.getFriendlyName());
+                LOG.error("Could not get image and checksum information for {}:{} from {}", repo, tag.getName(), registry.getFriendlyName());
                 continue;
             }
 
