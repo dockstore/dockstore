@@ -535,7 +535,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // handle imports and includes
                 if (mapValue instanceof String) {
                     setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
-                    absoluteImportPath = convertRelativePathToAbsolutePathImports(parentFilePath, (String)mapValue);
+                    absoluteImportPath = unsafeConvertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
                     handleAndProcessImport(repositoryId, absoluteImportPath, version, imports, (String)mapValue, sourceCodeRepoInterface);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
@@ -545,7 +545,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 //  run: revtool.cwl
                 if (mapValue instanceof String) {
                     setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
-                    absoluteImportPath = convertRelativePathToAbsolutePathImports(parentFilePath, (String)mapValue);
+                    absoluteImportPath = unsafeConvertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
                     handleAndProcessImport(repositoryId, absoluteImportPath, version, imports, (String)mapValue, sourceCodeRepoInterface);
                 } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used
@@ -1137,7 +1137,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 // See https://datatracker.ietf.org/doc/html/rfc8089
                 childPath = childPath.replaceFirst("^file:/*+", "/");
             }
-            return LanguageHandlerHelper.convertRelativePathToAbsolutePathImports(parentPath, childPath);
+            return LanguageHandlerHelper.unsafeConvertRelativePathToAbsolutePath(parentPath, childPath);
         }
 
         private String loadFile(String loadPath, String notFoundValue) {

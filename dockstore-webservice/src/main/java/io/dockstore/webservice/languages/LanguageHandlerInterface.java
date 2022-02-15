@@ -1002,8 +1002,8 @@ public interface LanguageHandlerInterface {
      * @param relativePath Relative path the parent file
      * @return Absolute version of relative path
      */
-    default String convertRelativePathToAbsolutePathImports(String parentPath, String relativePath) {
-        return LanguageHandlerHelper.convertRelativePathToAbsolutePathImports(parentPath, relativePath);
+    default String unsafeConvertRelativePathToAbsolutePath(String parentPath, String relativePath) {
+        return LanguageHandlerHelper.unsafeConvertRelativePathToAbsolutePath(parentPath, relativePath);
     }
 
     /**

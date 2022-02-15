@@ -18,7 +18,7 @@ public final class LanguageHandlerHelper {
      * @param relativePath Relative path the parent file
      * @return Absolute version of relative path
      */
-    public static String convertRelativePathToAbsolutePathImports(String parentPath, String relativePath) {
+    public static String unsafeConvertRelativePathToAbsolutePath(String parentPath, String relativePath) {
         if (relativePath.startsWith("/")) {
             return relativePath;
         }

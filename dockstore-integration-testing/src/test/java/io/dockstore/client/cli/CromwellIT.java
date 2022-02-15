@@ -112,8 +112,8 @@ public class CromwellIT {
     @Test
     public void testPathResolver() {
         Assert.assertEquals("/module00a/Module00a.wdl", LanguageHandlerHelper
-                .convertRelativePathToAbsolutePathImports("/GATKSVPipelineClinical.wdl", "module00a/Module00a.wdl"));
+                .unsafeConvertRelativePathToAbsolutePath("/GATKSVPipelineClinical.wdl", "module00a/Module00a.wdl"));
         Assert.assertEquals("/a/importA.wdl", LanguageHandlerHelper
-                .convertRelativePathToAbsolutePathImports("/parent/parent.wdl", "../a/importA.wdl"));
+                .unsafeConvertRelativePathToAbsolutePath("/parent/parent.wdl", "../a/importA.wdl"));
     }
 }
