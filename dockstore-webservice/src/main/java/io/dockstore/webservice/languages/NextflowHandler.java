@@ -140,7 +140,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         suspectedConfigImports.add(mainScriptPath);
 
         for (String filename : suspectedConfigImports) {
-            String filenameAbsolutePath = convertRelativePathToAbsolutePath(filepath, filename);
+            String filenameAbsolutePath = convertRelativePathToAbsolutePathImports(filepath, filename);
             Optional<SourceFile> sourceFile = sourceCodeRepoInterface
                 .readFile(repositoryId, version, DescriptorLanguage.FileType.NEXTFLOW, filenameAbsolutePath);
             if (sourceFile.isPresent()) {
@@ -176,7 +176,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         Matcher m = IMPORT_PATTERN.matcher(content);
         while (m.find()) {
             String path = getRelativeImportPathFromLine(m.group(), workingDirectoryForFile);
-            String absoluteImportPath = convertRelativePathToAbsolutePath(workingDirectoryForFile, path);
+            String absoluteImportPath = convertRelativePathToAbsolutePathImports(workingDirectoryForFile, path);
             handleImport(repositoryId, version, imports, path, sourceCodeRepoInterface, absoluteImportPath);
         }
         Map<String, SourceFile> recursiveImports = new HashMap<>();

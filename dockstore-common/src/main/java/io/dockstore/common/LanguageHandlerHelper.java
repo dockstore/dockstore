@@ -12,11 +12,13 @@ public final class LanguageHandlerHelper {
 
     /**
      * Resolves a relative path based on an absolute parent path
+     * Should only be used with workflow imports and not for using
+     * untrusted inputs for traversing the filesystem.
      * @param parentPath Absolute path to parent file
      * @param relativePath Relative path the parent file
      * @return Absolute version of relative path
      */
-    public static String convertRelativePathToAbsolutePath(String parentPath, String relativePath) {
+    public static String convertRelativePathToAbsolutePathImports(String parentPath, String relativePath) {
         if (relativePath.startsWith("/")) {
             return relativePath;
         }
