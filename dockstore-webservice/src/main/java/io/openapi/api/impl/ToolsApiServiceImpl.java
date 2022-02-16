@@ -739,6 +739,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param workingDirectory working directory if relevant
      * @return
      */
+    @SuppressWarnings("lgtm[java/path-injection]")
     public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
         String targetPath;
         if (searchPathParam.startsWith("/")) {

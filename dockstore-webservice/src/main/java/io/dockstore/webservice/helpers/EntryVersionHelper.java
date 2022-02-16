@@ -324,8 +324,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         return resultMap;
     }
 
-
-
+    @SuppressWarnings("lgtm[java/path-injection]")
     default void createTestParameters(List<String> testParameterPaths, Version workflowVersion, Set<SourceFile> sourceFiles, DescriptorLanguage.FileType fileType, FileDAO fileDAO) {
         for (String path : testParameterPaths) {
             long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
