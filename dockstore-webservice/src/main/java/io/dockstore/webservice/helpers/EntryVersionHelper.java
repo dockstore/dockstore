@@ -334,7 +334,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
                 sourceFile.setPath(path);
-                sourceFile.setAbsolutePath(Paths.get(StringUtils.prependIfMissing(workflowVersion.getWorkingDirectory(), "/")).resolve(path).toString());
+                sourceFile.setAbsolutePath(Paths.get(StringUtils.prependIfMissing(workflowVersion.getWorkingDirectory(), "/")).resolve(path).toString()); // lgtm[java/path-injection]
                 sourceFile.setType(fileType);
 
                 long id = fileDAO.create(sourceFile);
