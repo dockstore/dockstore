@@ -49,6 +49,7 @@ import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -632,28 +633,39 @@ public class UserResourceIT extends BaseIT {
         io.dockstore.openapi.client.model.User user = userApi.getUser();
 
         privilegeRequest.setAdmin(false);
-        adminApi.setUserPrivileges(privilegeRequest, user.getId());
+        privilegeRequest.setCurator(false);
         adminApi.setUserPrivileges(privilegeRequest, user.getId());
         assertFalse(userApi.getUser().isIsAdmin());
         assertFalse(userApi.getUser().isCurator());
 
+        privilegeRequest.setAdmin(false);
         privilegeRequest.setCurator(true);
         adminApi.setUserPrivileges(privilegeRequest, user.getId());
         assertFalse(userApi.getUser().isIsAdmin());
         assertTrue(userApi.getUser().isCurator());
 
-        try {
-            userApi.setUserPrivileges(privilegeRequest, admin.getId());
-            fail("Curator should not be able to set admin permissions");
-        } catch (io.dockstore.openapi.client.ApiException ex) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+        // At this point in the code, the user is a curator.
+        for (boolean adminValue: Arrays.asList(Boolean.FALSE, Boolean.TRUE)) {
+            for (boolean curatorValue: Arrays.asList(Boolean.FALSE, Boolean.TRUE)) {
+                privilegeRequest.setAdmin(adminValue);
+                privilegeRequest.setCurator(curatorValue);
+                try {
+                    userApi.setUserPrivileges(privilegeRequest, admin.getId());
+                    fail("Curator should not be able to set any permissions");
+                } catch (io.dockstore.openapi.client.ApiException ex) {
+                    assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
+                }
+            }
         }
 
         privilegeRequest.setAdmin(true);
+        privilegeRequest.setCurator(false);
         adminApi.setUserPrivileges(privilegeRequest, user.getId());
         assertTrue(userApi.getUser().isIsAdmin());
+        assertFalse(userApi.getUser().isCurator());
 
         privilegeRequest.setAdmin(false);
+        privilegeRequest.setCurator(false);
         try {
             adminApi.setUserPrivileges(privilegeRequest, admin.getId());
             fail("User should not be able to set their own permissions");
@@ -661,6 +673,7 @@ public class UserResourceIT extends BaseIT {
             assertEquals(HttpStatus.SC_FORBIDDEN, ex.getCode());
         }
 
+        privilegeRequest.setAdmin(false);
         privilegeRequest.setCurator(false);
         adminApi.setUserPrivileges(privilegeRequest, user.getId());
         assertFalse(userApi.getUser().isIsAdmin());
