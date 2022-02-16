@@ -45,6 +45,7 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URL;
@@ -329,6 +330,8 @@ public abstract class AbstractImageRegistry {
             toolTags = getTagsDockerHub(tool);
         } else if (tool.getRegistry().equals(Registry.GITLAB.getDockerPath())) {
             toolTags = getTagsGitLab(tool);
+        } else if (tool.getRegistry().equals((Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath()))) {
+            toolTags = getTagsGitHubContainerRegistry(tool);
         } else {
             toolTags = getTags(tool);
         }
@@ -565,8 +568,9 @@ public abstract class AbstractImageRegistry {
             }
         }
 
-        // For tools from dockerhub, grab/update the image and checksum information
-        if (tool.getRegistry().equals(Registry.DOCKER_HUB.getDockerPath()) || tool.getRegistry().equals(Registry.GITLAB.getDockerPath())) {
+        // For tools from dockerhub, gitlab, and github container registry, grab/update the image and checksum information
+        if (tool.getRegistry().equals(Registry.DOCKER_HUB.getDockerPath()) || tool.getRegistry().equals(Registry.GITLAB.getDockerPath())
+                || tool.getRegistry().equals(Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath())) {
             updateNonQuayImageInformation(newTags, tool, existingTags);
         }
 
@@ -623,6 +627,7 @@ public abstract class AbstractImageRegistry {
                 for (Tag oldTag : existingTags) {
                     if (oldTag.getName().equals(newTag.getName())) {
                         updateImageInformation(tool, newTag, oldTag);
+                        break;
                     }
                 }
             }
@@ -696,6 +701,36 @@ public abstract class AbstractImageRegistry {
             LOG.error("Unable to get GitLab response for " + repo, ex);
         }
         return Collections.emptyList();
+    }
+
+    private List<Tag> getTagsGitHubContainerRegistry(Tool tool) {
+        final Registry registry = Registry.GITHUB_CONTAINER_REGISTRY;
+        final List<Tag> tags = new ArrayList<>();
+        final String repo = tool.getNamespace() + '/' + tool.getName();
+
+        // Get image information for the tool's tags.
+        // No need to get all tags belonging to the container because image information is only updated for existing tool tags
+        for (Tag tag : tool.getWorkflowVersions()) {
+            // Determine if the tag is the 'latest' tag
+            LanguageHandlerInterface.DockerSpecifier specifier;
+            if (tag.getName().equals("latest")) {
+                specifier = LanguageHandlerInterface.DockerSpecifier.LATEST;
+            } else {
+                specifier = LanguageHandlerInterface.DockerSpecifier.TAG;
+            }
+
+            Set<Image> images = DockerRegistryAPIHelper.getImages(registry, repo, specifier, tag.getName());
+            if (images.isEmpty()) {
+                LOG.error("Could not get image and checksum information for {}:{} from {}", repo, tag.getName(), registry.getFriendlyName());
+                continue;
+            }
+
+            Tag newTag = new Tag();
+            newTag.setName(tag.getName());
+            newTag.setImages(images);
+            tags.add(newTag);
+        }
+        return tags;
     }
 
     private void updateFiles(Tool tool, Tag tag, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {
