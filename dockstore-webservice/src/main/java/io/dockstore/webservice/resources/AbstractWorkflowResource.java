@@ -473,7 +473,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 String subclass = wf.getSubclass();
                 if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
-                    throw new CustomWebApplicationException( "Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
+                    throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
                 }
 
                 String workflowName = wf.getName();
