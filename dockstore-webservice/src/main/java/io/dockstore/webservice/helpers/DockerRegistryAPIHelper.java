@@ -127,7 +127,7 @@ public final class DockerRegistryAPIHelper {
                 }
             } else {
                 if (digestHeader.startsWith(DIGEST_HASH_ALGORITHM)) { // Digest header should have the form sha256:<digest>
-                    digest = digestHeader.split(DIGEST_HASH_ALGORITHM + ":")[0];
+                    digest = digestHeader.split(DIGEST_HASH_ALGORITHM + ":")[1]; // sha256:<digest> splits to ["", <digest>]
                 } else {
                     LOG.error("Could not retrieve a {} digest for {}", DIGEST_HASH_ALGORITHM, imageNameMessage);
                     return images;
