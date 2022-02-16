@@ -708,7 +708,8 @@ public abstract class AbstractImageRegistry {
         final List<Tag> tags = new ArrayList<>();
         final String repo = tool.getNamespace() + '/' + tool.getName();
 
-        // Get image information for the tool's tags
+        // Get image information for the tool's tags.
+        // No need to get all tags belonging to the container because image information is only updated for existing tool tags
         for (Tag tag : tool.getWorkflowVersions()) {
             // Determine if the tag is the 'latest' tag
             LanguageHandlerInterface.DockerSpecifier specifier;

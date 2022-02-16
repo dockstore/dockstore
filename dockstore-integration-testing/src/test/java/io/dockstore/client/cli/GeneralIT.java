@@ -1219,6 +1219,7 @@ public class GeneralIT extends BaseIT {
 
 
     private void verifyChecksumsAreSaved(List<Tag> tags) {
+        assertTrue("The list of tags should not be empty", tags.size() > 0);
         for (Tag tag : tags) {
             List<Image> images = tag.getImages();
             assertTrue("Tag should have an image", images.size() > 0);
