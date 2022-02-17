@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -26,7 +25,7 @@ public class QuayImageRegistryTest {
      * This tests that when there are over 500 tags, we can use the paginated endpoint to retrieve all of them instead.
      * Using calico/node because it has over 3838 tags
      */
-    @Ignore("https://github.com/dockstore/dockstore/issues/4663")
+    //    @Ignore("https://github.com/dockstore/dockstore/issues/4663")
     @Test
     public void getOver500TagsTest() {
         Token token = new Token();
@@ -40,8 +39,14 @@ public class QuayImageRegistryTest {
         int size = tags.size();
         Assert.assertTrue("Should be able to get more than the default 500 tags", size > 3838);
         tags.forEach(tag -> {
-            Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
-            Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            if (tag.getSize() == null) {
+                Assert.assertNull("Image ID shouldn't be populated", tag.getImageId());
+
+            } else {
+                Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
+                Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            }
+
         });
         Set<String> collect = tags.parallelStream().map(Version::getName).collect(Collectors.toSet());
         int distinctSize = collect.size();

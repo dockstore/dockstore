@@ -59,7 +59,7 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
     @ApiModelProperty(value = "Size of the image", position = 103)
-    private long size;
+    private Long size;
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("dockerfile_path")
@@ -164,11 +164,11 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     }
 
     @JsonProperty
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 

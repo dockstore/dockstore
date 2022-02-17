@@ -461,11 +461,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @param dockstoreYml
      */
+    @SuppressWarnings("lgtm[java/path-injection]")
     private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml, boolean isOneStepWorkflow) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
-            final Path gitRefPath = Path.of(gitReference);
+            final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
             for (YamlWorkflow wf : yamlWorkflows) {
                 if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                     continue;
@@ -511,11 +512,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param user User that triggered action
      * @param dockstoreYml
      */
+    @SuppressWarnings("lgtm[java/path-injection]")
     private void createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
             User user, final SourceFile dockstoreYml) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         if (service != null) {
-            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
+            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) { // lgtm[java/path-injection]
                 return;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();

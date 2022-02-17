@@ -739,6 +739,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param workingDirectory working directory if relevant
      * @return
      */
+    @SuppressWarnings("lgtm[java/path-injection]")
     public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPathParam, String workingDirectory) {
         String targetPath;
         if (searchPathParam.startsWith("/")) {
@@ -748,7 +749,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             // treat searchPath as a relative path
             String relativeSearchPath = cleanRelativePath(searchPathParam);
             // assemble normalized absolute path
-            targetPath = Paths.get(workingDirectory, relativeSearchPath).normalize().toString().toLowerCase();
+            targetPath = Paths.get(workingDirectory, relativeSearchPath).normalize().toString().toLowerCase(); // lgtm[java/path-injection]
         }
 
         // assembled map from paths normalized relative to the root (not the main descriptor) to files
