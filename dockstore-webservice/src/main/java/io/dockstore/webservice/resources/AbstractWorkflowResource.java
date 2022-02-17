@@ -453,7 +453,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Create or retrieve workflows based on Dockstore.yml, add or update tag version
+     * Create or retrieve workflows/GitHub App Tools based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
@@ -463,7 +463,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     @SuppressWarnings("lgtm[java/path-injection]")
     private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
-            final SourceFile dockstoreYml, boolean isOneStepWorkflow) {
+            final SourceFile dockstoreYml, boolean isTool) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
             final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
@@ -473,12 +473,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
 
                 String subclass = wf.getSubclass();
+                if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
+                    throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
+                }
+
                 String workflowName = wf.getName();
                 Boolean publish = wf.getPublish();
                 final var defaultVersion = wf.getLatestTagAsDefault();
                 final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
-                Class workflowType = isOneStepWorkflow ? AppTool.class : BioWorkflow.class;
+                Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
                 Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
