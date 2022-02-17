@@ -388,10 +388,44 @@ public class GeneralIT extends BaseIT {
 
         tool = toolApi.registerManual(tool);
 
-        // Add a tag
+        // Add the 3.9.6 tag for the ghcr.io/homebrew/core/python/3.9 tool
         List<Tag> tags = new ArrayList<>();
         Tag tag = new Tag();
         tag.setName("3.9.6");
+        tag.setReference("master");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        return tool;
+    }
+
+    private DockstoreTool registerManualAmazonECRToolAndAddTag() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+
+        // This image is used for the tool: public.ecr.aws/ubuntu/ubuntu:18.04
+        tool.setRegistryString(Registry.AMAZON_ECR.getDockerPath());
+        tool.setNamespace("ubuntu");
+        tool.setName("ubuntu");
+        tool.setDefaultDockerfilePath("/Dockerfile");
+        tool.setDefaultCwlPath("/Dockstore.cwl");
+        tool.setDefaultWdlPath("/Dockstore.wdl");
+        tool.setDefaultCWLTestParameterFile("/test.cwl.json");
+        tool.setDefaultWDLTestParameterFile("/test.wdl.json");
+        tool.setIsPublished(false);
+        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+        tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/dockstore-whalesay-2.git");
+        tool.setPrivateAccess(false);
+
+        tool = toolApi.registerManual(tool);
+
+        // Add the 18.04 tag for the public.ecr.aws/ubuntu/ubuntu tool
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
+        tag.setName("18.04");
         tag.setReference("master");
         tags.add(tag);
         toolTagsApi.addTags(tool.getId(), tags);
@@ -1201,7 +1235,6 @@ public class GeneralIT extends BaseIT {
     public void testGrabChecksumFromGitHubContainerRegistry() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         ContainersApi toolApi = new ContainersApi(webClient);
-        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
         DockstoreTool tool = registerManualGitHubContainerRegistryToolAndAddTag();
         List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
         verifyChecksumsAreSaved(tags);
@@ -1217,6 +1250,24 @@ public class GeneralIT extends BaseIT {
         verifyChecksumsAreSaved(updatedTags);
     }
 
+    @Test
+    public void testGrabChecksumFromAmazonECR() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        DockstoreTool tool = registerManualAmazonECRToolAndAddTag();
+        List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(tags);
+
+        // Check for case where user deletes tag and creates new one of same name.
+        // Check that the new imageid and checksums are grabbed on refresh. Also check the old images have been deleted.
+        refreshAfterDeletedTag(toolApi, tool, tags);
+
+        // mimic getting a registry being slow/not responding and verify we do not delete the image information we already have by going to an invalid url.
+        testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where id=" + tool.getId());
+        toolApi.refresh(tool.getId());
+        List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(updatedTags);
+    }
 
     private void verifyChecksumsAreSaved(List<Tag> tags) {
         assertTrue("The list of tags should not be empty", tags.size() > 0);
