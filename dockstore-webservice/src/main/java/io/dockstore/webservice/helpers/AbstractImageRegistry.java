@@ -331,7 +331,10 @@ public abstract class AbstractImageRegistry {
         } else if (tool.getRegistry().equals(Registry.GITLAB.getDockerPath())) {
             toolTags = getTagsGitLab(tool);
         } else if (tool.getRegistry().equals((Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath()))) {
-            toolTags = getTagsGitHubContainerRegistry(tool);
+            toolTags = getTagsFromRegistry(Registry.GITHUB_CONTAINER_REGISTRY, tool);
+        } else if (isPublicAmazonEcrTool(tool)) {
+            // Only get tags for public Amazon ECR tools. Private Amazon ECR tools have a custom docker path
+            toolTags = getTagsFromRegistry(Registry.AMAZON_ECR, tool);
         } else {
             toolTags = getTags(tool);
         }
@@ -570,7 +573,7 @@ public abstract class AbstractImageRegistry {
 
         // For tools from dockerhub, gitlab, and github container registry, grab/update the image and checksum information
         if (tool.getRegistry().equals(Registry.DOCKER_HUB.getDockerPath()) || tool.getRegistry().equals(Registry.GITLAB.getDockerPath())
-                || tool.getRegistry().equals(Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath())) {
+                || tool.getRegistry().equals(Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath()) || isPublicAmazonEcrTool(tool)) {
             updateNonQuayImageInformation(newTags, tool, existingTags);
         }
 
@@ -703,8 +706,15 @@ public abstract class AbstractImageRegistry {
         return Collections.emptyList();
     }
 
-    private List<Tag> getTagsGitHubContainerRegistry(Tool tool) {
-        final Registry registry = Registry.GITHUB_CONTAINER_REGISTRY;
+    /**
+     * Get image information for a tool's existing tags using the Docker Registry HTTP API V2.
+     * This function is used for tools that belong to registries that require authentication to use their APIs.
+     * Examples: GitHub Container Registry and Amazon ECR tools.
+     * @param registry The tool's image registry
+     * @param tool The tool to get image information for
+     * @return A list of Tags
+     */
+    private List<Tag> getTagsFromRegistry(Registry registry, Tool tool) {
         final List<Tag> tags = new ArrayList<>();
         final String repo = tool.getNamespace() + '/' + tool.getName();
 
@@ -731,6 +741,10 @@ public abstract class AbstractImageRegistry {
             tags.add(newTag);
         }
         return tags;
+    }
+
+    private boolean isPublicAmazonEcrTool(Tool tool) {
+        return tool.getRegistry().equals(Registry.AMAZON_ECR.getDockerPath()) && !tool.isPrivateAccess();
     }
 
     private void updateFiles(Tool tool, Tag tag, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {
