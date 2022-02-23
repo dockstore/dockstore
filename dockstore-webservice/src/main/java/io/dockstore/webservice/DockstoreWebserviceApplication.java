@@ -77,6 +77,7 @@ import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
 import io.dockstore.webservice.jdbi.AppToolDAO;
+import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
@@ -345,6 +346,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
+        final BioWorkflowDAO bioWorkflowDAO = new BioWorkflowDAO(hibernate.getSessionFactory());
 
         publicStateManager.insertListener(new PopulateEntryListener(toolDAO), publicStateManager.getElasticListener());
 
@@ -411,6 +413,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
+        ToolsApiServiceImpl.setBioWorkflowDAO(bioWorkflowDAO);
         ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         ToolsApiServiceImpl.setTrsListener(trsListener);

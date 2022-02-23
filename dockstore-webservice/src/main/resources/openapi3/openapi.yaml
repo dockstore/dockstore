@@ -5313,8 +5313,8 @@ paths:
       - users
   /users/{userId}/privileges:
     put:
-      description: "Updates the provided userID to admin or curator status, ADMIN\
-        \ or CURATOR only"
+      description: "Updates the provided userID to admin or curator status, usable\
+        \ by ADMINs only"
       operationId: setUserPrivileges
       parameters:
       - in: path

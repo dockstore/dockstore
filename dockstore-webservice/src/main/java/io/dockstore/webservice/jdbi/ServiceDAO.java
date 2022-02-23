@@ -16,9 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.database.WorkflowPath;
 import java.util.List;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
 /**
@@ -35,6 +39,13 @@ public class ServiceDAO extends EntryDAO<Service> {
 
     public long create(Service file) {
         return persist(file).getId();
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
+        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
+        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
     }
 
     public List<WorkflowPath> findAllPublishedPaths() {
