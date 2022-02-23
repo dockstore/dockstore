@@ -736,6 +736,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
 
         Workflow publishedWorkflow = publishWorkflow(workflow, request.getPublish(), userDAO.findById(user.getId()));
         Hibernate.initialize(publishedWorkflow.getWorkflowVersions());
+        initializeAdditionalFields(AUTHORS, publishedWorkflow);
         return publishedWorkflow;
     }
 
