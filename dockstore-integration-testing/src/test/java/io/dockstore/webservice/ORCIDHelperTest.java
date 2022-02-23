@@ -33,8 +33,6 @@ public class ORCIDHelperTest {
     @ClassRule
     public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(ORCID_SIMULATION_SOURCE);
 
-    private static final String BASE_URL = "https://api.sandbox.orcid.org/v3.0/";
-
     @Test
     public void exportEntry() throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
         Workflow entry = new BioWorkflow();
@@ -52,21 +50,21 @@ public class ORCIDHelperTest {
         String token = "fakeToken";
         Optional<Version> optionalVersion = Optional.of(version);
         String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
-        HttpResponse<String> response = ORCIDHelper.postWorkString(BASE_URL, id, orcidWorkString, token);
+        HttpResponse<String> response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
         Assert.assertEquals(HttpStatus.SC_CREATED, response.statusCode());
         Assert.assertEquals("", response.body());
         String putCode = getPutCodeFromLocation(response);
-        response = ORCIDHelper.postWorkString(BASE_URL, id, orcidWorkString, token);
+        response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
         Assert.assertEquals(HttpStatus.SC_CONFLICT, response.statusCode());
         Assert.assertTrue(response.body().contains("409 Conflict: You have already added this activity (matched by external identifiers), please see element with put-code " + putCode + ". If you are trying to edit the item, please use PUT instead of POST."));
         orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
-        response = ORCIDHelper.postWorkString(BASE_URL, id, orcidWorkString, token);
+        response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.statusCode());
         Assert.assertTrue(response.body().contains("400 Bad Request: Put-code is included when not expected. When posting new activities, the put code should be omitted."));
-        response = ORCIDHelper.putWorkString(BASE_URL, id, orcidWorkString, token, putCode);
+        response = ORCIDHelper.putWorkString(id, orcidWorkString, token, putCode);
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
         Assert.assertTrue(response.body().contains("work:work put-code=\"" + putCode + "\" "));
-        response = ORCIDHelper.getAllWorks(BASE_URL, id, token);
+        response = ORCIDHelper.getAllWorks(id, token);
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
     }
 }

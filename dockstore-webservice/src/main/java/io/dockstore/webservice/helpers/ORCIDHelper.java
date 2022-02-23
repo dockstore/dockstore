@@ -61,8 +61,8 @@ public final class ORCIDHelper {
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
 
-    private static String baseApiUrl;
-    private static String baseUrl;
+    private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
+    private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
     private static String orcidClientId;
     private static String orcidClientSecret;
 
@@ -82,6 +82,10 @@ public final class ORCIDHelper {
 
         orcidClientId = configuration.getOrcidClientID();
         orcidClientSecret = configuration.getOrcidClientSecret();
+    }
+
+    public static String getOrcidBaseApiUrl() {
+        return baseApiUrl;
     }
 
     /**
@@ -184,9 +188,9 @@ public final class ORCIDHelper {
         return doi;
     }
 
-    public static HttpResponse<String> postWorkString(String baseURL, String id, String workString, String token)
+    public static HttpResponse<String> postWorkString(String id, String workString, String token)
             throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).POST(ofString(workString)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id + "/work")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).POST(ofString(workString)).build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -195,9 +199,9 @@ public final class ORCIDHelper {
      * This updates an existing ORCID work
      * @return
      */
-    public static HttpResponse<String> putWorkString(String baseURL, String id, String workString, String token, String putCode)
+    public static HttpResponse<String> putWorkString(String id, String workString, String token, String putCode)
             throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).PUT(ofString(workString)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id + "/work/" + putCode)).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).PUT(ofString(workString)).build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
@@ -233,10 +237,10 @@ public final class ORCIDHelper {
         return writer.getBuffer().toString();
     }
 
-    public static Optional<Long> searchForPutCodeByDoiUrl(String baseURL, String id, List<Token> orcidTokens, String doiUrl)
+    public static Optional<Long> searchForPutCodeByDoiUrl(String id, List<Token> orcidTokens, String doiUrl)
             throws IOException, URISyntaxException, InterruptedException, JAXBException {
         // Get user's ORCID works
-        HttpResponse<String> response = getAllWorks(baseURL, id, orcidTokens.get(0).getToken());
+        HttpResponse<String> response = getAllWorks(id, orcidTokens.get(0).getToken());
 
         if (response.statusCode() == HttpStatus.SC_OK) {
             Works works = transformXmlToWorks(response.body());
@@ -258,8 +262,8 @@ public final class ORCIDHelper {
     /**
      * This gets all works belonging to the orcid author with the provided orcid ID.
      */
-    public static HttpResponse<String> getAllWorks(String baseURL, String id, String token) throws IOException, URISyntaxException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseURL + id + "/works")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
+    public static HttpResponse<String> getAllWorks(String id, String token) throws IOException, URISyntaxException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id + "/works")).header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE).header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
                 HttpResponse.BodyHandlers.ofString());
     }
