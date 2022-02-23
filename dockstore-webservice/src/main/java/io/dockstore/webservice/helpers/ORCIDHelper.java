@@ -3,22 +3,28 @@ package io.dockstore.webservice.helpers;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Version;
+import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
@@ -38,17 +44,71 @@ import org.orcid.jaxb.model.v3.release.common.Title;
 import org.orcid.jaxb.model.v3.release.common.Url;
 import org.orcid.jaxb.model.v3.release.record.ExternalID;
 import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
+import org.orcid.jaxb.model.v3.release.record.Person;
 import org.orcid.jaxb.model.v3.release.record.Work;
 import org.orcid.jaxb.model.v3.release.record.WorkTitle;
+import org.orcid.jaxb.model.v3.release.record.summary.Employments;
 import org.orcid.jaxb.model.v3.release.record.summary.WorkGroup;
 import org.orcid.jaxb.model.v3.release.record.summary.WorkSummary;
 import org.orcid.jaxb.model.v3.release.record.summary.Works;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // Swagger-ui available here: https://api.orcid.org/v3.0/#!/Development_Member_API_v3.0/
 public final class ORCIDHelper {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ORCIDHelper.class);
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
+    private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+
+    private static String baseApiUrl;
+    private static String baseUrl;
+    private static String orcidClientId;
+    private static String orcidClientSecret;
 
     private ORCIDHelper() {
+    }
+
+    public static void init(DockstoreWebserviceConfiguration configuration) {
+        try {
+            URL orcidAuthUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
+            // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
+            baseUrl = orcidAuthUrl.getProtocol() + "://" + orcidAuthUrl.getHost() + "/";
+            // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
+            baseApiUrl = orcidAuthUrl.getProtocol() + "://api." + orcidAuthUrl.getHost() + "/v3.0/";
+        } catch (MalformedURLException e) {
+            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
+        }
+
+        orcidClientId = configuration.getOrcidClientID();
+        orcidClientSecret = configuration.getOrcidClientSecret();
+    }
+
+    /**
+     * Get a read-public access token for reading public information.
+     * https://info.orcid.org/documentation/api-tutorials/api-tutorial-read-data-on-a-record/#Get_an_access_token
+     * @return An access token
+     */
+    public static Optional<String> getOrcidAccessToken() {
+        String requestData = String.format("grant_type=client_credentials&scope=/read-public&client_id=%s&client_secret=%s", orcidClientId, orcidClientSecret);
+        try {
+            HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseUrl + "oauth/token"))
+                    .header(HttpHeaders.ACCEPT, "application/json")
+                    .headers(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                    .POST(ofString(requestData)).build();
+
+            HttpResponse response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != HttpStatus.SC_OK) {
+                LOG.error("Could not get ORCID access token");
+                return Optional.empty();
+            }
+
+            Map<String, String> responseMap = MAPPER.readValue(response.body().toString(), Map.class);
+            return Optional.of(responseMap.get("access_token"));
+        } catch (URISyntaxException | IOException | InterruptedException ex) {
+            LOG.error("Could not get ORCID access token", ex);
+            return Optional.empty();
+        }
     }
 
     /**
@@ -211,5 +271,57 @@ public final class ORCIDHelper {
         JAXBContext context = JAXBContext.newInstance(Works.class);
         Unmarshaller unmarshaller = context.createUnmarshaller();
         return (Works) unmarshaller.unmarshal(new StringReader(worksXml));
+    }
+
+    /**
+     * Gets details of the person identified by the given ORCID ID.
+     * @param id ORCID ID of the person to get details for
+     * @param token ORCID token
+     * @return HttpResponse
+     */
+    public static HttpResponse<String> getPerson(String id, String token) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id + "/person"))
+                .header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE)
+                .header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
+        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+                HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * Transforms the ORCID XML response from a get person call to a Person object. Assumes that the XML from ORCID is safe.
+     * @param personXml
+     * @return Person object
+     * @throws JAXBException
+     */
+    static Person transformXmlToPerson(String personXml) throws JAXBException {
+        JAXBContext context = JAXBContext.newInstance(Person.class);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        return (Person) unmarshaller.unmarshal(new StringReader(personXml));
+    }
+
+    /**
+     * Gets all employments of the person identified by the given ORCID ID.
+     * @param id ORCID ID of the person to get employments for
+     * @param token ORCID token
+     * @return HttpResponse
+     */
+    public static HttpResponse<String> getAllEmployments(String id, String token) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id + "/employments"))
+                .header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE)
+                .header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
+        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
+                HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * ransforms the ORCID XML response from a get all Employments call to a Person object. Assumes that the XML from ORCID is safe.
+     * @param employmentsXml
+     * @return Employments object
+     * @throws JAXBException
+     */
+    static Employments transformXmlToEmployments(String employmentsXml) throws JAXBException {
+        JAXBContext context = JAXBContext.newInstance(Employments.class);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        return (Employments) unmarshaller.unmarshal(new StringReader(employmentsXml));
     }
 }

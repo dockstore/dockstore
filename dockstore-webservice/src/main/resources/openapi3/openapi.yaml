@@ -7174,6 +7174,9 @@ components:
           type: string
         email:
           type: string
+        id:
+          type: integer
+          format: int64
         name:
           type: string
         role:
@@ -8265,7 +8268,18 @@ components:
     OrcidAuthor:
       type: object
       properties:
+        affiliation:
+          type: string
+        email:
+          type: string
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
         orcid:
+          type: string
+        role:
           type: string
     OrcidPutCode:
       type: object

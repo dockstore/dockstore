@@ -70,6 +70,7 @@ import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
@@ -384,6 +385,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
 
         MetadataResourceHelper.init(configuration);
+        ORCIDHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));

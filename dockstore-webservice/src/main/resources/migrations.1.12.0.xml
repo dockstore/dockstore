@@ -387,4 +387,20 @@
             alter table sourcefile enable row level security;
         </sql>
     </changeSet>
+    <changeSet author="ktran (generated)" id="orcidAuthorInfo">
+        <addColumn tableName="orcidauthor">
+            <column name="affiliation" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="orcidauthor">
+            <column name="email" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <addColumn tableName="orcidauthor">
+            <column name="name" type="varchar(255 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="orcidauthor">
+            <column name="role" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

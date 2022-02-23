@@ -23,7 +23,6 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -40,6 +39,8 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.ORCIDHelper;
+import io.dockstore.webservice.helpers.OrcidAuthorHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -49,6 +50,7 @@ import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
+import io.dockstore.webservice.jdbi.OrcidAuthorDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -99,6 +101,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final FileDAO fileDAO;
     protected final LambdaEventDAO lambdaEventDAO;
     protected final FileFormatDAO fileFormatDAO;
+    protected final OrcidAuthorDAO orcidAuthorDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -121,6 +124,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.eventDAO = new EventDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.orcidAuthorDAO = new OrcidAuthorDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -479,7 +483,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 Class workflowType = isOneStepWorkflow ? AppTool.class : BioWorkflow.class;
                 Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, user, defaultVersion, yamlAuthors);
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -524,7 +528,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final List<YamlAuthor> yamlAuthors = service.getAuthors();
 
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
-            addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+            addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, user, defaultVersion, yamlAuthors);
 
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -606,8 +610,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml Dockstore YAML File
      * @param gitHubSourceCodeRepo Source Code Repo
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private void addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
-            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault, final List<YamlAuthor> yamlAuthors) {
+            GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, User user, boolean latestTagAsDefault, final List<YamlAuthor> yamlAuthors) {
         Instant startTime = Instant.now();
         try {
             // Create version and pull relevant files
@@ -615,7 +620,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
             // Add authors
-            addDockstoreYmlAuthorsToVersion(yamlAuthors, remoteWorkflowVersion);
+            addDockstoreYmlAuthorsToVersion(yamlAuthors, remoteWorkflowVersion, user);
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
@@ -682,7 +687,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param yamlAuthors
      * @param version
      */
-    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version) {
+    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version, User user) {
         final Set<Author> authors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() == null)
                 .map(yamlAuthor -> {
@@ -695,11 +700,23 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 })
                 .collect(Collectors.toSet());
         version.setAuthors(authors);
-        final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
-                .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
-                .map(yamlAuthor -> new OrcidAuthor(yamlAuthor.getOrcid()))
+
+        // Only need the ORCID IDs because ORCID Author information is retrieved using the ORCID API
+        final Set<String> orcidAuthorIds = yamlAuthors.stream()
+                .map(YamlAuthor::getOrcid)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        version.setOrcidAuthors(orcidAuthors);
+
+        if (!orcidAuthorIds.isEmpty()) {
+            List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
+            // Get a read-public access token for ORCID if the user who initiated the GitHub release does not have an ORCID token
+            Optional<String> orcidToken =
+                    orcidByUserId.isEmpty() ? ORCIDHelper.getOrcidAccessToken() : Optional.of(orcidByUserId.get(0).getToken());
+
+            if (orcidToken.isPresent()) {
+                OrcidAuthorHelper.updateVersionOrcidAuthors(version, orcidAuthorIds, orcidToken.get(), orcidAuthorDAO);
+            }
+        }
     }
 
     private Version.ReferenceType getReferenceTypeFromGitRef(String gitRef) {
