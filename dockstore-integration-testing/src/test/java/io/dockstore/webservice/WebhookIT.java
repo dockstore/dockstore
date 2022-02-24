@@ -42,7 +42,8 @@ import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
-import io.specto.hoverfly.junit.rule.HoverflyRule;
+import io.specto.hoverfly.junit.core.Hoverfly;
+import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -63,7 +64,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -90,9 +90,6 @@ public class WebhookIT extends BaseIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-
-    @ClassRule
-    public static HoverflyRule hoverflyRule = HoverflyRule.inSpyMode(ORCID_SIMULATION_SOURCE);
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
@@ -785,64 +782,70 @@ public class WebhookIT extends BaseIT {
         Workflow workflow;
         WorkflowVersion version;
 
-        // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
-        // If the .dockstore.yml specifies an author, then only the .dockstore.yml's authors should be saved
-        client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
-        // WDL workflow
-        workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
-        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(2, version.getAuthors().size());
-        assertEquals(1, version.getOrcidAuthors().size());
-        final String wdlDescriptorAuthorName = "Descriptor Author";
-        assertTrue("Should not have any author from the descriptor",
-                version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
-        // CWL workflow
-        workflow = client.getWorkflowByPath(cwlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
-        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(1, version.getAuthors().size());
-        assertEquals(0, version.getOrcidAuthors().size());
-        final String cwlDescriptorAuthorName = "Test User";
-        assertTrue("Should not have any author from the descriptor",
-                version.getAuthors().stream().noneMatch(author -> author.getName().equals(cwlDescriptorAuthorName)));
-        // Nextflow workflow
-        workflow = client.getWorkflowByPath(nextflowWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
-        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        assertEquals(1, version.getAuthors().size());
-        assertEquals(0, version.getOrcidAuthors().size());
-        final String nextflowDescriptorAuthorName = "Nextflow Test Author";
-        assertTrue("Should not have any author from the descriptor",
-                version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
+        // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
+        try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SPY)) { // Spy mode so Hoverfly doesn't try to intercept GitHub in this test
+            hoverfly.start();
+            hoverfly.simulate(ORCID_SIMULATION_SOURCE);
 
-        // WDL workflow containing only .dockstore.yml authors
-        client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDockstoreYmlAuthors", installationId);
-        workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
-        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDockstoreYmlAuthors")).findFirst().get();
-        assertEquals(2, version.getAuthors().size());
-        assertEquals(1, version.getOrcidAuthors().size());
+            // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
+            // If the .dockstore.yml specifies an author, then only the .dockstore.yml's authors should be saved
+            client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+            // WDL workflow
+            workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+            version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
+            assertEquals(2, version.getAuthors().size());
+            assertEquals(1, version.getOrcidAuthors().size());
+            final String wdlDescriptorAuthorName = "Descriptor Author";
+            assertTrue("Should not have any author from the descriptor",
+                    version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
+            // CWL workflow
+            workflow = client.getWorkflowByPath(cwlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+            version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
+            assertEquals(1, version.getAuthors().size());
+            assertEquals(0, version.getOrcidAuthors().size());
+            final String cwlDescriptorAuthorName = "Test User";
+            assertTrue("Should not have any author from the descriptor",
+                    version.getAuthors().stream().noneMatch(author -> author.getName().equals(cwlDescriptorAuthorName)));
+            // Nextflow workflow
+            workflow = client.getWorkflowByPath(nextflowWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+            version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
+            assertEquals(1, version.getAuthors().size());
+            assertEquals(0, version.getOrcidAuthors().size());
+            final String nextflowDescriptorAuthorName = "Nextflow Test Author";
+            assertTrue("Should not have any author from the descriptor",
+                    version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
 
-        // WDL workflow containing only a descriptor author
-        client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDescriptorAuthor", installationId);
-        workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
-        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDescriptorAuthor")).findFirst().get();
-        assertEquals(1, version.getAuthors().size());
-        assertEquals(wdlDescriptorAuthorName, version.getAuthor());
-        assertEquals(0, version.getOrcidAuthors().size());
+            // WDL workflow containing only .dockstore.yml authors
+            client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDockstoreYmlAuthors", installationId);
+            workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+            version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDockstoreYmlAuthors")).findFirst().get();
+            assertEquals(2, version.getAuthors().size());
+            assertEquals(1, version.getOrcidAuthors().size());
 
-        // Release WDL workflow containing only a descriptor author again and test that it doesn't create a duplicate author
-        client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDescriptorAuthor", installationId);
-        workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
-        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDescriptorAuthor")).findFirst().get();
-        assertEquals(1, version.getAuthors().size());
-        assertEquals(wdlDescriptorAuthorName, version.getAuthor());
-        assertEquals(0, version.getOrcidAuthors().size());
+            // WDL workflow containing only a descriptor author
+            client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDescriptorAuthor", installationId);
+            workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+            version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDescriptorAuthor")).findFirst().get();
+            assertEquals(1, version.getAuthors().size());
+            assertEquals(wdlDescriptorAuthorName, version.getAuthor());
+            assertEquals(0, version.getOrcidAuthors().size());
 
-        // WDL workflow containing multiple descriptor authors separated by a comma ("Author 1, Author 2") and no .dockstore.yml authors
-        client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/multipleDescriptorAuthors", installationId);
-        workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
-        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("multipleDescriptorAuthors")).findFirst().get();
-        assertEquals(2, version.getAuthors().size());
-        version.getAuthors().stream().forEach(author -> assertNotNull(author.getEmail()));
-        assertEquals(0, version.getOrcidAuthors().size());
+            // Release WDL workflow containing only a descriptor author again and test that it doesn't create a duplicate author
+            client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDescriptorAuthor", installationId);
+            workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+            version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDescriptorAuthor")).findFirst().get();
+            assertEquals(1, version.getAuthors().size());
+            assertEquals(wdlDescriptorAuthorName, version.getAuthor());
+            assertEquals(0, version.getOrcidAuthors().size());
+
+            // WDL workflow containing multiple descriptor authors separated by a comma ("Author 1, Author 2") and no .dockstore.yml authors
+            client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/multipleDescriptorAuthors", installationId);
+            workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+            version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("multipleDescriptorAuthors")).findFirst().get();
+            assertEquals(2, version.getAuthors().size());
+            version.getAuthors().stream().forEach(author -> assertNotNull(author.getEmail()));
+            assertEquals(0, version.getOrcidAuthors().size());
+        }
     }
 
     /**
