@@ -19,6 +19,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,6 +42,7 @@ import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.specto.hoverfly.junit.rule.HoverflyRule;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -61,6 +63,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -87,6 +90,9 @@ public class WebhookIT extends BaseIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    @ClassRule
+    public static HoverflyRule hoverflyRule = HoverflyRule.inSpyMode(ORCID_SIMULATION_SOURCE);
 
     private final String workflowRepo = "DockstoreTestUser2/workflow-dockstore-yml";
     private final String githubFiltersRepo = "DockstoreTestUser2/dockstoreyml-github-filters-test";
@@ -762,6 +768,10 @@ public class WebhookIT extends BaseIT {
      * This tests multiple authors functionality in .dockstore.yml and descriptor file.
      * If there are authors in .dockstore.yml, then only .dockstore.yml authors are saved, even if the descriptor has an author.
      * If there are no authors in .dockstore.yml, then authors from the descriptor are saved.
+     *
+     * This test relies on Hoverfly to simulate responses from the ORCID API. The ORCID API is used for creating ORCID authors found in the .dockstore.yml.
+     * In the simulation, the responses are crafted for an ORCID author with ID 0000-0002-6130-1021.
+     * ORCID authors with other IDs are considered "not found" by the simulation.
      * @throws Exception
      */
     @Test
@@ -782,30 +792,33 @@ public class WebhookIT extends BaseIT {
         workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(2, version.getAuthors().size());
-        assertEquals(2, version.getOrcidAuthors().size());
+        assertEquals(1, version.getOrcidAuthors().size());
         final String wdlDescriptorAuthorName = "Descriptor Author";
-        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
+        assertTrue("Should not have any author from the descriptor",
+                version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
         // CWL workflow
         workflow = client.getWorkflowByPath(cwlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(1, version.getAuthors().size());
-        assertEquals(1, version.getOrcidAuthors().size());
+        assertEquals(0, version.getOrcidAuthors().size());
         final String cwlDescriptorAuthorName = "Test User";
-        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(cwlDescriptorAuthorName)));
+        assertTrue("Should not have any author from the descriptor",
+                version.getAuthors().stream().noneMatch(author -> author.getName().equals(cwlDescriptorAuthorName)));
         // Nextflow workflow
         workflow = client.getWorkflowByPath(nextflowWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         assertEquals(1, version.getAuthors().size());
-        assertEquals(1, version.getOrcidAuthors().size());
+        assertEquals(0, version.getOrcidAuthors().size());
         final String nextflowDescriptorAuthorName = "Nextflow Test Author";
-        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
+        assertTrue("Should not have any author from the descriptor",
+                version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
 
         // WDL workflow containing only .dockstore.yml authors
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDockstoreYmlAuthors", installationId);
         workflow = client.getWorkflowByPath(wdlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("onlyDockstoreYmlAuthors")).findFirst().get();
         assertEquals(2, version.getAuthors().size());
-        assertEquals(2, version.getOrcidAuthors().size());
+        assertEquals(1, version.getOrcidAuthors().size());
 
         // WDL workflow containing only a descriptor author
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDescriptorAuthor", installationId);

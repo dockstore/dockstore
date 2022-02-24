@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.jackson.Jackson;
@@ -21,6 +22,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -42,11 +44,14 @@ import org.orcid.jaxb.model.v3.release.common.CreatedDate;
 import org.orcid.jaxb.model.v3.release.common.LastModifiedDate;
 import org.orcid.jaxb.model.v3.release.common.Title;
 import org.orcid.jaxb.model.v3.release.common.Url;
+import org.orcid.jaxb.model.v3.release.record.Email;
 import org.orcid.jaxb.model.v3.release.record.ExternalID;
 import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
 import org.orcid.jaxb.model.v3.release.record.Person;
 import org.orcid.jaxb.model.v3.release.record.Work;
 import org.orcid.jaxb.model.v3.release.record.WorkTitle;
+import org.orcid.jaxb.model.v3.release.record.summary.AffiliationGroup;
+import org.orcid.jaxb.model.v3.release.record.summary.EmploymentSummary;
 import org.orcid.jaxb.model.v3.release.record.summary.Employments;
 import org.orcid.jaxb.model.v3.release.record.summary.WorkGroup;
 import org.orcid.jaxb.model.v3.release.record.summary.WorkSummary;
@@ -103,7 +108,7 @@ public final class ORCIDHelper {
 
             HttpResponse response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != HttpStatus.SC_OK) {
-                LOG.error("Could not get ORCID access token");
+                LOG.error("Could not get ORCID access token: {}", response.body());
                 return Optional.empty();
             }
 
@@ -275,6 +280,54 @@ public final class ORCIDHelper {
         JAXBContext context = JAXBContext.newInstance(Works.class);
         Unmarshaller unmarshaller = context.createUnmarshaller();
         return (Works) unmarshaller.unmarshal(new StringReader(worksXml));
+    }
+
+    /**
+     * Creates an OrcidAuthor, retrieving information about the author using the ORCID API.
+     * Throws an exception if the person with the ORCID ID does not exist on the ORCID site.
+     * @param id ORCID ID of the ORCID author
+     * @param token ORCID token
+     * @return OrcidAuthor object
+     */
+    public static OrcidAuthor createOrcidAuthor(String id, String token)
+            throws URISyntaxException, IOException, InterruptedException, JAXBException, CustomWebApplicationException {
+        OrcidAuthor orcidAuthor = new OrcidAuthor(id);
+
+        HttpResponse<String> response = getPerson(id, token);
+        if (response.statusCode() != HttpStatus.SC_OK) {
+            LOG.error("Could not get ORCID person with ID {}: {}", id, response.body());
+            throw new CustomWebApplicationException("Could not get ORCID person with ID " + id, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Person person = transformXmlToPerson(response.body());
+        // Set name
+        String fullName = person.getName().getGivenNames().getContent(); // At a minimum, the Orcid Author will have a first name because it's mandated by ORCID
+        if (person.getName().getFamilyName() != null) {
+            fullName += " " + person.getName().getFamilyName().getContent();
+        }
+        orcidAuthor.setName(fullName);
+        // Set email
+        Optional<Email> primaryEmail = person.getEmails().getEmails().stream().filter(email -> email.isPrimary()).findFirst();
+        if (primaryEmail.isPresent()) {
+            orcidAuthor.setEmail(primaryEmail.get().getEmail());
+        }
+
+        response = getAllEmployments(id, token);
+        if (response.statusCode() != HttpStatus.SC_OK) {
+            LOG.error("Could not get employment details for ORCID user with ID {}: {}", id, response.body());
+            return orcidAuthor; // Can still return the author since the author's name is set at this point
+        }
+
+        Employments employments = transformXmlToEmployments(response.body());
+        Collection<AffiliationGroup<EmploymentSummary>> affiliationGroups = employments.getEmploymentGroups();
+        if (affiliationGroups.iterator().hasNext()) {
+            // Set affiliation and role
+            EmploymentSummary employmentSummary = affiliationGroups.iterator().next().getActivities().get(0); // The first employment in the list is the most recent according to end date
+            orcidAuthor.setAffiliation(employmentSummary.getOrganization().getName());
+            orcidAuthor.setRole(employmentSummary.getRoleTitle());
+        }
+
+        return orcidAuthor;
     }
 
     /**

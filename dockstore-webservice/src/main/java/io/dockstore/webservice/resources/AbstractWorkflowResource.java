@@ -721,6 +721,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             if (orcidToken.isPresent()) {
                 OrcidAuthorHelper.updateVersionOrcidAuthors(version, orcidAuthorIds, orcidToken.get(), orcidAuthorDAO);
+            } else {
+                LOG.error("Could not add ORCID authors for version");
             }
         }
     }

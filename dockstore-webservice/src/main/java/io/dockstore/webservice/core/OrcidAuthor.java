@@ -20,6 +20,8 @@ public class OrcidAuthor extends AbstractAuthor {
     @ApiModelProperty(value = "ORCID id of the author", required = true, position = 2)
     private String orcid;
 
+    public OrcidAuthor() {}
+
     public OrcidAuthor(String orchid) {
         this.orcid = orchid;
     }

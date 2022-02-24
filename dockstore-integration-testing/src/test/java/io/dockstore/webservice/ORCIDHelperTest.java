@@ -1,15 +1,19 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
+import static io.dockstore.common.Hoverfly.ORCID_USER_3;
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ORCIDHelper;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.specto.hoverfly.junit.rule.HoverflyRule;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -19,7 +23,9 @@ import java.util.Optional;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,6 +38,21 @@ public class ORCIDHelperTest {
      */
     @ClassRule
     public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(ORCID_SIMULATION_SOURCE);
+
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+            DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+
+
+    @Before
+    public void setUp() throws Exception {
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        SUPPORT.getEnvironment().healthChecks().shutdown();
+        SUPPORT.after();
+    }
 
     @Test
     public void exportEntry() throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
@@ -66,5 +87,28 @@ public class ORCIDHelperTest {
         Assert.assertTrue(response.body().contains("work:work put-code=\"" + putCode + "\" "));
         response = ORCIDHelper.getAllWorks(id, token);
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+    }
+
+    @Test
+    public void testOrcidAuthor() throws URISyntaxException, IOException, InterruptedException {
+        String id = ORCID_USER_3;
+        Optional<String> accessToken = ORCIDHelper.getOrcidAccessToken();
+        Assert.assertTrue(accessToken.isPresent());
+
+        HttpResponse<String> response = ORCIDHelper.getPerson(id, accessToken.get());
+        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+
+        response = ORCIDHelper.getAllEmployments(id, accessToken.get());
+        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+
+        try {
+            OrcidAuthor orcidAuthor = ORCIDHelper.createOrcidAuthor(id, accessToken.get());
+            Assert.assertNotNull(orcidAuthor.getName());
+            Assert.assertNotNull(orcidAuthor.getEmail());
+            Assert.assertNotNull(orcidAuthor.getAffiliation());
+            Assert.assertNotNull(orcidAuthor.getRole());
+        } catch (URISyntaxException | IOException | InterruptedException | JAXBException ex) {
+            Assert.fail("Should be able to create an Orcid Author");
+        }
     }
 }
