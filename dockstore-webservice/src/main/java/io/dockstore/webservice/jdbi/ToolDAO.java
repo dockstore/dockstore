@@ -212,7 +212,7 @@ public class ToolDAO extends EntryDAO<Tool> {
         predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
         if (checker != null && checker) {
             // tools are never checker workflows
-            predicate = cb.and(predicate, cb.isFalse(cb.literal(false)));
+            predicate = cb.isFalse(cb.literal(true));
         }
 
         if (descriptorLanguage != null) {

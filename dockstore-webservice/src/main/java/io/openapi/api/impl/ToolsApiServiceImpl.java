@@ -327,6 +327,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         int offsetInteger = 0;
         if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
+            offsetInteger = Math.max(offsetInteger, 0);
         }
         // note, there's a subtle change in definition here, TRS uses offset to indicate the page number, JPA uses index in the result set
         int startIndex = offsetInteger * actualLimit;
@@ -464,9 +465,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             for (ImmutableTriple<String, EntryDAO, Long> typeDAO : typeDAOs) {
                 if (!all.isEmpty()) {
-                    // if we got any tools, overflow into the very start of workflows
+                    // if we got any tools, overflow into the very start of the next type of stuff
                     startIndex = 0;
-                    pageRemaining = Math.max(pageRemaining - all.size(), 0);
+                    pageRemaining = Math.max(actualLimit - all.size(), 0);
                 } else {
                     // on the other hand, if we skipped all tools then, adjust the start index accordingly
                     // TODO: conversion might bite us much later

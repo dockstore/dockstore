@@ -379,7 +379,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final CriteriaQuery<T> q = cb.createQuery(typeOfT);
-        generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
+        final Root<T> tRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
+        // order by id
+        q.orderBy(cb.asc(tRoot.get("id")));
         TypedQuery<T> query = currentSession().createQuery(q);
         query.setFirstResult(startIndex);
         query.setMaxResults(pageRemaining);
@@ -391,8 +393,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         CriteriaBuilder cb, CriteriaQuery<?> q);
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    protected Predicate getBioWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, CriteriaBuilder cb,
-        SourceControlConverter converter, Root<?> entryRoot) {
+    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot) {
         Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
         predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
         predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));

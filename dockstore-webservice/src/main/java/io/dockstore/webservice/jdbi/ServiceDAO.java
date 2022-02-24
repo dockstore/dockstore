@@ -51,7 +51,13 @@ public class ServiceDAO extends EntryDAO<Service> {
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<Service> entryRoot = q.from(Service.class);
 
-        Predicate predicate = getBioWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot);
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
+
+        // apptool is never a checker workflow
+        if (checker != null && checker) {
+            predicate = cb.isFalse(cb.literal(true));
+        }
+
         q.where(predicate);
         return entryRoot;
     }
