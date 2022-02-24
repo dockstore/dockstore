@@ -473,19 +473,20 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     startIndex = startIndex - entriesConsidered;
                 }
 
-                if (startIndex < typeDAO.right) {
+                if (startIndex < typeDAO.right && isCorrectToolClass(toolClass, typeDAO.left)) {
                     // then we want at least some of whatever this DAO returns
-                    // Add them if user didn't provide a tool class or the tool class provided matches
-                    if (toolClass == null || typeDAO.left.equalsIgnoreCase(toolClass)) {
-                        // TODO we used to handle languages for tools here, test this
-                        all.addAll(typeDAO.middle
-                            .filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, Math.toIntExact(startIndex), Math.toIntExact(pageRemaining)));
-                    }
+                    // TODO we used to handle languages for tools here, test this
+                    all.addAll(typeDAO.middle
+                        .filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, Math.toIntExact(startIndex), Math.toIntExact(pageRemaining)));
                 }
                 entriesConsidered = typeDAO.right;
             }
         }
         return new NumberOfEntityTypes(numTools, numWorkflows, numAppTools, numServices);
+    }
+
+    private boolean isCorrectToolClass(String toolClass, String daoToolClass) {
+        return toolClass == null || daoToolClass.equalsIgnoreCase(toolClass);
     }
 
 
@@ -965,10 +966,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     private static class NumberOfEntityTypes {
 
-        public long numTools;
-        public long numWorkflows;
-        public long numAppTools;
-        public long numServices;
+        public final long numTools;
+        public final long numWorkflows;
+        public final long numAppTools;
+        public final long numServices;
 
         NumberOfEntityTypes(long numTools, long numWorkflows, long numAppTools, long numServices) {
             this.numTools = numTools;
