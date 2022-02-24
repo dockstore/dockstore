@@ -23,7 +23,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.database.RSSToolPath;
 import io.dockstore.webservice.core.database.ToolPath;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -211,6 +210,10 @@ public class ToolDAO extends EntryDAO<Tool> {
         predicate = andLike(cb, predicate, entryRoot.get("toolname"), Optional.ofNullable(toolname));
         predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
         predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+        if (checker != null && checker) {
+            // tools are never checker workflows
+            predicate = cb.and(predicate, cb.isFalse(cb.literal(false)));
+        }
 
         if (descriptorLanguage != null) {
             // not quite right, this probably doesn't deal with tools that have both but https://hibernate.atlassian.net/browse/HHH-9991 is kicking my butt
@@ -220,27 +223,5 @@ public class ToolDAO extends EntryDAO<Tool> {
 
         q.where(predicate);
         return entryRoot;
-    }
-
-    @Override
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public List<Tool> filterTrsToolsGet(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname,
-        String description, String author, Boolean checker, int startIndex, int pageRemaining) {
-        //TODO: probably a better way of doing this with the predicate builder, we can short circuit since tools are never checkers
-        if (checker != null && checker) {
-            return new ArrayList<>();
-        }
-        return super.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname,
-            description, author, checker, startIndex, pageRemaining);
-    }
-
-    @Override
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public long countAllPublished(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker) {
-        //TODO: probably a better way of doing this with the predicate builder, we can short circuit since tools are never checkers
-        if (checker != null && checker) {
-            return 0;
-        }
-        return super.countAllPublished(descriptorLanguage, registry, organization, name, toolname, description, author, checker);
     }
 }

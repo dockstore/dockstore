@@ -25,6 +25,7 @@ import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -388,4 +389,23 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     protected abstract Root<T> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q);
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected Predicate getBioWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, CriteriaBuilder cb,
+        SourceControlConverter converter, Root<?> entryRoot) {
+        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
+        predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
+        predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
+        predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
+        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
+        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+
+        if (descriptorLanguage != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
+        }
+        if (registry != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
+        }
+        return predicate;
+    }
 }

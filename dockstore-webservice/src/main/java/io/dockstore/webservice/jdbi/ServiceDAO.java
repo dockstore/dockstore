@@ -18,10 +18,12 @@ package io.dockstore.webservice.jdbi;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.database.WorkflowPath;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
@@ -43,9 +45,15 @@ public class ServiceDAO extends EntryDAO<Service> {
 
     @Override
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
-        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
-        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
+    protected Root<Service> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, CriteriaQuery<?> q) {
+
+        final SourceControlConverter converter = new SourceControlConverter();
+        final Root<Service> entryRoot = q.from(Service.class);
+
+        Predicate predicate = getBioWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot);
+        q.where(predicate);
+        return entryRoot;
     }
 
     public List<WorkflowPath> findAllPublishedPaths() {

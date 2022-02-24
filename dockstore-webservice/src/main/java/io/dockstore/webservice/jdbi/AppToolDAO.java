@@ -18,9 +18,11 @@ package io.dockstore.webservice.jdbi;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.SourceControlConverter;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.hibernate.SessionFactory;
 
@@ -29,11 +31,22 @@ public class AppToolDAO extends EntryDAO<AppTool> {
         super(factory);
     }
 
-    @Override
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    protected Root<AppTool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author,
-        Boolean checker, CriteriaBuilder cb, CriteriaQuery<?> q) {
-        throw new UnsupportedOperationException("Only supported for BioWorkflow and Tools");
+    protected Root<AppTool> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, CriteriaQuery<?> q) {
+
+        final SourceControlConverter converter = new SourceControlConverter();
+        final Root<AppTool> entryRoot = q.from(AppTool.class);
+
+        Predicate predicate = getBioWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, cb, converter, entryRoot);
+
+        if (checker != null && checker) {
+            // tools are never checker workflows
+            predicate = cb.and(predicate, cb.isFalse(cb.literal(false)));
+        }
+
+        q.where(predicate);
+        return entryRoot;
     }
 
     public List<AppTool> finalAllPublished() {
