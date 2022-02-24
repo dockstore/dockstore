@@ -371,7 +371,7 @@ public final class ORCIDHelper {
     }
 
     /**
-     * ransforms the ORCID XML response from a get all Employments call to a Person object. Assumes that the XML from ORCID is safe.
+     * Transforms the ORCID XML response from a get all employments call to an Employments object. Assumes that the XML from ORCID is safe.
      * @param employmentsXml
      * @return Employments object
      * @throws JAXBException
