@@ -61,10 +61,10 @@ public abstract class AbstractAuthor {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public AbstractAuthor() {
+    protected AbstractAuthor() {
     }
 
-    public AbstractAuthor(String name) {
+    protected AbstractAuthor(String name) {
         this.name = name;
     }
 

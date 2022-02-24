@@ -66,7 +66,7 @@ public final class ORCIDHelper {
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
 
-    private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
+    private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
     private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
     private static String orcidClientId;
     private static String orcidClientSecret;
@@ -79,7 +79,7 @@ public final class ORCIDHelper {
             URL orcidAuthUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
             // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
             baseUrl = orcidAuthUrl.getProtocol() + "://" + orcidAuthUrl.getHost() + "/";
-            // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
+            // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
             baseApiUrl = orcidAuthUrl.getProtocol() + "://api." + orcidAuthUrl.getHost() + "/v3.0/";
         } catch (MalformedURLException e) {
             LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
@@ -106,7 +106,7 @@ public final class ORCIDHelper {
                     .headers(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
                     .POST(ofString(requestData)).build();
 
-            HttpResponse response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != HttpStatus.SC_OK) {
                 LOG.error("Could not get ORCID access token: {}", response.body());
                 return Optional.empty();
