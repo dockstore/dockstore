@@ -315,15 +315,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         String description, String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
 
+        final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
+        final String relativePath = value.getUriInfo().getRequestUri().getPath();
+
         final Integer hashcode = new HashCodeBuilder().append(id).append(alias).append(toolClass).append(descriptorType).append(registry).append(organization).append(name)
-            .append(toolname).append(description).append(author).append(checker).append(offset).append(limit)
+            .append(toolname).append(description).append(author).append(checker).append(offset).append(actualLimit).append(relativePath)
             .append(user.orElseGet(User::new).getId()).build();
         final Optional<Response.ResponseBuilder> trsResponses = trsListener.getTrsResponse(hashcode);
         if (trsResponses.isPresent()) {
             return trsResponses.get().build();
         }
 
-        final int actualLimit = Math.min(ObjectUtils.firstNonNull(limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
         int offsetInteger = 0;
         if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
@@ -359,7 +361,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
             responseBuilder.header("self_link",
                 new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath,
                     value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
             // construct links to other pages
             List<String> filters = new ArrayList<>();
@@ -376,12 +378,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             if (startIndex + actualLimit < numEntries.sum()) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath,
                     Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(), Joiner.on('&').join(filters) + "&offset=" + numPages, null)
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + relativePath, Joiner.on('&').join(filters) + "&offset=" + numPages, null)
                 .normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
