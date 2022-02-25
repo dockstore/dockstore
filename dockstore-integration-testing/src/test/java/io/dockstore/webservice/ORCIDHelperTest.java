@@ -7,6 +7,7 @@ import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Version;
@@ -25,7 +26,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,15 +43,17 @@ public class ORCIDHelperTest {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
 
+    protected static TestingPostgres testingPostgres;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
     }
 
     @AfterClass
     public static void afterClass() {
-        SUPPORT.getEnvironment().healthChecks().shutdown();
         SUPPORT.after();
     }
 

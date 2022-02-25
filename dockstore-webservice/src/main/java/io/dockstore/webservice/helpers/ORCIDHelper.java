@@ -112,7 +112,7 @@ public final class ORCIDHelper {
                 return Optional.empty();
             }
 
-            Map<String, String> responseMap = MAPPER.readValue(response.body().toString(), Map.class);
+            Map<String, String> responseMap = MAPPER.readValue(response.body(), Map.class);
             return Optional.of(responseMap.get("access_token"));
         } catch (URISyntaxException | IOException | InterruptedException ex) {
             LOG.error("Could not get ORCID access token", ex);
@@ -307,7 +307,7 @@ public final class ORCIDHelper {
         }
         orcidAuthor.setName(fullName);
         // Set email
-        Optional<Email> primaryEmail = person.getEmails().getEmails().stream().filter(email -> email.isPrimary()).findFirst();
+        Optional<Email> primaryEmail = person.getEmails().getEmails().stream().filter(Email::isPrimary).findFirst();
         if (primaryEmail.isPresent()) {
             orcidAuthor.setEmail(primaryEmail.get().getEmail());
         }

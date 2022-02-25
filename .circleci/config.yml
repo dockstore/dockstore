@@ -428,6 +428,7 @@ commands:
       - run:
           name: run integration test
           command: |
+            /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
           name: send coverage
