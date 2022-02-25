@@ -47,7 +47,7 @@ public class ORCIDHelperTest {
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, CommonTestUtilities.PUBLIC_CONFIG_PATH);
         SUPPORT.before();
         testingPostgres = new TestingPostgres(SUPPORT);
     }

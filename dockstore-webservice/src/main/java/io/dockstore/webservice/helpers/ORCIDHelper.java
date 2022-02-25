@@ -114,7 +114,11 @@ public final class ORCIDHelper {
 
             Map<String, String> responseMap = MAPPER.readValue(response.body(), Map.class);
             return Optional.of(responseMap.get("access_token"));
-        } catch (URISyntaxException | IOException | InterruptedException ex) {
+        } catch (URISyntaxException | IOException ex) {
+            LOG.error("Could not get ORCID access token", ex);
+            return Optional.empty();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             LOG.error("Could not get ORCID access token", ex);
             return Optional.empty();
         }

@@ -53,7 +53,10 @@ public final class OrcidAuthorHelper {
                     OrcidAuthor orcidAuthor = ORCIDHelper.createOrcidAuthor(orcidAuthorId, token);
                     long id = orcidAuthorDAO.create(orcidAuthor);
                     updatedOrcidAuthors.add(orcidAuthorDAO.findById(id));
-                } catch (URISyntaxException | IOException | InterruptedException | JAXBException | CustomWebApplicationException ex) {
+                } catch (URISyntaxException | IOException | JAXBException | CustomWebApplicationException ex) {
+                    LOG.error("Could not get author information for ORCID author with ID {}", orcidAuthorId, ex);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
                     LOG.error("Could not get author information for ORCID author with ID {}", orcidAuthorId, ex);
                 }
             }
@@ -74,7 +77,10 @@ public final class OrcidAuthorHelper {
             orcidAuthor.setEmail(updatedOrcidAuthor.getEmail());
             orcidAuthor.setAffiliation(updatedOrcidAuthor.getAffiliation());
             orcidAuthor.setRole(updatedOrcidAuthor.getRole());
-        } catch (URISyntaxException | IOException | InterruptedException | JAXBException | CustomWebApplicationException ex) {
+        } catch (URISyntaxException | IOException | JAXBException | CustomWebApplicationException ex) {
+            LOG.error("Could not update existing ORCID author with ORCID ID {}", orcidAuthor.getOrcid(), ex);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             LOG.error("Could not update existing ORCID author with ORCID ID {}", orcidAuthor.getOrcid(), ex);
         }
     }
