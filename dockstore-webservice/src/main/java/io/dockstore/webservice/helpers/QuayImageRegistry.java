@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -114,16 +115,11 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         final List<Tag> tags = new ArrayList<>();
         final Optional<QuayRepo> toolFromQuay = getToolFromQuay(tool);
         if (toolFromQuay.isPresent()) {
-            final QuayRepo quayRepo = toolFromQuay.get();
-            final Map<String, QuayTag> tagsFromRepo = quayRepo.getTags();
-            final int maxQuayTagsReturnedByRepo = 500;
-            List<QuayTag> quayTags = new ArrayList<>(tagsFromRepo.values());
-            if (tagsFromRepo.size() == maxQuayTagsReturnedByRepo) {
-                try {
-                    quayTags = getAllQuayTags(repo);
-                } catch (ApiException e) {
-                    throw new CustomWebApplicationException("Could not get QuayTag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
+            List<QuayTag> quayTags;
+            try {
+                quayTags = getAllQuayTags(repo);
+            } catch (ApiException e) {
+                throw new CustomWebApplicationException("Could not get QuayTag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             // Search through the Quay tags for ones that are classified as a manifest list and then use its digest to get the repo's manifest.
@@ -131,17 +127,16 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             Map<QuayTag, List<Image>> multiImageQuayTags = new HashMap<>();
             Gson g = new Gson();
             quayTags.stream().forEach(quayTag -> {
-                if (quayTag.isIsManifestList()) {
+                if (quayTag.isIsManifestList() != null && quayTag.isIsManifestList()) {
                     try {
                         List<Image> images = handleMultiArchQuayTags(tool, quayTag, g, cleanedQuayTagList);
                         multiImageQuayTags.put(quayTag, images);
                     } catch (ApiException ex) {
-                        System.out.println("d");
+                        System.out.println("Unable to handle manifest list for QuayTag " + quayTag.getName() + " in repo " + repo );
                     }
 
                 }
             });
-
 
             for (QuayTag tagItem : cleanedQuayTagList) {
                 try {
@@ -158,23 +153,38 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return tags;
     }
 
-    // For each manifest in the list:
-    // Find the matching Quay tag (using the digest)
-    // Store the collected Image(s) into a map that consists of <Original Manifest List Quay Tag, List<Images>>.
-    // Remove the matching Quay tag from the list so that a Dockstore version is not created based off of it.
+    /**
+     * For each manifest in the list:
+     * Find the matching Quay tag (using the digest)
+     * Store the collected Image(s) into a map that consists of <Original Manifest List Quay Tag, List<Images>>.
+     * Remove the matching Quay tag from the list so that a Dockstore version is not created based off of it.
+     *
+     * @param tool a tool from Dockstore
+     * @param quayTag the Quay Tag that is a manifest list
+     * @param g Gson to covert string to JSON
+     * @param cleanedQuayTagList List of Quay Tags that removes Quay tags that are listed in quayTag's manifest list
+     * @return list of images with arch/os information for the quayTag
+     */
     private List<Image> handleMultiArchQuayTags(Tool tool, QuayTag quayTag, Gson g, List<QuayTag> cleanedQuayTagList) throws ApiException {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", quayTag.getName());
         QuayRepoManifest quayRepoManifest;
-        quayRepoManifest = manifestApi.getRepoManifest(quayTag.getManifestDigest(), tool.getNamespace() + '/' + tool.getName());
-        DockerManifestList manifestList = g.fromJson(quayRepoManifest.getManifestData(), DockerManifestList.class);
+        DockerManifestList manifestList;
         List<Image> images = new ArrayList<Image>();
+        quayRepoManifest = manifestApi.getRepoManifest(quayTag.getManifestDigest(), tool.getNamespace() + '/' + tool.getName());
+        try {
+            manifestList = g.fromJson(quayRepoManifest.getManifestData(), DockerManifestList.class);
+        } catch (JsonSyntaxException ex) {
+            LOG.info("Unexpected response from Quay while retrieving repo manifest for Quay Tag " + quayTag.getName() + " for tool " + tool.getToolPath());
+            return images;
+        }
         Arrays.stream(manifestList.getManifests()).forEach(manifest -> {
             Optional<QuayTag> matchingTag = cleanedQuayTagList.stream().filter(tag -> (tag.getManifestDigest().equals(manifest.getDigest()))).findFirst();
             if (matchingTag.isPresent()) {
                 final String manifestDigest = manifest.getDigest();
                 final String imageID = matchingTag.get().getImageId();
                 List<Checksum> checksums = new ArrayList<>();
-                checksums.add(new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]));
+                String[] splitChecksum = manifestDigest.split(":");
+                checksums.add(new Checksum(splitChecksum[0], splitChecksum[1]));
                 Image image = new Image(checksums, tool.getNamespace() + '/' + tool.getName(), quayTag.getName(), imageID, Registry.QUAY_IO, quayTag.getSize(), quayTag.getLastModified());
                 image.setArchitecture(manifest.getPlatform().getArchitecture());
                 image.setOs(manifest.getPlatform().getOs());
@@ -190,6 +200,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     private Tag convertQuayTagToTag(QuayTag quayTag, Tool tool, Map<QuayTag, List<Image>> multiImageQuayTags) throws InvocationTargetException, IllegalAccessException {
         final Tag tag = new Tag();
         BeanUtils.copyProperties(tag, quayTag);
+        // If we were unable to get the list of images from the manifest list, then an empty image list will be added to the tag.
         if (quayTag.isIsManifestList()) {
             List<Image> images = multiImageQuayTags.get(quayTag);
             tag.getImages().addAll(images);
