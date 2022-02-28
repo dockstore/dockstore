@@ -190,6 +190,9 @@ public final class ToolsImplCommon {
 
             final Set<SourceFile> sourceFiles = version.getSourceFiles();
             for (SourceFile file : sourceFiles) {
+
+                //                DescriptorLanguage descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(file.getType());
+
                 switch (file.getType()) {
                 case DOCKSTORE_SMK:
                     toolVersion.addDescriptorTypeItem(DescriptorType.SMK);

@@ -17,9 +17,12 @@ package io.dockstore.webservice.languages;
 
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DescriptorLanguage.FileType;
+import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
+import io.dockstore.language.MinimalLanguageInterface.GenericFileType;
 import io.dockstore.language.RecommendedLanguageInterface;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Author;
@@ -112,27 +115,20 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             String absolutePath = file.getAbsolutePath();
 
             MinimalLanguageInterface.GenericFileType fileType;
-            switch (file.getType()) {
-            case DOCKSTORE_SMK:
-            case DOCKSTORE_CWL:
-            case DOCKSTORE_WDL:
-            case NEXTFLOW_CONFIG:
-            case NEXTFLOW:
-            case DOCKSTORE_SERVICE_YML:
-            case DOCKSTORE_SERVICE_OTHER:
-            case DOCKSTORE_YML:
+
+            FileTypeCategory fileTypeCategory = file.getType().getCategory();
+            if (fileTypeCategory == FileTypeCategory.GENERIC_DESCRIPTOR
+                || fileTypeCategory == FileTypeCategory.PRIMARY_DESCRIPTOR
+                || fileTypeCategory == FileTypeCategory.SECONDARY_DESCRIPTOR
+                || fileTypeCategory == FileTypeCategory.OTHER) {
                 fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
-                break;
-            case SMK_TEST_PARAMS:
-            case CWL_TEST_JSON:
-            case WDL_TEST_JSON:
-            case NEXTFLOW_TEST_PARAMS:
-            case DOCKSTORE_SERVICE_TEST_JSON:
+            } else if (fileTypeCategory == FileTypeCategory.TEST_FILE) {
                 fileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
-                break;
-            default:
+            } else if (fileTypeCategory == FileTypeCategory.CONTAINERFILE) {
                 fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
-                break;
+            } else {
+                LOG.error("could not determine file type catagory, so setting file type to CONTAINER for source file ", file.getPath());
+                fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
             }
 
             Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, fileType);
@@ -179,9 +175,23 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 // TODO: this needs to be more sophisticated
                 sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML);
             }
-            // For some reason this has not been set when we get here
-            if (minimalLanguageInterface.getDescriptorLanguage().getShortName().equals(DescriptorLanguage.SMK.toString())) {
-                sourceFile.setType(DescriptorLanguage.FileType.DOCKSTORE_SMK);
+
+            // The language plugins don't necessarily set the file type
+            // so query the plugin to find out what the imported file
+            // type should be, because this is needed in downstream code.
+            // We assume if imported files are not descriptors or not test files they are Dockerfiles,
+            // however this may not be true for some languages, and we may have to change this
+            if (sourceFile.getType() == null) {
+                DescriptorLanguage.FileType importedFileType = null;
+                if (entry.getValue().getRight() == GenericFileType.IMPORTED_DESCRIPTOR) {
+                    importedFileType = minimalLanguageInterface.getDescriptorLanguage().getFileType();
+                } else if (entry.getValue().getRight() == GenericFileType.TEST_PARAMETER_FILE) {
+                    importedFileType = minimalLanguageInterface.getDescriptorLanguage().getTestParamType();
+                } else {
+                    // For some languages this may be incorrect
+                    importedFileType = FileType.DOCKERFILE;
+                }
+                sourceFile.setType(importedFileType);
             }
             sourceFile.setAbsolutePath(entry.getKey());
             results.put(entry.getKey(), sourceFile);
