@@ -129,6 +129,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             quayTags.stream().forEach(quayTag -> {
                 if (quayTag.isIsManifestList() != null && quayTag.isIsManifestList()) {
                     try {
+                        // Store the collected Image(s) into a map that consists of <Original Manifest List Quay Tag, List<Images>>.
                         List<Image> images = handleMultiArchQuayTags(tool, quayTag, g, cleanedQuayTagList);
                         multiImageQuayTags.put(quayTag, images);
                     } catch (ApiException ex) {
@@ -156,7 +157,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     /**
      * For each manifest in the list:
      * Find the matching Quay tag (using the digest)
-     * Store the collected Image(s) into a map that consists of <Original Manifest List Quay Tag, List<Images>>.
+     * Gather and return the associated images
      * Remove the matching Quay tag from the list so that a Dockstore version is not created based off of it.
      *
      * @param tool a tool from Dockstore
