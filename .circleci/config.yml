@@ -34,6 +34,12 @@ executors:
     environment:
       PGHOST: 127.0.0.1
     resource_class: medium
+    steps:
+      - run:
+          name: install java certs
+          command: |
+            sudo dpkg --purge --force-depends ca-certificates-java
+            sudo apt-get install ca-certificates-java
 
 common_filters: &common_filters
   filters:
