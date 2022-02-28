@@ -133,7 +133,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                         List<Image> images = handleMultiArchQuayTags(tool, quayTag, g, cleanedQuayTagList);
                         multiImageQuayTags.put(quayTag, images);
                     } catch (ApiException ex) {
-                        System.out.println("Unable to handle manifest list for QuayTag " + quayTag.getName() + " in repo " + repo);
+                        LOG.info("Unable to handle manifest list for QuayTag " + quayTag.getName() + " in repo " + repo);
                     }
 
                 }
@@ -170,7 +170,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         LOG.info(quayToken.getUsername() + " ======================= Getting image for tag {}================================", quayTag.getName());
         QuayRepoManifest quayRepoManifest;
         DockerManifestList manifestList;
-        List<Image> images = new ArrayList<Image>();
+        List<Image> images = new ArrayList<>();
         quayRepoManifest = manifestApi.getRepoManifest(quayTag.getManifestDigest(), tool.getNamespace() + '/' + tool.getName());
         try {
             manifestList = g.fromJson(quayRepoManifest.getManifestData(), DockerManifestList.class);
@@ -202,7 +202,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         final Tag tag = new Tag();
         BeanUtils.copyProperties(tag, quayTag);
         // If we were unable to get the list of images from the manifest list, then an empty image list will be added to the tag.
-        if (quayTag.isIsManifestList()) {
+        if (quayTag.isIsManifestList() != null && quayTag.isIsManifestList()) {
             List<Image> images = multiImageQuayTags.get(quayTag);
             tag.getImages().addAll(images);
         } else {
