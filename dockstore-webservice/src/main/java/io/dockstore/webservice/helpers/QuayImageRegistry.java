@@ -132,7 +132,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                         List<Image> images = handleMultiArchQuayTags(tool, quayTag, g, cleanedQuayTagList);
                         multiImageQuayTags.put(quayTag, images);
                     } catch (ApiException ex) {
-                        System.out.println("Unable to handle manifest list for QuayTag " + quayTag.getName() + " in repo " + repo );
+                        System.out.println("Unable to handle manifest list for QuayTag " + quayTag.getName() + " in repo " + repo);
                     }
 
                 }
