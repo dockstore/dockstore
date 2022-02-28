@@ -119,7 +119,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             try {
                 quayTags = getAllQuayTags(repo);
             } catch (ApiException e) {
-                throw new CustomWebApplicationException("Could not get QuayTag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                LOG.error("Could not get Quay Tag", e);
+                throw new CustomWebApplicationException("Could not get Quay Tag", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             // Search through the Quay tags for ones that are classified as a manifest list and then use its digest to get the repo's manifest.
@@ -127,13 +128,13 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             Map<QuayTag, List<Image>> multiImageQuayTags = new HashMap<>();
             Gson g = new Gson();
             quayTags.stream().forEach(quayTag -> {
-                if (quayTag.isIsManifestList() != null && quayTag.isIsManifestList()) {
+                if (Boolean.TRUE.equals(quayTag.isIsManifestList())) {
                     try {
                         // Store the collected Image(s) into a map that consists of <Original Manifest List Quay Tag, List<Images>>.
                         List<Image> images = handleMultiArchQuayTags(tool, quayTag, g, cleanedQuayTagList);
                         multiImageQuayTags.put(quayTag, images);
                     } catch (ApiException ex) {
-                        LOG.info("Unable to handle manifest list for QuayTag " + quayTag.getName() + " in repo " + repo);
+                        LOG.info("Unable to handle manifest list for Quay Tag " + quayTag.getName() + " in repo " + repo, ex);
                     }
 
                 }
@@ -175,7 +176,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         try {
             manifestList = g.fromJson(quayRepoManifest.getManifestData(), DockerManifestList.class);
         } catch (JsonSyntaxException ex) {
-            LOG.info("Unexpected response from Quay while retrieving repo manifest for Quay Tag " + quayTag.getName() + " for tool " + tool.getToolPath());
+            LOG.info("Unexpected response from Quay while retrieving repo manifest for Quay Tag " + quayTag.getName() + " for tool " + tool.getToolPath(), ex);
             return images;
         }
         Arrays.stream(manifestList.getManifests()).forEach(manifest -> {
