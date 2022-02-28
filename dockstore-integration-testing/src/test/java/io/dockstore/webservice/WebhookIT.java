@@ -21,6 +21,8 @@ package io.dockstore.webservice;
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
+import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -929,28 +931,90 @@ public class WebhookIT extends BaseIT {
         client.publish(workflow.getId(), publishRequest);
         Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
 
-        boolean apptoolTRSworking = false;
-        if (apptoolTRSworking) {
-            //TODO; need to fix this, we need app tools in TRS but with paging as well to get this working right
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
+        final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        assertEquals(2, tools.size());
 
-            Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
-            final List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
-            assertEquals(2, tools.size());
+        final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools/md5sum");
+        assertNotNull(tool);
+        assertEquals("CommandLineTool", tool.getToolclass().getDescription());
 
-            final io.dockstore.openapi.client.model.Tool tool = ga4Ghv20Api.toolsIdGet("github.com/DockstoreTestUser2/test-workflows-and-tools/md5sum");
-            assertNotNull(tool);
-            assertEquals("CommandLineTool", tool.getToolclass().getDescription());
+        final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/github.com/DockstoreTestUser2/test-workflows-and-tools");
+        assertNotNull(trsWorkflow);
+        assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
 
-            final Tool trsWorkflow = ga4Ghv20Api.toolsIdGet(ToolsImplCommon.WORKFLOW_PREFIX + "/github.com/DockstoreTestUser2/test-workflows-and-tools");
-            assertNotNull(trsWorkflow);
-            assertEquals("Workflow", trsWorkflow.getToolclass().getDescription());
-
-            publishRequest.setPublish(false);
-            client.publish(appTool.getId(), publishRequest);
-            client.publish(workflow.getId(), publishRequest);
-            Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
-        }
+        publishRequest.setPublish(false);
+        client.publish(appTool.getId(), publishRequest);
+        client.publish(workflow.getId(), publishRequest);
+        Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
     }
+
+
+    @Test
+    public void testTRSWithAppTools() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalid-workflow", installationId);
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/invalidTool", installationId);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
+        Workflow workflow = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepo, BIOWORKFLOW, "versions,validations");        // publish endpoint updates elasticsearch index
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
+        client.publish(appTool.getId(), publishRequest);
+        client.publish(workflow.getId(), publishRequest);
+
+
+        Ga4Ghv20Api ga4Ghv20Api = new Ga4Ghv20Api(openApiClient);
+        List<io.dockstore.openapi.client.model.Tool> tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        assertEquals(2, tools.size());
+
+        // testing filters of various kinds
+
+        tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, true, null, null);
+        // neither the apptool or the regular workflow are checkers
+        assertEquals(0, tools.size());
+        tools = ga4Ghv20Api.toolsGet(null, null, null, null, null, null, null, null, null, null, false, null, null);
+        // neither the apptool or the regular workflow are checkers
+        assertEquals(2, tools.size());
+        tools = ga4Ghv20Api.toolsGet(null, null, WORKFLOW, null, null, null, null, null, null, null, false, null, null);
+        // the apptool is a commandline tool and not a workflow
+        assertEquals(1, tools.size());
+        tools = ga4Ghv20Api.toolsGet(null, null, COMMAND_LINE_TOOL, null, null, null, null, null, null, null, false, null, null);
+        // the apptool is a commandline tool and not a workflow
+        assertEquals(1, tools.size());
+        tools = ga4Ghv20Api.toolsGet(null, null, SERVICE, null, null, null, null, null, null, null, false, null, null);
+        // neither are services
+        assertEquals(0, tools.size());
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.SERVICE.getShortName(), null, null, null, null, null, null, false, null, null);
+        // neither are services this way either
+        assertEquals(0, tools.size());
+
+        // testing paging
+
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(-1), 1);
+        // should just go to first page
+        assertEquals(1, tools.size());
+        assertEquals(WORKFLOW, tools.get(0).getToolclass().getDescription());
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(0), 1);
+        // first page
+        assertEquals(1, tools.size());
+        assertEquals(WORKFLOW, tools.get(0).getToolclass().getDescription());
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(1), 1);
+        // second page
+        assertEquals(1, tools.size());
+        assertEquals(COMMAND_LINE_TOOL, tools.get(0).getToolclass().getDescription());
+        tools = ga4Ghv20Api.toolsGet(null, null, null, DescriptorLanguage.CWL.getShortName(), null, null, null, null, null, null, false, String.valueOf(1000), 1);
+        //TODO should just go to second page, but for now I guess you just scroll off into nothingness
+        assertEquals(0, tools.size());
+
+    }
+
 
     @Test
     public void testDuplicatePathsAcrossTables() throws Exception {

@@ -26,7 +26,7 @@ public class QuayImageRegistryTest {
      * This tests that when there are over 500 tags, we can use the paginated endpoint to retrieve all of them instead.
      * Using calico/node because it has over 3838 tags
      */
-    @Ignore("https://github.com/dockstore/dockstore/issues/4663")
+    @Ignore("https://github.com/dockstore/dockstore/issues/4663 and possibly https://github.com/dockstore/dockstore/pull/4753")
     @Test
     public void getOver500TagsTest() {
         Token token = new Token();

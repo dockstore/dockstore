@@ -24,7 +24,6 @@ import io.dockstore.webservice.core.database.MyWorkflows;
 import io.dockstore.webservice.core.database.RSSWorkflowPath;
 import io.dockstore.webservice.core.database.WorkflowPath;
 import java.util.List;
-import java.util.Optional;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -48,24 +47,12 @@ public class BioWorkflowDAO extends EntryDAO<BioWorkflow> {
         final SourceControlConverter converter = new SourceControlConverter();
         final Root<BioWorkflow> entryRoot = q.from(BioWorkflow.class);
 
-        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
-        predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
-        predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
-        predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
-        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
-        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+        Predicate predicate = getWorkflowPredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, converter, entryRoot);
 
-        if (descriptorLanguage != null) {
-            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
-        }
-        if (registry != null) {
-            predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
-        }
-
+        // its tempting to put this in EntryDAO, but something goes wrong with generics/inheritance
         if (checker != null) {
-            predicate = cb.and(predicate, cb.isTrue(entryRoot.get("isChecker")));
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("isChecker"), checker));
         }
-
         q.where(predicate);
         return entryRoot;
     }
