@@ -91,6 +91,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
+      SECURITY_CERTS_LOCATION: /etc/ssl/certs/java/cacerts
     steps:
       - old_python
       - setup_machine
@@ -106,6 +107,7 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
+      SECURITY_CERTS_LOCATION: /usr/local/jdk-<< pipeline.parameters.java-tag >>/lib/security/cacerts
     steps:
       - setup_remote_docker:
           version: 19.03.13
@@ -118,6 +120,7 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: tool-integration-tests
+      SECURITY_CERTS_LOCATION: /usr/local/jdk-<< pipeline.parameters.java-tag >>/lib/security/cacerts
     steps:
       - setup_test
       - install-postgres
@@ -128,6 +131,7 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
+      SECURITY_CERTS_LOCATION: /usr/local/jdk-<< pipeline.parameters.java-tag >>/lib/security/cacerts
     steps:
       - setup_test
       - install-postgres
@@ -138,6 +142,7 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
+      SECURITY_CERTS_LOCATION: /etc/ssl/certs/java/cacerts
     steps:
       - old_python
       - setup_machine
@@ -434,7 +439,7 @@ commands:
           name: run integration test
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-            "${JAVA_HOME}/bin/keytool" -importkeystore -srckeystore "${JAVA_HOME}/lib/security/cacerts" -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
+            $JAVA_HOME/bin/keytool -importkeystore -srckeystore $SECURITY_CERTS_LOCATION -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
             mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
           name: send coverage
