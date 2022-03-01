@@ -127,7 +127,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             } else if (fileTypeCategory == FileTypeCategory.CONTAINERFILE) {
                 fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
             } else {
-                LOG.info(String.format("Could not determine file type catagory, so setting file type to CONTAINER for source file %s", file.getPath()));
+                LOG.info("Could not determine file type category, so setting file type to CONTAINER for source file {}", file.getPath());
                 fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
             }
 
