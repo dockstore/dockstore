@@ -179,23 +179,27 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             LOG.info("Unexpected response from Quay while retrieving repo manifest for Quay Tag " + quayTag.getName() + " for tool " + tool.getToolPath(), ex);
             return images;
         }
-        Arrays.stream(manifestList.getManifests()).forEach(manifest -> {
-            Optional<QuayTag> matchingTag = cleanedQuayTagList.stream().filter(tag -> (tag.getManifestDigest().equals(manifest.getDigest()))).findFirst();
-            if (matchingTag.isPresent()) {
-                final String manifestDigest = manifest.getDigest();
-                final String imageID = matchingTag.get().getImageId();
-                List<Checksum> checksums = new ArrayList<>();
-                String[] splitChecksum = manifestDigest.split(":");
-                checksums.add(new Checksum(splitChecksum[0], splitChecksum[1]));
-                Image image = new Image(checksums, tool.getNamespace() + '/' + tool.getName(), quayTag.getName(), imageID, Registry.QUAY_IO, quayTag.getSize(), quayTag.getLastModified());
-                image.setArchitecture(manifest.getPlatform().getArchitecture());
-                image.setOs(manifest.getPlatform().getOs());
-                images.add(image);
-                cleanedQuayTagList.remove(matchingTag.get());
-            } else {
-                LOG.info("Unable to find matching Quay tag image information using digest");
-            }
-        });
+        try {
+            Arrays.stream(manifestList.getManifests()).forEach(manifest -> {
+                Optional<QuayTag> matchingTag = cleanedQuayTagList.stream().filter(tag -> (tag.getManifestDigest().equals(manifest.getDigest()))).findFirst();
+                if (matchingTag.isPresent()) {
+                    final String manifestDigest = manifest.getDigest();
+                    final String imageID = matchingTag.get().getImageId();
+                    List<Checksum> checksums = new ArrayList<>();
+                    String[] splitChecksum = manifestDigest.split(":");
+                    checksums.add(new Checksum(splitChecksum[0], splitChecksum[1]));
+                    Image image = new Image(checksums, tool.getNamespace() + '/' + tool.getName(), quayTag.getName(), imageID, Registry.QUAY_IO, quayTag.getSize(), quayTag.getLastModified());
+                    image.setArchitecture(manifest.getPlatform().getArchitecture());
+                    image.setOs(manifest.getPlatform().getOs());
+                    images.add(image);
+                    cleanedQuayTagList.remove(matchingTag.get());
+                } else {
+                    LOG.info("Unable to find matching Quay tag image information using digest");
+                }
+            });
+        } catch (NullPointerException ex) {
+            LOG.info("Unexpected null response from Quay while retrieving image and checksum info from manifest for Quay Tag " + quayTag.getName() + " for tool " + tool.getToolPath(), ex);
+        }
         return images;
     }
 
