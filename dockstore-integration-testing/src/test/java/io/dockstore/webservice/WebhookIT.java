@@ -95,8 +95,8 @@ public class WebhookIT extends BaseIT {
     private final String installationId = "1179416";
     private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
     private final String toolAndWorkflowRepoToolPath = "DockstoreTestUser2/test-workflows-and-tools/md5sum";
-    private final String taggedToolAndWorkflowRepo = "svonworl/test-workflows-and-tools";
-    private final String taggedToolAndWorkflowRepoPath = "svonworl/test-workflows-and-tools/md5sum";
+    private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
+    private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
     private FileDAO fileDAO;
 
@@ -943,8 +943,8 @@ public class WebhookIT extends BaseIT {
         io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
-        client.handleGitHubRelease(taggedToolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/tags/testtag", installationId);
-        Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolAndWorkflowRepoPath, APPTOOL, "versions,validations");
+        client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolRepoPath, APPTOOL, "versions,validations");
 
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
@@ -956,6 +956,7 @@ public class WebhookIT extends BaseIT {
         client.updateWorkflowVersion(appTool.getId(), Lists.newArrayList(validVersion));
 
         // check if version is frozen
+        appTool = client.getWorkflow(appTool.getId(), null);
         validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
         assertTrue(validVersion.isFrozen());
 
