@@ -267,7 +267,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             throw new CustomWebApplicationException(identifiedType + " is not a valid workflow or test file type.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        DescriptorLanguage.FileType testParameterType = DescriptorLanguage.getDescriptorLanguage(identifiedType).getTestParamType();
+        DescriptorLanguage.FileType testParameterType = descriptorLanguage.getTestParamType();
         if (testParameterType != null) {
             // if the type of the file is already a test file then this is an error
             if (testParameterType == identifiedType) {
