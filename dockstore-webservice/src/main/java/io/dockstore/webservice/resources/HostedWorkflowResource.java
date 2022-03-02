@@ -258,10 +258,21 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         descriptorValidation = new Validation(identifiedType, validDescriptorSet);
         version.addOrUpdateValidation(descriptorValidation);
 
-        DescriptorLanguage.FileType testParameterType = null;
+        DescriptorLanguage descriptorLanguage = null;
+        try {
+            // get the descriptor language associated with this file
+            descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(identifiedType);
+        } catch (UnsupportedOperationException exception) {
+            // if the file type was not a valid workflow file type throw an exception
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow or test file type.", HttpStatus.SC_BAD_REQUEST);
+        }
 
-        testParameterType = DescriptorLanguage.getDescriptorLanguage(identifiedType).getTestParamType();
+        DescriptorLanguage.FileType testParameterType = DescriptorLanguage.getDescriptorLanguage(identifiedType).getTestParamType();
         if (testParameterType != null) {
+            // if the type of the file is already a test file then this is an error
+            if (testParameterType == identifiedType) {
+                throw new CustomWebApplicationException(identifiedType + " is a test file type, not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+            }
             VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);

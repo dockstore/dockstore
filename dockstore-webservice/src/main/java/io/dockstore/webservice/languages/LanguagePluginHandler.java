@@ -18,7 +18,6 @@ package io.dockstore.webservice.languages;
 import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguage.FileType;
-import io.dockstore.common.DescriptorLanguage.FileTypeCategory;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
@@ -115,22 +114,23 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             String absolutePath = file.getAbsolutePath();
 
             MinimalLanguageInterface.GenericFileType fileType;
-
-            FileTypeCategory fileTypeCategory = file.getType().getCategory();
-            if (fileTypeCategory == FileTypeCategory.GENERIC_DESCRIPTOR
-                || fileTypeCategory == FileTypeCategory.PRIMARY_DESCRIPTOR
-                || fileTypeCategory == FileTypeCategory.SECONDARY_DESCRIPTOR
-                || fileTypeCategory == FileTypeCategory.OTHER) {
+            switch (file.getType().getCategory()) {
+            case GENERIC_DESCRIPTOR:
+            case PRIMARY_DESCRIPTOR:
+            case SECONDARY_DESCRIPTOR:
+            case OTHER:
                 fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
-            } else if (fileTypeCategory == FileTypeCategory.TEST_FILE) {
+                break;
+            case TEST_FILE:
                 fileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
-            } else if (fileTypeCategory == FileTypeCategory.CONTAINERFILE) {
+                break;
+            case CONTAINERFILE:
                 fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
-            } else {
-                LOG.info("Could not determine file type category, so setting file type to CONTAINER for source file {}", file.getPath());
-                fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
+                break;
+            default:
+                LOG.error("Could not determine file type category for source file {}", file.getPath());
+                throw new CustomWebApplicationException("Could not determine file type category for source file " + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
             }
-
             Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, fileType);
             indexedFiles.put(absolutePath, indexedFile);
         }
