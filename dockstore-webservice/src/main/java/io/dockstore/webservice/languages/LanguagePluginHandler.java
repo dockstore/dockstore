@@ -113,25 +113,32 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
             String content = file.getContent();
             String absolutePath = file.getAbsolutePath();
 
-            MinimalLanguageInterface.GenericFileType fileType;
-            switch (file.getType().getCategory()) {
+            FileType fileType = file.getType();
+            if (fileType == null) {
+                LOG.error("Could not determine file type for source file {}", file.getPath());
+                throw new CustomWebApplicationException("Could not determine file type for source file "
+                    + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
+            }
+            MinimalLanguageInterface.GenericFileType genericFileType;
+            switch (fileType.getCategory()) {
             case GENERIC_DESCRIPTOR:
             case PRIMARY_DESCRIPTOR:
             case SECONDARY_DESCRIPTOR:
             case OTHER:
-                fileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
+                genericFileType = MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR;
                 break;
             case TEST_FILE:
-                fileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
+                genericFileType = MinimalLanguageInterface.GenericFileType.TEST_PARAMETER_FILE;
                 break;
             case CONTAINERFILE:
-                fileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
+                genericFileType = MinimalLanguageInterface.GenericFileType.CONTAINERFILE;
                 break;
             default:
                 LOG.error("Could not determine file type category for source file {}", file.getPath());
-                throw new CustomWebApplicationException("Could not determine file type category for source file " + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
+                throw new CustomWebApplicationException("Could not determine file type category for source file "
+                    + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
             }
-            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, fileType);
+            Pair<String, MinimalLanguageInterface.GenericFileType> indexedFile = new ImmutablePair<>(content, genericFileType);
             indexedFiles.put(absolutePath, indexedFile);
         }
         return indexedFiles;
