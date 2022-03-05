@@ -63,8 +63,8 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
     @Override
     public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
-        final MinimalLanguageInterface.WorkflowMetadata workflowMetadata = minimalLanguageInterface
-            .parseWorkflowForMetadata(filepath, content, new HashMap<>());
+        final MinimalLanguageInterface.WorkflowMetadata workflowMetadata =
+            minimalLanguageInterface.parseWorkflowForMetadata(filepath, content, new HashMap<>());
         // Add authors from descriptor if there are no .dockstore.yml authors
         if (workflowMetadata.getAuthor() != null && version.getAuthors().isEmpty()) {
             Author author = new Author(workflowMetadata.getAuthor());
@@ -115,9 +115,9 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
 
             FileType fileType = file.getType();
             if (fileType == null) {
-                LOG.error("Could not determine file type for source file {}", file.getPath());
-                throw new CustomWebApplicationException("Could not determine file type for source file "
-                    + file.getPath(), HttpStatus.SC_METHOD_FAILURE);
+                LOG.error("File type for source file {} is null", file.getPath());
+                throw new CustomWebApplicationException("File type for source file "
+                    + file.getPath() + " is null", HttpStatus.SC_METHOD_FAILURE);
             }
             MinimalLanguageInterface.GenericFileType genericFileType;
             switch (fileType.getCategory()) {
