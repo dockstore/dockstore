@@ -241,7 +241,7 @@ public class LanguagePluginHandlerTest {
                 Assert.assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).getRight());
             }
             if (indexedFiles.containsKey(DOCKERFILE)) {
-                Assert.assertSame( GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).getRight());
+                Assert.assertSame(GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).getRight());
             }
             if (indexedFiles.containsKey(PRIMARY_DESCRIPTOR)) {
                 Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).getRight());
