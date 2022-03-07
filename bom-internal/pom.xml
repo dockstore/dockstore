@@ -70,7 +70,7 @@ POM as their parent.
         <scala.version>2.12.15</scala.version>
 <!--        Cromwell versions can be found at https://broadinstitute.jfrog.io/ui/native/libs-release-local/org/broadinstitute/-->
         <cromwell.version>77</cromwell.version>
-        <jackson.version>2.13.1</jackson.version>
+        <jackson.version>2.12.3</jackson.version>
         <docker-client.version>3.2.8</docker-client.version>
 
         <skipTests>false</skipTests>

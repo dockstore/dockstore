@@ -251,6 +251,16 @@
                     <groupId>com.google.cloud</groupId>
                     <artifactId>google-cloud-monitoring</artifactId>
                 </exclusion>
+                <!--  Cromwell core pulls in com.fasterxml.jackson.core:jackson-core 2.13.1 which causes error
+                      javax.xml.stream.FactoryConfigurationError: Provider for javax.xml.stream.XMLInputFactory cannot be found
+                      in some integration tests. So exclude the jackson-core version that cromwell pulls in
+                      in favor of the older version of jackson-core specified in bom-internal (2.12.3)
+                      Remove this when jackson-core can be safely upgraded to a newer version
+                -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
