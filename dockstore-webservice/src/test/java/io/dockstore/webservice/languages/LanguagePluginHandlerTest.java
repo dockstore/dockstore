@@ -56,9 +56,6 @@ public class LanguagePluginHandlerTest {
 
     @Test
     public void parseWorkflowContentTest() throws IOException {
-        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
-        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
-
         Set<SourceFile> sourceFileSet = new TreeSet<>();
 
         SourceFile mainDescriptorSourceFile = createSourceFile(MAIN_DESCRIPTOR_CWL, MAIN_DESCRIPTOR_CWL_RESOURCE_PATH, FileType.DOCKSTORE_CWL);
@@ -70,15 +67,12 @@ public class LanguagePluginHandlerTest {
         Version workflowVersion = new WorkflowVersion();
         workflowVersion = minimalLanguageHandler.parseWorkflowContent(SECONDARY_DESCRIPTOR_CWL,
             mainDescriptorSourceFile.getContent(), sourceFileSet, workflowVersion);
-        Assert.assertTrue(workflowVersion.getAuthor().equals("Shakespeare")
-            && workflowVersion.getEmail().equals("globetheater@bard.com"));
+        Assert.assertEquals("Shakespeare", workflowVersion.getAuthor());
+        Assert.assertEquals("globetheater@bard.com", workflowVersion.getEmail());
     }
 
     @Test
     public void sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest() throws IOException {
-        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
-        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
-
         Set<SourceFile> sourceFileSet = new TreeSet<>();
 
         SourceFile otherFileSourceFile = createSourceFile(OTHER_FILE, OTHER_FILE_RESOURCE_PATH, FileType.DOCKSTORE_YML);
@@ -158,9 +152,6 @@ public class LanguagePluginHandlerTest {
 
     @Test
     public void processImportsTest() throws IOException {
-        final ToolDAO toolDAO = Mockito.mock(ToolDAO.class);
-        when(toolDAO.findAllByPath(Mockito.anyString(), Mockito.anyBoolean())).thenReturn(null);
-
         SourceFile mainDescriptorSourceFile = createSourceFile(MAIN_DESCRIPTOR_CWL, MAIN_DESCRIPTOR_CWL_RESOURCE_PATH, FileType.DOCKSTORE_CWL);
         LanguagePluginHandler minimalLanguageHandler = new LanguagePluginHandler(TestLanguage.class);
         Version emptyVersion = new WorkflowVersion();
