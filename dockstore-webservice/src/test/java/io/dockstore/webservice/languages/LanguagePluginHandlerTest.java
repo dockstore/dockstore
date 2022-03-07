@@ -167,15 +167,15 @@ public class LanguagePluginHandlerTest {
         Map<String, SourceFile> importedFilesMap = minimalLanguageHandler.processImports("whatever", mainDescriptorSourceFile.getContent(),
                 emptyVersion, new ToolsCWLWorkflowExpSourceCodeRepoInterface(), MAIN_DESCRIPTOR_CWL);
         SourceFile secondarySourceFile = importedFilesMap.get(SECONDARY_DESCRIPTOR_CWL_RESOURCE_PATH);
-        Assert.assertSame(secondarySourceFile.getType(), FileType.DOCKSTORE_CWL);
+        Assert.assertSame(FileType.DOCKSTORE_CWL, secondarySourceFile.getType());
         SourceFile testInputFile = importedFilesMap.get(TEST_INPUT_FILE_RESOURCE_PATH);
-        Assert.assertSame(testInputFile.getType(), FileType.CWL_TEST_JSON);
+        Assert.assertSame(FileType.CWL_TEST_JSON, testInputFile.getType());
         SourceFile dockerFile = importedFilesMap.get(DOCKERFILE_RESOURCE_PATH);
-        Assert.assertSame(dockerFile.getType(), FileType.DOCKERFILE);
+        Assert.assertSame(FileType.DOCKERFILE, dockerFile.getType());
         SourceFile serviceFile = importedFilesMap.get(SERVICE_DESCRIPTOR_RESOURCE_PATH);
         // eventually will be DescriptorLanguage.FileType.DOCKSTORE_SERVICE_YML
         // when services are enabled?
-        Assert.assertSame(serviceFile.getType(), FileType.DOCKSTORE_CWL);
+        Assert.assertSame(FileType.DOCKSTORE_CWL, serviceFile.getType());
 
     }
 
@@ -241,22 +241,22 @@ public class LanguagePluginHandlerTest {
             // This will be executed via the sourcefilesToIndexedFilesViaValidateWorkflowSetNullTypeTest test code
             // and some files may not be present depending on the inputs to the test
             if (indexedFiles.containsKey(MAIN_DESCRIPTOR_CWL)) {
-                Assert.assertSame(indexedFiles.get(MAIN_DESCRIPTOR_CWL).getRight(), MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR);
+                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(MAIN_DESCRIPTOR_CWL).getRight());
             }
             if (indexedFiles.containsKey(SECONDARY_DESCRIPTOR_CWL)) {
-                Assert.assertSame(indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).getRight(), MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR);
+                Assert.assertSame(MinimalLanguageInterface.GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(SECONDARY_DESCRIPTOR_CWL).getRight());
             }
             if (indexedFiles.containsKey(TEST_INPUT_FILE)) {
-                Assert.assertSame(indexedFiles.get(TEST_INPUT_FILE).getRight(), GenericFileType.TEST_PARAMETER_FILE);
+                Assert.assertSame(GenericFileType.TEST_PARAMETER_FILE, indexedFiles.get(TEST_INPUT_FILE).getRight());
             }
             if (indexedFiles.containsKey(DOCKERFILE)) {
-                Assert.assertSame(indexedFiles.get(DOCKERFILE).getRight(), GenericFileType.CONTAINERFILE);
+                Assert.assertSame( GenericFileType.CONTAINERFILE, indexedFiles.get(DOCKERFILE).getRight());
             }
             if (indexedFiles.containsKey(PRIMARY_DESCRIPTOR)) {
-                Assert.assertSame(indexedFiles.get(PRIMARY_DESCRIPTOR).getRight(), GenericFileType.IMPORTED_DESCRIPTOR);
+                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(PRIMARY_DESCRIPTOR).getRight());
             }
             if (indexedFiles.containsKey(OTHER_FILE)) {
-                Assert.assertSame(indexedFiles.get(OTHER_FILE).getRight(), GenericFileType.IMPORTED_DESCRIPTOR);
+                Assert.assertSame(GenericFileType.IMPORTED_DESCRIPTOR, indexedFiles.get(OTHER_FILE).getRight());
             }
 
             return new VersionTypeValidation(true, Collections.emptyMap());
