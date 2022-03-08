@@ -91,7 +91,6 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: regression-integration-tests
-      SECURITY_CERTS_LOCATION: /etc/ssl/certs/java/cacerts
     steps:
       - old_python
       - setup_machine
@@ -107,7 +106,6 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: integration-tests
-      SECURITY_CERTS_LOCATION: /usr/local/jdk-<< pipeline.parameters.java-tag >>/lib/security/cacerts
     steps:
       - setup_remote_docker:
           version: 19.03.13
@@ -120,7 +118,6 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: tool-integration-tests
-      SECURITY_CERTS_LOCATION: /usr/local/jdk-<< pipeline.parameters.java-tag >>/lib/security/cacerts
     steps:
       - setup_test
       - install-postgres
@@ -131,7 +128,6 @@ jobs:
     executor: integration_test_exec
     environment:
       TESTING_PROFILE: workflow-integration-tests
-      SECURITY_CERTS_LOCATION: /usr/local/jdk-<< pipeline.parameters.java-tag >>/lib/security/cacerts
     steps:
       - setup_test
       - install-postgres
@@ -142,7 +138,6 @@ jobs:
     executor: machine_integration_test_exec
     environment:
       TESTING_PROFILE: language-parsing-tests
-      SECURITY_CERTS_LOCATION: /etc/ssl/certs/java/cacerts
     steps:
       - old_python
       - setup_machine
@@ -396,11 +391,6 @@ commands:
             mvn -v
             python3 -V
       - run:
-          name: install java certs
-          command: |
-            sudo dpkg --purge --force-depends ca-certificates-java
-            sudo apt-get install ca-certificates-java
-      - run:
           name: Docker-Compose
           command: docker-compose up -d
   setup_test:
@@ -437,10 +427,7 @@ commands:
             wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true
       - run:
           name: run integration test
-          command: |
-            # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
-            $JAVA_HOME/bin/keytool -importkeystore -srckeystore $SECURITY_CERTS_LOCATION -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
-            mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
+          command: mvn -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       - run:
           name: send coverage
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"

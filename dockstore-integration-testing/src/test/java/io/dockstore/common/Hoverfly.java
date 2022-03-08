@@ -66,6 +66,7 @@ public final class Hoverfly {
     public static final String ORCID_USER_1 = "0000-0001-8365-0487";
     public static final String ORCID_USER_2 = "0000-0002-8365-0487";
     public static final String ORCID_USER_3 = "0000-0002-6130-1021";
+    public static final String NOT_FOUND_ORCID_USER = "0000-0000-0000-0000";
 
     private static final String GITHUB_USER1 = fixture("fixtures/GitHubUser.json");
     private static final String GITHUB_USER2 = fixture("fixtures/GitHubUser2.json");
@@ -170,15 +171,11 @@ public final class Hoverfly {
                     .put(String.format("/v3.0/%s/work/%s", ORCID_USER_2, PUT_CODE_USER_2)).body(contains(PUT_CODE_USER_2)).willReturn(success().body(fixture("fixtures/successfulPutOrcidWork.xml")))
                     .put(String.format("/v3.0/%s/work/%s", ORCID_USER_2, BAD_PUT_CODE)).body(contains(BAD_PUT_CODE)).willReturn(notFound())
 
-                    .get(String.format("/v3.0/%s/person", ORCID_USER_3)).anyBody().willReturn(success().body(fixture("fixtures/successfulGetOrcidPerson.xml")))
-                    .get(String.format("/v3.0/%s/employments", ORCID_USER_3)).anyBody().willReturn(success().body(fixture(
-                            "fixtures/successfulOrcidGetAllEmployments.xml")))
-
-                    // The following three requests are for ORCID IDs used in the DockstoreTestUser2/test-authors repo.
+                    .get("/v3.0/" + ORCID_USER_3).anyBody().willReturn(success().body(fixture("fixtures/successfulGetOrcidRecord.xml")))
                     // Since it's repetitive to mock all the responses needed to create an OrcidAuthor for these IDs, simulate that the ORCID IDs don't exist.
-                    .get("/v3.0/0000-0000-0000-0000/person").anyBody().willReturn(notFound())
-                    .get("/v3.0/1111-1111-1111-1111/person").anyBody().willReturn(notFound())
-                    .get("/v3.0/0000-1234-5678-0000/person").anyBody().willReturn(notFound()),
+                    .get("/v3.0/0000-0000-0000-0000").anyBody().willReturn(notFound())
+                    .get("/v3.0/1111-1111-1111-1111").anyBody().willReturn(notFound())
+                    .get("/v3.0/0000-1234-5678-0000").anyBody().willReturn(notFound()),
 
             service("https://sandbox.orcid.org")
                     .post("/oauth/token").anyBody().willReturn(success(GSON.toJson(getFakeTokenResponse("")), MediaType.APPLICATION_JSON))

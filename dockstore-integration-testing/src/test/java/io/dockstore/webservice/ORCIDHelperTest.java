@@ -1,5 +1,6 @@
 package io.dockstore.webservice;
 
+import static io.dockstore.common.Hoverfly.NOT_FOUND_ORCID_USER;
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.common.Hoverfly.ORCID_USER_3;
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
@@ -9,7 +10,7 @@ import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.OrcidAuthor;
+import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -94,24 +95,24 @@ public class ORCIDHelperTest {
 
     @Test
     public void testOrcidAuthor() throws URISyntaxException, IOException, InterruptedException {
-        String id = ORCID_USER_3;
         Optional<String> accessToken = ORCIDHelper.getOrcidAccessToken();
         Assert.assertTrue(accessToken.isPresent());
 
-        HttpResponse<String> response = ORCIDHelper.getPerson(id, accessToken.get());
+        HttpResponse<String> response = ORCIDHelper.getRecordDetails(ORCID_USER_3, accessToken.get());
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
 
-        response = ORCIDHelper.getAllEmployments(id, accessToken.get());
-        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+        Optional<OrcidAuthorInformation> orcidAuthorInformation = ORCIDHelper.getOrcidAuthorInformation(ORCID_USER_3, accessToken.get());
+        Assert.assertTrue("Should be able to get Orcid Author information", orcidAuthorInformation.isPresent());
+        Assert.assertNotNull(orcidAuthorInformation.get().getOrcid());
+        Assert.assertNotNull(orcidAuthorInformation.get().getName());
+        Assert.assertNotNull(orcidAuthorInformation.get().getEmail());
+        Assert.assertNotNull(orcidAuthorInformation.get().getAffiliation());
+        Assert.assertNotNull(orcidAuthorInformation.get().getRole());
 
-        try {
-            OrcidAuthor orcidAuthor = ORCIDHelper.createOrcidAuthor(id, accessToken.get());
-            Assert.assertNotNull(orcidAuthor.getName());
-            Assert.assertNotNull(orcidAuthor.getEmail());
-            Assert.assertNotNull(orcidAuthor.getAffiliation());
-            Assert.assertNotNull(orcidAuthor.getRole());
-        } catch (URISyntaxException | IOException | InterruptedException | JAXBException ex) {
-            Assert.fail("Should be able to create an Orcid Author");
-        }
+        response = ORCIDHelper.getRecordDetails(NOT_FOUND_ORCID_USER, accessToken.get());
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, response.statusCode());
+
+        orcidAuthorInformation = ORCIDHelper.getOrcidAuthorInformation(NOT_FOUND_ORCID_USER, accessToken.get());
+        Assert.assertTrue("An ORCID author that doesn't exist should not have ORCID info", orcidAuthorInformation.isEmpty());
     }
 }
