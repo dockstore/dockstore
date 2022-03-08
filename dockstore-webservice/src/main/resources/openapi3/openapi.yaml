@@ -7075,6 +7075,40 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors:
+    get:
+      description: Retrieve ORCID author information for a workflow version
+      operationId: getWorkflowVersionOrcidAuthors
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrcidAuthorInformation'
+          description: Retrieve ORCID author information for a workflow version
+        "400":
+          description: Bad Request
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation:
     post:
       description: Language parser calls this endpoint to update parsed information
@@ -7212,9 +7246,6 @@ components:
           type: string
         email:
           type: string
-        id:
-          type: integer
-          format: int64
         name:
           type: string
         role:
@@ -8306,13 +8337,18 @@ components:
     OrcidAuthor:
       type: object
       properties:
+        id:
+          type: integer
+          format: int64
+        orcid:
+          type: string
+    OrcidAuthorInformation:
+      type: object
+      properties:
         affiliation:
           type: string
         email:
           type: string
-        id:
-          type: integer
-          format: int64
         name:
           type: string
         orcid:

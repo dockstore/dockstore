@@ -388,19 +388,17 @@
         </sql>
     </changeSet>
     <changeSet author="ktran (generated)" id="orcidAuthorInfo">
-        <addColumn tableName="orcidauthor">
-            <column name="affiliation" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="orcidauthor">
-            <column name="email" type="varchar(255 BYTE)"/>
-        </addColumn>
-        <addColumn tableName="orcidauthor">
-            <column name="name" type="varchar(255 BYTE)">
-                <constraints nullable="false"/>
-            </column>
-        </addColumn>
-        <addColumn tableName="orcidauthor">
-            <column name="role" type="varchar(255 BYTE)"/>
-        </addColumn>
+        <sql dbms="postgresql">
+            <comment>Remove all ORCID authors because there's duplicates many duplicates</comment>
+            delete from version_orcidauthor;
+            delete from orcidauthor;
+        </sql>
+        <sql dbms="postgresql">
+            <comment>Add a constraint to ensure that ORCID IDs have the correct format</comment>
+            alter table orcidauthor add constraint check_valid_orcid check (orcid like '____-____-____-____');
+        </sql>
+        <sql dbms="postgresql">
+            create unique index orcidauthor_orcidid_index on orcidauthor (orcid);
+        </sql>
     </changeSet>
 </databaseChangeLog>

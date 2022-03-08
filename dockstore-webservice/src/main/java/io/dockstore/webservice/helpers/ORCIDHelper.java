@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.OrcidAuthor;
+import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.jackson.Jackson;
@@ -28,6 +28,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -44,10 +45,13 @@ import org.orcid.jaxb.model.v3.release.common.CreatedDate;
 import org.orcid.jaxb.model.v3.release.common.LastModifiedDate;
 import org.orcid.jaxb.model.v3.release.common.Title;
 import org.orcid.jaxb.model.v3.release.common.Url;
+import org.orcid.jaxb.model.v3.release.common.Visibility;
 import org.orcid.jaxb.model.v3.release.record.Email;
 import org.orcid.jaxb.model.v3.release.record.ExternalID;
 import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
+import org.orcid.jaxb.model.v3.release.record.Name;
 import org.orcid.jaxb.model.v3.release.record.Person;
+import org.orcid.jaxb.model.v3.release.record.Record;
 import org.orcid.jaxb.model.v3.release.record.Work;
 import org.orcid.jaxb.model.v3.release.record.WorkTitle;
 import org.orcid.jaxb.model.v3.release.record.summary.AffiliationGroup;
@@ -65,11 +69,15 @@ public final class ORCIDHelper {
     private static final Logger LOG = LoggerFactory.getLogger(ORCIDHelper.class);
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+    private static final Pattern ORCID_ID_PATTERN = Pattern.compile("\\d{4}-\\d{4}-\\d{4}-\\d{4}"); // ex: 1234-1234-1234-1234
+    private static final Class[] JAXB_CONTEXT_CLASSES = {Work.class, Works.class, Record.class, Person.class, Employments.class};
 
     private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
     private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
+    private static JAXBContext jaxbContext;
     private static String orcidClientId;
     private static String orcidClientSecret;
+    private static String readPublicAccessToken;
 
     private ORCIDHelper() {
     }
@@ -93,35 +101,45 @@ public final class ORCIDHelper {
         return baseApiUrl;
     }
 
+    private static JAXBContext getJaxbContext() throws JAXBException {
+        if (jaxbContext == null) {
+            jaxbContext = JAXBContext.newInstance(JAXB_CONTEXT_CLASSES);
+        }
+        return jaxbContext;
+    }
+
     /**
      * Get a read-public access token for reading public information.
      * https://info.orcid.org/documentation/api-tutorials/api-tutorial-read-data-on-a-record/#Get_an_access_token
      * @return An access token
      */
     public static Optional<String> getOrcidAccessToken() {
-        String requestData = String.format("grant_type=client_credentials&scope=/read-public&client_id=%s&client_secret=%s", orcidClientId, orcidClientSecret);
-        try {
-            HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseUrl + "oauth/token"))
-                    .header(HttpHeaders.ACCEPT, "application/json")
-                    .headers(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                    .POST(ofString(requestData)).build();
+        if (readPublicAccessToken == null) {
+            String requestData = String.format("grant_type=client_credentials&scope=/read-public&client_id=%s&client_secret=%s",
+                    orcidClientId, orcidClientSecret);
+            try {
+                HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseUrl + "oauth/token"))
+                        .header(HttpHeaders.ACCEPT, "application/json").headers(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded").POST(ofString(requestData)).build();
 
-            HttpResponse<String> response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != HttpStatus.SC_OK) {
-                LOG.error("Could not get ORCID access token: {}", response.body());
+                HttpResponse<String> response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() != HttpStatus.SC_OK) {
+                    LOG.error("Could not get ORCID access token: {}", response.body());
+                    return Optional.empty();
+                }
+
+                Map<String, String> responseMap = MAPPER.readValue(response.body(), Map.class);
+                readPublicAccessToken = responseMap.get("access_token");
+            } catch (URISyntaxException | IOException ex) {
+                LOG.error("Could not get ORCID access token", ex);
+                return Optional.empty();
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                LOG.error("Could not get ORCID access token", ex);
                 return Optional.empty();
             }
-
-            Map<String, String> responseMap = MAPPER.readValue(response.body(), Map.class);
-            return Optional.of(responseMap.get("access_token"));
-        } catch (URISyntaxException | IOException ex) {
-            LOG.error("Could not get ORCID access token", ex);
-            return Optional.empty();
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            LOG.error("Could not get ORCID access token", ex);
-            return Optional.empty();
         }
+
+        return Optional.of(readPublicAccessToken);
     }
 
     /**
@@ -238,7 +256,7 @@ public final class ORCIDHelper {
     }
 
     private static String transformWork(Work work) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(Work.class);
+        JAXBContext context = getJaxbContext();
         StringWriter writer = new StringWriter();
         Marshaller marshaller = context.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
@@ -281,67 +299,82 @@ public final class ORCIDHelper {
      * Transforms the ORCID XML response from a get all works call to a Works object. Assumes that the XML from Orcid is safe.
      */
     private static Works transformXmlToWorks(String worksXml) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(Works.class);
+        JAXBContext context = getJaxbContext();
         Unmarshaller unmarshaller = context.createUnmarshaller();
         return (Works) unmarshaller.unmarshal(new StringReader(worksXml));
     }
 
     /**
-     * Creates an OrcidAuthor, retrieving information about the author using the ORCID API.
+     * Retrieves public information about the ORCID author using the ORCID API.
      * Throws an exception if the person with the ORCID ID does not exist on the ORCID site.
      * @param id ORCID ID of the ORCID author
      * @param token ORCID token
-     * @return OrcidAuthor object
+     * @return OrcidAuthorInfo object
      */
-    public static OrcidAuthor createOrcidAuthor(String id, String token)
-            throws URISyntaxException, IOException, InterruptedException, JAXBException, CustomWebApplicationException {
-        OrcidAuthor orcidAuthor = new OrcidAuthor(id);
+    public static Optional<OrcidAuthorInformation> getOrcidAuthorInformation(String id, String token) {
+        OrcidAuthorInformation orcidAuthorInfo = new OrcidAuthorInformation(id);
 
-        HttpResponse<String> response = getPerson(id, token);
-        if (response.statusCode() != HttpStatus.SC_OK) {
-            LOG.error("Could not get ORCID person with ID {}: {}", id, response.body());
-            throw new CustomWebApplicationException("Could not get ORCID person with ID " + id, HttpStatus.SC_BAD_REQUEST);
-        }
+        try {
+            HttpResponse<String> response = getRecordDetails(id, token);
+            if (response.statusCode() != HttpStatus.SC_OK) {
+                if (response.statusCode() == HttpStatus.SC_NOT_FOUND) {
+                    LOG.error("ORCID iD {} not found", id);
+                } else {
+                    LOG.error("Could not get ORCID record with ID {}: {}", id, response.body());
+                }
+                return Optional.empty();
+            }
 
-        Person person = transformXmlToPerson(response.body());
-        // Set name
-        String fullName = person.getName().getGivenNames().getContent(); // At a minimum, the Orcid Author will have a first name because it's mandated by ORCID
-        if (person.getName().getFamilyName() != null) {
-            fullName += " " + person.getName().getFamilyName().getContent();
-        }
-        orcidAuthor.setName(fullName);
-        // Set email
-        Optional<Email> primaryEmail = person.getEmails().getEmails().stream().filter(Email::isPrimary).findFirst();
-        if (primaryEmail.isPresent()) {
-            orcidAuthor.setEmail(primaryEmail.get().getEmail());
-        }
+            Record record = transformXmlToRecord(response.body());
+            // Deprecated and deactivated records don't have data
+            // Info about deprecated record: https://support.orcid.org/hc/en-us/articles/360006896634-Removing-your-additional-or-duplicate-ORCID-iD
+            // Info about deactivated record: https://support.orcid.org/hc/en-us/articles/360006973813-Deactivating-an-ORCID-account
+            if (record.getDeprecated() != null || record.getHistory().getDeactivationDate() != null) {
+                return Optional.empty();
+            }
 
-        response = getAllEmployments(id, token);
-        if (response.statusCode() != HttpStatus.SC_OK) {
-            LOG.error("Could not get employment details for ORCID user with ID {}: {}", id, response.body());
-            return orcidAuthor; // Can still return the author since the author's name is set at this point
-        }
+            // Set name
+            Name name = record.getPerson().getName();
+            if (name != null && name.getVisibility() == Visibility.PUBLIC) {
+                String fullName = name.getGivenNames().getContent(); // At a minimum, the Orcid Author will have a first name because it's mandated by ORCID
 
-        Employments employments = transformXmlToEmployments(response.body());
-        Collection<AffiliationGroup<EmploymentSummary>> affiliationGroups = employments.getEmploymentGroups();
-        if (affiliationGroups.iterator().hasNext()) {
-            // Set affiliation and role
-            EmploymentSummary employmentSummary = affiliationGroups.iterator().next().getActivities().get(0); // The first employment in the list is the most recent according to end date
-            orcidAuthor.setAffiliation(employmentSummary.getOrganization().getName());
-            orcidAuthor.setRole(employmentSummary.getRoleTitle());
-        }
+                if (name.getFamilyName() != null) {
+                    fullName += " " + name.getFamilyName().getContent();
+                }
+                orcidAuthorInfo.setName(fullName);
+            }
 
-        return orcidAuthor;
+            // Set email
+            Optional<Email> primaryEmail = record.getPerson().getEmails().getEmails().stream().filter(Email::isPrimary).findFirst();
+            if (primaryEmail.isPresent() && primaryEmail.get().getVisibility() == Visibility.PUBLIC) {
+                orcidAuthorInfo.setEmail(primaryEmail.get().getEmail());
+            }
+
+            Employments employments = record.getActivitiesSummary().getEmployments();
+            Collection<AffiliationGroup<EmploymentSummary>> affiliationGroups = employments.getEmploymentGroups();
+            if (affiliationGroups.iterator().hasNext()) {
+                // Set affiliation and role
+                EmploymentSummary employmentSummary = affiliationGroups.iterator().next().getActivities().get(0); // The first employment in the list is the most recent according to end date
+                if (employmentSummary.getVisibility() == Visibility.PUBLIC) {
+                    orcidAuthorInfo.setAffiliation(employmentSummary.getOrganization().getName());
+                    orcidAuthorInfo.setRole(employmentSummary.getRoleTitle());
+                }
+            }
+            return Optional.of(orcidAuthorInfo);
+        } catch (URISyntaxException | IOException | InterruptedException | JAXBException e) {
+            LOG.error("Could not create ORCID author", e);
+            return Optional.empty();
+        }
     }
 
     /**
-     * Gets details of the person identified by the given ORCID ID.
-     * @param id ORCID ID of the person to get details for
+     * Get ORCID record details for record with the given ORCID iD.
+     * @param id ORCID iD
      * @param token ORCID token
      * @return HttpResponse
      */
-    public static HttpResponse<String> getPerson(String id, String token) throws URISyntaxException, IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id + "/person"))
+    public static HttpResponse<String> getRecordDetails(String id, String token) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id))
                 .header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE)
                 .header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
         return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
@@ -349,40 +382,17 @@ public final class ORCIDHelper {
     }
 
     /**
-     * Transforms the ORCID XML response from a get person call to a Person object. Assumes that the XML from ORCID is safe.
-     * @param personXml
-     * @return Person object
-     * @throws JAXBException
+     * Transforms the ORCID XML response from a get record details call to a Record object. Assumes that the XML from ORCID is safe.
+     * @param recordXml ORCID Record XML response
+     * @return Record Object
      */
-    static Person transformXmlToPerson(String personXml) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(Person.class);
+    public static Record transformXmlToRecord(String recordXml) throws JAXBException {
+        JAXBContext context = getJaxbContext();
         Unmarshaller unmarshaller = context.createUnmarshaller();
-        return (Person) unmarshaller.unmarshal(new StringReader(personXml));
+        return (Record) unmarshaller.unmarshal(new StringReader(recordXml));
     }
 
-    /**
-     * Gets all employments of the person identified by the given ORCID ID.
-     * @param id ORCID ID of the person to get employments for
-     * @param token ORCID token
-     * @return HttpResponse
-     */
-    public static HttpResponse<String> getAllEmployments(String id, String token) throws URISyntaxException, IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder().uri(new URI(baseApiUrl + id + "/employments"))
-                .header(HttpHeaders.CONTENT_TYPE, ORCID_XML_CONTENT_TYPE)
-                .header(HttpHeaders.AUTHORIZATION, JWT_SECURITY_DEFINITION_NAME + " " + token).GET().build();
-        return HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request,
-                HttpResponse.BodyHandlers.ofString());
-    }
-
-    /**
-     * Transforms the ORCID XML response from a get all employments call to an Employments object. Assumes that the XML from ORCID is safe.
-     * @param employmentsXml
-     * @return Employments object
-     * @throws JAXBException
-     */
-    static Employments transformXmlToEmployments(String employmentsXml) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(Employments.class);
-        Unmarshaller unmarshaller = context.createUnmarshaller();
-        return (Employments) unmarshaller.unmarshal(new StringReader(employmentsXml));
+    public static boolean isValidOrcidId(String orcidId) {
+        return ORCID_ID_PATTERN.matcher(orcidId).matches();
     }
 }

@@ -41,6 +41,8 @@ import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Image;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.OrcidAuthor;
+import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -58,6 +60,7 @@ import io.dockstore.webservice.helpers.AliasHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -2144,5 +2147,39 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         }
         githubWebhookDelete(repository, gitReference, username);
         return Response.status(HttpStatus.SC_NO_CONTENT).build();
+    }
+
+    @GET
+    @Path("/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors")
+    @UnitOfWork(readOnly = true)
+    @ApiOperation(value = "Retrieve ORCID author information for a workflow version",  hidden = true)
+    @Operation(operationId = "getWorkflowVersionOrcidAuthors", description = "Retrieve ORCID author information for a workflow version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve ORCID author information for a workflow version", content = @Content(
+            mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = OrcidAuthorInformation.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = "Bad Request")
+    public Set<OrcidAuthorInformation> getWorkflowVersionOrcidAuthors(@Parameter(hidden = true, name = "user")@Auth User user,
+            @Parameter(name = "workflowId", description = "id of the workflow", required = true, in = ParameterIn.PATH)  @PathParam("workflowId") Long workflowId,
+            @Parameter(name = "workflowVersionId", description = "id of the workflow version", required = true, in = ParameterIn.PATH) @PathParam("workflowVersionId") Long workflowVersionId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkCanRead(user, workflow);
+
+        WorkflowVersion workflowVersion = this.workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("Version " + workflowVersionId + " does not exist for this workflow", HttpStatus.SC_NOT_FOUND);
+        }
+
+        Set<OrcidAuthorInformation> orcidAuthorInfo = new HashSet<>();
+        Optional<String> token = ORCIDHelper.getOrcidAccessToken();
+        if (token.isPresent()) {
+            orcidAuthorInfo = workflowVersion.getOrcidAuthors().stream()
+                    .map(OrcidAuthor::getOrcid)
+                    .map(orcidId -> ORCIDHelper.getOrcidAuthorInformation(orcidId, token.get()))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
+        }
+
+        return orcidAuthorInfo;
     }
 }

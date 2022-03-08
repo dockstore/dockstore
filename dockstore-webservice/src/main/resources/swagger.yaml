@@ -6384,10 +6384,6 @@ definitions:
       email:
         type: "string"
         description: "Email of the author"
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the author in this web service"
       role:
         type: "string"
         description: "Role of the author"
@@ -7452,30 +7448,17 @@ definitions:
   OrcidAuthor:
     type: "object"
     required:
-    - "name"
+    - "id"
     - "orcid"
     properties:
-      affiliation:
-        type: "string"
-        description: "Affiliation of the author"
-      email:
-        type: "string"
-        description: "Email of the author"
       id:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the author in this web service"
-      role:
-        type: "string"
-        description: "Role of the author"
-      name:
-        type: "string"
-        position: 1
-        description: "Name of the author"
       orcid:
         type: "string"
-        position: 2
-        description: "ORCID id of the author"
+        position: 1
+        description: "ORCID iD of the author"
     description: "This describes an ORCID-author of a version in Dockstore"
   OrcidPutCode:
     type: "object"

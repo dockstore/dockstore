@@ -23,6 +23,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
@@ -40,7 +41,6 @@ import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.ORCIDHelper;
-import io.dockstore.webservice.helpers.OrcidAuthorHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -626,7 +626,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     .createVersionForWorkflow(repository, gitReference, workflow, dockstoreYml);
             remoteWorkflowVersion.setReferenceType(getReferenceTypeFromGitRef(gitReference));
             // Add authors
-            addDockstoreYmlAuthorsToVersion(yamlAuthors, remoteWorkflowVersion, user);
+            addDockstoreYmlAuthorsToVersion(yamlAuthors, remoteWorkflowVersion);
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
@@ -693,7 +693,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param yamlAuthors
      * @param version
      */
-    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version, User user) {
+    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version) {
         final Set<Author> authors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() == null)
                 .map(yamlAuthor -> {
@@ -707,24 +707,19 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 .collect(Collectors.toSet());
         version.setAuthors(authors);
 
-        // Only need the ORCID IDs because ORCID Author information is retrieved using the ORCID API
-        final Set<String> orcidAuthorIds = yamlAuthors.stream()
-                .map(YamlAuthor::getOrcid)
-                .filter(Objects::nonNull)
+        final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
+                .filter(yamlAuthor -> yamlAuthor.getOrcid() != null && ORCIDHelper.isValidOrcidId(yamlAuthor.getOrcid()))
+                .map(yamlAuthor -> {
+                    OrcidAuthor existingOrcidAuthor = orcidAuthorDAO.findByOrcidId(yamlAuthor.getOrcid());
+                    if (existingOrcidAuthor == null) {
+                        long id = orcidAuthorDAO.create(new OrcidAuthor(yamlAuthor.getOrcid()));
+                        return orcidAuthorDAO.findById(id);
+                    } else {
+                        return existingOrcidAuthor;
+                    }
+                })
                 .collect(Collectors.toSet());
-
-        if (!orcidAuthorIds.isEmpty()) {
-            List<Token> orcidByUserId = tokenDAO.findOrcidByUserId(user.getId());
-            // Get a read-public access token for ORCID if the user who initiated the GitHub release does not have an ORCID token
-            Optional<String> orcidToken =
-                    orcidByUserId.isEmpty() ? ORCIDHelper.getOrcidAccessToken() : Optional.of(orcidByUserId.get(0).getToken());
-
-            if (orcidToken.isPresent()) {
-                OrcidAuthorHelper.updateVersionOrcidAuthors(version, orcidAuthorIds, orcidToken.get(), orcidAuthorDAO);
-            } else {
-                LOG.error("Could not add ORCID authors for version");
-            }
-        }
+        version.setOrcidAuthors(orcidAuthors);
     }
 
     private Version.ReferenceType getReferenceTypeFromGitRef(String gitRef) {
