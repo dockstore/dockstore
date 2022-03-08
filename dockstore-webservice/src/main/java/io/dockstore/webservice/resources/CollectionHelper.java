@@ -87,18 +87,24 @@ class CollectionHelper {
             entry.setLabels(labelStrings);
             List<CategorySummary> summaries = entryDAO.findCategorySummariesByEntryId(entry.getId());
             entry.setCategorySummaries(summaries);
-            if (entry.getEntryType().equals("tool")) {
+            switch (entry.getEntryType()) {
+            case "tool":
                 entry.setDescriptorTypes(entryDAO.getToolsDescriptorTypes(entry.getId()));
-            } else if (entry.getEntryType().equals("workflow")) {
+                break;
+            case "workflow":
                 entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
+                break;
+            case "apptool":
+                entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
+                // we get file descriptor types like workflows, but make the UI treat these as workflows (so icon and url work)
+                entry.setEntryType("tool");
+                break;
+            default:
+                throw new UnsupportedOperationException("unexpected entry type when constructing collection");
             }
         });
         collection.setCollectionEntries(collectionEntries);
         collection.setWorkflowsLength(collectionWorkflows.size() + (long)collectionWorkflowsWithVersions.size());
         collection.setToolsLength(collectionTools.size() + (long)collectionToolsWithVersions.size());
-    }
-
-    public void evictAndAddEntries(java.util.Collection<? extends Collection> c) {
-        c.forEach(this::evictAndAddEntries);
     }
 }

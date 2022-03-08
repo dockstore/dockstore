@@ -102,7 +102,7 @@ public class OrganizationIT extends BaseIT {
      *
      * @return Organization object
      */
-    private Organization stubOrgObject() {
+    private static Organization stubOrgObject() {
         String markdownDescription = "An h1 header ============ Paragraphs are separated by a blank line. 2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists look like: * this one * that one * the other one Note that --- not considering the asterisk --- the actual text content starts at 4-columns in. > Block quotes are > written like so. > > They can span multiple paragraphs, > if you like. Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., \"it's all in chapters 12--14\"). Three dots ... will be converted to an ellipsis. Unicode is supported. ☺ ";
         Organization organization = new Organization();
         organization.setName("testname");
@@ -140,7 +140,7 @@ public class OrganizationIT extends BaseIT {
      *
      * @return Collection object
      */
-    private Collection stubCollectionObject() {
+    public static Collection stubCollectionObject() {
         Collection collection = new Collection();
         collection.setName("Alignment");
         collection.setDisplayName("Alignment Algorithms");
@@ -167,7 +167,7 @@ public class OrganizationIT extends BaseIT {
      * @param organizationsApi
      * @return Newly registered Organization
      */
-    private Organization createOrg(OrganizationsApi organizationsApi) {
+    public static Organization createOrg(OrganizationsApi organizationsApi) {
         Organization organization = stubOrgObject();
         return organizationsApi.createOrganization(organization);
     }
