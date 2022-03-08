@@ -397,8 +397,6 @@
             <comment>Add a constraint to ensure that ORCID IDs have the correct format</comment>
             alter table orcidauthor add constraint check_valid_orcid check (orcid like '____-____-____-____');
         </sql>
-        <sql dbms="postgresql">
-            create unique index orcidauthor_orcidid_index on orcidauthor (orcid);
-        </sql>
+        <addUniqueConstraint columnNames="orcid" constraintName="unique_orcid_index" tableName="orcidauthor"/>
     </changeSet>
 </databaseChangeLog>
