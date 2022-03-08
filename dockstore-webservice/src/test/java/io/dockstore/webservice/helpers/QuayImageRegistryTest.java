@@ -5,10 +5,10 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -26,7 +26,6 @@ public class QuayImageRegistryTest {
      * This tests that when there are over 500 tags, we can use the paginated endpoint to retrieve all of them instead.
      * Using calico/node because it has over 3838 tags
      */
-    @Ignore("https://github.com/dockstore/dockstore/issues/4663 and possibly https://github.com/dockstore/dockstore/pull/4753")
     @Test
     public void getOver500TagsTest() {
         Token token = new Token();
@@ -40,17 +39,44 @@ public class QuayImageRegistryTest {
         int size = tags.size();
         Assert.assertTrue("Should be able to get more than the default 500 tags", size > 3838);
         tags.forEach(tag -> {
+            Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
+            Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
             if (tag.getSize() == null) {
-                Assert.assertNull("Image ID shouldn't be populated", tag.getImageId());
-
-            } else {
-                Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
-                Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+                tag.getImages().stream().forEach(image -> {
+                    boolean archOsInfoFilled = false;
+                    if (image.getOs() != null || image.getArchitecture() != null) {
+                        archOsInfoFilled = true;
+                    }
+                    Assert.assertTrue("The image's arch and/or os info should be filled in", archOsInfoFilled);
+                });
             }
-
         });
         Set<String> collect = tags.parallelStream().map(Version::getName).collect(Collectors.toSet());
         int distinctSize = collect.size();
         Assert.assertEquals("There should be no tags with the same name", size, distinctSize);
+
+        // This Quay repo has tags with > 1 manifest per image
+        tool.setNamespace("openshift-release-dev");
+        tool.setName("ocp-release");
+        tags = quayImageRegistry.getTags(tool);
+        Optional<Tag> tagWithMoreThanOneImage = tags.stream().filter(tag -> tag.getImages().size() > 1).findFirst();
+        if (tagWithMoreThanOneImage.isEmpty()) {
+            Assert.fail("There should be at least one tag where there is more than one image");
+        }
+        tags.forEach(tag -> {
+            Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
+            Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
+            if (tag.getSize() == null) {
+                tag.getImages().stream().forEach(image -> {
+                    boolean archOsInfoFilled = false;
+                    if (image.getOs() != null || image.getArchitecture() != null) {
+                        archOsInfoFilled = true;
+                    }
+                    Assert.assertTrue("The image's arch and/or os info should be filled in", archOsInfoFilled);
+                });
+            }
+        });
     }
 }

@@ -99,6 +99,8 @@ public class WebhookIT extends BaseIT {
     private final String installationId = "1179416";
     private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
     private final String toolAndWorkflowRepoToolPath = "DockstoreTestUser2/test-workflows-and-tools/md5sum";
+    private final String taggedToolRepo = "dockstore-testing/tagged-apptool";
+    private final String taggedToolRepoPath = "dockstore-testing/tagged-apptool/md5sum";
     private final String authorsRepo = "DockstoreTestUser2/test-authors";
     private FileDAO fileDAO;
 
@@ -128,7 +130,7 @@ public class WebhookIT extends BaseIT {
                 "foobar", "wdl", "/test.json");
         workflowApi.manualRegister(SourceControl.GITHUB.name(), DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME, "/Dockstore.cwl", "",
                 DescriptorLanguage.CWL.getShortName(), "/test.json");
-        
+
         // Refresh should work
         workflow = workflowApi.refresh(workflow.getId(), false);
         assertEquals("Workflow should be FULL mode", Workflow.ModeEnum.FULL, workflow.getMode());
@@ -350,7 +352,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(null, workflow.getDefaultVersion());
 
     }
-    
+
     private io.dockstore.openapi.client.model.Workflow getFoobar1Workflow(io.dockstore.openapi.client.api.WorkflowsApi client) {
         return client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", WorkflowSubClass.BIOWORKFLOW, "versions");
     }
@@ -968,6 +970,35 @@ public class WebhookIT extends BaseIT {
         Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
     }
 
+    @Test
+    public void testSnapshotAppTool() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + taggedToolRepoPath, APPTOOL, "versions,validations");
+
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
+        client.publish(appTool.getId(), publishRequest);
+
+        // snapshot the version
+        validVersion.setFrozen(true);
+        client.updateWorkflowVersion(appTool.getId(), Lists.newArrayList(validVersion));
+
+        // check if version is frozen
+        appTool = client.getWorkflow(appTool.getId(), null);
+        validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        assertTrue(validVersion.isFrozen());
+
+        // check if image has been created
+        long imageCount = testingPostgres.runSelectStatement("select count(*) from entry_version_image where versionid = " + validVersion.getId(), long.class);
+        assertEquals(1, imageCount);
+    }
 
     @Test
     public void testTRSWithAppTools() throws Exception {

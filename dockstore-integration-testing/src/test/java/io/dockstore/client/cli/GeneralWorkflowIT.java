@@ -817,12 +817,12 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     public void testFreezingInvalidWorkflow() {
-        String versionToSnapshot = "1.0.1";
+        String versionToSnapshot = "1.0";
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/md5sum-checker", "",
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/tagged-apptool", "",
             DescriptorLanguage.CWL.toString(),
-            SourceControl.GITHUB, "/md5sum/md5sum-tool.cwl", false);
+            SourceControl.GITHUB, "/tool.cwl", false);
         Workflow workflowBeforeFreezing = workflowsApi.refresh(workflow.getId(), false);
         WorkflowVersion version =
             workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
