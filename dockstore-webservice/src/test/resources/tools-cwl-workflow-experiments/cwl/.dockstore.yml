@@ -1,0 +1,6 @@
+version: 1.2
+workflows:
+  - subclass: CWL
+    primaryDescriptorPath: /workflow_docker.cwl
+    testParameterFiles:
+      - /workflow.json

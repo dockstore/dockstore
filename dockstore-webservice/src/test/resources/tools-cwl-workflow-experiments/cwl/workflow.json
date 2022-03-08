@@ -1,0 +1,7 @@
+{
+  "input_file": {
+    "class": "File",
+    "path": "foo.txt"
+  },
+  "compute_exponent": 1
+}

@@ -258,28 +258,21 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         descriptorValidation = new Validation(identifiedType, validDescriptorSet);
         version.addOrUpdateValidation(descriptorValidation);
 
-        DescriptorLanguage.FileType testParameterType = null;
-        switch (identifiedType) {
-        case DOCKSTORE_SMK:
-            testParameterType = DescriptorLanguage.FileType.SMK_TEST_PARAMS;
-            break;
-        case DOCKSTORE_CWL:
-            testParameterType = DescriptorLanguage.FileType.CWL_TEST_JSON;
-            break;
-        case DOCKSTORE_WDL:
-            testParameterType = DescriptorLanguage.FileType.WDL_TEST_JSON;
-            break;
-        case DOCKSTORE_GXFORMAT2:
-            testParameterType = DescriptorLanguage.FileType.GXFORMAT2_TEST_FILE;
-            break;
-        case NEXTFLOW_CONFIG:
-            // Nextflow does not have test parameter files, so do not fail
-            break;
-        default:
-            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+        DescriptorLanguage descriptorLanguage = null;
+        try {
+            // get the descriptor language associated with this file
+            descriptorLanguage = DescriptorLanguage.getDescriptorLanguage(identifiedType);
+        } catch (UnsupportedOperationException exception) {
+            // if the file type was not a valid workflow file type throw an exception
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow or test file type.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        DescriptorLanguage.FileType testParameterType = descriptorLanguage.getTestParamType();
         if (testParameterType != null) {
+            // if the type of the file is already a test file then this is an error
+            if (testParameterType == identifiedType) {
+                throw new CustomWebApplicationException(identifiedType + " is a test file type, not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+            }
             VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);

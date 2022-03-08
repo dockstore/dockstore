@@ -47,7 +47,7 @@ public interface MinimalLanguageInterface extends ExtensionPoint {
     /**
      * Find all files that would be useful to display to a user (hopefully all files needed to launch a workflow)
      *
-     * @param initialPath path to the intial descriptor as set by the user (e.g. /example_directory/Dockstore.cwl)
+     * @param initialPath path to the initial descriptor as set by the user (e.g. /example_directory/Dockstore.cwl)
      * @param contents    contents of the initial descriptor
      * @param reader      get additional files and their content
      * @return a map from absolute paths (relative to the root of the repo, e.g. "common.cwl" as opposed to "../common.cwl") to their file types and content
