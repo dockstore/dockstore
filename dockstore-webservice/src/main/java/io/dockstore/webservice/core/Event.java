@@ -33,11 +33,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "event")
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:hiddenfield"})
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryIds", query = "SELECT e FROM Event e where (e.tool.id in :entryIDs) OR (e.workflow.id in :entryIDs) ORDER by id desc"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE Event e where e.tool.id = :entryId OR e.workflow.id = :entryId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE Event e WHERE e.organization.id = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryIds", query = "SELECT e FROM Event e where (e.tool.id in :entryIDs) OR (e.workflow.id in :entryIDs) OR (e.apptool.id in :entryIDs) ORDER by id desc"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE from Event e where e.tool.id = :entryId OR e.workflow.id = :entryId OR e.apptool.id = :entryID"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE from Event e WHERE e.organization.id = :organizationId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByUserId", query = "SELECT e FROM Event e where e.user.id = :userId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryId", query = "SELECT e FROM Event e where e.workflow.id = :entryId OR e.tool.id = :entryId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryId", query = "SELECT e FROM Event e where e.workflow.id = :entryId OR e.tool.id = :entryId OR e.apptool.id = :entryid"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganization", query = "SELECT eve FROM Event eve WHERE eve.organization.id = :organizationId ORDER BY id DESC"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByOrganizationIds", query = "SELECT e FROM Event e WHERE e.organization.id in :organizationIDs ORDER BY id DESC"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.countAllForOrganization", query = "SELECT COUNT(*) FROM Event eve WHERE eve.organization.id = :organizationId")
@@ -71,6 +71,12 @@ public class Event {
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
     @JsonIgnoreProperties({ "workflowVersions" })
     private BioWorkflow workflow;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "apptoolId", referencedColumnName = "id")
+    @ApiModelProperty(value = "(github) apps tool that the event is acting on.", position = 9)
+    @JsonIgnoreProperties({ "workflowVersions" })
+    private AppTool apptool;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
@@ -149,6 +155,14 @@ public class Event {
 
     public void setTool(Tool tool) {
         this.tool = tool;
+    }
+
+    public AppTool getApptool() {
+        return apptool;
+    }
+
+    public void setApptool(AppTool apptool) {
+        this.apptool = apptool;
     }
 
     public Workflow getWorkflow() {
@@ -294,6 +308,7 @@ public class Event {
             event.user = this.user;
             event.organization = this.organization;
             event.tool = this.tool;
+            event.apptool = this.appTool;
             event.workflow = this.bioWorkflow;
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;
