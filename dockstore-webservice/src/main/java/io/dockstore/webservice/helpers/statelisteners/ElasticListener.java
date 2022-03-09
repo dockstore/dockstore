@@ -208,7 +208,8 @@ public class ElasticListener implements StateListenerInterface {
                         }
                     }
                 } else {
-                    LOGGER.info("Bulk [{}] completed in {} milliseconds", executionId, response.getTook().getMillis());
+                    LOGGER.info("Bulk [{}] completed in {} milliseconds",
+                            executionId, response.getTook().getMillis());
                 }
             }
 

@@ -26,6 +26,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
@@ -48,6 +49,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class PublicStateManagerIT {
     private static PublicStateManager manager;
+    private static ElasticSearchHelper esHelper;
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -63,6 +65,7 @@ public class PublicStateManagerIT {
         PublicStateManagerIT.manager = PublicStateManager.getInstance();
         manager.reset();
         manager.setConfig(config);
+        esHelper = new ElasticSearchHelper(config.getEsConfiguration());
     }
 
     @Before
@@ -112,11 +115,13 @@ public class PublicStateManagerIT {
     }
 
     @Test
-    public void addAnEntry() throws IOException {
+    public void addAnEntry() throws Exception {
         Tool tool = getFakeTool(false);
         manager.handleIndexUpdate(tool, StateManagerMode.UPDATE);
 
+        esHelper.start(); // Need to start the elasticsearch client because ElasticListener.bulkUpsert relies on it
         manager.bulkUpsert(Collections.singletonList(tool));
+        esHelper.stop();
 
         //TODO: should extend this by checking that elastic search holds the content we expect
         Assert.assertFalse(systemOutRule.getLog().contains("Connection refused"));
