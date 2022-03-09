@@ -389,7 +389,7 @@
     </changeSet>
     <changeSet author="ktran (generated)" id="orcidAuthorInfo">
         <sql dbms="postgresql">
-            <comment>Remove all ORCID authors because there's duplicates many duplicates</comment>
+            <comment>Remove all ORCID authors because there are many duplicates</comment>
             delete from version_orcidauthor;
             delete from orcidauthor;
         </sql>

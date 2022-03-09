@@ -444,7 +444,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @GET
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}")
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "Retrieve a workflow version by ID",  hidden = true)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
     @Operation(operationId = "getWorkflowVersionById", description = "Retrieve a workflow version by ID", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Get a workflow version by ID", content = @Content(
             mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = WorkflowVersion.class)))
@@ -1517,7 +1517,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork(readOnly = true)
     @Path("{workflowId}/workflowVersions/{workflowVersionId}/sourcefiles")
-    @ApiOperation(value = "Retrieve sourcefiles for an entry's version",  hidden = true)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
     @Operation(operationId = "getWorkflowVersionsSourcefiles", description = "Retrieve sourcefiles for an entry's version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     public SortedSet<SourceFile> getWorkflowVersionsSourceFiles(@Parameter(hidden = true, name = "user")@Auth Optional<User> user,
             @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH) @PathParam("workflowId") Long workflowId,
@@ -1628,7 +1628,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Operation(operationId = "updateDescriptorType", summary = "Changes the descriptor type of an unpublished, invalid workflow.", description = "Use with caution. This deletes all the workflowVersions, only use if there's nothing worth keeping in the workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "hidden", hidden = true)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
     public Workflow updateLanguage(
             @ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
             @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId,
@@ -1664,7 +1664,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Language parser calls this endpoint to update parsed information for this version",
         security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "hidden", hidden = true)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
     public void postParsedInformation(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @Parameter(name = "workflowId", description = "Workflow to retrieve the version from.", required = true, in = ParameterIn.PATH)
         @PathParam("workflowId") Long workflowId,
@@ -1890,10 +1890,8 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (checkIncludes(include, ALIASES)) {
             Hibernate.initialize(workflowVersion.getAliases());
         }
-        if (checkIncludes(include, IMAGES)) {
-            if (workflowVersion.isFrozen()) {
-                Hibernate.initialize(workflowVersion.getImages());
-            }
+        if (checkIncludes(include, IMAGES) && workflowVersion.isFrozen()) {
+            Hibernate.initialize(workflowVersion.getImages());
         }
         if (checkIncludes(include, AUTHORS)) {
             Hibernate.initialize(workflowVersion.getOrcidAuthors());
@@ -2152,7 +2150,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @GET
     @Path("/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors")
     @UnitOfWork(readOnly = true)
-    @ApiOperation(value = "Retrieve ORCID author information for a workflow version",  hidden = true)
+    @ApiOperation(value = "See OpenApi for details", hidden = true)
     @Operation(operationId = "getWorkflowVersionOrcidAuthors", description = "Retrieve ORCID author information for a workflow version", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Retrieve ORCID author information for a workflow version", content = @Content(
             mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = OrcidAuthorInformation.class))))

@@ -50,7 +50,6 @@ import org.orcid.jaxb.model.v3.release.record.Email;
 import org.orcid.jaxb.model.v3.release.record.ExternalID;
 import org.orcid.jaxb.model.v3.release.record.ExternalIDs;
 import org.orcid.jaxb.model.v3.release.record.Name;
-import org.orcid.jaxb.model.v3.release.record.Person;
 import org.orcid.jaxb.model.v3.release.record.Record;
 import org.orcid.jaxb.model.v3.release.record.Work;
 import org.orcid.jaxb.model.v3.release.record.WorkTitle;
@@ -70,14 +69,14 @@ public final class ORCIDHelper {
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final Pattern ORCID_ID_PATTERN = Pattern.compile("\\d{4}-\\d{4}-\\d{4}-\\d{4}"); // ex: 1234-1234-1234-1234
-    private static final Class[] JAXB_CONTEXT_CLASSES = {Work.class, Works.class, Record.class, Person.class, Employments.class};
+    private static final Class[] JAXB_CONTEXT_CLASSES = {Work.class, Works.class, Record.class};
 
     private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
     private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
-    private static JAXBContext jaxbContext;
     private static String orcidClientId;
     private static String orcidClientSecret;
-    private static String readPublicAccessToken;
+    private static volatile JAXBContext jaxbContext;
+    private static volatile String readPublicAccessToken;
 
     private ORCIDHelper() {
     }
@@ -91,6 +90,7 @@ public final class ORCIDHelper {
             baseApiUrl = orcidAuthUrl.getProtocol() + "://api." + orcidAuthUrl.getHost() + "/v3.0/";
         } catch (MalformedURLException e) {
             LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
+            throw new CustomWebApplicationException("The ORCID Auth URL in the dropwizard configuration file is malformed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
         orcidClientId = configuration.getOrcidClientID();
@@ -123,7 +123,9 @@ public final class ORCIDHelper {
 
                 HttpResponse<String> response = HttpClient.newBuilder().proxy(ProxySelector.getDefault()).build().send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() != HttpStatus.SC_OK) {
-                    LOG.error("Could not get ORCID access token: {}", response.body());
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Could not get ORCID access token: {}", response.body());
+                    }
                     return Optional.empty();
                 }
 
@@ -320,21 +322,23 @@ public final class ORCIDHelper {
                 if (response.statusCode() == HttpStatus.SC_NOT_FOUND) {
                     LOG.error("ORCID iD {} not found", id);
                 } else {
-                    LOG.error("Could not get ORCID record with ID {}: {}", id, response.body());
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Could not get ORCID record with iD {}: {}", id, response.body());
+                    }
                 }
                 return Optional.empty();
             }
 
-            Record record = transformXmlToRecord(response.body());
+            Record orcidRecord = transformXmlToRecord(response.body());
             // Deprecated and deactivated records don't have data
             // Info about deprecated record: https://support.orcid.org/hc/en-us/articles/360006896634-Removing-your-additional-or-duplicate-ORCID-iD
             // Info about deactivated record: https://support.orcid.org/hc/en-us/articles/360006973813-Deactivating-an-ORCID-account
-            if (record.getDeprecated() != null || record.getHistory().getDeactivationDate() != null) {
+            if (orcidRecord.getDeprecated() != null || orcidRecord.getHistory().getDeactivationDate() != null) {
                 return Optional.empty();
             }
 
             // Set name
-            Name name = record.getPerson().getName();
+            Name name = orcidRecord.getPerson().getName();
             if (name != null && name.getVisibility() == Visibility.PUBLIC) {
                 String fullName = name.getGivenNames().getContent(); // At a minimum, the Orcid Author will have a first name because it's mandated by ORCID
 
@@ -345,12 +349,12 @@ public final class ORCIDHelper {
             }
 
             // Set email
-            Optional<Email> primaryEmail = record.getPerson().getEmails().getEmails().stream().filter(Email::isPrimary).findFirst();
+            Optional<Email> primaryEmail = orcidRecord.getPerson().getEmails().getEmails().stream().filter(Email::isPrimary).findFirst();
             if (primaryEmail.isPresent() && primaryEmail.get().getVisibility() == Visibility.PUBLIC) {
                 orcidAuthorInfo.setEmail(primaryEmail.get().getEmail());
             }
 
-            Employments employments = record.getActivitiesSummary().getEmployments();
+            Employments employments = orcidRecord.getActivitiesSummary().getEmployments();
             Collection<AffiliationGroup<EmploymentSummary>> affiliationGroups = employments.getEmploymentGroups();
             if (affiliationGroups.iterator().hasNext()) {
                 // Set affiliation and role
@@ -361,8 +365,12 @@ public final class ORCIDHelper {
                 }
             }
             return Optional.of(orcidAuthorInfo);
-        } catch (URISyntaxException | IOException | InterruptedException | JAXBException e) {
-            LOG.error("Could not create ORCID author", e);
+        } catch (URISyntaxException | IOException | JAXBException e) {
+            LOG.error("Could not get ORCID author information", e);
+            return Optional.empty();
+        } catch (InterruptedException e) {
+            LOG.error("Could not get ORCID author information", e);
+            Thread.currentThread().interrupt();
             return Optional.empty();
         }
     }
