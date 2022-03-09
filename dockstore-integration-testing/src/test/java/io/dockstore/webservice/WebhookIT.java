@@ -966,6 +966,34 @@ public class WebhookIT extends BaseIT {
     }
 
     @Test
+    public void testStarAppTool() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
+
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
+        client.publish(appTool.getId(), publishRequest);
+
+        List<io.dockstore.openapi.client.model.Entry> pre = usersApi.getStarredTools();
+        assertEquals(0, pre.stream().filter(e -> e.getId().equals(appTool.getId())).count());
+        assertEquals(0, client.getStarredUsers(appTool.getId()).size());
+
+        client.starEntry(appTool.getId(), new io.swagger.client.model.StarRequest().star(true));
+
+        List<io.dockstore.openapi.client.model.Entry> post = usersApi.getStarredTools();
+        assertEquals(1, post.stream().filter(e -> e.getId().equals(appTool.getId())).count());
+        assertEquals(pre.size() + 1, post.size());
+        assertEquals(1, client.getStarredUsers(appTool.getId()).size());
+    }
+
+    @Test
     public void testTRSWithAppTools() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
