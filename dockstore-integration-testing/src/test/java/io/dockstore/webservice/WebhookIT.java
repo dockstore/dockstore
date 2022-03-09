@@ -966,6 +966,32 @@ public class WebhookIT extends BaseIT {
     }
 
     @Test
+    public void testStarAppTool() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+        WorkflowsApi client = new WorkflowsApi(webClient);
+
+        client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+        Workflow appTool = client.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions,validations");
+
+        PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
+        WorkflowVersion validVersion = appTool.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).findFirst().get();
+        testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
+        client.publish(appTool.getId(), publishRequest);
+
+        int preCount = usersApi.getStarredTools().size();
+
+        io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
+        new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient).starEntry1(appTool.getId(), starRequest);
+
+        int postCount = usersApi.getStarredTools().size();
+
+        assertEquals(postCount, preCount + 1);
+    }
+
+    @Test
     public void testTRSWithAppTools() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
