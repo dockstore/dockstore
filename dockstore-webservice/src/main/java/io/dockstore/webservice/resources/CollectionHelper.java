@@ -96,7 +96,7 @@ class CollectionHelper {
                 break;
             case "apptool":
                 entry.setDescriptorTypes(entryDAO.getWorkflowsDescriptorTypes(entry.getId()));
-                // we get file descriptor types like workflows, but make the UI treat these as workflows (so icon and url work)
+                // we get file descriptor types like workflows, but make the UI treat these as tools (so icon and url work)
                 entry.setEntryType("tool");
                 break;
             default:
