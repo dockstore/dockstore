@@ -6,18 +6,13 @@ import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SE
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.AppTool;
-import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
-import io.dockstore.webservice.core.Event.Builder;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
-import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ParamHelper;
@@ -257,13 +252,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Event for addition
         Organization organization = organizationDAO.findById(organizationId);
 
-        Event.Builder eventBuild = new Event.Builder()
+        Event.Builder eventBuild = entryAndCollection.getLeft().getEventBuilder()
                 .withOrganization(organization)
                 .withCollection(entryAndCollection.getRight())
                 .withInitiatorUser(user)
                 .withType(Event.EventType.ADD_TO_COLLECTION);
-
-        eventBuild = modifyBuilderForCollection(entryAndCollection, eventBuild);
 
         Event addToCollectionEvent = eventBuild.build();
         eventDAO.create(addToCollectionEvent);
@@ -309,13 +302,11 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Event for deletion
         Organization organization = organizationDAO.findById(organizationId);
 
-        Event.Builder eventBuild = new Event.Builder()
+        Event.Builder eventBuild = entryAndCollection.getLeft().getEventBuilder()
                 .withOrganization(organization)
                 .withCollection(entryAndCollection.getRight())
                 .withInitiatorUser(user)
                 .withType(Event.EventType.REMOVE_FROM_COLLECTION);
-
-        eventBuild = modifyBuilderForCollection(entryAndCollection, eventBuild);
 
         Event removeFromCollectionEvent = eventBuild.build();
         eventDAO.create(removeFromCollectionEvent);
@@ -326,21 +317,6 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
 
         return collectionDAO.findById(collectionId);
-    }
-
-    private Builder modifyBuilderForCollection(ImmutablePair<Entry, Collection> entryAndCollection, Builder eventBuild) {
-        if (entryAndCollection.getLeft() instanceof BioWorkflow) {
-            eventBuild = eventBuild.withBioWorkflow((BioWorkflow) entryAndCollection.getLeft());
-        } else if (entryAndCollection.getLeft() instanceof Service) {
-            eventBuild = eventBuild.withService((Service) entryAndCollection.getLeft());
-        } else if (entryAndCollection.getLeft() instanceof Tool) {
-            eventBuild = eventBuild.withTool((Tool) entryAndCollection.getLeft());
-        } else if (entryAndCollection.getLeft() instanceof AppTool) {
-            eventBuild = eventBuild.withAppTool((AppTool) entryAndCollection.getLeft());
-        } else {
-            throw new UnsupportedOperationException("something has gone wrong, attempting to add unknown entry type to collection");
-        }
-        return eventBuild;
     }
 
     /**
