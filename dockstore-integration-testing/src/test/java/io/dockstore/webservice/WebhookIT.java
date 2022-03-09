@@ -982,15 +982,15 @@ public class WebhookIT extends BaseIT {
         client.publish(appTool.getId(), publishRequest);
 
         List<io.dockstore.openapi.client.model.Entry> pre = usersApi.getStarredTools();
-        assertEquals(client.getStarredUsers(appTool.getId()).size(), 0);
         assertEquals(pre.stream().filter(e -> e.getId() == appTool.getId()).count(), 0);
+        assertEquals(client.getStarredUsers(appTool.getId()).size(), 0);
 
         client.starEntry(appTool.getId(), new io.swagger.client.model.StarRequest().star(true));
 
         List<io.dockstore.openapi.client.model.Entry> post = usersApi.getStarredTools();
-        assertEquals(client.getStarredUsers(appTool.getId()).size(), 1);
         assertEquals(post.stream().filter(e -> e.getId() == appTool.getId()).count(), 1);
         assertEquals(post.size(), pre.size() + 1);
+        assertEquals(client.getStarredUsers(appTool.getId()).size(), 1);
     }
 
     @Test
