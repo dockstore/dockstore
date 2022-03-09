@@ -102,7 +102,7 @@ public class OrganizationIT extends BaseIT {
      *
      * @return Organization object
      */
-    private static Organization stubOrgObject() {
+    public static Organization stubOrgObject() {
         String markdownDescription = "An h1 header ============ Paragraphs are separated by a blank line. 2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists look like: * this one * that one * the other one Note that --- not considering the asterisk --- the actual text content starts at 4-columns in. > Block quotes are > written like so. > > They can span multiple paragraphs, > if you like. Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., \"it's all in chapters 12--14\"). Three dots ... will be converted to an ellipsis. Unicode is supported. ☺ ";
         Organization organization = new Organization();
         organization.setName("testname");
@@ -121,7 +121,7 @@ public class OrganizationIT extends BaseIT {
      *
      * @return openAPI Organization object
      */
-    private io.dockstore.openapi.client.model.Organization openApiStubOrgObject() {
+    public static io.dockstore.openapi.client.model.Organization openApiStubOrgObject() {
         String markdownDescription = "An h1 header ============ Paragraphs are separated by a blank line. 2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists look like: * this one * that one * the other one Note that --- not considering the asterisk --- the actual text content starts at 4-columns in. > Block quotes are > written like so. > > They can span multiple paragraphs, > if you like. Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., \"it's all in chapters 12--14\"). Three dots ... will be converted to an ellipsis. Unicode is supported. ☺ ";
         io.dockstore.openapi.client.model.Organization organization = new io.dockstore.openapi.client.model.Organization();
         organization.setName("testname");
@@ -153,7 +153,7 @@ public class OrganizationIT extends BaseIT {
      *
      * @return Collection object
      */
-    private io.dockstore.openapi.client.model.Collection openApiStubCollectionObject() {
+    public static io.dockstore.openapi.client.model.Collection openApiStubCollectionObject() {
         io.dockstore.openapi.client.model.Collection collection = new io.dockstore.openapi.client.model.Collection();
         collection.setName("Alignment");
         collection.setDisplayName("Alignment Algorithms");
