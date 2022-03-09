@@ -981,14 +981,16 @@ public class WebhookIT extends BaseIT {
         testingPostgres.runUpdateStatement("update apptool set actualdefaultversion = " + validVersion.getId() + " where id = " + appTool.getId());
         client.publish(appTool.getId(), publishRequest);
 
-        int preCount = usersApi.getStarredTools().size();
+        List<io.dockstore.openapi.client.model.Entry> pre = usersApi.getStarredTools();
+        assertEquals(client.getStarredUsers(appTool.getId()).size(), 0);
+        assertEquals(pre.stream().filter(e -> e.getId() == appTool.getId()).count(), 0);
 
-        io.dockstore.openapi.client.model.StarRequest starRequest = new io.dockstore.openapi.client.model.StarRequest().star(true);
-        new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient).starEntry1(appTool.getId(), starRequest);
+        client.starEntry(appTool.getId(), new io.swagger.client.model.StarRequest().star(true));
 
-        int postCount = usersApi.getStarredTools().size();
-
-        assertEquals(postCount, preCount + 1);
+        List<io.dockstore.openapi.client.model.Entry> post = usersApi.getStarredTools();
+        assertEquals(client.getStarredUsers(appTool.getId()).size(), 1);
+        assertEquals(post.stream().filter(e -> e.getId() == appTool.getId()).count(), 1);
+        assertEquals(post.size(), pre.size() + 1);
     }
 
     @Test
