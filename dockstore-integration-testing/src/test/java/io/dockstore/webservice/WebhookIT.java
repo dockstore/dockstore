@@ -940,7 +940,6 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
@@ -970,7 +969,6 @@ public class WebhookIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
         final io.dockstore.openapi.client.ApiClient openApiClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
-        io.dockstore.openapi.client.api.UsersApi usersApi = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
         WorkflowsApi client = new WorkflowsApi(webClient);
 
         client.handleGitHubRelease(taggedToolRepo, BasicIT.USER_2_USERNAME, "refs/tags/1.0", installationId);
