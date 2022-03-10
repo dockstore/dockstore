@@ -7175,6 +7175,10 @@ definitions:
         position: 8
         description: "Version associated with the event."
         $ref: "#/definitions/Version"
+      apptool:
+        position: 9
+        description: "(github) apps tool that the event is acting on."
+        $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
