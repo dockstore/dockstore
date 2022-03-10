@@ -69,13 +69,11 @@ public final class ORCIDHelper {
     private static final String ORCID_XML_CONTENT_TYPE = "application/vnd.orcid+xml";
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
     private static final Pattern ORCID_ID_PATTERN = Pattern.compile("\\d{4}-\\d{4}-\\d{4}-\\d{4}"); // ex: 1234-1234-1234-1234
-    private static final Class[] JAXB_CONTEXT_CLASSES = {Work.class, Works.class, Record.class};
 
     private static String baseApiUrl; // baseApiUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/"
     private static String baseUrl; // baseUrl should be something like "https://sandbox.orcid.org/" or "https://orcid.org/"
     private static String orcidClientId;
     private static String orcidClientSecret;
-    private static volatile JAXBContext jaxbContext;
     private static volatile String readPublicAccessToken;
 
     private ORCIDHelper() {
@@ -99,13 +97,6 @@ public final class ORCIDHelper {
 
     public static String getOrcidBaseApiUrl() {
         return baseApiUrl;
-    }
-
-    private static JAXBContext getJaxbContext() throws JAXBException {
-        if (jaxbContext == null) {
-            jaxbContext = JAXBContext.newInstance(JAXB_CONTEXT_CLASSES);
-        }
-        return jaxbContext;
     }
 
     /**
@@ -258,7 +249,7 @@ public final class ORCIDHelper {
     }
 
     private static String transformWork(Work work) throws JAXBException {
-        JAXBContext context = getJaxbContext();
+        JAXBContext context = JAXBContext.newInstance(Work.class);
         StringWriter writer = new StringWriter();
         Marshaller marshaller = context.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
@@ -301,7 +292,7 @@ public final class ORCIDHelper {
      * Transforms the ORCID XML response from a get all works call to a Works object. Assumes that the XML from Orcid is safe.
      */
     private static Works transformXmlToWorks(String worksXml) throws JAXBException {
-        JAXBContext context = getJaxbContext();
+        JAXBContext context = JAXBContext.newInstance(Works.class);
         Unmarshaller unmarshaller = context.createUnmarshaller();
         return (Works) unmarshaller.unmarshal(new StringReader(worksXml));
     }
@@ -395,7 +386,7 @@ public final class ORCIDHelper {
      * @return Record Object
      */
     public static Record transformXmlToRecord(String recordXml) throws JAXBException {
-        JAXBContext context = getJaxbContext();
+        JAXBContext context = JAXBContext.newInstance(Record.class);
         Unmarshaller unmarshaller = context.createUnmarshaller();
         return (Record) unmarshaller.unmarshal(new StringReader(recordXml));
     }
