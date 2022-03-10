@@ -17,6 +17,7 @@ package io.dockstore.webservice.statelisteners;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -30,6 +31,7 @@ import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
+import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
@@ -80,13 +82,26 @@ public class PublicStateManagerIT {
         boolean verified = jsonNode.get("verified").booleanValue();
         Assert.assertFalse(verified);
         tool = getFakeTool(true);
+        final ObjectMapper mapper = Jackson.newObjectMapper();
+        String beforeString = mapper.writeValueAsString(tool);
         jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
+        String afterString = mapper.writeValueAsString(tool);
+        Assert.assertEquals("The original tool should not have changed.", beforeString, afterString);
         verified = jsonNode.get("verified").booleanValue();
         Assert.assertTrue(verified);
     }
 
     private Tool getFakeTool(boolean verified) throws IOException {
         Tool tool = new Tool();
+        Tag tag = getFakeTag(verified);
+        tool.setRegistry("potato");
+        tool.addWorkflowVersion(tag);
+        tool.setActualDefaultVersion(tag);
+        tool.setIsPublished(true);
+        return tool;
+    }
+
+    private Tag getFakeTag(boolean verified) throws IOException {
         Tag tag = new Tag();
         SourceFile file = new SourceFile();
         File cwlFilePath = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
@@ -107,11 +122,7 @@ public class PublicStateManagerIT {
         tag.addSourceFile(file);
         tag.setReference("master");
         tag.updateVerified();
-        tool.setRegistry("potato");
-        tool.addWorkflowVersion(tag);
-        tool.setActualDefaultVersion(tag);
-        tool.setIsPublished(true);
-        return tool;
+        return tag;
     }
 
     @Test
