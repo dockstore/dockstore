@@ -776,7 +776,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiOperation(value = "Get the authenticated user's starred tools.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User u = userDAO.findById(user.getId());
-        return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
+        return u.getStarredEntries().stream().filter(element -> element instanceof Tool || element instanceof AppTool)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
