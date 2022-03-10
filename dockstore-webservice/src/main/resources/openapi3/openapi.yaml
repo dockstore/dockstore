@@ -7926,6 +7926,8 @@ components:
     Event:
       type: object
       properties:
+        apptool:
+          $ref: '#/components/schemas/AppTool'
         collection:
           $ref: '#/components/schemas/Collection'
         dbCreateDate:

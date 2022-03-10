@@ -387,4 +387,10 @@
             alter table sourcefile enable row level security;
         </sql>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="addAppToolEvents">
+        <addColumn tableName="event">
+            <column name="apptoolid" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="apptoolid" baseTableName="event" constraintName="fkApptoolId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="apptool"/>
+    </changeSet>
 </databaseChangeLog>
