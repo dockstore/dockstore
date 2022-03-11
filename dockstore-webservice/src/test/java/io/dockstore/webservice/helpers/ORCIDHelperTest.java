@@ -36,4 +36,12 @@ public class ORCIDHelperTest {
             Assert.assertEquals(nonDoi, ORCIDHelper.doiToUrl(nonDoi));
         }
     }
+
+    @Test
+    public void testIsValidOrcidId() {
+        Assert.assertTrue(ORCIDHelper.isValidOrcidId("1234-1234-1234-1234"));
+        Assert.assertFalse(ORCIDHelper.isValidOrcidId("https://orcid.org/1234-1234-1234-1234"));
+        Assert.assertFalse(ORCIDHelper.isValidOrcidId("1-1-1-1"));
+        Assert.assertFalse(ORCIDHelper.isValidOrcidId("orcidId"));
+    }
 }

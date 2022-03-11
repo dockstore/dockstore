@@ -19,6 +19,7 @@
 package io.dockstore.webservice;
 
 import static io.dockstore.client.cli.WorkflowIT.DOCKSTORE_TEST_USER_2_HELLO_DOCKSTORE_NAME;
+import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
 import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
@@ -40,10 +41,13 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
 import io.dockstore.openapi.client.api.LambdaEventsApi;
+import io.dockstore.openapi.client.model.OrcidAuthorInformation;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.specto.hoverfly.junit.core.Hoverfly;
+import io.specto.hoverfly.junit.core.HoverflyMode;
 import io.swagger.api.impl.ToolsImplCommon;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -793,6 +797,7 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, version.getOrcidAuthors().size());
         final String wdlDescriptorAuthorName = "Descriptor Author";
         assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
+
         // CWL workflow
         workflow = client.getWorkflowByPath(cwlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
@@ -838,6 +843,36 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, version.getAuthors().size());
         version.getAuthors().stream().forEach(author -> assertNotNull(author.getEmail()));
         assertEquals(0, version.getOrcidAuthors().size());
+    }
+
+    /**
+     * This test relies on Hoverfly to simulate responses from the ORCID API.
+     * In the simulation, the responses are crafted for an ORCID author with ID 0000-0002-6130-1021.
+     * ORCID authors with other IDs are considered "not found" by the simulation.
+     */
+    @Test
+    public void testGetWorkflowVersionOrcidAuthors() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final io.dockstore.openapi.client.ApiClient webClient = getOpenAPIWebClient(BasicIT.USER_2_USERNAME, testingPostgres);
+        io.dockstore.openapi.client.api.WorkflowsApi workflowsApi = new io.dockstore.openapi.client.api.WorkflowsApi(webClient);
+        String wdlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar");
+
+        // Workflows containing 1 descriptor author and multiple .dockstore.yml authors.
+        // If the .dockstore.yml specifies an author, then only the .dockstore.yml's authors should be saved
+        workflowsApi.handleGitHubRelease("refs/heads/main", installationId, authorsRepo, BasicIT.USER_2_USERNAME);
+        // WDL workflow
+        io.dockstore.openapi.client.model.Workflow workflow = workflowsApi.getWorkflowByPath(wdlWorkflowRepoPath, WorkflowSubClass.BIOWORKFLOW, "versions,authors");
+        io.dockstore.openapi.client.model.WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
+        assertEquals(2, version.getAuthors().size());
+        assertEquals(2, version.getOrcidAuthors().size());
+
+        // Hoverfly is not used as a class rule here because for some reason it's trying to intercept GitHub in both spy and simulation mode
+        try (Hoverfly hoverfly = new Hoverfly(HoverflyMode.SIMULATE)) {
+            hoverfly.start();
+            hoverfly.simulate(ORCID_SIMULATION_SOURCE);
+            List<OrcidAuthorInformation> orcidAuthorInfo = workflowsApi.getWorkflowVersionOrcidAuthors(workflow.getId(), version.getId());
+            assertEquals(1, orcidAuthorInfo.size()); // There's 1 OrcidAuthorInfo instead of 2 because only 1 ORCID ID from the version exists on ORCID
+        }
     }
 
     /**

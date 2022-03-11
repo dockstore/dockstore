@@ -1,15 +1,21 @@
 package io.dockstore.webservice;
 
+import static io.dockstore.common.Hoverfly.NOT_FOUND_ORCID_USER;
 import static io.dockstore.common.Hoverfly.ORCID_SIMULATION_SOURCE;
+import static io.dockstore.common.Hoverfly.ORCID_USER_3;
 import static io.dockstore.webservice.helpers.ORCIDHelper.getPutCodeFromLocation;
 
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestingPostgres;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.OrcidAuthorInformation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ORCIDHelper;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.specto.hoverfly.junit.rule.HoverflyRule;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -19,7 +25,9 @@ import java.util.Optional;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import org.apache.http.HttpStatus;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,7 +41,22 @@ public class ORCIDHelperTest {
     @ClassRule
     public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(ORCID_SIMULATION_SOURCE);
 
-    private static final String BASE_URL = "https://api.sandbox.orcid.org/v3.0/";
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+            DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+
+    protected static TestingPostgres testingPostgres;
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+        SUPPORT.before();
+        testingPostgres = new TestingPostgres(SUPPORT);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        SUPPORT.after();
+    }
 
     @Test
     public void exportEntry() throws JAXBException, IOException, DatatypeConfigurationException, URISyntaxException, InterruptedException {
@@ -52,21 +75,44 @@ public class ORCIDHelperTest {
         String token = "fakeToken";
         Optional<Version> optionalVersion = Optional.of(version);
         String orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, null);
-        HttpResponse<String> response = ORCIDHelper.postWorkString(BASE_URL, id, orcidWorkString, token);
+        HttpResponse<String> response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
         Assert.assertEquals(HttpStatus.SC_CREATED, response.statusCode());
         Assert.assertEquals("", response.body());
         String putCode = getPutCodeFromLocation(response);
-        response = ORCIDHelper.postWorkString(BASE_URL, id, orcidWorkString, token);
+        response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
         Assert.assertEquals(HttpStatus.SC_CONFLICT, response.statusCode());
         Assert.assertTrue(response.body().contains("409 Conflict: You have already added this activity (matched by external identifiers), please see element with put-code " + putCode + ". If you are trying to edit the item, please use PUT instead of POST."));
         orcidWorkString = ORCIDHelper.getOrcidWorkString(entry, optionalVersion, putCode);
-        response = ORCIDHelper.postWorkString(BASE_URL, id, orcidWorkString, token);
+        response = ORCIDHelper.postWorkString(id, orcidWorkString, token);
         Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.statusCode());
         Assert.assertTrue(response.body().contains("400 Bad Request: Put-code is included when not expected. When posting new activities, the put code should be omitted."));
-        response = ORCIDHelper.putWorkString(BASE_URL, id, orcidWorkString, token, putCode);
+        response = ORCIDHelper.putWorkString(id, orcidWorkString, token, putCode);
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
         Assert.assertTrue(response.body().contains("work:work put-code=\"" + putCode + "\" "));
-        response = ORCIDHelper.getAllWorks(BASE_URL, id, token);
+        response = ORCIDHelper.getAllWorks(id, token);
         Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+    }
+
+    @Test
+    public void testOrcidAuthor() throws URISyntaxException, IOException, InterruptedException {
+        Optional<String> accessToken = ORCIDHelper.getOrcidAccessToken();
+        Assert.assertTrue(accessToken.isPresent());
+
+        HttpResponse<String> response = ORCIDHelper.getRecordDetails(ORCID_USER_3, accessToken.get());
+        Assert.assertEquals(HttpStatus.SC_OK, response.statusCode());
+
+        Optional<OrcidAuthorInformation> orcidAuthorInformation = ORCIDHelper.getOrcidAuthorInformation(ORCID_USER_3, accessToken.get());
+        Assert.assertTrue("Should be able to get Orcid Author information", orcidAuthorInformation.isPresent());
+        Assert.assertNotNull(orcidAuthorInformation.get().getOrcid());
+        Assert.assertNotNull(orcidAuthorInformation.get().getName());
+        Assert.assertNotNull(orcidAuthorInformation.get().getEmail());
+        Assert.assertNotNull(orcidAuthorInformation.get().getAffiliation());
+        Assert.assertNotNull(orcidAuthorInformation.get().getRole());
+
+        response = ORCIDHelper.getRecordDetails(NOT_FOUND_ORCID_USER, accessToken.get());
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, response.statusCode());
+
+        orcidAuthorInformation = ORCIDHelper.getOrcidAuthorInformation(NOT_FOUND_ORCID_USER, accessToken.get());
+        Assert.assertTrue("An ORCID author that doesn't exist should not have ORCID info", orcidAuthorInformation.isEmpty());
     }
 }
