@@ -17,6 +17,7 @@ package io.dockstore.webservice.statelisteners;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.BioWorkflow;
@@ -26,9 +27,11 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.statelisteners.ElasticListener;
+import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +51,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class PublicStateManagerIT {
     private static PublicStateManager manager;
+    private static ElasticSearchHelper esHelper;
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -63,6 +67,7 @@ public class PublicStateManagerIT {
         PublicStateManagerIT.manager = PublicStateManager.getInstance();
         manager.reset();
         manager.setConfig(config);
+        esHelper = new ElasticSearchHelper(config.getEsConfiguration());
     }
 
     @Before
@@ -77,13 +82,26 @@ public class PublicStateManagerIT {
         boolean verified = jsonNode.get("verified").booleanValue();
         Assert.assertFalse(verified);
         tool = getFakeTool(true);
+        final ObjectMapper mapper = Jackson.newObjectMapper();
+        String beforeString = mapper.writeValueAsString(tool);
         jsonNode = ElasticListener.dockstoreEntryToElasticSearchObject(tool);
+        String afterString = mapper.writeValueAsString(tool);
+        Assert.assertEquals("The original tool should not have changed.", beforeString, afterString);
         verified = jsonNode.get("verified").booleanValue();
         Assert.assertTrue(verified);
     }
 
     private Tool getFakeTool(boolean verified) throws IOException {
         Tool tool = new Tool();
+        Tag tag = getFakeTag(verified);
+        tool.setRegistry("potato");
+        tool.addWorkflowVersion(tag);
+        tool.setActualDefaultVersion(tag);
+        tool.setIsPublished(true);
+        return tool;
+    }
+
+    private Tag getFakeTag(boolean verified) throws IOException {
         Tag tag = new Tag();
         SourceFile file = new SourceFile();
         File cwlFilePath = new File(ResourceHelpers.resourceFilePath("schema.cwl"));
@@ -104,19 +122,17 @@ public class PublicStateManagerIT {
         tag.addSourceFile(file);
         tag.setReference("master");
         tag.updateVerified();
-        tool.setRegistry("potato");
-        tool.addWorkflowVersion(tag);
-        tool.setActualDefaultVersion(tag);
-        tool.setIsPublished(true);
-        return tool;
+        return tag;
     }
 
     @Test
-    public void addAnEntry() throws IOException {
+    public void addAnEntry() throws Exception {
         Tool tool = getFakeTool(false);
         manager.handleIndexUpdate(tool, StateManagerMode.UPDATE);
 
+        esHelper.start(); // Need to start the elasticsearch client because ElasticListener.bulkUpsert relies on it
         manager.bulkUpsert(Collections.singletonList(tool));
+        esHelper.stop();
 
         //TODO: should extend this by checking that elastic search holds the content we expect
         Assert.assertFalse(systemOutRule.getLog().contains("Connection refused"));
