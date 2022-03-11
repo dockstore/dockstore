@@ -6104,6 +6104,10 @@ paths:
         schema:
           type: boolean
           default: false
+      - in: query
+        name: subclass
+        schema:
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
