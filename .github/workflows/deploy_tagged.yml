@@ -23,6 +23,6 @@ jobs:
           restore-keys: |
            ${{ runner.os }}-maven-
       - name: Deploy with mvnw
-        run: ./mvnw --batch-mode deploy scm:tag -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ changelist  }}
+        run: ./mvnw --batch-mode deploy scm:tag -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist  }}
         env: 
           SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
