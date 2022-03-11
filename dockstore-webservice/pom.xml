@@ -1164,9 +1164,6 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <configuration>
-                    <excludeFilterFile>src/main/resources/findbugs-exclude.xml</excludeFilterFile>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1195,7 +1192,7 @@
                 -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>4.4.0</version>
+                <version>4.8.0</version>
                 <configuration>
                     <driver>org.postgresql.Driver</driver>
                     <referenceDriver>org.postgresql.Driver</referenceDriver>

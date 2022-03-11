@@ -435,7 +435,7 @@
                     <version>1.2.5</version>
                     <configuration>
                         <outputDirectory>${project.basedir}/generated/src/main/resources/</outputDirectory>
-                        <updatePomFile>false</updatePomFile>
+                        <updatePomFile>true</updatePomFile>
                         <!-- snyk is picky about filenames -->
                         <flattenedPomFilename>pom.xml</flattenedPomFilename>
                     </configuration>
