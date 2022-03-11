@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -185,6 +186,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
+        final ArrayList<Throwable> afterBulkFailures = new ArrayList<>(); // Store information about failures encountered by the BulkProcessor.Listener
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
@@ -198,6 +200,13 @@ public class ElasticListener implements StateListenerInterface {
                     BulkResponse response) {
                 if (response.hasFailures()) {
                     LOGGER.error("Bulk [{}] executed with failures", executionId);
+                    for (BulkItemResponse bulkItemResponse : response.getItems()) {
+                        if (bulkItemResponse.isFailed()) {
+                            Throwable failure = bulkItemResponse.getFailure().getCause().getCause();
+                            LOGGER.error("Item {} in bulk [{}] executed with failure", bulkItemResponse.getItemId(), executionId, failure);
+                            afterBulkFailures.add(failure);
+                        }
+                    }
                 } else {
                     LOGGER.info("Bulk [{}] completed in {} milliseconds",
                             executionId, response.getTook().getMillis());
@@ -208,6 +217,7 @@ public class ElasticListener implements StateListenerInterface {
             public void afterBulk(long executionId, BulkRequest request,
                     Throwable failure) {
                 LOGGER.error("Failed to execute bulk", failure);
+                afterBulkFailures.add(failure);
             }
         };
 
@@ -238,6 +248,9 @@ public class ElasticListener implements StateListenerInterface {
                 if (!terminated) {
                     LOGGER.error("Could not submit " + index + " index to elastic search in time");
                     throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search in time", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+                if (!afterBulkFailures.isEmpty()) {
+                    throw new CustomWebApplicationException("Encountered failures while executing bulk index", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } catch (InterruptedException e) {
                 LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
