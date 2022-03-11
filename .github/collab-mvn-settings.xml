@@ -1,7 +1,7 @@
 <settings>
   <servers>
     <server>
-      <id>snapshots</id>
+      <id>central</id>
       <username>dockstore-bot</username>
       <password>${env.COLLAB_DEPLOY_TOKEN}</password>
     </server>
