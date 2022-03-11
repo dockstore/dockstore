@@ -13,7 +13,7 @@ info:
     url: https://github.com/dockstore/dockstore/blob/develop/LICENSE
   termsOfService: https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf
   title: Dockstore API
-  version: 1.13.0-alpha.0-SNAPSHOT
+  version: 1.13.0-SNAPSHOT
 servers:
 - description: Current server when hosted on AWS
   url: /api
@@ -1811,10 +1811,10 @@ paths:
             - DOCKSTORE_SMK
             - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -2306,10 +2306,10 @@ paths:
                   - DOCKSTORE_SMK
                   - SMK_TEST_PARAMS
                   - DOCKSTORE_CWL
-                  - DOCKSTORE_WDL
-                  - DOCKERFILE
                   - CWL_TEST_JSON
+                  - DOCKSTORE_WDL
                   - WDL_TEST_JSON
+                  - DOCKERFILE
                   - NEXTFLOW
                   - NEXTFLOW_CONFIG
                   - NEXTFLOW_TEST_PARAMS
@@ -7117,10 +7117,10 @@ paths:
             - DOCKSTORE_SMK
             - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -8567,10 +8567,10 @@ components:
           - DOCKSTORE_SMK
           - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
@@ -9218,10 +9218,10 @@ components:
           - DOCKSTORE_SMK
           - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
