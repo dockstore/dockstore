@@ -1,0 +1,28 @@
+name: Tagged release deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      changelist:
+        description: 'patch and pre-release metadata'
+        required: true
+        default: '.0-alpha.1'
+
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      # Step that does that actual cache save and restore
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+           ${{ runner.os }}-maven-
+      - name: Deploy with mvnw
+        run: ./mvnw --batch-mode deploy scm:tag -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ changelist  }}
+        env: 
+          SNAPSHOT_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
