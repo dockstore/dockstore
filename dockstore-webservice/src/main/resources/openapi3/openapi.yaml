@@ -1811,10 +1811,10 @@ paths:
             - DOCKSTORE_SMK
             - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -2306,10 +2306,10 @@ paths:
                   - DOCKSTORE_SMK
                   - SMK_TEST_PARAMS
                   - DOCKSTORE_CWL
-                  - DOCKSTORE_WDL
-                  - DOCKERFILE
                   - CWL_TEST_JSON
+                  - DOCKSTORE_WDL
                   - WDL_TEST_JSON
+                  - DOCKERFILE
                   - NEXTFLOW
                   - NEXTFLOW_CONFIG
                   - NEXTFLOW_TEST_PARAMS
@@ -7117,10 +7117,10 @@ paths:
             - DOCKSTORE_SMK
             - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -8567,10 +8567,10 @@ components:
           - DOCKSTORE_SMK
           - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
@@ -9218,10 +9218,10 @@ components:
           - DOCKSTORE_SMK
           - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
