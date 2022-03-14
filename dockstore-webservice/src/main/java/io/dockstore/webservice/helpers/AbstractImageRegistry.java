@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import static io.dockstore.webservice.helpers.SourceCodeRepoFactory.parseGitUrl;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -657,7 +658,7 @@ public abstract class AbstractImageRegistry {
 
             if (projectResponse.isPresent()) {
                 final String projectJSON = projectResponse.get();
-                Gson gson = new Gson();
+                Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
                 Type gitLabContainerRegistryListType = new TypeToken<ArrayList<GitLabContainerRegistry>>() { }.getType();
                 List<GitLabContainerRegistry> registries = gson.fromJson(projectJSON, gitLabContainerRegistryListType);
 
