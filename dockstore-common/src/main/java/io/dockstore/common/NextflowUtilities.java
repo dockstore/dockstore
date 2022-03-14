@@ -97,7 +97,7 @@ public final class NextflowUtilities {
     public static Configuration grabConfig(File content) {
         try {
             final List<String> strings =
-                Arrays.asList("java", "--illegal-access=permit", "-jar", getNextflowTargetFile().getAbsolutePath(), "config", "-properties");
+                Arrays.asList("java", "--add-opens java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED", "-jar", getNextflowTargetFile().getAbsolutePath(), "config", "-properties");
             final String join = Joiner.on(" ").join(strings);
             LOG.info("running: " + join);
             final ImmutablePair<String, String> execute = executeNextflowConfig(content, join);
