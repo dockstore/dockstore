@@ -785,7 +785,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @ApiParam(value = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
-        @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter", defaultValue = "") @QueryParam("subclass") WorkflowSubClass subclass,
+        @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter") @QueryParam("subclass") WorkflowSubClass subclass,
         @Context HttpServletResponse response) {
         // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
