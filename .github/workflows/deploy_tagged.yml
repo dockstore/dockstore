@@ -26,6 +26,6 @@ jobs:
         run: |
          git config --global user.email "${{ github.actor }}"
          git config --global user.name "${{ github.actor }}"
-         ./mvnw --batch-mode deploy scm:tag -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist  }}
+         ./mvnw --batch-mode deploy -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist  }}
         env: 
           COLLAB_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
