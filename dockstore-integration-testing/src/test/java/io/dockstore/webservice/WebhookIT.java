@@ -972,6 +972,9 @@ public class WebhookIT extends BaseIT {
         client.publish(appTool.getId(), publishRequest);
         client.publish(workflow.getId(), publishRequest);
         Assert.assertFalse(systemOutRule.getLog().contains("Could not submit index to elastic search"));
+
+
+
     }
 
     @Test

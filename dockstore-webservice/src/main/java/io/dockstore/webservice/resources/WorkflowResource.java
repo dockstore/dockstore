@@ -769,6 +769,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         return publishedWorkflow;
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -783,12 +784,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
-        @ApiParam(value = "services", defaultValue = "false") @DefaultValue("false") @QueryParam("services") boolean services,
+        @ApiParam(value = "Should only be used by Dockstore CLI versions < 1.12.0. Indicates whether to get a service or workflow") @DefaultValue("false") @QueryParam("services") boolean services,
+        @ApiParam(value = "Which workflow subclass to retrieve. If present takes precedence over services parameter") @QueryParam("subclass") WorkflowSubClass subclass,
         @Context HttpServletResponse response) {
         // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
-        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder, (Class<Workflow>)(services
-            ? Service.class : BioWorkflow.class));
+        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder,
+            (Class<Workflow>) workflowSubClass(services, subclass));
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         EntryDAO entryDAO = services ? serviceEntryDAO : bioWorkflowDAO;
@@ -1896,6 +1898,13 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
         if (checkIncludes(include, AUTHORS)) {
             Hibernate.initialize(workflowVersion.getOrcidAuthors());
         }
+    }
+
+    private Class<? extends Workflow> workflowSubClass(boolean services, WorkflowSubClass subClass) {
+        if (subClass != null) {
+            return getSubClass(subClass);
+        }
+        return services ? Service.class : BioWorkflow.class;
     }
 
     @Override

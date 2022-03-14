@@ -143,6 +143,9 @@ public class WorkflowIT extends BaseIT {
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
     private static final String GATK_SV_TAG = "dockstore-test";
     private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
+    private final String installationId = "1179416";
+    private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
+    private final String toolAndWorkflowRepoToolPath = "DockstoreTestUser2/test-workflows-and-tools/md5sum";
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -1004,21 +1007,21 @@ public class WorkflowIT extends BaseIT {
 
         // should start with nothing published
         assertTrue("should start with nothing published ",
-            workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).isEmpty());
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
 
         refreshByOrganizationReplacement(workflowApi, openAPIWebClient);
 
         assertTrue("should remain with nothing published ",
-            workflowApi.allPublishedWorkflows(null, null, null, null, null, false).isEmpty());
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).isEmpty());
         // ensure that sorting or filtering don't expose unpublished workflows
         assertTrue("should start with nothing published ",
-            workflowApi.allPublishedWorkflows(null, null, null, "descriptorType", "asc", false).isEmpty());
+            workflowApi.allPublishedWorkflows(null, null, null, "descriptorType", "asc", false, null).isEmpty());
         assertTrue("should start with nothing published ",
-            workflowApi.allPublishedWorkflows(null, null, "hello", null, null, false).isEmpty());
+            workflowApi.allPublishedWorkflows(null, null, "hello", null, null, false, null).isEmpty());
         assertTrue("should start with nothing published ",
-            workflowApi.allPublishedWorkflows(null, null, "hello", "descriptorType", "asc", false).isEmpty());
+            workflowApi.allPublishedWorkflows(null, null, "hello", "descriptorType", "asc", false, null).isEmpty());
 
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
@@ -1029,8 +1032,8 @@ public class WorkflowIT extends BaseIT {
         // publish one
         final PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
-        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(),
-            1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
+        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size(),
+            1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size());
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId(), null);
         assertNotNull("did not get published workflow", publishedWorkflow);
         final Workflow publishedWorkflowByPath = workflowApi
@@ -1045,23 +1048,47 @@ public class WorkflowIT extends BaseIT {
                 workflowApi.refresh(workflow.getId(), false);
                 workflowApi.publish(workflow.getId(), publishRequest);
             });
-        List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null, false);
+        List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null);
         // test offset
         assertEquals("offset does not seem to be working",
-            workflowApi.allPublishedWorkflows("1", null, null, null, null, false).get(0).getId(), workflows.get(1).getId());
+            workflowApi.allPublishedWorkflows("1", null, null, null, null, false, null).get(0).getId(), workflows.get(1).getId());
         // test limit
-        assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null, false).size());
+        assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null, false, null).size());
         // test custom sort column
-        List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc", false);
-        List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc", false);
+        List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc", false, null);
+        List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc", false, null);
         assertEquals("sort by id does not seem to be working", ascId.get(0).getId(), descId.get(descId.size() - 1).getId());
         // test filter
-        List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale", "stars", null, false);
+        List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale", "stars", null, false, null);
         assertEquals(1, filteredLowercase.size());
         filteredLowercase.forEach(workflow -> assertNull(workflow.getAliases()));
-        List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE", "stars", null, false);
+        List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE", "stars", null, false, null);
         assertEquals(1, filteredUppercase.size());
         assertEquals(filteredLowercase, filteredUppercase);
+
+        // Tests for subclass
+
+        assertEquals("There should be no app tools published", 0,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
+                WorkflowSubClass.APPTOOL.getValue()).size());
+
+        final int publishedWorkflowsCount = workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
+            null).size();
+        assertEquals("An null subclass param defaults to services param value",
+            publishedWorkflowsCount,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
+            WorkflowSubClass.BIOWORKFLOW.getValue()).size());
+
+        // Create an app tool and publish it
+        workflowApi.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/main", installationId);
+        Workflow appTool = workflowApi.getWorkflowByPath("github.com/" + toolAndWorkflowRepoToolPath, APPTOOL, "versions");
+        workflowApi.publish(appTool.getId(), publishRequest);
+        assertEquals("There should be 1 app tool published", 1,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
+                WorkflowSubClass.APPTOOL.getValue()).size());
+        assertEquals("Published workflow count should be unchanged", publishedWorkflowsCount,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null, false,
+                WorkflowSubClass.BIOWORKFLOW.getValue()).size());
     }
 
     /**
@@ -1113,8 +1140,8 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("A workflow version that had a README description should get updated", testWDL.get().getDescription().contains("test repo for CWL and WDL workflows"));
 
         // Assert some things
-        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size(),
-            1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false).size());
+        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size(),
+            1, workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null).size());
         final long count3 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", long.class);
         assertEquals("One workflow is in full mode", 1, count3);
