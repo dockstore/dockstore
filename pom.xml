@@ -536,7 +536,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <!-- toggle this when we want the jar to only support Java 17, unless we read up on multi-release jars -->
-                    <release>17</release>
+                    <release>11</release>
                 </configuration>
             </plugin>
             <plugin>
