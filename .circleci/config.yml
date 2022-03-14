@@ -218,7 +218,7 @@ jobs:
       - image: cimg/openjdk:<< pipeline.parameters.java-tag >>
         environment:
           PGHOST: 127.0.0.1
-      - image: circleci/postgres:13.3
+      - image: cimg/postgres:13.3
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: postgres
