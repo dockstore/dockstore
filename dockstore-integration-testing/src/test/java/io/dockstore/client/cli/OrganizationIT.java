@@ -72,8 +72,9 @@ public class OrganizationIT extends BaseIT {
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
+    private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAa", "BAA", "baa123", "baa-baa", "b-a-a-a-a", "b0-a-9", "baa-1234", "baa1-234", "zzz");
     // All numbers, too short, bad pattern, too long, foreign characters
-    private final List<String> badNames = Arrays.asList("1234", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "我喜欢狗");
+    private final List<String> badNames = Arrays.asList("1234", "", "a", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
     // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
     private final List<String> badAvatarUrls = Arrays
         .asList("https://via.placeholder.com/150", "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
@@ -1323,7 +1324,7 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
-     * Helper that creates an Organization with a name that should fail
+     * Helper that creates a Collection with a name that should fail
      *
      * @param name
      * @param organizationsApi
@@ -1342,6 +1343,18 @@ public class OrganizationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to create a collection with an incorrect name: " + name);
         }
+    }
+
+    /**
+     * Helper that creates a Collection with a name that should succeed
+     *
+     * @param name
+     * @param organizationsApi
+     */
+    private void createCollectionWithGoodName(String name, OrganizationsApi organizationsApi, Long organizationId) {
+        Collection collection = stubCollectionObject();
+        collection.setName(name);
+        organizationsApi.createCollection(organizationId, collection);
     }
 
     @Test
@@ -1621,6 +1634,10 @@ public class OrganizationIT extends BaseIT {
         assertEquals(1, collectionById.getEntries().size());
 
         testVersionRemoval(organizationsApi, organization, collectionId, entryId, versionId, webClientUser2);
+
+        goodCollectionNames.forEach(name -> {
+            createCollectionWithGoodName(name, organizationsApi, organizationID);
+        });
     }
 
     /**
