@@ -1354,6 +1354,7 @@ public class OrganizationIT extends BaseIT {
     private void createCollectionWithGoodName(String name, OrganizationsApi organizationsApi, Long organizationId) {
         Collection collection = stubCollectionObject();
         collection.setName(name);
+        collection.setDisplayName(name);
         organizationsApi.createCollection(organizationId, collection);
     }
 
