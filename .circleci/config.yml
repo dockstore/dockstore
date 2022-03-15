@@ -231,6 +231,12 @@ jobs:
       - install-postgres
       - install-git-secrets
       - setup_postgres
+      - run: # Useful for verifying versions
+          name: Java/Maven/Python versions
+          command: |
+            java -version
+            ./mvnw -v
+            python3 -V
       - run:
           name: run the actual tests
           command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
@@ -425,6 +431,12 @@ commands:
           name: Wait for ES
           command: |
             wget --output-document /dev/null --waitretry=5 --tries=10 --retry-connrefused localhost:9200 || true
+      - run: # Useful for verifying default versions on machine image
+          name: Java/Maven/Python versions
+          command: |
+            java -version
+            ./mvnw -v
+            python3 -V
       - run:
           name: run integration test
           command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
