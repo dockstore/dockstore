@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -31,6 +32,11 @@ import org.mockito.Mockito;
  * @since 1.5.0
  */
 public class CWLHandlerTest {
+
+    private Set<String> toValues(Set<FileFormat> formats) {
+        return formats.stream().map(FileFormat::getValue).collect(Collectors.toSet());
+    }
+
     /**
      * Tests if the input and output file formats can be extracted from a CWL descriptor file
      * @throws Exception
@@ -40,9 +46,19 @@ public class CWLHandlerTest {
         CWLHandler cwlHandler = new CWLHandler();
         String filePath = ResourceHelpers.resourceFilePath("metadata_example4.cwl");
         Set<FileFormat> inputs = cwlHandler.getFileFormats(FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), "inputs");
-        Assert.assertTrue(inputs.stream().anyMatch(input -> input.getValue().equals("http://edamontology.org/format_2572")));
+        Assert.assertEquals(Set.of("http://edamontology.org/format_2572"), toValues(inputs));
         Set<FileFormat> outputs = cwlHandler.getFileFormats(FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), "outputs");
-        Assert.assertTrue(outputs.stream().anyMatch(input -> input.getValue().equals("http://edamontology.org/format_1964")));
+        Assert.assertEquals(Set.of("http://edamontology.org/format_1964"), toValues(outputs));
+    }
+
+    @Test
+    public void getInputFileFormatsSpecifiedAsArray() throws Exception {
+        CWLHandler cwlHandler = new CWLHandler();
+        String filePath = ResourceHelpers.resourceFilePath("metadata_example5.cwl");
+        Set<FileFormat> inputs = cwlHandler.getFileFormats(FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), "inputs");
+        Assert.assertEquals(Set.of("http://edamontology.org/format_2572", "http://edamontology.org/format_2573"), toValues(inputs));
+        Set<FileFormat> outputs = cwlHandler.getFileFormats(FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), "outputs");
+        Assert.assertEquals(Set.of("http://edamontology.org/format_1964", "http://edamontology.org/format_1965"), toValues(outputs));
     }
 
     @Test

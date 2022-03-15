@@ -263,14 +263,24 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return fileFormats;
     }
 
+    private void addFileFormat(Set<FileFormat> fileFormats, Object format) {
+        if (format instanceof String) {
+            FileFormat fileFormat = new FileFormat();
+            fileFormat.setValue((String)format);
+            fileFormats.add(fileFormat);
+        } else {
+            LOG.debug("malformed file format value");
+        }
+    }
+
     private void handlePotentialFormatEntry(Set<FileFormat> fileFormats, Object v) {
         if (v instanceof Map) {
             Map<String, String> outputMap = (Map<String, String>)v;
-            String format = outputMap.get("format");
-            if (format != null) {
-                FileFormat fileFormat = new FileFormat();
-                fileFormat.setValue(format);
-                fileFormats.add(fileFormat);
+            Object format = outputMap.get("format");
+            if (format instanceof List) {
+                ((List<?>)format).forEach(formatElement -> addFileFormat(fileFormats, formatElement));
+            } else {
+                addFileFormat(fileFormats, format);
             }
         }
     }
