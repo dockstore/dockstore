@@ -72,7 +72,7 @@ public class OrganizationIT extends BaseIT {
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
-    private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAa", "BAA", "baa123", "baa-baa", "b-a-a-a-a", "b0-a-9", "baa-1234", "baa1-234", "zzz");
+    private final List<String> goodCollectionNames = Arrays.asList("baa", "baaa", "bAaaa", "BAAAAA", "baa123", "daa-daa", "d-a-a-a-a", "d0-a-9", "daa-1234", "daa5-678", "aaz", "zaa");
     // All numbers, too short, bad pattern, too long, foreign characters
     private final List<String> badNames = Arrays.asList("1234", "", "a", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a b", "我喜欢狗", "-", "---", "-abc", "abc-", "a--b");
     // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
