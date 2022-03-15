@@ -1811,10 +1811,10 @@ paths:
             - DOCKSTORE_SMK
             - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -2306,10 +2306,10 @@ paths:
                   - DOCKSTORE_SMK
                   - SMK_TEST_PARAMS
                   - DOCKSTORE_CWL
-                  - DOCKSTORE_WDL
-                  - DOCKERFILE
                   - CWL_TEST_JSON
+                  - DOCKSTORE_WDL
                   - WDL_TEST_JSON
+                  - DOCKERFILE
                   - NEXTFLOW
                   - NEXTFLOW_CONFIG
                   - NEXTFLOW_TEST_PARAMS
@@ -5860,8 +5860,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         in: query
         name: include
         schema:
@@ -6028,8 +6028,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         in: query
         name: include
         schema:
@@ -6114,6 +6114,10 @@ paths:
         schema:
           type: boolean
           default: false
+      - in: query
+        name: subclass
+        schema:
+          $ref: '#/components/schemas/WorkflowSubClass'
       responses:
         default:
           content:
@@ -6136,8 +6140,8 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         in: query
         name: include
         schema:
@@ -6342,8 +6346,8 @@ paths:
         schema:
           type: integer
           format: int64
-      - description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+      - description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         in: query
         name: include
         schema:
@@ -7051,6 +7055,78 @@ paths:
       - bearer: []
       tags:
       - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}:
+    get:
+      description: Retrieve a workflow version by ID
+      operationId: getWorkflowVersionById
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: "Comma-delimited list of fields to include: validations, aliases,\
+          \ images, authors"
+        in: query
+        name: include
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+          description: Get a workflow version by ID
+        "400":
+          description: Bad Request
+      security:
+      - bearer: []
+      tags:
+      - workflows
+  /workflows/{workflowId}/workflowVersions/{workflowVersionId}/orcidAuthors:
+    get:
+      description: Retrieve ORCID author information for a workflow version
+      operationId: getWorkflowVersionOrcidAuthors
+      parameters:
+      - description: id of the workflow
+        in: path
+        name: workflowId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - description: id of the workflow version
+        in: path
+        name: workflowVersionId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrcidAuthorInformation'
+          description: Retrieve ORCID author information for a workflow version
+        "400":
+          description: Bad Request
+      security:
+      - bearer: []
+      tags:
+      - workflows
   /workflows/{workflowId}/workflowVersions/{workflowVersionId}/parsedInformation:
     post:
       description: Language parser calls this endpoint to update parsed information
@@ -7117,10 +7193,10 @@ paths:
             - DOCKSTORE_SMK
             - SMK_TEST_PARAMS
             - DOCKSTORE_CWL
-            - DOCKSTORE_WDL
-            - DOCKERFILE
             - CWL_TEST_JSON
+            - DOCKSTORE_WDL
             - WDL_TEST_JSON
+            - DOCKERFILE
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
@@ -7942,6 +8018,8 @@ components:
     Event:
       type: object
       properties:
+        apptool:
+          $ref: '#/components/schemas/AppTool'
         collection:
           $ref: '#/components/schemas/Collection'
         dbCreateDate:
@@ -8283,7 +8361,23 @@ components:
     OrcidAuthor:
       type: object
       properties:
+        id:
+          type: integer
+          format: int64
         orcid:
+          type: string
+    OrcidAuthorInformation:
+      type: object
+      properties:
+        affiliation:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        orcid:
+          type: string
+        role:
           type: string
     OrcidPutCode:
       type: object
@@ -8567,10 +8661,10 @@ components:
           - DOCKSTORE_SMK
           - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
@@ -9218,10 +9312,10 @@ components:
           - DOCKSTORE_SMK
           - SMK_TEST_PARAMS
           - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
           - CWL_TEST_JSON
+          - DOCKSTORE_WDL
           - WDL_TEST_JSON
+          - DOCKERFILE
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS

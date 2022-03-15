@@ -56,6 +56,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
         final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());
+        toolTypes.add(getServiceClass());
         return Response.ok().entity(toolTypes).build();
     }
 }

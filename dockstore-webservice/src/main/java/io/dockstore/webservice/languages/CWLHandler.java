@@ -311,7 +311,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             Preprocessor preprocessor = new Preprocessor(secondarySourceFiles);
             mapping = preprocess(mapping, mainDescriptorPath, preprocessor);
 
-            // verify cwl version is correctly specified
+            // Verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
             if (cwlVersion != null) {
                 final boolean startsWith = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
@@ -323,6 +323,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             } else {
                 LOG.error(CWLHandler.CWL_NO_VERSION_ERROR);
                 throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+            }
+
+            // If the descriptor describes a tool, wrap and process it as a single-step workflow
+            final Object cwlClass = mapping.get("class");
+            if ("CommandLineTool".equals(cwlClass) || "ExpressionTool".equals(cwlClass)) {
+                mapping = convertToolToSingleStepWorkflow(mapping);
             }
 
             JSONObject cwlJson = new JSONObject(mapping);
@@ -372,6 +378,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
+    }
+
+    private Map<String, Object> convertToolToSingleStepWorkflow(Map<String, Object> tool) {
+        Map<String, Object> workflow = new HashMap<>();
+        workflow.put("cwlVersion", "v1.2");
+        workflow.put("class", "Workflow");
+        workflow.put("inputs", Map.of());
+        workflow.put("outputs", Map.of());
+        workflow.put("steps", Map.of("tool", Map.of("run", tool, "in", List.of(), "out", List.of())));
+        return workflow;
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})

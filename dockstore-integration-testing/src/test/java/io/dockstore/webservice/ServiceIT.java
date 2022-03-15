@@ -154,8 +154,8 @@ public class ServiceIT extends BaseIT {
         final CreateContent invoke = new CreateContent().invoke();
         final ApiClient webClient = getWebClient(true, false);
         WorkflowsApi client = new WorkflowsApi(webClient);
-        final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true);
-        final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false);
+        final List<io.swagger.client.model.Workflow> services = client.allPublishedWorkflows(null, null, null, null, null, true, null);
+        final List<io.swagger.client.model.Workflow> workflows = client.allPublishedWorkflows(null, null, null, null, null, false, null);
         assertTrue(workflows.size() >= 2 && workflows.stream()
             .noneMatch(workflow -> workflow.getDescriptorType().getValue().equalsIgnoreCase(DescriptorLanguage.SERVICE.toString())));
         Client jerseyClient = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");

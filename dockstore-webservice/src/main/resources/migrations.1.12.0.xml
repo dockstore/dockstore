@@ -387,4 +387,22 @@
             alter table sourcefile enable row level security;
         </sql>
     </changeSet>
+    <changeSet author="dyuen (generated)" id="addAppToolEvents">
+        <addColumn tableName="event">
+            <column name="apptoolid" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="apptoolid" baseTableName="event" constraintName="fkApptoolId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="apptool"/>
+    </changeSet>
+    <changeSet author="ktran (generated)" id="orcidAuthorInfo">
+        <sql dbms="postgresql">
+            <comment>Remove all ORCID authors because there are many duplicates</comment>
+            delete from version_orcidauthor;
+            delete from orcidauthor;
+        </sql>
+        <sql dbms="postgresql">
+            <comment>Add a constraint to ensure that ORCID IDs have the correct format</comment>
+            alter table orcidauthor add constraint check_valid_orcid check (orcid like '____-____-____-____');
+        </sql>
+        <addUniqueConstraint columnNames="orcid" constraintName="unique_orcid_index" tableName="orcidauthor"/>
+    </changeSet>
 </databaseChangeLog>

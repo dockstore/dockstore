@@ -40,6 +40,7 @@ import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -49,6 +50,7 @@ import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
+import io.dockstore.webservice.jdbi.OrcidAuthorDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
@@ -99,6 +101,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final FileDAO fileDAO;
     protected final LambdaEventDAO lambdaEventDAO;
     protected final FileFormatDAO fileFormatDAO;
+    protected final OrcidAuthorDAO orcidAuthorDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
@@ -121,6 +124,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.eventDAO = new EventDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.orcidAuthorDAO = new OrcidAuthorDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
@@ -453,7 +457,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Create or retrieve workflows based on Dockstore.yml, add or update tag version
+     * Create or retrieve workflows/GitHub App Tools based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
@@ -463,7 +467,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     @SuppressWarnings("lgtm[java/path-injection]")
     private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
-            final SourceFile dockstoreYml, boolean isOneStepWorkflow) {
+            final SourceFile dockstoreYml, boolean isTool) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
             final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
@@ -473,12 +477,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
 
                 String subclass = wf.getSubclass();
+                if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
+                    throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
+                }
+
                 String workflowName = wf.getName();
                 Boolean publish = wf.getPublish();
                 final var defaultVersion = wf.getLatestTagAsDefault();
                 final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
-                Class workflowType = isOneStepWorkflow ? AppTool.class : BioWorkflow.class;
+                Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
                 Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
@@ -697,9 +705,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 })
                 .collect(Collectors.toSet());
         version.setAuthors(authors);
+
         final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
-                .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
-                .map(yamlAuthor -> new OrcidAuthor(yamlAuthor.getOrcid()))
+                .filter(yamlAuthor -> yamlAuthor.getOrcid() != null && ORCIDHelper.isValidOrcidId(yamlAuthor.getOrcid()))
+                .map(yamlAuthor -> {
+                    OrcidAuthor existingOrcidAuthor = orcidAuthorDAO.findByOrcidId(yamlAuthor.getOrcid());
+                    if (existingOrcidAuthor == null) {
+                        long id = orcidAuthorDAO.create(new OrcidAuthor(yamlAuthor.getOrcid()));
+                        return orcidAuthorDAO.findById(id);
+                    } else {
+                        return existingOrcidAuthor;
+                    }
+                })
                 .collect(Collectors.toSet());
         version.setOrcidAuthors(orcidAuthors);
     }

@@ -43,6 +43,9 @@ public class AppTool extends Workflow {
 
     @Override
     public void setParentEntry(Entry parentEntry) {
+        if (parentEntry == null) {
+            return;
+        }
         throw new UnsupportedOperationException("AppTool cannot be a checker workflow");
     }
 
@@ -53,6 +56,9 @@ public class AppTool extends Workflow {
 
     @Override
     public void setIsChecker(boolean isChecker) {
+        if (!isChecker) {
+            return;
+        }
         throw new UnsupportedOperationException("AppTool cannot be a checker workflow");
     }
 

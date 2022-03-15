@@ -5134,8 +5134,8 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
       - name: "subclass"
@@ -5318,8 +5318,8 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
       - name: "subclass"
@@ -5414,10 +5414,21 @@ paths:
         - "desc"
       - name: "services"
         in: "query"
-        description: "services"
+        description: "Should only be used by Dockstore CLI versions < 1.12.0. Indicates\
+          \ whether to get a service or workflow"
         required: false
         type: "boolean"
         default: false
+      - name: "subclass"
+        in: "query"
+        description: "Which workflow subclass to retrieve. If present takes precedence\
+          \ over services parameter"
+        required: false
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
       responses:
         200:
           description: "successful operation"
@@ -5443,8 +5454,8 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
       responses:
@@ -5622,8 +5633,8 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases,\
-          \ images, versions, authors, orcidputcodes"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
       responses:
@@ -7182,6 +7193,10 @@ definitions:
         position: 8
         description: "Version associated with the event."
         $ref: "#/definitions/Version"
+      apptool:
+        position: 9
+        description: "(github) apps tool that the event is acting on."
+        $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
@@ -7455,12 +7470,17 @@ definitions:
   OrcidAuthor:
     type: "object"
     required:
+    - "id"
     - "orcid"
     properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the author in this web service"
       orcid:
         type: "string"
         position: 1
-        description: "ORCID id of the author"
+        description: "ORCID iD of the author"
     description: "This describes an ORCID-author of a version in Dockstore"
   OrcidPutCode:
     type: "object"
@@ -7756,10 +7776,10 @@ definitions:
         - "DOCKSTORE_SMK"
         - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
-        - "DOCKSTORE_WDL"
-        - "DOCKERFILE"
         - "CWL_TEST_JSON"
+        - "DOCKSTORE_WDL"
         - "WDL_TEST_JSON"
+        - "DOCKERFILE"
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
@@ -8447,10 +8467,10 @@ definitions:
         - "DOCKSTORE_SMK"
         - "SMK_TEST_PARAMS"
         - "DOCKSTORE_CWL"
-        - "DOCKSTORE_WDL"
-        - "DOCKERFILE"
         - "CWL_TEST_JSON"
+        - "DOCKSTORE_WDL"
         - "WDL_TEST_JSON"
+        - "DOCKERFILE"
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"

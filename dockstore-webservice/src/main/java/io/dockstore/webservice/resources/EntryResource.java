@@ -71,7 +71,6 @@ import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
@@ -125,7 +124,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private final String discourseApiUsername = "system";
     private final int maxDescriptionLength = 500;
     private final String hostName;
-    private String baseApiURL;
 
     public EntryResource(SessionFactory sessionFactory, TokenDAO tokenDAO, ToolDAO toolDAO, VersionDAO<?> versionDAO, UserDAO userDAO,
         DockstoreWebserviceConfiguration configuration) {
@@ -137,13 +135,6 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         discourseUrl = configuration.getDiscourseUrl();
         discourseKey = configuration.getDiscourseKey();
         discourseCategoryId = configuration.getDiscourseCategoryId();
-        try {
-            URL orcidAuthUrl = new URL(configuration.getUiConfig().getOrcidAuthUrl());
-            // baseUrl should result in something like "https://api.sandbox.orcid.org/v3.0/" or "https://api.orcid.org/v3.0/";
-            baseApiURL = orcidAuthUrl.getProtocol() + "://api." + orcidAuthUrl.getHost() + "/v3.0/";
-        } catch (MalformedURLException e) {
-            LOG.error("The ORCID Auth URL in the dropwizard configuration file is malformed.", e);
-        }
 
         ApiClient apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -316,7 +307,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         if (!orcidByUserId.get(0).getScope().equals(TokenScope.ACTIVITIES_UPDATE)) {
             throw new CustomWebApplicationException("Please relink your ORCID ID in the accounts page.", HttpStatus.SC_UNAUTHORIZED);
         }
-        if (baseApiURL == null) {
+        if (ORCIDHelper.getOrcidBaseApiUrl() == null) {
             LOG.error("ORCID auth URL is likely incorrect");
             throw new CustomWebApplicationException("Could not export to ORCID: Dockstore ORCID integration is not set up correctly.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
@@ -343,7 +334,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
                 // If there's a conflict, the user already has an ORCID work with the same DOI URL. Try to link the ORCID work to the Dockstore entry by getting its put code
                 if (responseCode == HttpStatus.SC_CONFLICT) {
                     String doiUrl = optionalVersion.isPresent() ? optionalVersion.get().getDoiURL() : entry.getConceptDoi();
-                    Optional<Long> existingPutCode = ORCIDHelper.searchForPutCodeByDoiUrl(baseApiURL, orcidId, orcidByUserId, doiUrl);
+                    Optional<Long> existingPutCode = ORCIDHelper.searchForPutCodeByDoiUrl(orcidId, orcidByUserId, doiUrl);
                     if (existingPutCode.isPresent()) {
                         String existingPutCodeString = existingPutCode.get().toString();
                         // Sync the ORCID put code to Dockstore
@@ -392,7 +383,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private int createOrcidWork(Optional<Version> optionalVersion, Entry entry, String orcidId, String orcidWorkString,
         List<Token> orcidTokens, long userId) throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
-                .postWorkString(baseApiURL, orcidId, orcidWorkString, orcidTokens.get(0).getToken());
+                .postWorkString(orcidId, orcidWorkString, orcidTokens.get(0).getToken());
         switch (response.statusCode()) {
         case HttpStatus.SC_CREATED:
             setPutCode(optionalVersion, entry, getPutCodeFromLocation(response), userId);
@@ -411,7 +402,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
     private boolean updateOrcidWork(String orcidId, String orcidWorkString, List<Token> orcidTokens, String putCode)
             throws IOException, URISyntaxException, InterruptedException {
         HttpResponse<String> response = ORCIDHelper
-                .putWorkString(baseApiURL, orcidId, orcidWorkString, orcidTokens.get(0).getToken(), putCode);
+                .putWorkString(orcidId, orcidWorkString, orcidTokens.get(0).getToken(), putCode);
         switch (response.statusCode()) {
         case HttpStatus.SC_OK:
             return true;
