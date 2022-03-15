@@ -82,7 +82,7 @@ public class Collection implements Serializable, Aliasable {
     private long id;
 
     @Column(nullable = false)
-    @Pattern(regexp = "[a-zA-Z](-?[a-zA-Z\\d])*")
+    @Pattern(regexp = "[a-zA-Z](-?[a-zA-Z\\d]){0,38}")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the collection.", required = true, example = "alignment", position = 1)
     @Schema(description = "Name of the collection", required = true, example = "alignment")
