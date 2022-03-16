@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -58,6 +59,9 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
@@ -227,7 +231,19 @@ public class ElasticListener implements StateListenerInterface {
                 (request, bulkListener) ->
                         client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
                 listener);
-            // Set size of actions with `builder.setBulkSize()`, defaults to 5 MB
+            // Default is 5MB
+            final int bulkSizeKb = getEnv("BULK_SIZE_KB", 2500);
+            LOGGER.info("Bulk size is " + bulkSizeKb);
+            builder.setBulkSize(new ByteSizeValue(bulkSizeKb, ByteSizeUnit.KB));
+
+            // Defaults are 50ms, 8 retries
+            final int initialDelayMs = getEnv("BACKOFF_INITIAL_DELAY", 500);
+            LOGGER.info("Initial delay is " + initialDelayMs);
+            final int maxNumberOfRetries = getEnv("BACKOFF_RETRIES", 8);
+            LOGGER.info("Number of retries is " + maxNumberOfRetries);
+            builder.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(
+                initialDelayMs), maxNumberOfRetries));
+
             BulkProcessor bulkProcessor = builder.build();
             entries.forEach(entry -> {
                 try {
@@ -260,6 +276,11 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private int getEnv(final String name, final int defaultValue) {
+        final String envValue = System.getenv(name);
+        return envValue == null ? defaultValue : Integer.parseInt(envValue);
     }
 
     /**
