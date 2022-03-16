@@ -275,7 +275,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
     private void handlePotentialFormatEntry(Set<FileFormat> fileFormats, Object v) {
         if (v instanceof Map) {
-            Map<String, String> outputMap = (Map<String, String>)v;
+            Map<String, Object> outputMap = (Map<String, Object>)v;
             Object format = outputMap.get("format");
             if (format instanceof List) {
                 ((List<?>)format).forEach(formatElement -> addFileFormat(fileFormats, formatElement));
