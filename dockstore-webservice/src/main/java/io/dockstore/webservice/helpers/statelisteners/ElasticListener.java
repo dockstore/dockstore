@@ -280,12 +280,12 @@ public class ElasticListener implements StateListenerInterface {
      */
     private void configureBulkProcessorBuilder(Builder builder) {
         // Default is 5MB
-        final int bulkSizeKb = getEnv("BULK_SIZE_KB", 2500);
+        final int bulkSizeKb = getEnv("ESCLIENT_BULK_SIZE_KB", 2500);
         builder.setBulkSize(new ByteSizeValue(bulkSizeKb, ByteSizeUnit.KB));
 
         // Defaults are 50ms, 8 retries (leaving number of retries the same).
-        final int initialDelayMs = getEnv("BACKOFF_INITIAL_DELAY", 500);
-        final int maxNumberOfRetries = getEnv("BACKOFF_RETRIES", 8);
+        final int initialDelayMs = getEnv("ESCLIENT_BACKOFF_INITIAL_DELAY", 500);
+        final int maxNumberOfRetries = getEnv("ESCLIENT_BACKOFF_RETRIES", 8);
         builder.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(
             initialDelayMs), maxNumberOfRetries));
     }
