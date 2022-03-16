@@ -7296,10 +7296,10 @@ components:
         name:
           type: string
           description: Name of the collection
-          example: Alignment
+          example: alignment
           maxLength: 39
           minLength: 3
-          pattern: "[a-zA-Z][a-zA-Z\\d]*"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
         organizationID:
           type: integer
           format: int64
@@ -7415,10 +7415,10 @@ components:
         name:
           type: string
           description: Name of the collection
-          example: Alignment
+          example: alignment
           maxLength: 39
           minLength: 3
-          pattern: "[a-zA-Z][a-zA-Z\\d]*"
+          pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
         organizationID:
           type: integer
           format: int64
