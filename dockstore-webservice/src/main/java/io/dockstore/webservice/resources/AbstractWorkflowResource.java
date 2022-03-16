@@ -456,6 +456,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return lambdaEvent;
     }
 
+    private void cleanup(Workflow workflow) {
+        sessionFactory.getCurrentSession().evict(workflow);
+    }
+
     /**
      * Create or retrieve workflows/GitHub App Tools based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
@@ -492,7 +496,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
                 } catch (CustomWebApplicationException ex) {
                     LOG.error("Skipping entry in .dockstore.yml");
-                    // TODO cleanup?
+                    cleanup(workflow);
                     continue;
                 }
 
@@ -544,7 +548,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
             } catch (CustomWebApplicationException ex) {
                 LOG.error("Skipping entry in .dockstore.yml");
-                // TODO cleanup?
+                cleanup(workflow);
                 return;
             }
 
