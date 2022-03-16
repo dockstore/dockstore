@@ -52,6 +52,7 @@ import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkProcessor.Builder;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -231,18 +232,8 @@ public class ElasticListener implements StateListenerInterface {
                 (request, bulkListener) ->
                         client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
                 listener);
-            // Default is 5MB
-            final int bulkSizeKb = getEnv("BULK_SIZE_KB", 2500);
-            LOGGER.info("Bulk size is " + bulkSizeKb);
-            builder.setBulkSize(new ByteSizeValue(bulkSizeKb, ByteSizeUnit.KB));
 
-            // Defaults are 50ms, 8 retries
-            final int initialDelayMs = getEnv("BACKOFF_INITIAL_DELAY", 500);
-            LOGGER.info("Initial delay is " + initialDelayMs);
-            final int maxNumberOfRetries = getEnv("BACKOFF_RETRIES", 8);
-            LOGGER.info("Number of retries is " + maxNumberOfRetries);
-            builder.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(
-                initialDelayMs), maxNumberOfRetries));
+            configureBulkProcessorBuilder(builder);
 
             BulkProcessor bulkProcessor = builder.build();
             entries.forEach(entry -> {
@@ -276,6 +267,27 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Configures the builder for the ES bulk processor. The default settings were causing AWS
+     * ES 429 (too many requests) errors with our current prod data. Drop the default size
+     * and increase the time between retries. Environment variables are there for emergency
+     * overrides, but current settings work when tested.
+     *
+     * See https://ucsc-cgl.atlassian.net/browse/SEAB-3829
+     * @param builder
+     */
+    private void configureBulkProcessorBuilder(Builder builder) {
+        // Default is 5MB
+        final int bulkSizeKb = getEnv("BULK_SIZE_KB", 2500);
+        builder.setBulkSize(new ByteSizeValue(bulkSizeKb, ByteSizeUnit.KB));
+
+        // Defaults are 50ms, 8 retries (leaving number of retries the same).
+        final int initialDelayMs = getEnv("BACKOFF_INITIAL_DELAY", 500);
+        final int maxNumberOfRetries = getEnv("BACKOFF_RETRIES", 8);
+        builder.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(
+            initialDelayMs), maxNumberOfRetries));
     }
 
     private int getEnv(final String name, final int defaultValue) {
