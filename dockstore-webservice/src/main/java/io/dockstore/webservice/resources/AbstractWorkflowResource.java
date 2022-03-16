@@ -488,7 +488,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
                 Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
                 Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+                try {
+                    addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+                } catch (CustomWebApplicationException ex) {
+                    LOG.error("Skipping entry in .dockstore.yml");
+                    // TODO cleanup?
+                    continue;
+                }
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -534,7 +540,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             final List<YamlAuthor> yamlAuthors = service.getAuthors();
 
             Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
-            addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+            try {
+                addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+            } catch (CustomWebApplicationException ex) {
+                LOG.error("Skipping entry in .dockstore.yml");
+                // TODO cleanup?
+                return;
+            }
 
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -676,6 +688,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             }
         } catch (IOException ex) {
             final String message = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
+            LOG.error(message, ex);
+            throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
+        } catch (RuntimeException ex) {
+            final String message = "Error processing .dockstore.yml";
             LOG.error(message, ex);
             throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
