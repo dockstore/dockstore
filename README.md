@@ -103,11 +103,15 @@ As an alternative to the following commands, if you do not have Maven installed 
     # instead of
     mvn clean install
 
-If you maven build in the root directory this will build not only the web service but the client tool:
+If you maven build in the root directory this will build all modules:
 
     mvn clean install
     # or
     mvn clean install -Punit-tests
+    
+Consider the following if you need to build a specific version (such as in preparation for creating a tag for a release):
+
+    mvnw clean install  -Dchangelist=.0-beta.5 #or whatever version you need 
     
 If you're running tests on CircleCI (or otherwise have access to the confidential data bundle) Run them via:
 
