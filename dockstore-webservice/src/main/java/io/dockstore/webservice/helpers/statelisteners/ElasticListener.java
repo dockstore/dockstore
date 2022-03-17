@@ -36,6 +36,7 @@ import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -292,7 +293,14 @@ public class ElasticListener implements StateListenerInterface {
 
     private int getEnv(final String name, final int defaultValue) {
         final String envValue = System.getenv(name);
-        return envValue == null ? defaultValue : Integer.parseInt(envValue);
+        if (envValue != null) {
+            try {
+                return Integer.parseInt(envValue);
+            } catch (NumberFormatException ex) {
+                LOGGER.error(MessageFormat.format("Value {0} specified for {1} is not numeric, defaulting back to {2}", envValue, name, defaultValue), ex);
+            }
+        }
+        return defaultValue;
     }
 
     /**
