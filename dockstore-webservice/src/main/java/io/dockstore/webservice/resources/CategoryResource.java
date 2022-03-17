@@ -63,7 +63,6 @@ public class CategoryResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
-    @Path("")
     @Operation(operationId = "getCategories", summary = "Retrieve all categories.", description = "Retrieve all categories.")
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully retrieved categories", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Category.class))))
     public List<Category> getCategories(

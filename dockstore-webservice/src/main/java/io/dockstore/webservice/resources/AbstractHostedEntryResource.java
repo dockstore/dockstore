@@ -121,12 +121,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      */
     protected abstract X getVersionDAO();
 
-    public T createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
-        @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
-        @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
-        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage,
-        @ApiParam(value = "The Docker namespace (Tools only)") @QueryParam("namespace") String namespace,
-            @ApiParam(value = "Optional entry name (Tools only)") @QueryParam("entryName") String entryName) {
+    public T createHosted(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        String registry, String name, DescriptorLanguage descriptorLanguage, String namespace, String entryName) {
 
         // check if the user has hit a limit yet
         final long currentCount = getEntryDAO().countAllHosted(user.getId());
