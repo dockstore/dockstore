@@ -1293,8 +1293,9 @@
                     <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.0-beta.6-smk-gxformat2/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
-                        <dateLibrary>legacy</dateLibrary>
+                        <dateLibrary>java11</dateLibrary>
                         <java8>true</java8>
+                        <java11>true</java11>
                         <useRuntimeException>true</useRuntimeException>
                         <modelPackage>io.swagger.model</modelPackage>
                         <apiPackage>io.swagger.api</apiPackage>
@@ -1330,8 +1331,9 @@
                     <inputSpec>https://raw.githubusercontent.com/dockstore/tool-registry-service-schemas/2.0.1-beta.1-smk-galaxy/openapi/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs-jersey</language>
                     <configOptions>
-                        <dateLibrary>legacy</dateLibrary>
+                        <dateLibrary>java11</dateLibrary>
                         <java8>true</java8>
+                        <java11>true</java11>
                         <useRuntimeException>true</useRuntimeException>
                         <modelPackage>io.openapi.model</modelPackage>
                         <apiPackage>io.openapi.api</apiPackage>
