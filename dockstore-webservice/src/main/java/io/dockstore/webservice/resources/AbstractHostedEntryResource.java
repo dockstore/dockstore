@@ -67,7 +67,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -122,11 +121,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      */
     protected abstract X getVersionDAO();
 
-    @POST
-    @Path("/hostedEntry")
-    @Timed
-    @UnitOfWork
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created hosted entry", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Entry.class)))
     public T createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
         @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,

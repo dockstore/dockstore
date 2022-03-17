@@ -7820,190 +7820,45 @@ definitions:
       star:
         type: "boolean"
   Tag:
-    type: "object"
-    required:
-    - "name"
-    - "reference"
-    properties:
-      authors:
-        type: "array"
-        description: "Non-ORCID Authors for each version."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Author"
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the tag in this web service"
-        readOnly: true
-      orcidAuthors:
-        type: "array"
-        description: "ORCID Authors for versions."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/OrcidAuthor"
-      versionMetadata:
-        $ref: "#/definitions/VersionMetadata"
-      reference:
-        type: "string"
-        example: "master"
-        position: 1
-        description: "git commit/tag/branch"
-      name:
-        type: "string"
-        example: "latest"
-        position: 2
-        description: "Implementation specific, can be a quay.io or docker hub tag\
-          \ name"
-      commitID:
-        type: "string"
-        position: 3
-        description: "This is the commit id for the source control that the files\
-          \ belong to"
-      frozen:
-        type: "boolean"
-        position: 4
-        description: "When true, this version cannot be affected by refreshes to the\
-          \ content or updates to its metadata"
-      referenceType:
-        type: "string"
-        position: 5
-        description: "This indicates the type of git (or other source control) reference"
-        enum:
-        - "COMMIT"
-        - "TAG"
-        - "BRANCH"
-        - "NOT_APPLICABLE"
-        - "UNSET"
-      valid:
-        type: "boolean"
-        position: 7
-        description: "Implementation specific, whether this tag has valid files from\
-          \ source code repo"
-      dirtyBit:
-        type: "boolean"
-        position: 8
-        description: "True if user has altered the tag"
-      versionEditor:
-        position: 9
-        description: "Particularly for hosted workflows, this records who edited to\
-          \ create a revision"
-        $ref: "#/definitions/User"
-      dbUpdateDate:
-        type: "integer"
-        format: "int64"
-        position: 11
-      input_file_formats:
-        type: "array"
-        position: 12
-        description: "File formats for describing the input file formats of versions\
-          \ (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      output_file_formats:
-        type: "array"
-        position: 13
-        description: "File formats for describing the output file formats of versions\
-          \ (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      validations:
-        type: "array"
-        position: 14
-        description: "Cached validations for each version."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Validation"
-      images:
-        type: "array"
-        position: 15
-        description: "The images that belong to this version"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Image"
-      verified:
-        type: "boolean"
-        position: 16
-        description: "Whether this version has been verified or not"
-      verifiedSource:
-        type: "string"
-        position: 17
-        description: "Verified source for the version"
-      hidden:
-        type: "boolean"
-        position: 18
-        description: "Implementation specific, whether this row is visible to other\
-          \ users aside from the owner"
-      verifiedSources:
-        type: "array"
-        position: 18
-        description: "Verified source for the version"
-        items:
+    allOf:
+    - $ref: "#/definitions/Version"
+    - type: "object"
+      properties:
+        image_id:
           type: "string"
-      doiURL:
-        type: "string"
-        position: 19
-        description: "This is a URL for the DOI for the version of the entry"
-      image_id:
-        type: "string"
-        position: 19
-      doiStatus:
-        type: "string"
-        position: 20
-        description: "This indicates the DOI status"
-        enum:
-        - "NOT_REQUESTED"
-        - "REQUESTED"
-        - "CREATED"
-      author:
-        type: "string"
-        position: 21
-      description:
-        type: "string"
-        position: 22
-      descriptionSource:
-        type: "string"
-        position: 23
-        enum:
-        - "README"
-        - "DESCRIPTOR"
-      email:
-        type: "string"
-        position: 24
-      last_built:
-        type: "integer"
-        format: "int64"
-        position: 101
-        description: "For automated tools: The last time the container backing this\
-          \ tool version was built. For hosted: N/A"
-      size:
-        type: "integer"
-        format: "int64"
-        position: 103
-        description: "Size of the image"
-      dockerfile_path:
-        type: "string"
-        position: 104
-        description: "Path for the Dockerfile"
-      cwl_path:
-        type: "string"
-        position: 105
-        description: "Path for the CWL document"
-      wdl_path:
-        type: "string"
-        position: 106
-        description: "Path for the WDL document"
-      automated:
-        type: "boolean"
-        position: 107
-        description: "Implementation specific, indicates whether this is an automated\
-          \ build on quay.io"
-      workingDirectory:
-        type: "string"
-        position: 108
-    description: "This describes one tag associated with a container."
+          position: 19
+        last_built:
+          type: "integer"
+          format: "int64"
+          position: 101
+          description: "For automated tools: The last time the container backing this\
+            \ tool version was built. For hosted: N/A"
+        size:
+          type: "integer"
+          format: "int64"
+          position: 103
+          description: "Size of the image"
+        dockerfile_path:
+          type: "string"
+          position: 104
+          description: "Path for the Dockerfile"
+        cwl_path:
+          type: "string"
+          position: 105
+          description: "Path for the CWL document"
+        wdl_path:
+          type: "string"
+          position: 106
+          description: "Path for the WDL document"
+        automated:
+          type: "boolean"
+          position: 107
+          description: "Implementation specific, indicates whether this is an automated\
+            \ build on quay.io"
+        workingDirectory:
+          type: "string"
+          position: 108
+      description: "This describes one tag associated with a container."
   Token_Auth:
     type: "object"
     properties:
@@ -8504,6 +8359,7 @@ definitions:
     required:
     - "name"
     - "reference"
+    discriminator: "type"
     properties:
       authors:
         type: "array"
@@ -8919,189 +8775,43 @@ definitions:
         readOnly: true
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
-    type: "object"
-    required:
-    - "name"
-    - "reference"
-    properties:
-      aliases:
-        type: "object"
-        description: "aliases can be used as an alternate unique id for workflow versions"
-        additionalProperties:
-          $ref: "#/definitions/Alias"
-      authors:
-        type: "array"
-        description: "Non-ORCID Authors for each version."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Author"
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the tag in this web service"
-        readOnly: true
-      legacyVersion:
-        type: "boolean"
-      orcidAuthors:
-        type: "array"
-        description: "ORCID Authors for versions."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/OrcidAuthor"
-      versionMetadata:
-        $ref: "#/definitions/VersionMetadata"
-      workingDirectory:
-        type: "string"
-      reference:
-        type: "string"
-        example: "master"
-        position: 1
-        description: "git commit/tag/branch"
-      name:
-        type: "string"
-        example: "latest"
-        position: 2
-        description: "Implementation specific, can be a quay.io or docker hub tag\
-          \ name"
-      commitID:
-        type: "string"
-        position: 3
-        description: "This is the commit id for the source control that the files\
-          \ belong to"
-      frozen:
-        type: "boolean"
-        position: 4
-        description: "When true, this version cannot be affected by refreshes to the\
-          \ content or updates to its metadata"
-      referenceType:
-        type: "string"
-        position: 5
-        description: "This indicates the type of git (or other source control) reference"
-        enum:
-        - "COMMIT"
-        - "TAG"
-        - "BRANCH"
-        - "NOT_APPLICABLE"
-        - "UNSET"
-      valid:
-        type: "boolean"
-        position: 7
-        description: "Implementation specific, whether this tag has valid files from\
-          \ source code repo"
-      dirtyBit:
-        type: "boolean"
-        position: 8
-        description: "True if user has altered the tag"
-      versionEditor:
-        position: 9
-        description: "Particularly for hosted workflows, this records who edited to\
-          \ create a revision"
-        $ref: "#/definitions/User"
-      dbUpdateDate:
-        type: "integer"
-        format: "int64"
-        position: 11
-      input_file_formats:
-        type: "array"
-        position: 12
-        description: "File formats for describing the input file formats of versions\
-          \ (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      output_file_formats:
-        type: "array"
-        position: 13
-        description: "File formats for describing the output file formats of versions\
-          \ (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/FileFormat"
-      validations:
-        type: "array"
-        position: 14
-        description: "Cached validations for each version."
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Validation"
-      images:
-        type: "array"
-        position: 15
-        description: "The images that belong to this version"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Image"
-      verified:
-        type: "boolean"
-        position: 16
-        description: "Whether this version has been verified or not"
-      verifiedSource:
-        type: "string"
-        position: 17
-        description: "Verified source for the version"
-      hidden:
-        type: "boolean"
-        position: 18
-        description: "Implementation specific, whether this row is visible to other\
-          \ users aside from the owner"
-      verifiedSources:
-        type: "array"
-        position: 18
-        description: "Verified source for the version"
-        items:
+    allOf:
+    - $ref: "#/definitions/Version"
+    - type: "object"
+      properties:
+        aliases:
+          type: "object"
+          description: "aliases can be used as an alternate unique id for workflow\
+            \ versions"
+          additionalProperties:
+            $ref: "#/definitions/Alias"
+        legacyVersion:
+          type: "boolean"
+        workflow_path:
           type: "string"
-      doiURL:
-        type: "string"
-        position: 19
-        description: "This is a URL for the DOI for the version of the entry"
-      doiStatus:
-        type: "string"
-        position: 20
-        description: "This indicates the DOI status"
-        enum:
-        - "NOT_REQUESTED"
-        - "REQUESTED"
-        - "CREATED"
-      author:
-        type: "string"
-        position: 21
-      description:
-        type: "string"
-        position: 22
-      descriptionSource:
-        type: "string"
-        position: 23
-        enum:
-        - "README"
-        - "DESCRIPTOR"
-      email:
-        type: "string"
-        position: 24
-      workflow_path:
-        type: "string"
-        position: 101
-        description: "Path for the workflow"
-      last_modified:
-        type: "integer"
-        format: "int64"
-        position: 102
-        description: "Remote: Last time version on GitHub repo was changed. Hosted:\
-          \ time version created."
-      subClass:
-        type: "string"
-        position: 103
-        description: "The subclass of this for services."
-        enum:
-        - "DOCKER_COMPOSE"
-        - "SWARM"
-        - "KUBERNETES"
-        - "HELM"
-      synced:
-        type: "boolean"
-        position: 105
-        description: "Whether or not the version has been refreshed since its last\
-          \ edit on Dockstore."
-    description: "This describes one workflow version associated with a workflow."
+          position: 101
+          description: "Path for the workflow"
+        last_modified:
+          type: "integer"
+          format: "int64"
+          position: 102
+          description: "Remote: Last time version on GitHub repo was changed. Hosted:\
+            \ time version created."
+        subClass:
+          type: "string"
+          position: 103
+          description: "The subclass of this for services."
+          enum:
+          - "DOCKER_COMPOSE"
+          - "SWARM"
+          - "KUBERNETES"
+          - "HELM"
+        synced:
+          type: "boolean"
+          position: 105
+          description: "Whether or not the version has been refreshed since its last\
+            \ edit on Dockstore."
+      description: "This describes one workflow version associated with a workflow."
   WorkflowVersionPathInfo:
     type: "object"
     properties:

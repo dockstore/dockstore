@@ -22,7 +22,10 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.mockito.Mockito;
 
 /**
@@ -31,6 +34,13 @@ import org.mockito.Mockito;
  * @since 1.5.0
  */
 public class CWLHandlerTest {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
     /**
      * Tests if the input and output file formats can be extracted from a CWL descriptor file
      * @throws Exception

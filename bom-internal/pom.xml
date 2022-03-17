@@ -54,8 +54,8 @@ POM as their parent.
         <dropwizard.version>2.0.25</dropwizard.version>
         <dropwizard-annotations.version>4.2.4</dropwizard-annotations.version>
         <elasticsearch-version>7.10.2</elasticsearch-version>
-        <swagger-annotations-version>1.6.3</swagger-annotations-version>
-        <openapi-annotations-version>2.1.11</openapi-annotations-version>
+        <swagger-annotations-version>1.6.5</swagger-annotations-version>
+        <openapi-annotations-version>2.1.13</openapi-annotations-version>
         <assertj.version>3.14.0</assertj.version>
         <junit-version>4.13.1</junit-version>
         <logback.version>1.2.10</logback.version>
@@ -65,7 +65,7 @@ POM as their parent.
         <mockito.version>3.12.4</mockito.version>
         <cwlavro.version>2.0.4.7</cwlavro.version>
         <okhttp.version>4.7.0</okhttp.version>
-        <slf4j.version>1.7.32</slf4j.version>
+        <slf4j.version>1.7.35</slf4j.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <httpcomponents.version>4.5.13</httpcomponents.version>
         <httpcore.version>4.4.15</httpcore.version>

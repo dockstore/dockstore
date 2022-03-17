@@ -19,6 +19,7 @@ import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGE
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
+import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
@@ -40,6 +41,7 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
@@ -56,7 +58,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -97,9 +101,13 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
+    @POST
+    @Path("/hostedEntry")
+    @Timed
+    @UnitOfWork
     @UsernameRenameRequired
     @Operation(operationId = "createHostedTool", description = "Create a hosted tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted tool.", content = @Content(schema = @Schema(implementation = Tool.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted tool.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Tool.class)))
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
