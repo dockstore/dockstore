@@ -8773,26 +8773,121 @@ components:
       - url
     Tag:
       type: object
-      allOf:
-      - $ref: '#/components/schemas/Version'
-      - type: object
-        properties:
-          automated:
-            type: boolean
-          cwl_path:
+      properties:
+        author:
+          type: string
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Author'
+          uniqueItems: true
+        automated:
+          type: boolean
+        commitID:
+          type: string
+        cwl_path:
+          type: string
+        dbUpdateDate:
+          type: integer
+          format: int64
+        description:
+          type: string
+        descriptionSource:
+          type: string
+          enum:
+          - README
+          - DESCRIPTOR
+        dirtyBit:
+          type: boolean
+        dockerfile_path:
+          type: string
+        doiStatus:
+          type: string
+          enum:
+          - NOT_REQUESTED
+          - REQUESTED
+          - CREATED
+        doiURL:
+          type: string
+        email:
+          type: string
+        frozen:
+          type: boolean
+        hidden:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        image_id:
+          type: string
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+          uniqueItems: true
+        input_file_formats:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          uniqueItems: true
+        last_built:
+          type: integer
+          format: int64
+        name:
+          type: string
+          description: "Implementation specific, can be a quay.io or docker hub tag\
+            \ name"
+          example: latest
+        orcidAuthors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrcidAuthor'
+          uniqueItems: true
+        output_file_formats:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileFormat'
+          uniqueItems: true
+        parent:
+          $ref: '#/components/schemas/EntryObjectObject'
+        reference:
+          type: string
+          description: git commit/tag/branch
+          example: master
+        referenceType:
+          type: string
+          enum:
+          - COMMIT
+          - TAG
+          - BRANCH
+          - NOT_APPLICABLE
+          - UNSET
+        size:
+          type: integer
+          format: int64
+        valid:
+          type: boolean
+        validations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Validation'
+          uniqueItems: true
+        verified:
+          type: boolean
+        verifiedSource:
+          type: string
+        verifiedSources:
+          type: array
+          items:
             type: string
-          dockerfile_path:
-            type: string
-          image_id:
-            type: string
-          last_built:
-            type: integer
-            format: int64
-          size:
-            type: integer
-            format: int64
-          wdl_path:
-            type: string
+        versionEditor:
+          $ref: '#/components/schemas/User'
+        versionMetadata:
+          $ref: '#/components/schemas/VersionMetadata'
+        wdl_path:
+          type: string
+        workingDirectory:
+          type: string
       required:
       - name
       - reference
@@ -9245,8 +9340,6 @@ components:
           type: boolean
     Version:
       type: object
-      discriminator:
-        propertyName: type
       properties:
         author:
           type: string
@@ -9325,8 +9418,6 @@ components:
           - BRANCH
           - NOT_APPLICABLE
           - UNSET
-        type:
-          type: string
         valid:
           type: boolean
         validations:
@@ -9351,7 +9442,6 @@ components:
       required:
       - name
       - reference
-      - type
     VersionMetadata:
       type: object
       properties:

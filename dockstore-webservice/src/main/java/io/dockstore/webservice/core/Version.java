@@ -18,8 +18,6 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -69,7 +67,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author dyuen
  */
 @Entity
-@ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore", subTypes = {WorkflowVersion.class, Tag.class}, discriminator = "type")
+@ApiModel(value = "Version", description = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 
 // Ensure that the version requested belongs to a workflow a user has access to.
@@ -84,9 +82,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 })
 
 @SuppressWarnings("checkstyle:magicnumber")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
-@JsonSubTypes({ @JsonSubTypes.Type(value = WorkflowVersion.class, name = "WorkflowVersion"),
-    @JsonSubTypes.Type(value = Tag.class, name = "Tag")})
 public abstract class Version<T extends Version> implements Comparable<T> {
     public static final String CANNOT_FREEZE_VERSIONS_WITH_NO_FILES = "cannot freeze versions with no files";
     private static final Gson GSON = new Gson();
