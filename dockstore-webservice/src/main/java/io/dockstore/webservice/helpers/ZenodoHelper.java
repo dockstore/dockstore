@@ -132,8 +132,20 @@ public final class ZenodoHelper {
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
+                if (e.getCode() == HttpStatus.SC_FORBIDDEN) {
+                    // Another user in the same organization already requested a DOI for a workflow version and created the workflow concept DOI.
+                    // We are unable to create a new deposition version using the current user's Zenodo credentials because they don't have permission to create a deposition version for the original concept DOI.
+                    // The workaround is for the user who created the concept DOI to request DOI's for other versions whenever it's needed by users from the same organization.
+                    // This will hopefully be revisited later when Zenodo implements a feature where a deposit can be shared among users.
+                    String errorMessage = String.format(
+                            "Could not create new deposition version on Zenodo because you do not have permission to create a deposition version for DOI %s. "
+                                    + "Please ask the person who created DOI %s to request a DOI for workflow version %s on Dockstore.",
+                            workflow.getConceptDoi(), workflow.getConceptDoi(), workflowVersion.getName());
+                    throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
+                } else {
+                    throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
                         + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+                }
             }
         }
 
