@@ -207,13 +207,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>3.1.2</version>
                     <dependencies>
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <!-- codacy currently using 8.34 -->
-                            <version>8.34</version>
+                            <version>10.0</version>
                         </dependency>
                     </dependencies>
                     <configuration>
@@ -685,7 +684,7 @@
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.8.0.2131</version>
+                <version>3.9.1.2184</version>
             </plugin>
         </plugins>
     </build>

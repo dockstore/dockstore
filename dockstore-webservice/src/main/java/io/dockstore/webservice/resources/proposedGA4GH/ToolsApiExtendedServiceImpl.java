@@ -120,9 +120,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     /**
      * Avoid using this one, this is quite slow
      *
+     * @return all published workflows
      * @deprecated as of 1.11, avoid this one and hopefully delete it
-     * <p></p>
-     * @return
      */
     @Deprecated
     private List<Entry> getPublished() {

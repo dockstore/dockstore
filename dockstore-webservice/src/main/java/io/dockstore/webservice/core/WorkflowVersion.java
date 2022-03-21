@@ -47,12 +47,12 @@ import org.apache.commons.io.FilenameUtils;
  */
 @ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
-@Table(name = "workflowversion", uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_names", columnNames = { "parentid",
-    "name" }))
+@Table(name = "workflowversion", uniqueConstraints = @UniqueConstraint(name = "unique_workflowversion_names", columnNames = {"parentid",
+    "name"}))
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
-        @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastmodified DESC")
+    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByAlias", query = "SELECT e from WorkflowVersion e JOIN e.aliases a WHERE KEY(a) IN :alias"),
+    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName", query = "select v FROM WorkflowVersion v WHERE v.parent.id = :id And v.name = :name"),
+    @NamedQuery(name = "io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId", query = "FROM WorkflowVersion v WHERE v.parent.id = :id ORDER by lastmodified DESC")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

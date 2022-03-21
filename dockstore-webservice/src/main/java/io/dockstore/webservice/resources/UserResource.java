@@ -243,8 +243,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Operation(operationId = "getUserMemberships", description = "Get the logged-in user's memberships.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "A set of the logged-in user's memberships", content = @Content(array = @ArraySchema(schema = @Schema(implementation = OrganizationUser.class))))
-    @ApiOperation(value = "Get the logged-in user's memberships.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
+    @ApiOperation(value = "Get the logged-in user's memberships.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganizationUser.class, responseContainer = "set")
     public Set<OrganizationUser> getUserMemberships(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Set<OrganizationUser> organizationUsers = foundUser.getOrganizations();
@@ -941,9 +940,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_OK
             + "", description = "Successfully synced Dockstore account with GitHub App installations", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Workflow.class))))
     @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
-    @ApiOperation(value = "Syncs Dockstore account with GitHub App Installations.", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
-            response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Syncs Dockstore account with GitHub App Installations.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, responseContainer = "List")
     public List<Workflow> syncUserWithGitHub(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());
         workflowResource.syncEntitiesForUser(user);
@@ -957,8 +954,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @Path("/github/organizations")
     @Operation(operationId = "getMyGitHubOrgs", description = "Gets GitHub organizations for current user.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Descriptions of Github organizations (including but not limited to id, names)", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SourceControlOrganization.class)))),
-            @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = "Descriptions of Github organizations (including but not limited to id, names)", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SourceControlOrganization.class)))),
+        @ApiResponse(responseCode = HttpStatus.SC_BAD_REQUEST + "", description = HttpStatusMessageConstants.BAD_REQUEST)
     })
     public List<SourceControlOrganization> getMyGitHubOrgs(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser) {
         final User user = userDAO.findById(authUser.getId());

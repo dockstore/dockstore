@@ -219,8 +219,8 @@ public class DockerRepoResource
     @UsernameRenameRequired
     @Operation(operationId = "refresh", description = "Refresh one particular tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Refresh one particular tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class)
+    public Tool refresh(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
@@ -293,9 +293,10 @@ public class DockerRepoResource
     @Path("/{containerId}")
     @Operation(operationId = "getContainer", description = "Retrieve a tool", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieve a tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
-    public Tool getContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
+    public Tool getContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId,
+        @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkUser(user, tool);
@@ -314,8 +315,8 @@ public class DockerRepoResource
     @Path("/{containerId}/labels")
     @Operation(operationId = "updateLabels", description = "Update the labels linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the labels linked to a tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
-    public Tool updateLabels(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
+    public Tool updateLabels(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -328,14 +329,14 @@ public class DockerRepoResource
     @Path("/{containerId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateContainer", summary = "Update the tool with the given tool.",
-            description = "Updates default descriptor paths, default Dockerfile paths, default test parameter paths, git url,"
+        description = "Updates default descriptor paths, default Dockerfile paths, default test parameter paths, git url,"
             + " and default version. Also updates tool maintainer email, and private access for manual tools.",
-            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tool with the given tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class,
         notes = "Updates default descriptor paths, default Dockerfile paths, default test parameter paths, git url,"
-                + " and default version. Also updates tool maintainer email, and private access for manual tools.")
-    public Tool updateContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+            + " and default version. Also updates tool maintainer email, and private access for manual tools.")
+    public Tool updateContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool foundTool = toolDAO.findById(containerId);
@@ -378,11 +379,11 @@ public class DockerRepoResource
     @Path("/{toolId}/defaultVersion")
     @Operation(operationId = "updateDefaultVersion", description = "Update the default version of the given tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the default version of the given tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, nickname = "updateToolDefaultVersion")
-    public Tool updateDefaultVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class, nickname = "updateToolDefaultVersion")
+    public Tool updateDefaultVersion(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
         @ApiParam(value = "Tag name to set as default.", required = true) String version) {
-        return (Tool)updateDefaultVersionHelper(version, toolId, user);
+        return (Tool) updateDefaultVersionHelper(version, toolId, user);
     }
 
     /**
@@ -424,8 +425,8 @@ public class DockerRepoResource
     @Path("/{containerId}/updateTagPaths")
     @Operation(operationId = "updateTagContainerPath", description = "Change the tool paths.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Change the tool paths.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Resets the descriptor paths and dockerfile path of all versions to match the default paths from the tool object passed.", response = Tool.class)
-    public Tool updateTagContainerPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Resets the descriptor paths and dockerfile path of all versions to match the default paths from the tool object passed.", response = Tool.class)
+    public Tool updateTagContainerPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
 
@@ -455,8 +456,8 @@ public class DockerRepoResource
     @Path("/{containerId}/users")
     @Operation(operationId = "getUsers", description = "Get users of a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get users of a tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
-    public List<User> getUsers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = User.class, responseContainer = "List")
+    public List<User> getUsers(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
@@ -470,7 +471,8 @@ public class DockerRepoResource
     @UnitOfWork(readOnly = true)
     @Path("/published/{containerId}")
     @ApiOperation(value = "Get a published tool.", notes = "NO authentication", response = Tool.class)
-    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
+    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId,
+        @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findPublishedById(containerId);
         checkEntry(tool);
 
@@ -512,13 +514,14 @@ public class DockerRepoResource
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "registerManual", description = "Register a tool manually, along with tags.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Register a tool manually, along with tags.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool registerManual(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class)
+    public Tool registerManual(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to be registered", required = true) Tool toolParam) {
         // Check for custom docker registries
         Registry registry = toolParam.getRegistryProvider();
         if (registry == null) {
-            throw new CustomWebApplicationException("The provided registry is not valid. If you are using a custom registry please ensure that it matches the allowed paths.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("The provided registry is not valid. If you are using a custom registry please ensure that it matches the allowed paths.",
+                HttpStatus.SC_BAD_REQUEST);
         }
         Tool duplicate = toolDAO.findByPath(toolParam.getToolPath(), false);
 
@@ -601,8 +604,9 @@ public class DockerRepoResource
 
     /**
      * Set the license information for a tool
-     * @param user  The user the tool belongs to
-     * @param tool  The tool to get license information for
+     *
+     * @param user The user the tool belongs to
+     * @param tool The tool to get license information for
      */
     private void setToolLicenseInformation(User user, Tool tool) {
         // Get user's Git tokens
@@ -611,8 +615,8 @@ public class DockerRepoResource
         Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
         Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
-                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
+            .createSourceCodeRepo(tool.getGitUrl(), bitbucketToken == null ? null : bitbucketToken.getContent(),
+                gitlabToken == null ? null : gitlabToken.getContent(), githubToken);
         if (sourceCodeRepo != null) {
             sourceCodeRepo.checkSourceCodeValidity();
             String gitRepositoryFromGitUrl = AbstractImageRegistry.getGitRepositoryFromGitUrl(tool.getGitUrl());
@@ -648,9 +652,9 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}")
     @Operation(operationId = "deleteContainer", description = "Delete a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Delete a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Delete a tool.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
-    public Response deleteContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+    public Response deleteContainer(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkUserOwnsEntry(user, tool);
@@ -675,8 +679,8 @@ public class DockerRepoResource
     @Path("/{containerId}/publish")
     @Operation(operationId = "publish", description = "Publish or unpublish a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Publish or unpublish a tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool publish(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class)
+    public Tool publish(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool tool = toolDAO.findById(containerId);
@@ -756,7 +760,7 @@ public class DockerRepoResource
     @Path("published")
     @Operation(operationId = "allPublishedContainers", description = "List all published tools.")
     @ApiOperation(value = "List all published tools.", tags = {
-        "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
+        "containers"}, notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> allPublishedContainers(
         @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
         @ApiParam(value = "Amount of records to return in a given page, limited to "
@@ -779,7 +783,7 @@ public class DockerRepoResource
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}/published")
     @Operation(operationId = "getPublishedContainerByPath", summary = "Get a list of published tools by path.", description = "Do not include tool name.",
-            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a list of published tools by path.", notes = "NO authentication. Do not include tool name.", response = Tool.class, responseContainer = "List")
     public List<Tool> getPublishedContainerByPath(
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
@@ -794,10 +798,10 @@ public class DockerRepoResource
     @UnitOfWork(readOnly = true)
     @Path("/path/{repository}")
     @Operation(operationId = "getContainerByPath", summary = "Get a list of tools by path.", description = "Do not include tool name.",
-            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a list of tools by path.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Do not include tool name.", response = Tool.class, responseContainer = "List")
-    public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Do not include tool name.", response = Tool.class, responseContainer = "List")
+    public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tools = toolDAO.findAllByPath(path, false);
         checkEntry(tools);
@@ -810,11 +814,12 @@ public class DockerRepoResource
     @UnitOfWork(readOnly = true)
     @Path("/path/tool/{repository}")
     @Operation(operationId = "getContainerByToolPath", summary = "Get a tool by the specific tool path", description = "Requires full path (including tool name if applicable).",
-            security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+        security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a tool by the specific tool path", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including tool name if applicable).", response = Tool.class)
-    public Tool getContainerByToolPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Requires full path (including tool name if applicable).", response = Tool.class)
+    public Tool getContainerByToolPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findByPath(path, false);
         checkEntry(tool);
         checkUser(user, tool);
@@ -833,7 +838,9 @@ public class DockerRepoResource
     @Operation(operationId = "getPublishedContainerByToolPath", summary = "Get a published tool by the specific tool path.", description = "Requires full path (including tool name if applicable).")
     @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include, @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include, @Context SecurityContext securityContext,
+        @Context ContainerRequestContext containerContext) {
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
@@ -861,8 +868,8 @@ public class DockerRepoResource
     @Path("/tags")
     @Operation(operationId = "tags", description = "List the tags for a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "List the tags for a tool.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List", hidden = true)
-    public List<Tag> tags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user, @QueryParam("containerId") long containerId) {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tag.class, responseContainer = "List", hidden = true)
+    public List<Tag> tags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user, @QueryParam("containerId") long containerId) {
         Tool repository = toolDAO.findById(containerId);
         checkEntry(repository);
 
@@ -877,9 +884,8 @@ public class DockerRepoResource
     @Path("/{containerId}/dockerfile")
     @Operation(operationId = "dockerfile", description = "Get the corresponding Dockerfile.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the corresponding Dockerfile.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile dockerfile(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public SourceFile dockerfile(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
         return getSourceFile(containerId, tag, DescriptorLanguage.FileType.DOCKERFILE, user, fileDAO);
@@ -892,11 +898,10 @@ public class DockerRepoResource
     @Path("/{containerId}/primaryDescriptor")
     @Operation(operationId = "primaryDescriptor", description = "Get the primary descriptor file.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the primary descriptor file.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public SourceFile primaryDescriptor(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() -> new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
         return getSourceFile(containerId, tag, fileType, user, fileDAO);
     }
 
@@ -906,12 +911,11 @@ public class DockerRepoResource
     @Path("/{containerId}/descriptor/{relative-path}")
     @Operation(operationId = "secondaryDescriptorPath", description = "Get the corresponding descriptor file.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the corresponding descriptor file.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public SourceFile secondaryDescriptorPath(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path, @QueryParam("language") String language) {
-        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() ->  new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
+        final FileType fileType = DescriptorLanguage.getOptionalFileType(language).orElseThrow(() -> new CustomWebApplicationException("Language not valid", HttpStatus.SC_BAD_REQUEST));
         return getSourceFileByPath(containerId, tag, fileType, path, user, fileDAO);
     }
 
@@ -921,9 +925,8 @@ public class DockerRepoResource
     @Path("/{containerId}/secondaryDescriptors")
     @Operation(operationId = "secondaryDescriptors", description = "Get a list of secondary descriptor files.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get a list of secondary descriptor files.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public List<SourceFile> secondaryDescriptors(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag, @QueryParam("language") DescriptorLanguage language) {
         final FileType fileType = language.getFileType();
         return getAllSecondaryFiles(containerId, tag, fileType, user, fileDAO);
@@ -935,9 +938,8 @@ public class DockerRepoResource
     @Path("/{containerId}/testParameterFiles")
     @Operation(operationId = "getTestParameterFiles", description = "Get the corresponding test parameter files.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+        "containers"}, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true) @QueryParam("descriptorType") DescriptorLanguage descriptorLanguage) {
         final FileType testParameterType = descriptorLanguage.getTestParamType();
@@ -945,8 +947,7 @@ public class DockerRepoResource
     }
 
     /**
-     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user
-     * does not have permission, throws a {@link CustomWebApplicationException}.
+     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user does not have permission, throws a {@link CustomWebApplicationException}.
      *
      * @param user
      * @param tool
@@ -971,9 +972,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
     @Operation(operationId = "addTestParameterFiles", description = "Add test parameter files to a tag.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Add test parameter files to a tag.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+    @ApiOperation(value = "Add test parameter files to a tag.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody,
@@ -1009,8 +1009,8 @@ public class DockerRepoResource
     @Path("/{containerId}/testParameterFiles")
     @Operation(operationId = "deleteTestParameterFiles", description = "Delete test parameter files to a tag.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Delete test parameter files to a tag.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
         @QueryParam("tagName") String tagName,
@@ -1051,9 +1051,9 @@ public class DockerRepoResource
     @Path("/{containerId}/star")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "starEntry", description = "Star a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiOperation(value = "Star a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public void starEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
-        @ApiParam(value = "Tool to star.", required = true) @Parameter(description = "Tool to star.", required = true)  @PathParam("containerId") Long containerId,
+    @ApiOperation(value = "Star a tool.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public void starEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @ApiParam(value = "Tool to star.", required = true) @Parameter(description = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) @Parameter(description = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         if (request.getStar()) {
@@ -1110,7 +1110,7 @@ public class DockerRepoResource
      */
     private static boolean isGit(String url) {
         final Optional<Map<String, String>> stringStringGitUrlMap = SourceCodeRepoFactory
-                .parseGitUrl(url);
+            .parseGitUrl(url);
         return !stringStringGitUrlMap.isEmpty();
     }
 
@@ -1182,9 +1182,9 @@ public class DockerRepoResource
     @Path("/{toolId}/zip/{tagId}")
     @Operation(operationId = "getToolZip", description = "Download a ZIP file of a tool and all associated files.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Download a ZIP file of a tool and all associated files.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     @Produces("application/zip")
-    public Response getToolZip(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
+    public Response getToolZip(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
         @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
 
@@ -1214,7 +1214,7 @@ public class DockerRepoResource
         String fileName = EntryVersionHelper.generateZipFileName(tool.getToolPath(), tag.getName());
         java.nio.file.Path path = Paths.get(tag.getWorkingDirectory());
 
-        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
+        return Response.ok().entity((StreamingOutput) output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 
@@ -1224,9 +1224,9 @@ public class DockerRepoResource
     @Path("{alias}/aliases")
     @Operation(operationId = "getToolByAlias", description = "Retrieves a tool by alias.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Retrieves a tool by alias.", notes = OPTIONAL_AUTH_MESSAGE, response = Tool.class, authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public Tool getToolByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth Optional<User> user,
-            @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public Tool getToolByAlias(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth Optional<User> user,
+        @ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         final Tool tool = this.toolDAO.findByAlias(alias);
         checkEntry(tool);
         optionalUserCheckEntry(user, tool);

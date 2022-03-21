@@ -19,7 +19,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "orcidauthor", indexes = @Index(name = "unique_orcid_index", columnList = "orcid", unique = true))
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.OrcidAuthor.findByOrcidId", query = "SELECT o FROM OrcidAuthor o WHERE o.orcid = :orcidId")
+    @NamedQuery(name = "io.dockstore.webservice.core.OrcidAuthor.findByOrcidId", query = "SELECT o FROM OrcidAuthor o WHERE o.orcid = :orcidId")
 })
 public class OrcidAuthor {
 

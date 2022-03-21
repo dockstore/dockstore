@@ -59,37 +59,40 @@ import org.apache.http.HttpStatus;
  */
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V2_BETA + "/extended")
 @Api("extendedGA4GH")
-@Produces({ "application/json", "text/plain" })
+@Produces({"application/json", "text/plain"})
 @Tag(name = "extendedGA4GH", description = ResourceConstants.EXTENDEDGA4GH)
 public class ToolsExtendedApi {
+
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
     @GET
     @Path("/tools/{organization}")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(nickname = ToolsOrgGet.OPERATION_ID, value = ToolsOrgGet.SUMMARY, notes = ToolsOrgGet.DESCRIPTION, response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_OK, message = ToolsOrgGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List") })
+        @ApiResponse(code = HttpStatus.SC_OK, message = ToolsOrgGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List")})
     @Operation(operationId = ToolsOrgGet.OPERATION_ID, summary = ToolsOrgGet.SUMMARY, description = ToolsOrgGet.DESCRIPTION, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsOrgGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = ToolsOrgGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
     })
     public Response toolsOrgGet(
-            @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
-            @Context SecurityContext securityContext) throws NotFoundException {
+        @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
+        @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.toolsOrgGet(organization, securityContext);
     }
 
     @POST
     @Path("/tools/entry/_search")
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(nickname = ToolsIndexSearch.OPERATION_ID, value = ToolsIndexSearch.SUMMARY, notes = ToolsIndexSearch.DESCRIPTION, response = String.class)
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexSearch.OK_RESPONSE, response = String.class) })
+    @ApiResponses(value = {@ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexSearch.OK_RESPONSE, response = String.class)})
     @Operation(operationId = ToolsIndexSearch.OPERATION_ID, summary = ToolsIndexSearch.SUMMARY, description = ToolsIndexSearch.DESCRIPTION, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsIndexSearch.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class)))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = ToolsIndexSearch.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = String.class)))
     })
     public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query,
-                                       @Context UriInfo uriInfo, @Context SecurityContext securityContext) {
+        @Context UriInfo uriInfo, @Context SecurityContext securityContext) {
         return delegate.toolsIndexSearch(query, uriInfo != null ? uriInfo.getQueryParameters() : null, securityContext);
     }
 
@@ -97,12 +100,13 @@ public class ToolsExtendedApi {
     @Path("/tools/index")
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
-    @Produces({ MediaType.TEXT_PLAIN })
+    @Produces({MediaType.TEXT_PLAIN})
     @ApiOperation(value = ToolsIndexGet.SUMMARY, notes = ToolsIndexGet.DESCRIPTION, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Integer.class)
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexGet.OK_RESPONSE) })
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Integer.class)
+    @ApiResponses(value = {@ApiResponse(code = HttpStatus.SC_OK, message = ToolsIndexGet.OK_RESPONSE)})
     @Operation(operationId = ToolsIndexGet.SUMMARY, summary = ToolsIndexGet.SUMMARY, description = ToolsIndexGet.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsIndexGet.OK_RESPONSE, content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class)))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = ToolsIndexGet.OK_RESPONSE, content = @Content(mediaType = MediaType.TEXT_PLAIN, schema = @Schema(implementation = Integer.class)))
     })
     public Response toolsIndexGet(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user, @Context SecurityContext securityContext)
         throws NotFoundException {
@@ -112,65 +116,71 @@ public class ToolsExtendedApi {
     @GET
     @Path("/workflows/{organization}")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(nickname = WorkflowsOrgGet.OPERATION_ID, value = WorkflowsOrgGet.SUMMARY, notes = WorkflowsOrgGet.DESCRIPTION, response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_OK, message = WorkflowsOrgGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List") })
+        @ApiResponse(code = HttpStatus.SC_OK, message = WorkflowsOrgGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List")})
     @Operation(operationId = WorkflowsOrgGet.OPERATION_ID, summary = WorkflowsOrgGet.SUMMARY, description = WorkflowsOrgGet.DESCRIPTION, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = WorkflowsOrgGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = WorkflowsOrgGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
     })
     public Response workflowsOrgGet(
-            @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
-            @Context SecurityContext securityContext) throws NotFoundException {
+        @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
+        @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.workflowsOrgGet(organization, securityContext);
     }
 
     @GET
     @Path("/containers/{organization}")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(value = EntriesOrgGet.SUMMARY, nickname = EntriesOrgGet.OPERATION_ID, notes = EntriesOrgGet.DESCRIPTION, response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_OK, message = EntriesOrgGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List") })
+        @ApiResponse(code = HttpStatus.SC_OK, message = EntriesOrgGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List")})
     @Operation(operationId = EntriesOrgGet.OPERATION_ID, summary = EntriesOrgGet.SUMMARY, description = EntriesOrgGet.DESCRIPTION, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = EntriesOrgGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = EntriesOrgGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
     })
     public Response entriesOrgGet(
-            @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organizations,
-            @Context SecurityContext securityContext) throws NotFoundException {
+        @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organizations,
+        @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.entriesOrgGet(organizations, securityContext);
     }
 
     @GET
     @Path("/organizations")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(value = "List all organizations", nickname = EntriesOrgsGet.OPERATION_ID, notes = EntriesOrgsGet.DESCRIPTION, response = String.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_OK, message = EntriesOrgsGet.OK_RESPONSE, response = String.class, responseContainer = "List") })
+        @ApiResponse(code = HttpStatus.SC_OK, message = EntriesOrgsGet.OK_RESPONSE, response = String.class, responseContainer = "List")})
     @Operation(operationId = EntriesOrgsGet.OPERATION_ID, summary = EntriesOrgsGet.SUMMARY, description = EntriesOrgsGet.DESCRIPTION, responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = EntriesOrgsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = EntriesOrgsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
     })
     public Response entriesOrgGet(
-            @Context SecurityContext securityContext) {
+        @Context SecurityContext securityContext) {
         return delegate.organizationsGet(securityContext);
     }
 
     @POST
     @UnitOfWork
-    @RolesAllowed({ "curator", "admin" })
+    @RolesAllowed({"curator", "admin"})
     @Path("/{id}/versions/{version_id}/{type}/tests/{relative_path : .+}")
-    @Produces({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON})
     @ApiOperation(value = VerifyTestParameterFilePost.SUMMARY, notes = VerifyTestParameterFilePost.DESCRIPTION, response = Map.class, authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     @ApiResponses(value = {
         @ApiResponse(code = HttpStatus.SC_OK, message = VerifyTestParameterFilePost.OK_RESPONSE, response = Map.class),
         @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = VerifyTestParameterFilePost.NOT_FOUND_RESPONSE, response = Error.class),
-        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = VerifyTestParameterFilePost.UNAUTHORIZED_RESPONSE, response = Error.class) })
+        @ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = VerifyTestParameterFilePost.UNAUTHORIZED_RESPONSE, response = Error.class)})
     @Operation(operationId = "verifyTestParameterFilePost", summary = VerifyTestParameterFilePost.SUMMARY, description = VerifyTestParameterFilePost.DESCRIPTION, security = @SecurityRequirement(name = ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK + "", description = VerifyTestParameterFilePost.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = VerifyTestParameterFilePost.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = VerifyTestParameterFilePost.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = VerifyTestParameterFilePost.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Map.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED
+            + "", description = VerifyTestParameterFilePost.UNAUTHORIZED_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+            + "", description = VerifyTestParameterFilePost.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Error.class)))
     })
     @SuppressWarnings("checkstyle:parameternumber")
     public Response toolsIdVersionsVersionIdTypeTestsPost(@ApiParam(hidden = true) @Parameter(hidden = true) @Auth User user,
@@ -187,43 +197,56 @@ public class ToolsExtendedApi {
     }
 
     private static final class VerifyTestParameterFilePost {
+
         public static final String SUMMARY = "Annotate test JSON with information on whether it ran successfully on particular platforms plus metadata";
         public static final String DESCRIPTION = "Test JSON can be annotated with whether they ran correctly keyed by platform and associated with some metadata.";
         public static final String OK_RESPONSE = "The tool test JSON response.";
         public static final String NOT_FOUND_RESPONSE = "The tool test cannot be found to annotate.";
         public static final String UNAUTHORIZED_RESPONSE = "Credentials not provided or incorrect.";
     }
+
     private static final class ToolsIndexGet {
+
         public static final String SUMMARY = "Update the workflows and tools indices";
         public static final String DESCRIPTION = "This endpoint updates the indices for all published tools and workflows.";
         public static final String OK_RESPONSE = "Workflows and tools indices populated with entries.";
     }
+
     private static final class EntriesOrgsGet {
+
         public static final String OPERATION_ID = "entriesOrgsGet";
         public static final String SUMMARY = "List all organizations";
         public static final String DESCRIPTION = "This endpoint returns list of all organizations.";
         public static final String OK_RESPONSE = "An array of organizations' names.";
     }
+
     private static final class EntriesOrgGet {
+
         public static final String OPERATION_ID = "entriesOrgGet";
         public static final String SUMMARY = "List entries of an organization";
         public static final String DESCRIPTION = "This endpoint returns entries of an organization.";
         public static final String OK_RESPONSE = "An array of Tools of the input organization.";
     }
+
     private static final class WorkflowsOrgGet {
+
         public static final String OPERATION_ID = "workflowsOrgGet";
         public static final String SUMMARY = "List workflows of an organization";
         public static final String DESCRIPTION = "This endpoint returns workflows of an organization.";
         public static final String OK_RESPONSE = "An array of Tools of the input organization.";
     }
+
     private static final class ToolsIndexSearch {
+
         public static final String OPERATION_ID = "toolsIndexSearch";
         public static final String SUMMARY = "Search the tools and workflows indices.";
         public static final String DESCRIPTION = "This endpoint searches the indices for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint.";
         public static final String OK_RESPONSE = "An elastic search result.";
 
     }
+
     private static final class ToolsOrgGet {
+
         public static final String OPERATION_ID = "toolsOrgGet";
         public static final String SUMMARY = "List tools of an organization";
         public static final String DESCRIPTION = "This endpoint returns tools of an organization.";

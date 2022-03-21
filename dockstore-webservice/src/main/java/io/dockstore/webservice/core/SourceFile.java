@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
 @Entity
 @Table(name = "sourcefile")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion", query = "SELECT sourcefiles FROM Version version INNER JOIN version.sourceFiles as sourcefiles WHERE version.id = :versionId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.SourceFile.findSourceFilesForVersion", query = "SELECT sourcefiles FROM Version version INNER JOIN version.sourceFiles as sourcefiles WHERE version.id = :versionId"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile implements Comparable<SourceFile> {
