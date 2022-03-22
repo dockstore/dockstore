@@ -113,6 +113,7 @@ public class EventResource {
             Hibernate.initialize(event.getWorkflow());
             Hibernate.initialize(event.getCollection());
             Hibernate.initialize(event.getInitiatorUser());
+            Hibernate.initialize(event.getApptool());
         });
     }
 }

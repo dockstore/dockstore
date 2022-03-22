@@ -6478,12 +6478,12 @@ definitions:
         readOnly: true
       name:
         type: "string"
-        example: "Alignment"
+        example: "alignment"
         position: 1
         description: "Name of the collection."
         minLength: 3
         maxLength: 39
-        pattern: "[a-zA-Z][a-zA-Z\\d]*"
+        pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
       description:
         type: "string"
         position: 2
