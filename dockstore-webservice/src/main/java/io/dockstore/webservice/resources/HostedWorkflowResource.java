@@ -67,6 +67,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -114,12 +115,21 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
+    @POST
+    @Path("/hostedEntry")
+    @Timed
+    @UnitOfWork
     @UsernameRenameRequired
     @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted workflow.", content = @Content(schema = @Schema(implementation = Workflow.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted workflow.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Workflow.class)))
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
+    public Workflow createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
+        @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
+        @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
+        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") DescriptorLanguage descriptorType,
+        @ApiParam(value = "The Docker namespace (Tools only)") @QueryParam("namespace") String namespace,
+        @ApiParam(value = "Optional entry name (Tools only)") @QueryParam("entryName") String entryName) {
         Workflow workflow = super.createHosted(user, registry, name, descriptorType, namespace, entryName);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;

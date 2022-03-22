@@ -19,6 +19,7 @@ import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGE
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
+import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.VersionTypeValidation;
@@ -40,10 +41,14 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -56,7 +61,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -97,12 +105,21 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
+    @POST
+    @Path("/hostedEntry")
+    @Timed
+    @UnitOfWork
     @UsernameRenameRequired
     @Operation(operationId = "createHostedTool", description = "Create a hosted tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
-    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted tool.", content = @Content(schema = @Schema(implementation = Tool.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted tool.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Tool.class)))
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
+    public Tool createHosted(@ApiParam(hidden = true)  @Parameter(hidden = true, name = "user") @Auth User user,
+        @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
+        @ApiParam(value = "The repository name", required = true) @QueryParam("name") String name,
+        @ApiParam(value = "The descriptor type (Workflows only)") @QueryParam("descriptorType") DescriptorLanguage descriptorType,
+        @ApiParam(value = "The Docker namespace (Tools only)") @QueryParam("namespace") String namespace,
+        @ApiParam(value = "Optional entry name (Tools only)") @QueryParam("entryName") String entryName) {
         return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 

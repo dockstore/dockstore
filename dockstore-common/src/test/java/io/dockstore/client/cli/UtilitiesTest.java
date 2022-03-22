@@ -8,9 +8,18 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class UtilitiesTest {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
     public void testEnvironmentParam() throws IOException {
