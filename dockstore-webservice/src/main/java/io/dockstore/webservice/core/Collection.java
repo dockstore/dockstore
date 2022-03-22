@@ -57,19 +57,19 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "collection")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias AND e.deleted = FALSE"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId AND col.deleted = FALSE"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.deleteByOrgId", query = "DELETE Collection c WHERE c.organization.id = :organizationId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId AND c.deleted = FALSE"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND organizationid = :organizationId AND col.deleted = FALSE"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND organizationid = :organizationId AND col.deleted = FALSE"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias AND e.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.deleteByOrgId", query = "DELETE Collection c WHERE c.organization.id = :organizationId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrgId", query = "SELECT c from Collection c WHERE c.organization.id = :organizationId AND c.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND organizationid = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByDisplayNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.displayName) = lower(:displayName) AND organizationid = :organizationId AND col.deleted = FALSE"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Collection.findEntryVersionsByCollectionId", query = "SELECT entries FROM Collection c JOIN c.entries entries WHERE entries.id = :entryVersionId AND c.deleted = FALSE")
 })
 
 @NamedNativeQueries({
-        // This is a native query since I couldn't figure out how to do a delete with a join in HQL
-        @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId", query =
-                "DELETE FROM collection_entry_version WHERE collection_id = :collectionId")
+    // This is a native query since I couldn't figure out how to do a delete with a join in HQL
+    @NamedNativeQuery(name = "io.dockstore.webservice.core.Collection.deleteEntryVersionsByCollectionId", query =
+        "DELETE FROM collection_entry_version WHERE collection_id = :collectionId")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable, Aliasable {
@@ -118,7 +118,7 @@ public class Collection implements Serializable, Aliasable {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "collection_id", nullable = false, columnDefinition = "bigint"),
+        @JoinColumn(name = "collection_id", nullable = false, columnDefinition = "bigint"),
     })
     @JsonIgnore
     private Set<EntryVersion> entries = new HashSet<>();

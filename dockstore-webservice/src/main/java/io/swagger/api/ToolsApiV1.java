@@ -46,23 +46,25 @@ import org.apache.http.HttpStatus;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/tools")
 
-@Produces({ "application/json", "text/plain" })
+@Produces({"application/json", "text/plain"})
 @io.swagger.annotations.Api(description = "the tools API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
 @io.swagger.v3.oas.annotations.tags.Tag(name = "GA4GHV1", description = ResourceConstants.GA4GHV1)
 public class ToolsApiV1 {
+
     private final ToolsApiService delegate = ToolsApiServiceFactory.getToolsApi();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     @GET
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsGet", value = ToolsGet.SUMMARY, notes = ToolsGet.DESCRIPTION, response = ToolV1.class, responseContainer = "List", tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = ToolsGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = ToolsGet.OK_RESPONSE, response = ToolV1.class, responseContainer = "List")})
     @Operation(operationId = "toolsGetV1", summary = ToolsGet.SUMMARY, description = ToolsGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = ToolsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolV1.class))))
     })
     public Response toolsGet(
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`") @QueryParam("id") String id,
@@ -83,13 +85,14 @@ public class ToolsApiV1 {
     @GET
     @Path("/{id}")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsIdGet", value = ToolsIdGet.SUMMARY, notes = ToolsIdGet.DESCRIPTION, response = ToolV1.class, tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = ToolsIdGet.OK_RESPONSE, response = ToolV1.class) })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = ToolsIdGet.OK_RESPONSE, response = ToolV1.class)})
     @Operation(operationId = "toolsIdGetV1", summary = ToolsIdGet.SUMMARY, description = ToolsIdGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsIdGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolV1.class)))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = ToolsIdGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolV1.class)))
     })
     public Response toolsIdGet(
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
@@ -100,13 +103,14 @@ public class ToolsApiV1 {
     @GET
     @Path("/{id}/versions")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsGet", value = ToolsIdVersionGet.SUMMARY, notes = ToolsIdVersionGet.DESCRIPTION, response = ToolVersionV1.class, responseContainer = "List", tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = ToolsIdVersionGet.OK_RESPONSE, response = ToolVersionV1.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = ToolsIdVersionGet.OK_RESPONSE, response = ToolVersionV1.class, responseContainer = "List")})
     @Operation(operationId = "toolsIdVersionGetV1", summary = ToolsIdVersionGet.SUMMARY, description = ToolsIdVersionGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = ToolsIdVersionGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolVersionV1.class))))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = ToolsIdVersionGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolVersionV1.class))))
     })
     public Response toolsIdVersionsGet(
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
@@ -117,15 +121,16 @@ public class ToolsApiV1 {
     @GET
     @Path("/{id}/versions/{version_id}/dockerfile")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdDockerfileGet", value = DockerfileGet.SUMMARY, notes = DockerfileGet.DESCRIPTION, response = ToolDockerfile.class, tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = DockerfileGet.OK_RESPONSE, response = ToolDockerfile.class),
 
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "The tool payload is not present in the service.", response = ToolDockerfile.class) })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "The tool payload is not present in the service.", response = ToolDockerfile.class)})
     @Operation(operationId = "dockerfileGetV1", summary = DockerfileGet.SUMMARY, description = DockerfileGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = DockerfileGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDockerfile.class)))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = DockerfileGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDockerfile.class)))
     })
     public Response toolsIdVersionsVersionIdDockerfileGet(
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
@@ -138,13 +143,14 @@ public class ToolsApiV1 {
     @GET
     @Path("/{id}/versions/{version_id}")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdGet", value = VersionIdGet.SUMMARY, notes = VersionIdGet.DESCRIPTION, response = ToolVersionV1.class, tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = VersionIdGet.OK_RESPONSE, response = ToolVersionV1.class) })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = VersionIdGet.OK_RESPONSE, response = ToolVersionV1.class)})
     @Operation(operationId = "versionIdGetV1", summary = VersionIdGet.SUMMARY, description = VersionIdGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = VersionIdGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolVersionV1.class)))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = VersionIdGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolVersionV1.class)))
     })
     public Response toolsIdVersionsVersionIdGet(
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
@@ -157,15 +163,17 @@ public class ToolsApiV1 {
     @GET
     @Path("/{id}/versions/{version_id}/{type}/descriptor")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdTypeDescriptorGet", value = DescriptorGet.SUMMARY, notes = DescriptorGet.DESCRIPTION, response = ToolDescriptor.class, tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = DescriptorGet.OK_RESPONSE, response = ToolDescriptor.class),
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = DescriptorGet.NOT_FOUND_RESPONSE, response = ToolDescriptor.class) })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = DescriptorGet.NOT_FOUND_RESPONSE, response = ToolDescriptor.class)})
     @Operation(operationId = "descriptorGetV1", summary = DescriptorGet.SUMMARY, description = DescriptorGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = DescriptorGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class))),
-            @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = DescriptorGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class)))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = DescriptorGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class))),
+        @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+            + "", description = DescriptorGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class)))
     })
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(
         @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, PLAIN_CWL, PLAIN_WDL") @PathParam("type") String type,
@@ -179,16 +187,18 @@ public class ToolsApiV1 {
     @GET
     @Path("/{id}/versions/{version_id}/{type}/descriptor/{relative_path}")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdTypeDescriptorRelativePathGet", value = RelativeDescriptorGet.SUMMARY, notes = RelativeDescriptorGet.DESCRIPTION, response = ToolDescriptor.class, tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = RelativeDescriptorGet.OK_RESPONSE, response = ToolDescriptor.class),
 
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = RelativeDescriptorGet.NOT_FOUND_RESPONSE, response = ToolDescriptor.class) })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = RelativeDescriptorGet.NOT_FOUND_RESPONSE, response = ToolDescriptor.class)})
     @Operation(operationId = "relativeDescriptorGetV1", summary = RelativeDescriptorGet.SUMMARY, description = RelativeDescriptorGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = RelativeDescriptorGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class))),
-            @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = RelativeDescriptorGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class)))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = RelativeDescriptorGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class))),
+        @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+            + "", description = RelativeDescriptorGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ToolDescriptor.class)))
     })
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(
         @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return.  Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, PLAIN_CWL, PLAIN_WDL") @PathParam("type") String type,
@@ -204,16 +214,18 @@ public class ToolsApiV1 {
     @GET
     @Path("/{id}/versions/{version_id}/{type}/tests")
     @UnitOfWork(readOnly = true)
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @io.swagger.annotations.ApiOperation(nickname = "toolsIdVersionsVersionIdTypeTestsGet", value = TestsGet.SUMMARY, notes = TestsGet.DESCRIPTION, response = ToolTestsV1.class, responseContainer = "List", tags = {
-        "GA4GHV1", })
+        "GA4GHV1"})
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = TestsGet.OK_RESPONSE, response = ToolTestsV1.class, responseContainer = "List"),
 
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = TestsGet.NOT_FOUND_RESPONSE, response = ToolTestsV1.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = TestsGet.NOT_FOUND_RESPONSE, response = ToolTestsV1.class, responseContainer = "List")})
     @Operation(operationId = "testsGetV1", summary = TestsGet.SUMMARY, description = TestsGet.DESCRIPTION, responses = {
-            @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = TestsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolTestsV1.class)))),
-            @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = TestsGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolTestsV1.class))))
+        @ApiResponse(responseCode = HttpStatus.SC_OK
+            + "", description = TestsGet.OK_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolTestsV1.class)))),
+        @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND
+            + "", description = TestsGet.NOT_FOUND_RESPONSE, content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ToolTestsV1.class))))
     })
     public Response toolsIdVersionsVersionIdTypeTestsGet(
         @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, PLAIN_CWL, PLAIN_WDL") @PathParam("type") String type,
@@ -223,44 +235,60 @@ public class ToolsApiV1 {
         return ApiV1VersionConverter
             .convertToVersion(delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value, Optional.empty()));
     }
+
     private static final class ToolsGet {
+
         public static final String SUMMARY = "List all tools";
         public static final String DESCRIPTION = "This endpoint returns all tools available or a filtered subset using metadata query parameters.";
         public static final String OK_RESPONSE = "An array of Tools that match the filter.";
     }
+
     private static final class ToolsIdGet {
+
         public static final String SUMMARY = "List one specific tool, acts as an anchor for self references";
         public static final String DESCRIPTION = "This endpoint returns one specific tool (which has ToolVersions nested inside it)";
         public static final String OK_RESPONSE = "A tool.";
     }
+
     private static final class ToolsIdVersionGet {
+
         public static final String SUMMARY = "List versions of a tool";
         public static final String DESCRIPTION = "Returns all versions of the specified tool";
         public static final String OK_RESPONSE = "An array of tool versions";
     }
+
     private static final class DockerfileGet {
+
         public static final String SUMMARY = "Get the dockerfile for the specified image.";
         public static final String DESCRIPTION = "Returns the dockerfile for the specified image.";
         public static final String OK_RESPONSE = "The tool payload.";
     }
+
     private static final class VersionIdGet {
+
         public static final String SUMMARY = "List one specific tool version, acts as an anchor for self references";
         public static final String DESCRIPTION = "This endpoint returns one specific tool version";
         public static final String OK_RESPONSE = "A tool version.";
     }
+
     private static final class DescriptorGet {
+
         public static final String SUMMARY = "Get the tool descriptor (CWL/WDL) for the specified tool.";
         public static final String DESCRIPTION = "Returns the CWL or WDL descriptor for the specified tool.";
         public static final String OK_RESPONSE = "The tool descriptor.";
         public static final String NOT_FOUND_RESPONSE = "The tool can not be output in the specified type.";
     }
+
     private static final class RelativeDescriptorGet {
+
         public static final String SUMMARY = "Get additional tool descriptor files (CWL/WDL) relative to the main file";
         public static final String DESCRIPTION = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories";
         public static final String OK_RESPONSE = "The tool descriptor.";
         public static final String NOT_FOUND_RESPONSE = "The tool can not be output in the specified type.";
     }
+
     private static final class TestsGet {
+
         public static final String SUMMARY = "Get an array of test JSONs suitable for use with this descriptor type.";
         public static final String DESCRIPTION = "";
         public static final String OK_RESPONSE = "The tool test JSON response.";

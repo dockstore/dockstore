@@ -30,8 +30,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "notification")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Notification.getActiveNotifications",
-                query = "SELECT n FROM Notification n WHERE n.expiration > CURRENT_TIMESTAMP"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Notification.getActiveNotifications",
+        query = "SELECT n FROM Notification n WHERE n.expiration > CURRENT_TIMESTAMP"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Notification {

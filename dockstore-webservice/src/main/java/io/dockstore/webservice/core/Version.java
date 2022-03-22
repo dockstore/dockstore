@@ -72,13 +72,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 // Ensure that the version requested belongs to a workflow a user has access to.
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
-        @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
-                query = "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "
-                        + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
-                        + "version.parent.id = :entryId"
-        ),
-        @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.findVersionInEntry", query = "SELECT v FROM Version v WHERE :entryId = v.parent.id AND :versionId = v.id"),
+    @NamedQuery(name = "io.dockstore.webservice.core.database.VersionVerifiedPlatform.findEntryVersionsWithVerifiedPlatforms",
+        query =
+            "SELECT new io.dockstore.webservice.core.database.VersionVerifiedPlatform(version.id, KEY(verifiedbysource), verifiedbysource.metadata, verifiedbysource.platformVersion, sourcefiles.path, verifiedbysource.verified) FROM Version version "
+                + "INNER JOIN version.sourceFiles as sourcefiles INNER JOIN sourcefiles.verifiedBySource as verifiedbysource WHERE KEY(verifiedbysource) IS NOT NULL AND "
+                + "version.parent.id = :entryId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Version.getCountByEntryId", query = "SELECT Count(v) FROM Version v WHERE v.parent.id = :id")
 })
 
 @SuppressWarnings("checkstyle:magicnumber")

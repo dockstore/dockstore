@@ -43,7 +43,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "fileformat")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.FileFormat.findByFileFormatValue", query = "SELECT l FROM FileFormat l WHERE l.value = :fileformatValue")
+    @NamedQuery(name = "io.dockstore.webservice.core.FileFormat.findByFileFormatValue", query = "SELECT l FROM FileFormat l WHERE l.value = :fileformatValue")
 })
 
 public class FileFormat implements Comparable<FileFormat> {

@@ -27,10 +27,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @ApiModel(value = "CloudInstance", description = "Instances that launch-with cloud partners have")
 @Entity
-@Table(name = "cloud_instance", uniqueConstraints = @UniqueConstraint(name = "unique_user_instances", columnNames = { "url", "user_id",
-        "partner" }))
+@Table(name = "cloud_instance", uniqueConstraints = @UniqueConstraint(name = "unique_user_instances", columnNames = {"url", "user_id",
+    "partner"}))
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT ci from CloudInstance ci where user_id is null")
+    @NamedQuery(name = "io.dockstore.webservice.core.CloudInstance.findAllWithoutUser", query = "SELECT ci from CloudInstance ci where user_id is null")
 })
 public class CloudInstance implements Serializable {
     @Id

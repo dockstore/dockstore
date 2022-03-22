@@ -39,8 +39,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel(value = "DeletedUsername", description = "Usernames of deleted Dockstore accounts")
 @Entity
 @Table(name = "deletedusername")
-@NamedQueries({ @NamedQuery (name = "io.dockstore.webservice.core.DeletedUsername.findByUsername", query = "SELECT u FROM DeletedUsername u WHERE u.username = :username"),
-        @NamedQuery (name = "io.dockstore.webservice.core.DeletedUsername.findNonReusableUsername", query = "SELECT u FROM DeletedUsername u WHERE u.username = :username AND u.dbCreateDate > :timestamp")})
+@NamedQueries({@NamedQuery(name = "io.dockstore.webservice.core.DeletedUsername.findByUsername", query = "SELECT u FROM DeletedUsername u WHERE u.username = :username"),
+    @NamedQuery(name = "io.dockstore.webservice.core.DeletedUsername.findNonReusableUsername", query = "SELECT u FROM DeletedUsername u WHERE u.username = :username AND u.dbCreateDate > :timestamp")})
 public class DeletedUsername {
 
     @Id

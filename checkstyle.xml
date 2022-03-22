@@ -328,8 +328,8 @@
         <module name="JavadocMethod">
             <!-- Dockstore override, addition -->
             <property name="severity" value="warning"/>
-            <property name="scope" value="public"/>
             <property name="allowMissingParamTags" value="true"/>
+            <property name="accessModifiers" value="public, protected"/>
             <property name="allowMissingReturnTag" value="true"/>
             <property name="allowedAnnotations" value="Override, Test"/>
             <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
