@@ -1047,7 +1047,7 @@ public class GeneralIT extends BaseIT {
         containersApi.refresh(toolTest.getId());
         DockstoreTool container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
-        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId() != null && tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should overall refresh
@@ -1055,7 +1055,7 @@ public class GeneralIT extends BaseIT {
         usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
-        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId() != null && tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should organizational refresh
@@ -1063,7 +1063,7 @@ public class GeneralIT extends BaseIT {
         usersApi.refreshToolsByOrganization(userid, container.getNamespace(), DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
-        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId() != null && tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
     }
 
