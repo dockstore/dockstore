@@ -386,7 +386,7 @@ public final class ToolsImplCommon {
             return true;
         }
         // Hide tags with no image ID (except hosted tools which do not have image IDs)
-        return version instanceof Tag && ((Tag)version).getImageId() == null && !isHosted;
+        return version instanceof Tag && (((Tag)version).getImageId() == null && version.getImages().isEmpty()) && !isHosted;
     }
 
     /**
