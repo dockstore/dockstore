@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -28,7 +27,6 @@ public class QuayImageRegistryTest {
      * Using calico/node because it has over 3838 tags
      */
     @Test
-    @Ignore("Failing again on 2022-03-22")
     public void getOver500TagsTest() {
         Token token = new Token();
         token.setContent("fakeQuayTokenBecauseWeDontReallyNeedOne");
@@ -41,8 +39,8 @@ public class QuayImageRegistryTest {
         int size = tags.size();
         Assert.assertTrue("Should be able to get more than the default 500 tags", size > 3838);
         tags.forEach(tag -> {
-            Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
             Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            Assert.assertTrue("things look kinda sane", !tag.getName().isEmpty() && tag.getImages().stream().noneMatch(img -> img.getImageUpdateDate().isEmpty()));
             // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
             if (tag.getSize() == null) {
                 tag.getImages().stream().forEach(image -> {
@@ -67,8 +65,8 @@ public class QuayImageRegistryTest {
             Assert.fail("There should be at least one tag where there is more than one image");
         }
         tags.forEach(tag -> {
-            Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
             Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            Assert.assertTrue("things look kinda sane", !tag.getName().isEmpty() && tag.getImages().stream().noneMatch(img -> img.getImageUpdateDate().isEmpty()));
             // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
             if (tag.getSize() == null) {
                 tag.getImages().stream().forEach(image -> {
