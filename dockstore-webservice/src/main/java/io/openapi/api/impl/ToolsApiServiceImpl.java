@@ -475,26 +475,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // TODO: conversion might bite us much later
                     startIndex = startIndex - entriesConsidered;
                 }
-            }
-            if (!all.isEmpty()) {
-                // if we got any tools, overflow into the very start of workflows
-                startIndex = 0;
-                pageRemaining = Math.max(pageRemaining - all.size(), 0);
-            } else {
-                // on the other hand, if we skipped all tools then, adjust the start index accordingly
-                // TODO: conversion might bite us much later
-                startIndex = startIndex - Math.toIntExact(numTools);
-            }
-            if (startIndex < numWorkflows) {
-                if (toolClass == null || WORKFLOW.equalsIgnoreCase(toolClass)) {
-                    // filter published workflows using criteria builder
-                    all.addAll(bioWorkflowDAO.filterTrsToolsGet(descriptorLanguage, registry, organization, name, toolname, description, author, checker, startIndex, pageRemaining));
-                }
-            }
-        }
-        return ImmutablePair.of(numTools, numWorkflows);
-    }
-
 
                 if (startIndex < typeDAO.right && isCorrectToolClass(toolClass, typeDAO.left)) {
                     // then we want at least some of whatever this DAO returns
