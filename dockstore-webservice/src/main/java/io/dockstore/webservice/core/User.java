@@ -16,6 +16,18 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.security.Principal;
 import java.sql.Timestamp;
@@ -30,7 +42,6 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -55,19 +66,6 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.ComparisonChain;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
-import io.dockstore.webservice.helpers.GoogleHelper;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -88,6 +86,10 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUserId", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com' AND p.onlineProfileId = :id)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findAllGitHubUsers", query = "SELECT t FROM User t JOIN t.userProfiles p where(KEY(p) = 'github.com')"),
+    @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGoogleUserInfo", query = "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
+        + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'google.com' )"),
+    @NamedQuery(name = "io.dockstore.webservice.core.database.UserInfo.findAllGitHubUserInfo", query = "SELECT new io.dockstore.webservice.core.database.UserInfo(user.username, userProfiles.username, userProfiles.email, KEY(userProfiles))"
+        + " FROM User user INNER JOIN user.userProfiles as userProfiles WHERE( KEY(userProfiles) = 'github.com' )")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User>, Serializable {
@@ -185,6 +187,10 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private final Set<Organization> starredOrganizations;
 
+    @Column(columnDefinition = "boolean default 'false'", nullable = false)
+    @Schema(description = "Indicates whether the user is required to change their username before being allowed to do various operations on Dockstore.")
+    @ApiModelProperty(value = "Indicates whether the user is required to change their username before being allowed to do various operations on Dockstore.", position = 17)
+    private boolean usernameChangeRequired;
     /**
      * The total number of hosted entries (workflows and tools) a user is allowed to create.  A value of null
      * means to use the configured system limit.
@@ -539,6 +545,14 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public Set<CloudInstance> getCloudInstances() {
         return cloudInstances;
+    }
+
+    public boolean isUsernameChangeRequired() {
+        return usernameChangeRequired;
+    }
+
+    public void setUsernameChangeRequired(boolean usernameChangeRequired) {
+        this.usernameChangeRequired = usernameChangeRequired;
     }
 
     /**

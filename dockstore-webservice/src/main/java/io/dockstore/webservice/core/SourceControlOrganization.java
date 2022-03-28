@@ -16,10 +16,9 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Objects;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 
 @ApiModel(value = "SourceControlOrganization", description = "This describes a source control organization")
 public class SourceControlOrganization {

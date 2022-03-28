@@ -1,23 +1,17 @@
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
+import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
+import static io.dockstore.webservice.core.WorkflowMode.FULL;
+import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 import com.google.common.collect.Sets;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
@@ -25,15 +19,14 @@ import io.dockstore.common.yaml.YamlAuthor;
 import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.LambdaEvent;
 import io.dockstore.webservice.core.OrcidAuthor;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
@@ -41,23 +34,43 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.CheckUrlHelper;
+import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.GitHelper;
 import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LambdaEventDAO;
+import io.dockstore.webservice.jdbi.OrcidAuthorDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.swagger.annotations.Api;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
@@ -65,13 +78,6 @@ import org.hibernate.Transaction;
 import org.kohsuke.github.GHRateLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.DOCKSTORE_YML_PATH;
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
-import static io.dockstore.webservice.core.WorkflowMode.DOCKSTORE_YML;
-import static io.dockstore.webservice.core.WorkflowMode.FULL;
-import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 /**
  * Base class for ServiceResource and WorkflowResource.
@@ -84,7 +90,6 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 @Api("workflows")
 public abstract class AbstractWorkflowResource<T extends Workflow> implements SourceControlResourceInterface, AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractWorkflowResource.class);
-    private static final String SHA_TYPE_FOR_SOURCEFILES = "SHA-1";
 
     protected final HttpClient client;
     protected final TokenDAO tokenDAO;
@@ -96,12 +101,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     protected final FileDAO fileDAO;
     protected final LambdaEventDAO lambdaEventDAO;
     protected final FileFormatDAO fileFormatDAO;
+    protected final OrcidAuthorDAO orcidAuthorDAO;
     protected final String gitHubPrivateKeyFile;
     protected final String gitHubAppId;
     protected final SessionFactory sessionFactory;
 
     protected final String bitbucketClientSecret;
     protected final String bitbucketClientID;
+    protected final String checkUrlLambdaUrl;
 
     public AbstractWorkflowResource(HttpClient client, SessionFactory sessionFactory, EntryResource entryResource,
             DockstoreWebserviceConfiguration configuration) {
@@ -117,31 +124,24 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         this.eventDAO = new EventDAO(sessionFactory);
         this.lambdaEventDAO = new LambdaEventDAO(sessionFactory);
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.orcidAuthorDAO = new OrcidAuthorDAO(sessionFactory);
         this.bitbucketClientID = configuration.getBitbucketClientID();
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
         gitHubPrivateKeyFile = configuration.getGitHubAppPrivateKeyFile();
         gitHubAppId = configuration.getGitHubAppId();
+        this.checkUrlLambdaUrl = configuration.getCheckUrlLambdaUrl();
 
     }
 
     protected SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
-        List<Token> tokens = getAndRefreshTokens(user, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
-
-        final String bitbucketTokenContent = getToken(tokens, TokenType.BITBUCKET_ORG);
-        Token gitHubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
-        final String gitlabTokenContent = getToken(tokens, TokenType.GITLAB_COM);
-
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(gitUrl, bitbucketTokenContent, gitlabTokenContent, gitHubToken);
+        SourceControl sourceControl = SourceCodeRepoFactory.mapGitUrlToSourceCodeRepo(gitUrl);
+        SourceCodeRepoInterface sourceCodeRepo = createSourceCodeRepo(user, sourceControl, tokenDAO, client, bitbucketClientID, bitbucketClientSecret);
         if (sourceCodeRepo == null) {
-            throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Git tokens invalid, please re-link your Git accounts.", HttpStatus.SC_BAD_REQUEST);
+        } else {
+            return sourceCodeRepo;
         }
-        return sourceCodeRepo;
-    }
 
-    private String getToken(List<Token> tokens, TokenType tokenType) {
-        final Token token = Token.extractToken(tokens, tokenType);
-        return token == null ? null : token.getContent();
     }
 
     /**
@@ -215,27 +215,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             String fileKey = file.getType().toString() + file.getAbsolutePath();
             SourceFile existingFile = existingFileMap.get(fileKey);
             if (existingFileMap.containsKey(fileKey)) {
-                List<Checksum> checksums = new ArrayList<>();
-                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-                if (sha.isPresent()) {
-                    checksums.add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                    if (existingFile.getChecksums() == null) {
-                        existingFile.setChecksums(checksums);
-                    } else {
-                        existingFile.getChecksums().clear();
-                        existingFileMap.get(fileKey).getChecksums().addAll(checksums);
-
-                    }
-                }
                 existingFile.setContent(file.getContent());
             } else {
                 final long fileID = fileDAO.create(file);
                 final SourceFile fileFromDB = fileDAO.findById(fileID);
-
-                Optional<String> sha = FileFormatHelper.calcSHA1(file.getContent());
-                if (sha.isPresent()) {
-                    fileFromDB.getChecksums().add(new Checksum(SHA_TYPE_FOR_SOURCEFILES, sha.get()));
-                }
                 existingVersion.getSourceFiles().add(fileFromDB);
             }
         }
@@ -257,7 +240,49 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         for (Validation versionValidation : remoteVersion.getValidations()) {
             existingVersion.addOrUpdateValidation(versionValidation);
         }
+
+        // Setup CheckUrl
+        if (checkUrlLambdaUrl != null) {
+            publicAccessibleUrls(existingVersion, checkUrlLambdaUrl);
+        }
+
         return existingVersion;
+    }
+
+    /**
+     * Sets the publicly accessible URL version metadata.
+     * If at least one test parameter file is publicly accessible, then version metadata is true
+     * If there's 1+ test parameter file that is null but there's no false, then version metadata is null
+     * If there's 1+ test parameter file that is false, then version metadata is false
+     *
+     * @param existingVersion   Hibernate initialized version
+     * @param checkUrlLambdaUrl URL of the checkUrl lambda
+     */
+    public static void publicAccessibleUrls(WorkflowVersion existingVersion, String checkUrlLambdaUrl) {
+        Boolean publicAccessibleTestParameterFile = null;
+        Iterator<SourceFile> sourceFileIterator = existingVersion.getSourceFiles().stream().filter(sourceFile -> sourceFile.getType().getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)).iterator();
+        while (sourceFileIterator.hasNext()) {
+            SourceFile sourceFile = sourceFileIterator.next();
+            Optional<Boolean> publicAccessibleUrls = Optional.empty();
+            if (sourceFile.getAbsolutePath().endsWith(".json")) {
+                publicAccessibleUrls =
+                    CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl, TestFileType.JSON);
+            } else {
+                if (sourceFile.getAbsolutePath().endsWith(".yaml") || sourceFile.getAbsolutePath().endsWith(".yml")) {
+                    publicAccessibleUrls = CheckUrlHelper.checkTestParameterFile(sourceFile.getContent(), checkUrlLambdaUrl,
+                        TestFileType.YAML);
+                }
+            }
+            // Do not care about null, it will never override a true/false
+            if (publicAccessibleUrls.isPresent()) {
+                publicAccessibleTestParameterFile = publicAccessibleUrls.get();
+                if (Boolean.TRUE.equals(publicAccessibleUrls.get())) {
+                    // If the current test parameter file is publicly accessible, then all previous and future ones don't matter
+                    break;
+                }
+            }
+        }
+        existingVersion.getVersionMetadata().setPublicAccessibleTestParameterFile(publicAccessibleTestParameterFile);
     }
 
     /**
@@ -266,14 +291,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param username Git user who triggered the event
-     * @param installationId GitHub App installation ID
-     * @return List of updated workflows
      */
-    protected List<Workflow> githubWebhookDelete(String repository, String gitReference, String username, String installationId) {
+    protected void githubWebhookDelete(String repository, String gitReference, String username) {
         // Retrieve name from gitReference
         Optional<String> gitReferenceName = GitHelper.parseGitHubReference(gitReference);
         if (gitReferenceName.isEmpty()) {
-            String msg = "Reference " + gitReference + " is not of the valid form";
+            String msg = "Reference " + Utilities.cleanForLogging(gitReference) + " is not of the valid form";
             LOG.error(msg);
             sessionFactory.getCurrentSession().clear();
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
@@ -305,7 +328,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         });
         LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.DELETE);
         lambdaEventDAO.create(lambdaEvent);
-        return workflows;
     }
 
     /**
@@ -334,7 +356,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
             createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml);
+            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml, false);
+            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, user, dockstoreYml, true);
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
@@ -434,39 +457,43 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Create or retrieve workflows based on Dockstore.yml, add or update tag version
+     * Create or retrieve workflows/GitHub App Tools based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param installationId Installation id needed to setup GitHub apps
      * @param user User that triggered action
      * @param dockstoreYml
-     * @return List of new and updated workflows
      */
-    private List<Workflow> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
-            final SourceFile dockstoreYml) {
+    @SuppressWarnings("lgtm[java/path-injection]")
+    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
+            final SourceFile dockstoreYml, boolean isTool) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
-            List<Workflow> updatedWorkflows = new ArrayList<>();
-            final Path gitRefPath = Path.of(gitReference);
+            final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
             for (YamlWorkflow wf : yamlWorkflows) {
                 if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                     continue;
                 }
 
                 String subclass = wf.getSubclass();
+                if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
+                    throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
+                }
+
                 String workflowName = wf.getName();
                 Boolean publish = wf.getPublish();
                 final var defaultVersion = wf.getLatestTagAsDefault();
                 final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
-                Workflow workflow = createOrGetWorkflow(BioWorkflow.class, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
+                Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
+                Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                     try {
-                        workflow = publishWorkflow(workflow, publish);
+                        publishWorkflow(workflow, publish, user);
                     } catch (CustomWebApplicationException ex) {
                         LOG.warn("Could not set publish state from YML.", ex);
                         lambdaEvent.setSuccess(false);
@@ -474,9 +501,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                     lambdaEventDAO.create(lambdaEvent);
                 }
-                updatedWorkflows.add(workflow);
             }
-            return updatedWorkflows;
         } catch (ClassCastException ex) { // This has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
             // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
             // so display a generic one.
@@ -494,15 +519,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param installationId installation id needed to set up GitHub Apps
      * @param user User that triggered action
      * @param dockstoreYml
-     * @return List of new and updated services
      */
-    private List<Workflow> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
+    @SuppressWarnings("lgtm[java/path-injection]")
+    private void createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
             User user, final SourceFile dockstoreYml) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-        final List<Workflow> updatedServices = new ArrayList<>();
         if (service != null) {
-            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) {
-                return updatedServices;
+            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) { // lgtm[java/path-injection]
+                return;
             }
             final DescriptorLanguageSubclass subclass = service.getSubclass();
             final Boolean publish = service.getPublish();
@@ -515,7 +539,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (publish != null && workflow.getIsPublished() != publish) {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
                 try {
-                    workflow = publishWorkflow(workflow, publish);
+                    publishWorkflow(workflow, publish, user);
                 } catch (CustomWebApplicationException ex) {
                     LOG.warn("Could not set publish state from YML.", ex);
                     lambdaEvent.setSuccess(false);
@@ -523,15 +547,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 }
                 lambdaEventDAO.create(lambdaEvent);
             }
-
-            updatedServices.add(workflow);
         }
-        return updatedServices;
     }
 
     /**
      * Create or retrieve workflow or service based on Dockstore.yml
-     * @param workflowType Either BioWorkflow.class or Service.class
+     * @param workflowType Either BioWorkflow.class, Service.class or AppTool.class
      * @param repository Repository path (ex. dockstore/dockstore-ui2)
      * @param user User that triggered action
      * @param workflowName User that triggered action
@@ -542,7 +563,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private Workflow createOrGetWorkflow(Class workflowType, String repository, User user, String workflowName, String subclass, GitHubSourceCodeRepo gitHubSourceCodeRepo) {
         // Check for existing workflow
         String dockstoreWorkflowPath = "github.com/" + repository + (workflowName != null && !workflowName.isEmpty() ? "/" + workflowName : "");
-        Optional<Workflow> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
+        Optional<T> workflow = workflowDAO.findByPath(dockstoreWorkflowPath, false, workflowType);
 
         Workflow workflowToUpdate = null;
         // Create workflow if one does not exist
@@ -552,19 +573,28 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 throw new CustomWebApplicationException("User does not have an account on Dockstore.", LAMBDA_FAILURE);
             }
 
+            StringInputValidationHelper.checkEntryName(workflowType, workflowName);
+
             if (workflowType == BioWorkflow.class) {
+                workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, AppTool.class);
                 workflowToUpdate = gitHubSourceCodeRepo.initializeWorkflowFromGitHub(repository, subclass, workflowName);
             } else if (workflowType == Service.class) {
                 workflowToUpdate = gitHubSourceCodeRepo.initializeServiceFromGitHub(repository, subclass);
+            } else if (workflowType == AppTool.class) {
+                workflowDAO.checkForDuplicateAcrossTables(dockstoreWorkflowPath, BioWorkflow.class);
+                workflowToUpdate = gitHubSourceCodeRepo.initializeOneStepWorkflowFromGitHub(repository, subclass, workflowName);
             } else {
-                throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows and services are supported by GitHub Apps.", LAMBDA_FAILURE);
+                throw new CustomWebApplicationException(workflowType.getCanonicalName()  + " is not a valid workflow type. Currently only workflows, tools, and services are supported by GitHub Apps.", LAMBDA_FAILURE);
             }
             long workflowId = workflowDAO.create(workflowToUpdate);
             workflowToUpdate = workflowDAO.findById(workflowId);
-            LOG.info("Workflow " + dockstoreWorkflowPath + " has been created.");
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Workflow {} has been created.", Utilities.cleanForLogging(dockstoreWorkflowPath));
+            }
         } else {
             workflowToUpdate = workflow.get();
-            gitHubSourceCodeRepo.setLicenseInformation(workflowToUpdate, repository);
+            gitHubSourceCodeRepo.updateWorkflowInfo(workflowToUpdate, repository); // Update info that can change between GitHub releases
+
             if (Objects.equals(workflowToUpdate.getMode(), FULL) || Objects.equals(workflowToUpdate.getMode(), STUB)) {
                 LOG.info("Converting workflow to DOCKSTORE_YML");
                 workflowToUpdate.setMode(DOCKSTORE_YML);
@@ -585,9 +615,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
      * @param dockstoreYml Dockstore YAML File
      * @param gitHubSourceCodeRepo Source Code Repo
-     * @return New or updated workflow
      */
-    private Workflow addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
+    private void addDockstoreYmlVersionToWorkflow(String repository, String gitReference, SourceFile dockstoreYml,
             GitHubSourceCodeRepo gitHubSourceCodeRepo, Workflow workflow, boolean latestTagAsDefault, final List<YamlAuthor> yamlAuthors) {
         Instant startTime = Instant.now();
         try {
@@ -600,6 +629,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             // So we have workflowversion which is the new version, we want to update the version and associated source files
             WorkflowVersion existingWorkflowVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
+            WorkflowVersion updatedWorkflowVersion;
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
                 // Copy over workflow version level information
@@ -613,30 +643,37 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 existingWorkflowVersion.setToolTableJson(null);
                 existingWorkflowVersion.setReferenceType(remoteWorkflowVersion.getReferenceType());
                 existingWorkflowVersion.setValid(remoteWorkflowVersion.isValid());
+                existingWorkflowVersion.setAuthors(remoteWorkflowVersion.getAuthors());
+                existingWorkflowVersion.setOrcidAuthors(remoteWorkflowVersion.getOrcidAuthors());
                 updateDBVersionSourceFilesWithRemoteVersionSourceFiles(existingWorkflowVersion, remoteWorkflowVersion);
+                updatedWorkflowVersion = existingWorkflowVersion;
             } else {
+                if (checkUrlLambdaUrl != null) {
+                    publicAccessibleUrls(remoteWorkflowVersion, checkUrlLambdaUrl);
+                }
                 workflow.addWorkflowVersion(remoteWorkflowVersion);
+                updatedWorkflowVersion = remoteWorkflowVersion;
             }
-
-            WorkflowVersion addedVersion = workflowVersionDAO.getWorkflowVersionByWorkflowIdAndVersionName(workflow.getId(), remoteWorkflowVersion.getName());
-            if (addedVersion != null) {
-                gitHubSourceCodeRepo.updateVersionMetadata(addedVersion.getWorkflowPath(), addedVersion, workflow.getDescriptorType(), repository);
-                if (workflow.getLastModified() == null || (addedVersion.getLastModified() != null && workflow.getLastModifiedDate().before(addedVersion.getLastModified()))) {
-                    workflow.setLastModified(addedVersion.getLastModified());
-                }
-                // Update file formats for the version and then the entry.
-                // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
-                Set<WorkflowVersion> workflowVersions = new HashSet<>();
-                workflowVersions.add(addedVersion);
-                FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
-                boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
-                                .before(addedVersion.getLastModified());
-                if (latestTagAsDefault && Version.ReferenceType.TAG.equals(addedVersion.getReferenceType()) && addedVersionIsNewer) {
-                    workflow.setActualDefaultVersion(addedVersion);
-                }
+            gitHubSourceCodeRepo.updateVersionMetadata(updatedWorkflowVersion.getWorkflowPath(), updatedWorkflowVersion, workflow.getDescriptorType(), repository);
+            if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
+                workflow.setLastModified(updatedWorkflowVersion.getLastModified());
             }
-
+            // Update file formats for the version and then the entry.
+            // TODO: We were not adding file formats to .dockstore.yml versions before, so this only handles new/updated versions. Need to add a way to update all .dockstore.yml versions in a workflow
+            Set<WorkflowVersion> workflowVersions = new HashSet<>();
+            workflowVersions.add(updatedWorkflowVersion);
+            FileFormatHelper.updateFileFormats(workflow, workflowVersions, fileFormatDAO, false);
+            boolean addedVersionIsNewer = workflow.getActualDefaultVersion() == null || workflow.getActualDefaultVersion().getLastModified()
+                            .before(updatedWorkflowVersion.getLastModified());
+            if (latestTagAsDefault && Version.ReferenceType.TAG.equals(updatedWorkflowVersion.getReferenceType()) && addedVersionIsNewer) {
+                workflow.setActualDefaultVersion(updatedWorkflowVersion);
+            }
             LOG.info("Version " + remoteWorkflowVersion.getName() + " has been added to workflow " + workflow.getWorkflowPath() + ".");
+            // Update index if default version was updated
+            // verified and verified platforms are the only versions-level properties unrelated to default version that affect the index but GitHub Apps do not update it
+            if (workflow.getActualDefaultVersion() != null && updatedWorkflowVersion.getName() != null && workflow.getActualDefaultVersion().getName().equals(updatedWorkflowVersion.getName())) {
+                PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.UPDATE);
+            }
         } catch (IOException ex) {
             final String message = "Cannot retrieve the workflow reference from GitHub, ensure that " + gitReference + " is a valid tag.";
             LOG.error(message, ex);
@@ -644,8 +681,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
         Instant endTime = Instant.now();
         long timeElasped = Duration.between(startTime, endTime).toSeconds();
-        LOG.info("Processing .dockstore.yml workflow version " + gitReference + " for repo: " + repository + " took " + timeElasped + " seconds");
-        return workflow;
+        if (LOG.isInfoEnabled()) {
+            LOG.info(
+                "Processing .dockstore.yml workflow version {} for repo: {} took {} seconds", Utilities.cleanForLogging(gitReference), Utilities.cleanForLogging(repository), timeElasped);
+        }
     }
 
     /**
@@ -666,11 +705,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 })
                 .collect(Collectors.toSet());
         version.setAuthors(authors);
+
         final Set<OrcidAuthor> orcidAuthors = yamlAuthors.stream()
-                .filter(yamlAuthor -> yamlAuthor.getOrcid() != null)
+                .filter(yamlAuthor -> yamlAuthor.getOrcid() != null && ORCIDHelper.isValidOrcidId(yamlAuthor.getOrcid()))
                 .map(yamlAuthor -> {
-                    final OrcidAuthor orcidAuthor = new OrcidAuthor(yamlAuthor.getOrcid());
-                    return orcidAuthor;
+                    OrcidAuthor existingOrcidAuthor = orcidAuthorDAO.findByOrcidId(yamlAuthor.getOrcid());
+                    if (existingOrcidAuthor == null) {
+                        long id = orcidAuthorDAO.create(new OrcidAuthor(yamlAuthor.getOrcid()));
+                        return orcidAuthorDAO.findById(id);
+                    } else {
+                        return existingOrcidAuthor;
+                    }
                 })
                 .collect(Collectors.toSet());
         version.setOrcidAuthors(orcidAuthors);
@@ -771,7 +816,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubHelper.checkJWT(gitHubAppId, gitHubPrivateKeyFile);
         String installationAccessToken = CacheConfigManager.getInstance().getInstallationAccessTokenFromCache(installationId);
         if (installationAccessToken == null) {
-            String msg = "Could not get an installation access token for install with id " + installationId;
+            String msg = "Could not get an installation access token for install with id " + Utilities.cleanForLogging(installationId);
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
@@ -782,55 +827,57 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * Publish or unpublish given workflow, if necessary.
      * @param workflow
      * @param publish
+     * @param user
      * @return
      */
-    protected Workflow publishWorkflow(Workflow workflow, final boolean publish) {
+    protected Workflow publishWorkflow(Workflow workflow, final boolean publish, User user) {
         if (workflow.getIsPublished() == publish) {
             return workflow;
         }
+        checkNotChecker(workflow);
+        final Workflow checker = workflow.getCheckerWorkflow();
+        if (publish) {
+            final boolean validTag = workflow.getWorkflowVersions().stream().anyMatch(Version::isValid);
+            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
+                workflow.setIsPublished(true);
+                publishChecker(checker, true, user);
+            } else {
+                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
+            }
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
+            createAndSetDiscourseTopic(workflow);
+        } else {
+            workflow.setIsPublished(false);
+            publishChecker(checker, false, user);
+            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
+        }
+        eventDAO.publishEvent(publish, user, workflow);
+        return workflow;
+    }
 
-        Workflow checker = workflow.getCheckerWorkflow();
+    private void createAndSetDiscourseTopic(Workflow workflow) {
+        if (workflow.getTopicId() == null) {
+            try {
+                entryResource.createAndSetDiscourseTopic(workflow.getId());
+            } catch (CustomWebApplicationException ex) {
+                LOG.error("Error adding discourse topic.", ex);
+            }
+        }
+    }
 
+    private void publishChecker(Workflow checker, boolean publish, User user) {
+        if (checker != null && checker.getIsPublished() != publish) {
+            checker.setIsPublished(publish);
+            eventDAO.publishEvent(publish, user, checker);
+        }
+    }
+
+    private void checkNotChecker(Workflow workflow) {
         if (workflow.isIsChecker()) {
             String msg = "Cannot directly publish/unpublish a checker workflow.";
             LOG.error(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
-
-        if (publish) {
-            boolean validTag = false;
-            Set<WorkflowVersion> versions = workflow.getWorkflowVersions();
-            for (WorkflowVersion workflowVersion : versions) {
-                if (workflowVersion.isValid()) {
-                    validTag = true;
-                    break;
-                }
-            }
-
-            if (validTag && (!workflow.getGitUrl().isEmpty() || Objects.equals(workflow.getMode(), WorkflowMode.HOSTED))) {
-                workflow.setIsPublished(true);
-                if (checker != null) {
-                    checker.setIsPublished(true);
-                }
-            } else {
-                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.PUBLISH);
-            if (workflow.getTopicId() == null) {
-                try {
-                    entryResource.createAndSetDiscourseTopic(workflow.getId());
-                } catch (CustomWebApplicationException ex) {
-                    LOG.error("Error adding discourse topic.", ex);
-                }
-            }
-        } else {
-            workflow.setIsPublished(false);
-            if (checker != null) {
-                checker.setIsPublished(false);
-            }
-            PublicStateManager.getInstance().handleIndexUpdate(workflow, StateManagerMode.DELETE);
-        }
-        return workflow;
     }
+
 }

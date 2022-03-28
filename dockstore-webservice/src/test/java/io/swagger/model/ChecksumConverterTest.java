@@ -1,10 +1,9 @@
 package io.swagger.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.ChecksumConverter;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;

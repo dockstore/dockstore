@@ -1,7 +1,8 @@
 {
   "settings": {
     "index": {
-      "number_of_replicas": 0,
+      "number_of_shards" : 1,
+      "number_of_replicas": 1,
       "analysis": {
         "filter": {
           "english_stop": {
@@ -50,6 +51,31 @@
     "properties": {
       "author": {
         "type": "keyword"
+      },
+      "categories": {
+        "properties": {
+          "description": {
+            "type": "text"
+          },
+          "displayName": {
+            "type": "text"
+          },
+          "id": {
+            "type": "long"
+          },
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 39
+              }
+            }
+          },
+          "topic": {
+            "type": "text"
+          }
+        }
       },
       "default_cwl_path": {
         "type": "text"
@@ -195,6 +221,18 @@
       },
       "toolname": {
         "type": "text"
+      },
+      "organization": {
+        "type": "keyword"
+      },
+      "repository": {
+        "type": "keyword"
+      },
+      "workflowName": {
+        "type": "keyword"
+      },
+      "workflow_path": {
+        "type": "keyword"
       },
       "users": {
         "properties": {

@@ -16,6 +16,14 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.helpers.ZipSourceFileHelper;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -23,7 +31,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.ElementCollection;
@@ -44,15 +51,6 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.ComparisonChain;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.webservice.helpers.ZipSourceFileHelper;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -74,6 +72,7 @@ import org.slf4j.LoggerFactory;
 public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
+    public static final String SHA_TYPE = "SHA-256";
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -107,8 +106,8 @@ public class SourceFile implements Comparable<SourceFile> {
     @ApiModelProperty(value = "When true, this version cannot be affected by refreshes to the content or updates to its metadata", position = 5)
     private boolean frozen = false;
 
-    @Column(columnDefinition = "varchar")
-    @Convert(converter = ChecksumConverter.class)
+    @Column(columnDefinition = "TEXT", name = "sha256", updatable = false, insertable = false)
+    @Convert(converter = Sha256Converter.class)
     @ApiModelProperty(value = "The checksum(s) of the sourcefile's content", position = 6)
     private List<Checksum> checksums = new ArrayList<>();
 

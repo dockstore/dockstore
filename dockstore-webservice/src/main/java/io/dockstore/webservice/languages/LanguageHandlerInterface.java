@@ -15,6 +15,34 @@
  */
 package io.dockstore.webservice.languages;
 
+import com.google.common.base.Strings;
+import com.google.gson.Gson;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.LanguageHandlerHelper;
+import io.dockstore.common.Registry;
+import io.dockstore.common.VersionTypeValidation;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Checksum;
+import io.dockstore.webservice.core.Image;
+import io.dockstore.webservice.core.ParsedInformation;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.dockerhub.DockerHubImage;
+import io.dockstore.webservice.core.dockerhub.DockerHubTag;
+import io.dockstore.webservice.core.dockerhub.Results;
+import io.dockstore.webservice.helpers.AbstractImageRegistry;
+import io.dockstore.webservice.helpers.DAGHelper;
+import io.dockstore.webservice.helpers.DockerRegistryAPIHelper;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.swagger.quay.client.ApiClient;
+import io.swagger.quay.client.ApiException;
+import io.swagger.quay.client.Configuration;
+import io.swagger.quay.client.api.RepositoryApi;
+import io.swagger.quay.client.model.QuayRepo;
+import io.swagger.quay.client.model.QuayTag;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -32,35 +60,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.google.common.base.Strings;
-import com.google.gson.Gson;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.LanguageHandlerHelper;
-import io.dockstore.common.Registry;
-import io.dockstore.common.VersionTypeValidation;
-import io.dockstore.webservice.core.Checksum;
-import io.dockstore.webservice.core.Image;
-import io.dockstore.webservice.core.ParsedInformation;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.dockerhub.DockerHubImage;
-import io.dockstore.webservice.core.dockerhub.DockerHubTag;
-import io.dockstore.webservice.core.dockerhub.Results;
-import io.dockstore.webservice.helpers.AbstractImageRegistry;
-import io.dockstore.webservice.helpers.DAGHelper;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.swagger.quay.client.ApiClient;
-import io.swagger.quay.client.ApiException;
-import io.swagger.quay.client.Configuration;
-import io.swagger.quay.client.api.RepositoryApi;
-import io.swagger.quay.client.model.QuayRepo;
-import io.swagger.quay.client.model.QuayTag;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -76,12 +79,24 @@ public interface LanguageHandlerInterface {
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
     Gson GSON = new Gson();
     ApiClient API_CLIENT = Configuration.getDefaultApiClient();
-    Pattern AMAZON_ECR_PATTERN = Pattern.compile("(.+)(\\.dkr\\.ecr\\.)(.+)(\\.amazonaws.com/)(.+)");
+    // public.ecr.aws/<registry_alias>/<repository_name>:<image_tag> -> public.ecr.aws/ubuntu/ubuntu:18.04
+    // public.ecr.aws/<registry_alias>/<repository_name>@sha256:<image_digest>
+    Pattern AMAZON_ECR_PUBLIC_IMAGE = Pattern.compile("(public\\.ecr\\.aws/)([a-z0-9._-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
+    // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>:<image_tag> -> 012345678912.dkr.ecr.us-east-1.amazonaws.com/test-repo:1
+    // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>@sha256:<image_digest>
+    Pattern AMAZON_ECR_PRIVATE_IMAGE = Pattern.compile("([0-9]++)(\\.dkr\\.ecr\\.)([a-z0-9-]++)(\\.amazonaws.com/)([a-z0-9._/-]++)(:|@sha256:)(.++)");
     Pattern GOOGLE_PATTERN = Pattern.compile("((us|eu|asia)(.))?(gcr\\.io)(.+)");
     // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
-    Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*):(.+)");
+    // <org>/<repository>@sha256:<digest> -> broadinstitute/gatk@sha256:98b2f223dce4282c144d249e7e1f47d400ae349404409d01e87df2efeebac439
+    Pattern DOCKER_HUB = Pattern.compile("(\\w)+/(.*)(:|@sha256:)(.+)");
     // <repo>:<version> -> postgres:9.6 Official Docker Hub images belong to the org "library", but that's not included when pulling the image
-    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+:(.+)");
+    // <repo>@256:<digest> -> ubuntu@sha256:d7bb0589725587f2f67d0340edb81fd1fcba6c5f38166639cf2a252c939aa30c
+    Pattern OFFICIAL_DOCKER_HUB_IMAGE = Pattern.compile("(\\w|-)+(:|@sha256:)(.++)");
+    // ghcr.io/<owner>/<image_name>:<image_tag> -> ghcr.io/icgc-argo/workflow-gateway
+    // ghcr.io/<owner>/<image_name>@sha256:<image_digest>
+    Pattern GITHUB_CONTAINER_REGISTRY_IMAGE = Pattern.compile("(ghcr\\.io)/([a-zA-Z0-9-]++)/([a-z0-9._/-]++)(:|@sha256:)(.++)");
+    Pattern IMAGE_TAG_PATTERN = Pattern.compile("([^:]++):(\\S++)");
+    Pattern IMAGE_DIGEST_PATTERN = Pattern.compile("([^@]++)@(\\S++)");
 
     /**
      * Parses the content of the primary descriptor to get author, email, and description
@@ -280,6 +295,7 @@ public interface LanguageHandlerInterface {
             //get the docker requirement
             String dockerPullName = value.getDockerImage();
             String dockerLink = value.getDockerUrl();
+            DockerSpecifier dockerSpecifier = value.getDockerSpecifier();
 
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
@@ -287,6 +303,10 @@ public interface LanguageHandlerInterface {
             dataToolEntry.put("file", fileName);
             dataToolEntry.put("docker", dockerPullName);
             dataToolEntry.put("link", dockerLink);
+
+            if (dockerSpecifier != null) {
+                dataToolEntry.put("specifier", dockerSpecifier.name());
+            }
 
             // Only add if docker and link are present
             if (dockerLink != null && dockerPullName != null) {
@@ -314,69 +334,225 @@ public interface LanguageHandlerInterface {
     }
 
     /**
-     * Given a docker entry (quay or dockerhub), return a URL to the given entry
+     * Takes in a list of strings ["image_1", "image_2",..., "image_n"] and returns a formatted string: "image_1, image_2, ... and image_n"
      *
-     * @param dockerEntry has the docker name
+     * @param images : A list of docker image names
+     * @return
+     */
+    default String formatImageStrings(final List<String> images) {
+        int lastIndex = images.size() - 1;
+        if (images.size() == 1) {
+            return images.get(lastIndex);
+        } else {
+            String imagesString = String.join(", ", images.subList(0, lastIndex));
+            imagesString = String.join(" and ", imagesString, images.get(lastIndex));
+            return imagesString;
+        }
+    }
+
+    /**
+     * Check that all images are specified using a digest or tag.
+     *
+     * @param versionName of the workflow that the snapshot is being requested for
+     * @param toolsJSONTable
+     * @throws CustomWebApplicationException if there is at least one image that is specified by 'latest' tag, no tag, or parameter.
+     */
+    default void checkSnapshotImages(final String versionName, final String toolsJSONTable) throws CustomWebApplicationException {
+        List<Map<String, String>> dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, ArrayList.class);
+
+        // Eliminate duplicate docker strings
+        Map<String, DockerSpecifier> dockerStrings = dockerTools.stream().collect(Collectors.toMap(
+            dockerTool -> dockerTool.get("docker"), dockerTool -> DockerSpecifier.valueOf(dockerTool.get("specifier")), (x, y) -> x));
+
+        // Find invalid images
+        Map<String, DockerSpecifier> invalidSnapshotImages = dockerStrings.entrySet().stream()
+                .filter(image -> image.getValue() == DockerSpecifier.PARAMETER || image.getValue() == DockerSpecifier.LATEST
+                        || image.getValue() == DockerSpecifier.NO_TAG)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        // Create error message
+        if (invalidSnapshotImages.size() > 0) {
+            List<String> parameterImages = invalidSnapshotImages.entrySet().stream()
+                    .filter(image -> image.getValue() == DockerSpecifier.PARAMETER)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+            List<String> latestImages = invalidSnapshotImages.entrySet().stream()
+                    .filter(image -> image.getValue() == DockerSpecifier.LATEST)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+            List<String> noTagImages = invalidSnapshotImages.entrySet().stream()
+                    .filter(image -> image.getValue() == DockerSpecifier.NO_TAG)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+            StringBuilder errorMessage = new StringBuilder(String.format(
+                    "Snapshot for workflow version %s failed because not all images are specified using a digest nor a valid tag.",
+                    versionName));
+
+            if (parameterImages.size() > 1) {
+                errorMessage.append(String.format(" Images %s are parameters.", formatImageStrings(parameterImages)));
+            } else if (parameterImages.size() == 1) {
+                errorMessage.append(String.format(" Image %s is a parameter.", parameterImages.get(0)));
+            }
+
+            if (noTagImages.size() > 1) {
+                errorMessage.append(String.format(" Images %s have no tag.", formatImageStrings(noTagImages)));
+            } else if (noTagImages.size() == 1) {
+                errorMessage.append(String.format(" Image %s has no tag.", noTagImages.get(0)));
+            }
+
+            if (latestImages.size() > 1) {
+                errorMessage.append(String.format(" Images %s are using the 'latest' tag.", formatImageStrings(latestImages)));
+            } else if (latestImages.size() == 1) {
+                errorMessage.append(String.format(" Image %s is using the 'latest' tag.", latestImages.get(0)));
+            }
+
+            throw new CustomWebApplicationException(errorMessage.toString(), HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Given a docker entry (quay, dockerhub, amazon ecr, or github container registry), return a URL to the given entry
+     *
+     * @param dockerEntry     has the docker name
+     * @param toolDAO
+     * @param dockerSpecifier has the type of specifier used to refer to the docker image
      * @return URL
      */
     // TODO: Potentially add support for other registries and add message that the registry is unsupported
-    default String getURLFromEntry(String dockerEntry, ToolDAO toolDAO) {
+    default String getURLFromEntry(final String dockerEntry, final ToolDAO toolDAO, final DockerSpecifier dockerSpecifier) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
         String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
         String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
         String dockstorePath = "https://www.dockstore.org/containers/"; // Update to tools once UI is updated to use /tools instead of /containers
-
+        String amazonECRPublicPath = "https://gallery.ecr.aws/"; // Amazon ECR Public Gallery
         String url;
 
-        // Remove tag if exists
-        Pattern p = Pattern.compile("([^:]+):?(\\S+)?");
-        Matcher m = p.matcher(dockerEntry);
-        if (m.matches()) {
-            dockerEntry = m.group(1);
-        }
+        // Remove tag or digest if exists
+        String dockerImage = getImageNameWithoutSpecifier(dockerEntry, dockerSpecifier);
 
-        if (dockerEntry.isEmpty()) {
+        if (dockerImage.isEmpty()) {
             return null;
         }
 
         // Regex for determining registry requires a tag; add a fake "0" tag
-        Optional<Registry> registry = determineImageRegistry(dockerEntry + ":0");
+        Optional<Registry> registry = determineImageRegistry(dockerImage + ":0");
 
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
         if (registry.isPresent() && registry.get().equals(Registry.QUAY_IO)) {
-            List<Tool> byPath = toolDAO.findAllByPath(dockerEntry, true);
+            List<Tool> byPath = toolDAO.findAllByPath(dockerImage, true);
             if (byPath == null || byPath.isEmpty()) {
                 // when we cannot find a published tool on Dockstore, link to quay.io
-                url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
+                url = dockerImage.replaceFirst("quay\\.io/", quayIOPath);
             } else {
                 // when we found a published tool, link to the tool on Dockstore
-                url = dockstorePath + dockerEntry;
+                url = dockstorePath + dockerImage;
+            }
+        } else if (registry.isPresent() && registry.get().equals(Registry.AMAZON_ECR)) {
+            List<Tool> publishedByPath = toolDAO.findAllByPath(dockerImage, true);
+            if (publishedByPath == null || publishedByPath.isEmpty()) {
+                // Regex for Amazon ECR image requires a tag or digest; add a fake "0" tag
+                if (AMAZON_ECR_PUBLIC_IMAGE.matcher(dockerEntry + ":0").matches()) {
+                    // When we cannot find a published tool on Dockstore, link to Amazon ECR Public Gallery if it's a public image
+                    url = dockerImage.replaceFirst("public\\.ecr\\.aws/", amazonECRPublicPath);
+                } else {
+                    // Return the entry as the url if it's a private Amazon ECR image
+                    url = "https://" + dockerImage;
+                }
+            } else {
+                // When we find a published tool, link to the tool on Dockstore
+                url = dockstorePath + dockerImage;
+            }
+        } else if (registry.isPresent() && registry.get().equals(Registry.GITHUB_CONTAINER_REGISTRY)) {
+            List<Tool> publishedByPath = toolDAO.findAllByPath(dockerImage, true);
+            if (publishedByPath == null || publishedByPath.isEmpty()) {
+                // when we cannot find a published tool on Dockstore, link to GitHub Container Registry
+                url = "https://" + dockerImage; // The docker image path redirects to the GitHub Package page for the image
+            } else {
+                // When we find a published tool, link to the tool on Dockstore
+                url = dockstorePath + dockerImage;
             }
         } else if (registry.isEmpty() || !registry.get().equals(Registry.DOCKER_HUB)) {
-            // if the registry is neither Quay nor Docker Hub, return the entry as the url
-            url = "https://" + dockerEntry;
+            // if the registry is neither Quay, Docker Hub, Amazon ECR nor GitHub Container Registry, return the entry as the url
+            url = "https://" + dockerImage;
         } else {  // DOCKER_HUB
-            String[] parts = dockerEntry.split("/");
+            String[] parts = dockerImage.split("/");
             if (parts.length == 2) {
                 // if the path looks like pancancer/pcawg-oxog-tools
-                List<Tool> publishedByPath = toolDAO.findAllByPath("registry.hub.docker.com/" + dockerEntry, true);
+                List<Tool> publishedByPath = toolDAO.findAllByPath("registry.hub.docker.com/" + dockerImage, true);
                 if (publishedByPath == null || publishedByPath.isEmpty()) {
                     // when we cannot find a published tool on Dockstore, link to docker hub
-                    url = dockerHubPathR + dockerEntry;
+                    url = dockerHubPathR + dockerImage;
                 } else {
                     // when we found a published tool, link to the tool on Dockstore
-                    url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
+                    url = dockstorePath + "registry.hub.docker.com/" + dockerImage;
                 }
             } else {
                 // if the path looks like debian:8 or debian
-                url = dockerHubPathUnderscore + dockerEntry;
+                url = dockerHubPathUnderscore + dockerImage;
             }
 
         }
 
         return url;
+    }
+
+    /**
+     * Returns an image name without the specifier (tag or digest), if present.
+     * @param image
+     * @param specifier
+     * @return image name without specifier
+     */
+    default String getImageNameWithoutSpecifier(final String image, final DockerSpecifier specifier) {
+        String imageNameWithoutSpecifier = image;
+        // Remove tag or digest if exists
+        Matcher m;
+        if (specifier == DockerSpecifier.DIGEST) {
+            m = IMAGE_DIGEST_PATTERN.matcher(image);
+        } else {
+            m = IMAGE_TAG_PATTERN.matcher(image);
+        }
+        if (m.matches()) {
+            imageNameWithoutSpecifier = m.group(1);
+        }
+
+        // A specific architecture image from a multi-arch image is referenced by digest, but it may also include the tag for the multi-arch image
+        // Ex: ubuntu:18.04@sha256:c404618e908391e50953e1ead94fe05dbbddbf532bd5c89b935ef34a9ca130d3 is the linux/amd64 image for ubuntu:18.04
+        // Check for tag and remove if necessary
+        if (specifier == DockerSpecifier.DIGEST) {
+            m = IMAGE_TAG_PATTERN.matcher(imageNameWithoutSpecifier);
+            if (m.matches()) {
+                imageNameWithoutSpecifier = m.group(1);
+            }
+        }
+
+        return imageNameWithoutSpecifier;
+    }
+
+    static DockerSpecifier determineImageSpecifier(String image, DockerImageReference imageReference) {
+        DockerSpecifier dockerSpecifier = null;
+        String latestTag = "latest";
+        String digestSpecifer = "@sha256:";
+
+        if (imageReference == DockerImageReference.DYNAMIC) {
+            dockerSpecifier = DockerSpecifier.PARAMETER;
+        } else if (imageReference == DockerImageReference.LITERAL) {
+            // Determine how the image is specified
+            if (image.contains(digestSpecifer)) {
+                dockerSpecifier = DockerSpecifier.DIGEST;
+            } else if (image.contains(":")) {
+                String tagName = image.split(":")[1];
+                if (tagName.equals(latestTag)) {
+                    dockerSpecifier = DockerSpecifier.LATEST;
+                } else {
+                    dockerSpecifier = DockerSpecifier.TAG;
+                }
+            } else {
+                dockerSpecifier = DockerSpecifier.NO_TAG;
+            }
+        }
+        return dockerSpecifier;
     }
 
     default Optional<Registry> determineImageRegistry(String image) {
@@ -388,93 +564,143 @@ public interface LanguageHandlerInterface {
             return Optional.of(Registry.GITLAB);
         } else if (GOOGLE_PATTERN.matcher(image).matches()) {
             return Optional.empty();
-        } else if (AMAZON_ECR_PATTERN.matcher(image).matches()) {
+        } else if (AMAZON_ECR_PUBLIC_IMAGE.matcher(image).matches() || AMAZON_ECR_PRIVATE_IMAGE.matcher(image).matches()) {
             return Optional.of(Registry.AMAZON_ECR);
         } else if ((DOCKER_HUB.matcher(image).matches() || OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches())) {
             return Optional.of(Registry.DOCKER_HUB);
+        } else if (GITHUB_CONTAINER_REGISTRY_IMAGE.matcher(image).matches()) {
+            return Optional.of(Registry.GITHUB_CONTAINER_REGISTRY);
         } else {
             return Optional.empty();
         }
     }
 
-    // TODO: Implement then gitlab, seven bridges, amazon, google if possible;
+    // TODO: Implement then gitlab, seven bridges, google if possible;
     default Set<Image> getImagesFromRegistry(String toolsJSONTable) {
-        List<Map<String, String>> dockerTools = new ArrayList<>();
-        dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, dockerTools.getClass());
+        List<Map<String, String>> dockerTools = (ArrayList<Map<String, String>>)GSON.fromJson(toolsJSONTable, ArrayList.class);
 
         // Eliminate duplicate docker strings
-        Set<String> dockerStrings = dockerTools.stream().map(dockertool -> dockertool.get("docker")).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<String, DockerSpecifier> dockerStrings = dockerTools.stream().collect(Collectors.toMap(dockertool -> dockertool.get("docker"), dockertool -> DockerSpecifier.valueOf(dockertool.get("specifier")), (x, y) -> x));
 
         Set<Image> dockerImages = new HashSet<>();
 
-        for (String image : dockerStrings) {
-            String[] splitDocker;
-            String[] splitTag;
+        for (Map.Entry<String, DockerSpecifier> dockerString : dockerStrings.entrySet()) {
+            String image = dockerString.getKey();
+            DockerSpecifier imageSpecifier = dockerString.getValue();
 
             Optional<Registry> registry = determineImageRegistry(image);
             Registry registryFound = registry.isEmpty() ? null : registry.get();
-            if (registryFound == null || registryFound == Registry.AMAZON_ECR || registryFound == Registry.GITLAB) {
+            if (registryFound == null || registryFound == Registry.GITLAB) {
                 continue;
-            } else if (registryFound == Registry.QUAY_IO) {
-                try {
-                    splitDocker = image.split("/");
-                    splitTag = splitDocker[2].split(":");
-                } catch (ArrayIndexOutOfBoundsException ex) {
-                    LOG.error("URL to image on Quay incomplete", ex);
+            } else {
+                String repoName = getRepositoryName(registryFound, image, imageSpecifier);
+                String specifierName = getSpecifierName(image, imageSpecifier);
+                if (repoName.isEmpty()) {
+                    LOG.error("URL to image {} on {} incomplete", image, registryFound.getFriendlyName());
+                    continue;
+                }
+                if (specifierName.isEmpty()) {
+                    LOG.error("Could not find specifier for image {} on {}", image, registryFound.getFriendlyName());
                     continue;
                 }
 
-                if (splitTag.length > 1) {
-                    String repo = splitDocker[1] + "/" + splitTag[0];
-                    String tagName = splitTag[1];
-                    Set<Image> quayImages = getImageResponseFromQuay(repo, tagName);
-                    dockerImages.addAll(quayImages);
-
-                } else {
-                    LOG.error("Could not find image version specified for " + splitDocker[1]);
+                Set<Image> images = new HashSet<>();
+                if (registryFound == Registry.QUAY_IO) {
+                    images = getImageResponseFromQuay(repoName, imageSpecifier, specifierName);
+                } else if (registryFound == Registry.DOCKER_HUB) {
+                    images = getImagesFromDockerHub(repoName, imageSpecifier, specifierName);
+                } else if (registryFound == Registry.GITHUB_CONTAINER_REGISTRY) {
+                    images = DockerRegistryAPIHelper.getImages(Registry.GITHUB_CONTAINER_REGISTRY, repoName, imageSpecifier, specifierName);
+                } else if (registryFound == Registry.AMAZON_ECR && AMAZON_ECR_PUBLIC_IMAGE.matcher(image).matches()) {
+                    images = DockerRegistryAPIHelper.getImages(Registry.AMAZON_ECR, repoName, imageSpecifier, specifierName);
                 }
-            } else if (registryFound == Registry.DOCKER_HUB) {
-                // <org>/<repository>:<version> -> broadinstitute/gatk:4.0.1.1
-                if (DOCKER_HUB.matcher(image).matches()) {
-                    try {
-                        splitDocker = image.split("/");
-                        splitTag = splitDocker[1].split(":");
-                    } catch (ArrayIndexOutOfBoundsException ex) {
-                        LOG.error("URL to image on DockerHub incomplete", ex);
-                        continue;
-                    }
 
-                    String repo = splitDocker[0] + "/" + splitTag[0];
-                    String tagName = splitTag[1];
-
-                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
-                    dockerImages.addAll(dockerHubImages);
-                } else {
-                    try {
-                        splitDocker = image.split(":");
-                    } catch (ArrayIndexOutOfBoundsException ex) {
-                        LOG.error("URL to image on DockerHub incomplete", ex);
-                        continue;
-                    }
-                    // <repo>:<version> -> python:2.7
-                    String repo = "library" + "/" + splitDocker[0];
-                    String tagName = splitDocker[1];
-
-                    Set<Image> dockerHubImages = getImagesFromDockerHub(repo, tagName);
-                    dockerImages.addAll(dockerHubImages);
+                if (images.isEmpty()) {
+                    LOG.error("Could not get image {} from {}", image, registryFound.getFriendlyName());
+                    continue;
                 }
+                dockerImages.addAll(images);
             }
         }
         return dockerImages;
     }
 
-    default Set<Image> getImagesFromDockerHub(final String repo, final String tagName) {
+    /**
+     * Gets an image's full repository name.
+     * The repository name returned is the image's name without the registry docker path (if applicable, like Quay and GHCR) and the specifier.
+     * @param registry
+     * @param image
+     * @param specifier
+     * @return repository name of the image
+     */
+    @SuppressWarnings("checkstyle:MagicNumber")
+    default String getRepositoryName(final Registry registry, final String image, final DockerSpecifier specifier) {
+        String repoName = "";
+        boolean isOfficialDockerHubImage = false;
+        int minNumOfNameComponents = 0;
+        int numOfNameComponents = image.split("/").length;
+
+        if (registry == Registry.QUAY_IO || registry == Registry.GITHUB_CONTAINER_REGISTRY || (registry == Registry.AMAZON_ECR && AMAZON_ECR_PUBLIC_IMAGE.matcher(image).matches())) {
+            minNumOfNameComponents = 3; // <registry_docker_path>/<owner>/<repo> -> quay.io/collaboratory/dockstore-tool-bamstats
+        } else if (registry == Registry.AMAZON_ECR && AMAZON_ECR_PRIVATE_IMAGE.matcher(image).matches()) {
+            minNumOfNameComponents = 2; // <aws_account_id>.dkr.ecr.<region>.amazonaws.com/<repository_name>
+        } else if (registry == Registry.DOCKER_HUB) {
+            if (OFFICIAL_DOCKER_HUB_IMAGE.matcher(image).matches()) {
+                minNumOfNameComponents = 1; // <repo> -> python
+                isOfficialDockerHubImage = true;
+            } else {
+                minNumOfNameComponents = 2; // <owner>/<repo> -> collaboratory/dockstore-tool-bamstats
+            }
+        }
+
+        if (numOfNameComponents >= minNumOfNameComponents) {
+            repoName = getImageNameWithoutSpecifier(image, specifier);
+
+            if (registry == Registry.DOCKER_HUB && isOfficialDockerHubImage) {
+                repoName = "library/" + repoName;
+            } else {
+                // Remove registry docker path
+                if (repoName.startsWith(registry.getDockerPath())) {
+                    repoName = repoName.replaceFirst(registry.getDockerPath() + "/", "");
+                }
+            }
+        }
+
+        return repoName;
+    }
+
+    /**
+     * Gets the name of an image's specifier (tag or digest).
+     * @param image
+     * @param specifier
+     * @return specifier name
+     */
+    default String getSpecifierName(final String image, final DockerSpecifier specifier) {
+        String specifierName = "";
+        Matcher m;
+        if (specifier == DockerSpecifier.DIGEST) {
+            m = IMAGE_DIGEST_PATTERN.matcher(image);
+        } else {
+            m = IMAGE_TAG_PATTERN.matcher(image);
+        }
+        if (m.matches()) {
+            specifierName = m.group(2);
+        }
+        return specifierName;
+    }
+
+    default Set<Image> getImagesFromDockerHub(final String repo, final DockerSpecifier specifierType, final String specifierName) {
         Set<Image> dockerHubImages = new HashSet<>();
         Map<String, String> errorMap = new HashMap<>();
         Optional<String> response;
         boolean versionFound = false;
-        String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags?name=" + tagName;
         DockerHubTag dockerHubTag = new DockerHubTag();
+        String repoUrl = DOCKERHUB_URL + "repositories/" + repo + "/tags";
+
+        if (specifierType != DockerSpecifier.DIGEST) {
+            repoUrl += "?name=" + specifierName;
+        }
+
         do {
             try {
                 URL url = new URL(repoUrl);
@@ -502,7 +728,38 @@ public interface LanguageHandlerInterface {
                 }
 
                 for (Results r : results) {
-                    if (r.getName().equals(tagName)) {
+                    if (specifierType == DockerSpecifier.DIGEST) {
+                        // Look through images and find the image with the specified digest
+                        List<DockerHubImage> images = Arrays.asList(r.getImages());
+
+                        // For every version, DockerHub can provide multiple images, one for each os/architecture
+                        images.stream().forEach(dockerHubImage -> {
+                            final String manifestDigest = dockerHubImage.getDigest();
+                            // Must perform null check for manifestDigest because there are Docker Hub images where the digest is null
+                            if (manifestDigest != null && manifestDigest.equals(specifierName)) {
+                                String tagName = r.getName(); // Tag that's associated with the image specified by digest
+                                Checksum checksum = new Checksum(manifestDigest.split(":")[0], manifestDigest.split(":")[1]);
+                                List<Checksum> checksums = Collections.singletonList(checksum);
+                                // Docker Hub appears to return null for all the "last_pushed" properties of their images.
+                                // Using the result's "last_pushed" as a workaround
+                                Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB,
+                                        dockerHubImage.getSize(), r.getLastUpdated());
+
+                                String osInfo = formatImageInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
+                                String archInfo = formatImageInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
+                                archImage.setOs(osInfo);
+                                archImage.setArchitecture(archInfo);
+                                archImage.setSpecifier(specifierType);
+
+                                dockerHubImages.add(archImage);
+                            }
+                        });
+
+                        if (!dockerHubImages.isEmpty()) {
+                            versionFound = true;
+                            break;
+                        }
+                    } else if (r.getName().equals(specifierName)) { // match tag
                         List<DockerHubImage> images = Arrays.asList(r.getImages());
                         // For every version, DockerHub can provide multiple images, one for each os/architecture
                         images.stream().forEach(dockerHubImage -> {
@@ -511,13 +768,14 @@ public interface LanguageHandlerInterface {
                             List<Checksum> checksums = Collections.singletonList(checksum);
                             // Docker Hub appears to return null for all the "last_pushed" properties of their images.
                             // Using the result's "last_pushed" as a workaround
-                            Image archImage = new Image(checksums, repo, tagName, r.getImageID(), Registry.DOCKER_HUB,
+                            Image archImage = new Image(checksums, repo, specifierName, r.getImageID(), Registry.DOCKER_HUB,
                                     dockerHubImage.getSize(), r.getLastUpdated());
 
-                            String osInfo = formatDockerHubInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
-                            String archInfo = formatDockerHubInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
+                            String osInfo = formatImageInfo(dockerHubImage.getOs(), dockerHubImage.getOsVersion());
+                            String archInfo = formatImageInfo(dockerHubImage.getArchitecture(), dockerHubImage.getVariant());
                             archImage.setOs(osInfo);
                             archImage.setArchitecture(archInfo);
+                            archImage.setSpecifier(specifierType);
 
                             dockerHubImages.add(archImage);
                         });
@@ -530,10 +788,15 @@ public interface LanguageHandlerInterface {
                 }
             }
         } while (response.isPresent() && !versionFound && dockerHubTag.getNext() != null);
+
+        if (!versionFound) {
+            LOG.error("Unable to find image with {}: {} from Docker Hub in repo {}", specifierType.name(), specifierName, repo);
+        }
+
         return dockerHubImages;
     }
 
-    default String formatDockerHubInfo(String type, String version) {
+    static String formatImageInfo(String type, String version) {
         String imageInfo = null;
         if (type != null) {
             imageInfo = type;
@@ -544,21 +807,48 @@ public interface LanguageHandlerInterface {
         return imageInfo;
     }
 
-    default Set<Image> getImageResponseFromQuay(String repo, String tagName) {
+    default Set<Image> getImageResponseFromQuay(String repo, DockerSpecifier specifierType, String specifierName) {
         Set<Image> quayImages = new HashSet<>();
         RepositoryApi api = new RepositoryApi(API_CLIENT);
         try {
 
             final QuayRepo quayRepo = api.getRepo(repo, false);
-            QuayTag tag = quayRepo.getTags().get(tagName);
-            if (tag == null) {
-                LOG.error("Unable to get find tag: " + tagName + " from Quay in repo " + repo);
-                return quayImages;
+            if (specifierType == DockerSpecifier.DIGEST) {
+                Map<String, QuayTag> tags = quayRepo.getTags();
+                boolean imageFound = false;
+
+                for (QuayTag tag : tags.values()) {
+                    final String digest = tag.getManifestDigest();
+
+                    // Find image with the specified digest
+                    if (digest.equals(specifierName)) {
+                        final String imageID = tag.getImageId();
+                        final String tagName = tag.getName(); // Tag that's associated with the image specified by digest
+                        List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
+                        Image quayImage = new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO, tag.getSize(), tag.getLastModified());
+                        quayImage.setSpecifier(specifierType);
+                        quayImages.add(quayImage);
+                        imageFound = true;
+                        break;
+                    }
+                }
+                if (!imageFound) {
+                    LOG.error("Unable to find image with digest: {} from Quay in repo {}", specifierName, repo);
+                    return quayImages;
+                }
+            } else {
+                QuayTag tag = quayRepo.getTags().get(specifierName);
+                if (tag == null) {
+                    LOG.error("Unable to find tag: {} from Quay in repo {}", specifierName, repo);
+                    return quayImages;
+                }
+                final String digest = tag.getManifestDigest();
+                final String imageID = tag.getImageId();
+                List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
+                Image quayImage = new Image(checksums, repo, specifierName, imageID, Registry.QUAY_IO, tag.getSize(), tag.getLastModified());
+                quayImage.setSpecifier(specifierType);
+                quayImages.add(quayImage);
             }
-            final String digest = tag.getManifestDigest();
-            final String imageID = tag.getImageId();
-            List<Checksum> checksums = Collections.singletonList(new Checksum(digest.split(":")[0], digest.split(":")[1]));
-            quayImages.add(new Image(checksums, repo, tagName, imageID, Registry.QUAY_IO, tag.getSize(), tag.getLastModified()));
         } catch (ApiException ex) {
             LOG.error("Could not read from " + repo, ex);
         }
@@ -602,6 +892,7 @@ public interface LanguageHandlerInterface {
         for (Map.Entry<String, ToolInfo> entry : toolInfoMap.entrySet()) {
             String callId = entry.getKey();
             String docker = entry.getValue().dockerContainer;
+            DockerSpecifier dockerSpecifier = entry.getValue().dockerSpecifier;
             nodePairs.add(new MutablePair<>(callId, docker));
             if (Strings.isNullOrEmpty(docker)) {
                 callToType.put(callId, callType);
@@ -610,16 +901,16 @@ public interface LanguageHandlerInterface {
             }
             String dockerUrl = null;
             if (!Strings.isNullOrEmpty(docker)) {
-                dockerUrl = getURLFromEntry(docker, dao);
+                dockerUrl = getURLFromEntry(docker, dao, dockerSpecifier);
             }
 
             // Determine if call is imported
             String[] callName = callId.replaceFirst("^dockstore_", "").split("\\.");
 
             if (callName.length > 1) {
-                nodeDockerInfo.put(callId, new DockerInfo(namespaceToPath.get(callName[0]), docker, dockerUrl, null));
+                nodeDockerInfo.put(callId, new DockerInfo(namespaceToPath.get(callName[0]), docker, dockerUrl, dockerSpecifier));
             } else {
-                nodeDockerInfo.put(callId, new DockerInfo(mainDescName, docker, dockerUrl, null));
+                nodeDockerInfo.put(callId, new DockerInfo(mainDescName, docker, dockerUrl, dockerSpecifier));
             }
         }
 

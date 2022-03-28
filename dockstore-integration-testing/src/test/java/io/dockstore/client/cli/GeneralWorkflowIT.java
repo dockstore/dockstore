@@ -16,10 +16,16 @@
 
 package io.dockstore.client.cli;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
+import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
+import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -36,7 +42,12 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
+import io.swagger.client.model.Workflow.TopicSelectionEnum;
 import io.swagger.client.model.WorkflowVersion;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.eclipse.jetty.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -51,23 +62,14 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
-import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
-import static io.dockstore.webservice.resources.WorkflowResource.FROZEN_VERSION_REQUIRED;
-import static io.dockstore.webservice.resources.WorkflowResource.NO_ZENDO_USER_TOKEN;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 /**
  * This test suite tests various workflow related processes.
  * Created by aduncan on 05/04/16.
  */
 @Category({ ConfidentialTest.class, WorkflowTest.class })
 public class GeneralWorkflowIT extends BaseIT {
+
+    private static final String DUMMY_DOI = "10.foo/bar";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -170,7 +172,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // Smart refresh individual that is valid (should add versions that doesn't exist)
-        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, "", false);
+        Workflow workflow = workflowsApi.getWorkflowByPath(fullPath, BIOWORKFLOW, "");
         workflow = workflowsApi.refresh(workflow.getId(), false);
 
         // All versions should be synced
@@ -232,7 +234,7 @@ public class GeneralWorkflowIT extends BaseIT {
                 DescriptorLanguage.CWL.getShortName(), "");
 
         // refresh individual that is valid
-        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", "", false);
+        Workflow workflow = workflowsApi.getWorkflowByPath("github.com/DockstoreTestUser2/hello-dockstore-workflow", BIOWORKFLOW, "");
         workflow = workflowsApi.refresh(workflow.getId(), false);
         Assert.assertNotNull("Should have a license object even if it's null name", workflow.getLicenseInformation());
         Assert.assertNotNull("Should have no license name", workflow.getLicenseInformation().getLicenseName());
@@ -305,6 +307,30 @@ public class GeneralWorkflowIT extends BaseIT {
                 "/Dockstore.wdl", true);
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains("Repository does not meet requirements to publish"));
+        }
+    }
+
+    /**
+     * This tests adding and removing labels from a workflow
+     */
+    @Test
+    public void testLabelFormat() {
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+        // Set up workflow
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", "wdl",
+                SourceControl.GITHUB, "/Dockstore.wdl", true);
+
+        // test good labels
+        workflow = workflowsApi.updateLabels(workflow.getId(), "abc,abc-abc,123-123,abc-123,123-abc-abc", "");
+        assertEquals(5, workflow.getLabels().size());
+
+        // test bad labels
+        try {
+            workflow = workflowsApi.updateLabels(workflow.getId(), "-,-abc,123-,abc--123,123-abc-", "");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("Invalid label format"));
         }
     }
 
@@ -519,7 +545,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // refresh individual that is valid
         Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "", false);
+            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", BIOWORKFLOW, "");
 
         // Update workflow path
         workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
@@ -590,7 +616,7 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testAddingWorkflowForumUrl() throws ApiException {
+    public void testAddingWorkflowForumUrlAndTopic() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
@@ -599,16 +625,58 @@ public class GeneralWorkflowIT extends BaseIT {
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl",
                         "test-update-workflow", DescriptorLanguage.CWL.toString(),
                         "/test.json");
+
+        Assert.assertEquals("Should default to automatic", TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
         
         //update the forumUrl to hello.com
+        final String newTopic = "newTopic";
         workflow.setForumUrl("hello.com");
-        workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId(), false);
+        workflow.setTopicManual(newTopic);
+        workflow.setTopicSelection(TopicSelectionEnum.MANUAL);
+        Workflow updatedWorkflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
 
         //check the workflow's forumUrl is hello.com
         final String updatedForumUrl = testingPostgres
                 .runSelectStatement("select forumurl from workflow where workflowname = 'test-update-workflow'", String.class);
         assertEquals("forumUrl should be updated, it is " + updatedForumUrl, "hello.com", updatedForumUrl);
+
+        Assert.assertEquals(newTopic, updatedWorkflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, updatedWorkflow.getTopicSelection());
+    }
+
+    @Test
+    public void testTopicAfterRefresh() throws ApiException {
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "DockstoreTestUser2/hello-dockstore-workflow", "testname", DescriptorLanguage.CWL.toString(),
+            SourceControl.GITHUB, "/Dockstore.cwl", false);
+
+        // confirm the default workflow topic settings
+        final String topicAutomatic = workflow.getTopicAutomatic();
+        Assert.assertEquals("test repo for CWL and WDL workflows", topicAutomatic);
+        Assert.assertEquals(null, workflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, workflow.getTopicSelection());
+
+        // set the automatic topic to a garbage string, change the manual topic, and select it
+        final String topicManual = "a user-specified manual topic!";
+        final String garbage = "fooooo";
+        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update workflow set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", workflow.getId())));
+
+        // confirm the new topic settings
+        workflow = workflowsApi.getWorkflow(workflow.getId(), null);
+        Assert.assertEquals(garbage, workflow.getTopicAutomatic());
+        Assert.assertEquals(topicManual, workflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, workflow.getTopicSelection());
+
+        // refresh the workflow
+        Workflow refreshedWorkflow = workflowsApi.refresh(workflow.getId(), false);
+
+        // make sure the automatic topic was refreshed, and that the manual topic and selection are the same
+        Assert.assertEquals(workflow.getId(), refreshedWorkflow.getId());
+        Assert.assertEquals(topicAutomatic, refreshedWorkflow.getTopicAutomatic());
+        Assert.assertEquals(topicManual, refreshedWorkflow.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, refreshedWorkflow.getTopicSelection());
     }
 
     @Test
@@ -676,10 +744,10 @@ public class GeneralWorkflowIT extends BaseIT {
         // but should be able to change doi stuff
         master.setFrozen(true);
         master.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
-        master.setDoiURL("foo");
+        master.setDoiURL(DUMMY_DOI);
         workflowVersions = workflowsApi.updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(master));
         master = workflowVersions.stream().filter(v -> v.getName().equals("master")).findFirst().get();
-        assertEquals("foo", master.getDoiURL());
+        assertEquals(DUMMY_DOI, master.getDoiURL());
         assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // refresh should skip over the frozen version
@@ -736,6 +804,37 @@ public class GeneralWorkflowIT extends BaseIT {
         } catch (ApiException e) {
             assertTrue(e.getMessage().contains(CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY));
         }
+    }
+
+    /**
+     * This tests the case where the version is:
+     *  invalid
+     *  has files
+     *  processable (not too invalid which depends on the CWL handler)
+     * can be snapshotted
+     *
+     * Specifically, this is a particular CWL CommandLineTool registered as a Workflow
+     */
+    @Test
+    public void testFreezingInvalidWorkflow() {
+        String versionToSnapshot = "1.0";
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore-testing/tagged-apptool", "",
+            DescriptorLanguage.CWL.toString(),
+            SourceControl.GITHUB, "/tool.cwl", false);
+        Workflow workflowBeforeFreezing = workflowsApi.refresh(workflow.getId(), false);
+        WorkflowVersion version =
+            workflowBeforeFreezing.getWorkflowVersions().stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
+        version.setFrozen(true);
+        version.setDoiStatus(WorkflowVersion.DoiStatusEnum.REQUESTED);
+        version.setDoiURL(DUMMY_DOI);
+        assertFalse("Double check that this version is in fact invalid", version.isValid());
+        List<WorkflowVersion> workflowVersions = workflowsApi
+            .updateWorkflowVersion(workflowBeforeFreezing.getId(), Lists.newArrayList(version));
+        version = workflowVersions.stream().filter(v -> v.getName().equals(versionToSnapshot)).findFirst().get();
+        assertEquals(DUMMY_DOI, version.getDoiURL());
+        assertEquals(WorkflowVersion.DoiStatusEnum.REQUESTED, version.getDoiStatus());
     }
 
     /**

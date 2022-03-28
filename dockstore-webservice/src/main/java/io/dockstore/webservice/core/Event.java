@@ -1,7 +1,10 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -16,11 +19,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -35,11 +33,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "event")
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:hiddenfield"})
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryIds", query = "SELECT e FROM Event e where (e.tool.id in :entryIDs) OR (e.workflow.id in :entryIDs) ORDER by id desc"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE Event e where e.tool.id = :entryId OR e.workflow.id = :entryId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE Event e WHERE e.organization.id = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryIds", query = "SELECT e FROM Event e where (e.tool.id in :entryIDs) OR (e.workflow.id in :entryIDs) OR (e.apptool.id in :entryIDs) ORDER by id desc"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByEntryId", query = "DELETE from Event e where e.tool.id = :entryId OR e.workflow.id = :entryId OR e.apptool.id = :entryId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.deleteByOrganizationId", query = "DELETE from Event e WHERE e.organization.id = :organizationId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByUserId", query = "SELECT e FROM Event e where e.user.id = :userId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryId", query = "SELECT e FROM Event e where e.workflow.id = :entryId OR e.tool.id = :entryId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByEntryId", query = "SELECT e FROM Event e where e.workflow.id = :entryId OR e.tool.id = :entryId OR e.apptool.id = :entryId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganization", query = "SELECT eve FROM Event eve WHERE eve.organization.id = :organizationId ORDER BY id DESC"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllByOrganizationIds", query = "SELECT e FROM Event e WHERE e.organization.id in :organizationIDs ORDER BY id DESC"),
         @NamedQuery(name = "io.dockstore.webservice.core.Event.countAllForOrganization", query = "SELECT COUNT(*) FROM Event eve WHERE eve.organization.id = :organizationId")
@@ -73,6 +71,12 @@ public class Event {
     @ApiModelProperty(value = "Workflow that the event is acting on.", position = 4)
     @JsonIgnoreProperties({ "workflowVersions" })
     private BioWorkflow workflow;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "apptoolId", referencedColumnName = "id")
+    @ApiModelProperty(value = "(github) apps tool that the event is acting on.", position = 9)
+    @JsonIgnoreProperties({ "workflowVersions" })
+    private AppTool apptool;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collectionId", referencedColumnName = "id", columnDefinition = "bigint")
@@ -110,6 +114,7 @@ public class Event {
     private Timestamp dbUpdateDate;
 
     public Event() { }
+
     public Event(User user, Organization organization, Collection collection, BioWorkflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
         this.organization = organization;
@@ -150,6 +155,14 @@ public class Event {
 
     public void setTool(Tool tool) {
         this.tool = tool;
+    }
+
+    public AppTool getApptool() {
+        return apptool;
+    }
+
+    public void setApptool(AppTool apptool) {
+        this.apptool = apptool;
     }
 
     public Workflow getWorkflow() {
@@ -218,9 +231,12 @@ public class Event {
         REJECT_ORG_INVITE,
         CREATE_COLLECTION,
         MODIFY_COLLECTION,
+        DELETE_COLLECTION,
         REMOVE_FROM_COLLECTION,
         ADD_TO_COLLECTION,
-        ADD_VERSION_TO_ENTRY
+        ADD_VERSION_TO_ENTRY,
+        PUBLISH_ENTRY,
+        UNPUBLISH_ENTRY
     }
 
     public static class Builder {
@@ -228,6 +244,7 @@ public class Event {
         private Organization organization;
         private Tool tool;
         private BioWorkflow bioWorkflow;
+        private AppTool appTool;
         private Service service;
         private Collection collection;
         private User initiatorUser;
@@ -266,6 +283,11 @@ public class Event {
             return this;
         }
 
+        public Builder withAppTool(AppTool appTool) {
+            this.appTool = appTool;
+            return this;
+        }
+
         public Builder withCollection(Collection collection) {
             this.collection = collection;
             return this;
@@ -286,6 +308,7 @@ public class Event {
             event.user = this.user;
             event.organization = this.organization;
             event.tool = this.tool;
+            event.apptool = this.appTool;
             event.workflow = this.bioWorkflow;
             event.collection = this.collection;
             event.initiatorUser = this.initiatorUser;

@@ -15,16 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -40,8 +30,11 @@ import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.DockerImageReference;
+import io.dockstore.common.LanguageHandlerHelper;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.DescriptionSource;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.ParsedInformation;
@@ -50,7 +43,20 @@ import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import org.apache.commons.lang3.ObjectUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -73,14 +79,28 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public static final String CWL_VERSION_ERROR = "CWL descriptor should contain a cwlVersion starting with " + CWLHandler.CWL_VERSION_PREFIX + ", detected version ";
     public static final String CWL_NO_VERSION_ERROR = "CWL descriptor should contain a cwlVersion";
     public static final String CWL_PARSE_SECONDARY_ERROR = "Syntax incorrect. Could not ($)import or ($)include secondary file for run command: ";
+    private static final String NODE_PREFIX = "dockstore_";
+    private static final String TOOL_TYPE = "tool";
+    private static final String WORKFLOW_TYPE = "workflow";
+    private static final String EXPRESSION_TOOL_TYPE = "expressionTool";
+
 
     @Override
     protected DescriptorLanguage.FileType getFileType() {
         return DescriptorLanguage.FileType.DOCKSTORE_CWL;
     }
 
+    private String firstNonNullAndNonEmpty(String... values) {
+        for (String value: values) {
+            if (value != null && !value.isEmpty()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     @Override
-    public Version parseWorkflowContent(String filepath, String content, Set<SourceFile> sourceFiles, Version version) {
+    public Version parseWorkflowContent(String filePath, String content, Set<SourceFile> sourceFiles, Version version) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
@@ -89,6 +109,11 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 safeYaml.load(content);
                 Yaml yaml = new Yaml();
                 Map map = yaml.loadAs(content, Map.class);
+
+                // Expand $import, $include, etc
+                map = preprocess(map, filePath, new Preprocessor(sourceFiles));
+
+                // Extract various fields
                 String description = null;
                 try {
                     // draft-3 construct
@@ -108,16 +133,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     Object objectDoc = map.get("doc");
                     if (objectDoc instanceof String) {
                         doc = (String)objectDoc;
-                    } else if (objectDoc instanceof Map) {
-                        Map docMap = (Map)objectDoc;
-                        if (docMap.containsKey("$include")) {
-                            String enclosingFile = (String)docMap.get("$include");
-                            Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
-                                .findFirst();
-                            if (first.isPresent()) {
-                                doc = first.get().getContent();
-                            }
-                        }
                     } else if (objectDoc instanceof List) {
                         // arrays for "doc:" added in CWL 1.1
                         List docList = (List)objectDoc;
@@ -125,7 +140,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     }
                 }
 
-                final String finalChoiceForDescription = ObjectUtils.firstNonNull(doc, description, label);
+                final String finalChoiceForDescription = firstNonNullAndNonEmpty(doc, description, label);
 
                 if (finalChoiceForDescription != null) {
                     version.setDescriptionAndDescriptionSource(finalChoiceForDescription, DescriptionSource.DESCRIPTOR);
@@ -133,12 +148,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     LOG.info("Description not found!");
                 }
 
-                String dctKey = "dct:creator";
-                String schemaKey = "s:author";
-                if (map.containsKey(schemaKey)) {
-                    processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
-                } else if (map.containsKey(dctKey)) {
-                    processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                // Add authors from descriptor if there are no .dockstore.yml authors
+                if (version.getAuthors().isEmpty()) {
+                    String dctKey = "dct:creator";
+                    String schemaKey = "s:author";
+                    if (map.containsKey(schemaKey)) {
+                        processAuthor(version, map, schemaKey, "s:name", "s:email", "Author not found!");
+                    } else if (map.containsKey(dctKey)) {
+                        processAuthor(version, map, dctKey, "foaf:name", "foaf:mbox", "Creator not found!");
+                    }
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
@@ -154,7 +172,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 LOG.info("CWL file is malformed " + message);
                 // should just report on the malformed workflow
                 Map<String, String> validationMessageObject = new HashMap<>();
-                validationMessageObject.put(filepath, "CWL file is malformed or missing, cannot extract metadata: " + message);
+                validationMessageObject.put(filePath, "CWL file is malformed or missing, cannot extract metadata: " + message);
                 version.addOrUpdateValidation(new Validation(DescriptorLanguage.FileType.DOCKSTORE_CWL, false, validationMessageObject));
             }
         }
@@ -178,11 +196,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         map = (Map)o;
         if (map != null) {
             String author = (String)map.get(authorKey);
-            version.setAuthor(author);
+            Author newAuthor = new Author(author);
             String email = (String)map.get(emailKey);
             if (!Strings.isNullOrEmpty(email)) {
-                version.setEmail(email.replaceFirst("^mailto:", ""));
+                newAuthor.setEmail(email.replaceFirst("^mailto:", ""));
             }
+            version.addAuthor(newAuthor);
         } else {
             LOG.info(errorMessage);
         }
@@ -192,6 +211,13 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
         Map<String, SourceFile> imports = new HashMap<>();
+        processImport(repositoryId, content, version, sourceCodeRepoInterface, workingDirectoryForFile, imports);
+        return imports;
+    }
+
+    private void processImport(String repositoryId, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile, Map<String, SourceFile> imports) {
+
         Yaml yaml = new Yaml();
         try {
             Yaml safeYaml = new Yaml(new SafeConstructor());
@@ -202,15 +228,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         } catch (YAMLException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml", e);
         }
-
-        Map<String, SourceFile> recursiveImports = new HashMap<>();
-        for (Map.Entry<String, SourceFile> importFile : imports.entrySet()) {
-            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, importFile.getValue().getContent(), version, sourceCodeRepoInterface, importFile.getKey());
-            recursiveImports.putAll(sourceFiles);
-        }
-
-        recursiveImports.putAll(imports);
-        return recursiveImports;
     }
 
     /**
@@ -246,21 +263,41 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         return fileFormats;
     }
 
+    private void addFileFormat(Set<FileFormat> fileFormats, Object format) {
+        if (format instanceof String) {
+            FileFormat fileFormat = new FileFormat();
+            fileFormat.setValue((String)format);
+            fileFormats.add(fileFormat);
+        } else {
+            LOG.debug("malformed file format value");
+        }
+    }
+
     private void handlePotentialFormatEntry(Set<FileFormat> fileFormats, Object v) {
         if (v instanceof Map) {
-            Map<String, String> outputMap = (Map<String, String>)v;
-            String format = outputMap.get("format");
-            if (format != null) {
-                FileFormat fileFormat = new FileFormat();
-                fileFormat.setValue(format);
-                fileFormats.add(fileFormat);
+            Map<String, Object> outputMap = (Map<String, Object>)v;
+            Object format = outputMap.get("format");
+            if (format instanceof List) {
+                ((List<?>)format).forEach(formatElement -> addFileFormat(fileFormats, formatElement));
+            } else {
+                addFileFormat(fileFormats, format);
             }
         }
     }
 
+    private Map<String, Object> preprocess(Map<String, Object> mapping, String mainDescriptorPath, Preprocessor preprocessor) {
+        Object preprocessed = preprocessor.preprocess(mapping, mainDescriptorPath, null, 0);
+        // If the preprocessed result is not a map, the CWL is not valid.
+        if (!(preprocessed instanceof Map)) {
+            String message = "CWL file is malformed";
+            LOG.error(message);
+            throw new CustomWebApplicationException(message, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
+        return (Map<String, Object>)preprocessed;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:methodlength")
-    //TODO: Occassionally misses dockerpulls. One case is when a dockerPull is nested within a run that's within a step. There are other missed cases though that are TBD.
     public Optional<String> getContent(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
         Yaml yaml = new Yaml();
@@ -268,19 +305,23 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             Yaml safeYaml = new Yaml(new SafeConstructor());
             // This should throw an exception if there are unexpected blocks
             safeYaml.load(mainDescriptor);
+
             // Initialize data structures for DAG
             Map<String, ToolInfo> toolInfoMap = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             List<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
             Map<String, String> stepToType = new HashMap<>();               // Map of stepId -> type (expression tool, tool, workflow)
-            String defaultDockerPath = null;
 
             // Initialize data structures for Tool table
-            Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
+            Map<String, DockerInfo> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url, docker specifier)
 
             // Convert YAML to JSON
             Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
 
-            // verify cwl version is correctly specified
+            // Expand "$import", "$include", "run:", etc
+            Preprocessor preprocessor = new Preprocessor(secondarySourceFiles);
+            mapping = preprocess(mapping, mainDescriptorPath, preprocessor);
+
+            // Verify cwl version is correctly specified
             final Object cwlVersion = mapping.get("cwlVersion");
             if (cwlVersion != null) {
                 final boolean startsWith = cwlVersion.toString().startsWith(CWLHandler.CWL_VERSION_PREFIX);
@@ -294,17 +335,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 throw new CustomWebApplicationException(CWLHandler.CWL_NO_VERSION_ERROR, HttpStatus.SC_UNPROCESSABLE_ENTITY);
             }
 
+            // If the descriptor describes a tool, wrap and process it as a single-step workflow
+            final Object cwlClass = mapping.get("class");
+            if ("CommandLineTool".equals(cwlClass) || "ExpressionTool".equals(cwlClass)) {
+                mapping = convertToolToSingleStepWorkflow(mapping);
+            }
+
             JSONObject cwlJson = new JSONObject(mapping);
 
             // CWLAvro only supports requirements and hints as an array, must be converted
-            cwlJson = convertJSONObjectToArray("requirements", cwlJson);
-            cwlJson = convertJSONObjectToArray("hints", cwlJson);
-
-            // Other useful variables
-            String nodePrefix = "dockstore_";
-            String toolType = "tool";
-            String workflowType = "workflow";
-            String expressionToolType = "expressionTool";
+            convertRequirementsAndHintsToArray(cwlJson);
 
             // Set up GSON for JSON parsing
             Gson gson = CWL.getTypeSafeCWLToolDocument();
@@ -316,138 +356,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.empty();
             }
 
-            // Determine default docker path (Check requirement first and then hint)
-            defaultDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), defaultDockerPath);
-
-            // Store workflow steps in json and then read it into map <String, WorkflowStep>
-            Object steps = workflow.getSteps();
-            String stepJson = gson.toJson(steps);
-            Map<String, WorkflowStep> workflowStepMap;
-            if (steps instanceof ArrayList) {
-                ArrayList<WorkflowStep> workflowStepList = gson.fromJson(stepJson, new TypeToken<ArrayList<WorkflowStep>>() {
-                }.getType());
-                workflowStepMap = new LinkedTreeMap<>();
-                workflowStepList.forEach(workflowStep -> workflowStepMap.put(workflowStep.getId().toString(), workflowStep));
-            } else {
-                workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
-                }.getType());
-            }
-
-            if (stepJson == null) {
-                LOG.error("Could not find any steps for the workflow.");
-                return Optional.empty();
-            }
-
-            if (workflowStepMap == null) {
-                LOG.error("Error deserializing workflow steps");
-                return Optional.empty();
-            }
-
-            // Iterate through steps to find dependencies and docker requirements
-            for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
-                WorkflowStep workflowStep = entry.getValue();
-                String workflowStepId = nodePrefix + entry.getKey();
-
-                ArrayList<String> stepDependencies = new ArrayList<>();
-
-                // Iterate over source and get the dependencies
-                if (workflowStep.getIn() != null) {
-                    for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
-                        Object sources = workflowStepInput.getSource();
-
-                        processDependencies(nodePrefix, stepDependencies, sources);
-                    }
-                    if (stepDependencies.size() > 0) {
-                        toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
-                            toolInfo.toolDependencyList.addAll(stepDependencies);
-                            return toolInfo;
-                        });
-                        toolInfoMap.computeIfAbsent(workflowStepId, toolId -> new ToolInfo(null, stepDependencies));
-                    }
-                }
-
-                // Check workflow step for docker requirement and hints
-                String stepDockerRequirement = defaultDockerPath;
-                stepDockerRequirement = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(),
-                    stepDockerRequirement);
-
-                // Check for docker requirement within workflow step file
-                String secondaryFile = null;
-                Object run = workflowStep.getRun();
-                String runAsJson = gson.toJson(gson.toJsonTree(run));
-
-                if (run instanceof String) {
-                    secondaryFile = (String)run;
-                } else if (isTool(runAsJson, yaml)) {
-                    CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
-                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(),
-                        stepDockerRequirement);
-                    stepToType.put(workflowStepId, toolType);
-                } else if (isWorkflow(runAsJson, yaml)) {
-                    Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
-                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(),
-                        stepDockerRequirement);
-                    stepToType.put(workflowStepId, workflowType);
-                } else if (isExpressionTool(runAsJson, yaml)) {
-                    ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
-                    stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(),
-                        stepDockerRequirement);
-                    stepToType.put(workflowStepId, expressionToolType);
-                } else if (run instanceof Map) {
-                    // must be import or include
-                    Object importVal = ((Map)run).containsKey("$import") ? ((Map)run).get("$import") : ((Map)run).get("import");
-                    if (importVal != null) {
-                        secondaryFile = importVal.toString();
-                    }
-
-                    Object includeVal = ((Map)run).containsKey("$include") ? ((Map)run).get("$include") : ((Map)run).get("include");
-                    if (includeVal != null) {
-                        secondaryFile = includeVal.toString();
-                    }
-
-                    if (secondaryFile == null) {
-                        LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
-                        throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
-                    }
-                }
-
-                // Check secondary file for docker pull
-                if (secondaryFile != null) {
-                    String finalSecondaryFile = secondaryFile;
-                    final Optional<SourceFile> sourceFileOptional = secondarySourceFiles.stream()
-                            .filter(sf -> sf.getPath().equals(finalSecondaryFile)).findFirst();
-                    final String content = sourceFileOptional.map(SourceFile::getContent).orElse(null);
-                    Yaml safeSecondaryYaml = new Yaml(new SafeConstructor());
-                    // This should throw an exception if there are unexpected blocks
-                    safeSecondaryYaml.load(finalSecondaryFile);
-                    stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, content, gson, yaml);
-                    if (isExpressionTool(content, yaml)) {
-                        stepToType.put(workflowStepId, expressionToolType);
-                    } else if (isTool(content, yaml)) {
-                        stepToType.put(workflowStepId, toolType);
-                    } else if (isWorkflow(content, yaml)) {
-                        stepToType.put(workflowStepId, workflowType);
-                    } else {
-                        stepToType.put(workflowStepId, "n/a");
-                    }
-                }
-
-                String dockerUrl = null;
-                if ((stepToType.get(workflowStepId).equals(workflowType) || stepToType.get(workflowStepId).equals(toolType)) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
-                    dockerUrl = getURLFromEntry(stepDockerRequirement, dao);
-                }
-
-                if (type == LanguageHandlerInterface.Type.DAG) {
-                    nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
-                }
-
-                if (secondaryFile != null) {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(secondaryFile, stepDockerRequirement, dockerUrl));
-                } else {
-                    nodeDockerInfo.put(workflowStepId, new DockerInfo(mainDescriptorPath, stepDockerRequirement, dockerUrl));
-                }
-
-            }
+            processWorkflow(workflow, null, 0, null, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             if (type == LanguageHandlerInterface.Type.DAG) {
                 // Determine steps that point to end
@@ -455,7 +364,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
                     Object sources = workflowOutputParameter.getOutputSource();
-                    processDependencies(nodePrefix, endDependencies, sources);
+                    processDependencies(NODE_PREFIX, endDependencies, sources);
                 }
 
                 toolInfoMap.put("UniqueEndKey", new ToolInfo(null, endDependencies));
@@ -471,13 +380,149 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
 
                 return Optional.of(setupJSONDAG(nodePairs, toolInfoMap, stepToType, nodeDockerInfo));
             } else {
-                return Optional.of(getJSONTableToolContent(nodeDockerInfo));
+                Map<String, DockerInfo> toolDockerInfo = nodeDockerInfo.entrySet().stream().filter(e -> "tool".equals(stepToType.get(e.getKey()))).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                return Optional.of(getJSONTableToolContent(toolDockerInfo));
             }
         } catch (ClassCastException | YAMLException | JsonParseException ex) {
             final String exMsg = CWLHandler.CWL_PARSE_ERROR + ex.getMessage();
             LOG.error(exMsg, ex);
             throw new CustomWebApplicationException(exMsg, HttpStatus.SC_UNPROCESSABLE_ENTITY);
         }
+    }
+
+    private Map<String, Object> convertToolToSingleStepWorkflow(Map<String, Object> tool) {
+        Map<String, Object> workflow = new HashMap<>();
+        workflow.put("cwlVersion", "v1.2");
+        workflow.put("class", "Workflow");
+        workflow.put("inputs", Map.of());
+        workflow.put("outputs", Map.of());
+        workflow.put("steps", Map.of("tool", Map.of("run", tool, "in", List.of(), "out", List.of())));
+        return workflow;
+    }
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    private void processWorkflow(Workflow workflow, String defaultDockerPath, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+        Yaml yaml = new Yaml();
+        Gson gson = CWL.getTypeSafeCWLToolDocument();
+
+        // Determine default docker path (Check requirement first and then hint)
+        String workflowDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), defaultDockerPath);
+
+        // Store workflow steps in json and then read it into map <String, WorkflowStep>
+        Object steps = workflow.getSteps();
+        String stepJson = gson.toJson(steps);
+        Map<String, WorkflowStep> workflowStepMap;
+        if (steps instanceof ArrayList) {
+            ArrayList<WorkflowStep> workflowStepList = gson.fromJson(stepJson, new TypeToken<ArrayList<WorkflowStep>>() {
+            }.getType());
+            workflowStepMap = new LinkedTreeMap<>();
+            workflowStepList.forEach(workflowStep -> workflowStepMap.put(workflowStep.getId().toString(), workflowStep));
+        } else {
+            workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
+            }.getType());
+        }
+
+        if (stepJson == null) {
+            LOG.error("Could not find any steps for the workflow.");
+            return;
+        }
+
+        if (workflowStepMap == null) {
+            LOG.error("Error deserializing workflow steps");
+            return;
+        }
+
+        // Iterate through steps to find dependencies and docker requirements
+        for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
+            WorkflowStep workflowStep = entry.getValue();
+            String workflowStepId;
+            if (parentStepId == null) {
+                workflowStepId = NODE_PREFIX + entry.getKey();
+            } else {
+                // If there's a parent workflow, prefix the step id with the parent step id and a period.
+                workflowStepId = parentStepId + "." + entry.getKey();
+            }
+
+            if (depth == 0) {
+                ArrayList<String> stepDependencies = new ArrayList<>();
+
+                // Iterate over source and get the dependencies
+                if (workflowStep.getIn() != null) {
+                    for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
+                        Object sources = workflowStepInput.getSource();
+                        processDependencies(NODE_PREFIX, stepDependencies, sources);
+                    }
+                    if (stepDependencies.size() > 0) {
+                        toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
+                            toolInfo.toolDependencyList.addAll(stepDependencies);
+                            return toolInfo;
+                        });
+                        toolInfoMap.computeIfAbsent(workflowStepId, toolId -> new ToolInfo(null, stepDependencies));
+                    }
+                }
+            }
+
+            // Check workflow step for docker requirement and hints
+            String stepDockerPath = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(), workflowDockerPath);
+
+            // Check for docker requirement within workflow step file
+            Object run = workflowStep.getRun();
+            String runAsJson = gson.toJson(gson.toJsonTree(run));
+
+            String currentPath;
+
+            if (run instanceof Map) {
+                String entryId;
+                if (isWorkflow(runAsJson, yaml)) {
+                    Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
+                    stepDockerPath = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), stepDockerPath);
+                    stepToType.put(workflowStepId, WORKFLOW_TYPE);
+                    entryId = convertToString(stepWorkflow.getId());
+                    // Process the subworkflow
+                    processWorkflow(stepWorkflow, stepDockerPath, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                } else if (isTool(runAsJson, yaml)) {
+                    CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
+                    stepDockerPath = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), stepDockerPath);
+                    stepToType.put(workflowStepId, TOOL_TYPE);
+                    entryId = convertToString(clTool.getId());
+                } else if (isExpressionTool(runAsJson, yaml)) {
+                    ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
+                    stepDockerPath = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), stepDockerPath);
+                    stepToType.put(workflowStepId, EXPRESSION_TOOL_TYPE);
+                    entryId = convertToString(expressionTool.getId());
+                } else {
+                    LOG.error(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run);
+                    throw new CustomWebApplicationException(CWLHandler.CWL_PARSE_SECONDARY_ERROR + run, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+                }
+                currentPath = preprocessor.getPath(entryId);
+            } else {
+                stepToType.put(workflowStepId, "n/a");
+                currentPath = run.toString();
+            }
+
+            if (currentPath == null) {
+                currentPath = "";
+            }
+
+            DockerSpecifier dockerSpecifier = null;
+            String dockerUrl = null;
+            String stepType = stepToType.get(workflowStepId);
+            if ((stepType.equals(WORKFLOW_TYPE) || stepType.equals(TOOL_TYPE)) && !Strings.isNullOrEmpty(stepDockerPath)) {
+                // CWL doesn't support parameterized docker pulls. Must be a string.
+                dockerSpecifier = LanguageHandlerInterface.determineImageSpecifier(stepDockerPath, DockerImageReference.LITERAL);
+                dockerUrl = getURLFromEntry(stepDockerPath, dao, dockerSpecifier);
+            }
+
+            if (depth == 0 && type == LanguageHandlerInterface.Type.DAG) {
+                nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
+            }
+
+            nodeDockerInfo.put(workflowStepId, new DockerInfo(currentPath, stepDockerPath, dockerUrl, dockerSpecifier));
+        }
+    }
+
+    private String convertToString(Object object) {
+        return object != null ? object.toString() : null;
     }
 
     private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources) {
@@ -517,7 +562,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (mapValue instanceof String) {
                     setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
                     absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
-                    handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
+                    handleAndProcessImport(repositoryId, absoluteImportPath, version, imports, (String)mapValue, sourceCodeRepoInterface);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
                 // for workflows, bare files may be referenced. See https://github.com/dockstore/dockstore/issues/208
@@ -527,13 +572,23 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 if (mapValue instanceof String) {
                     setImportsBasedOnMapValue(parsedInformation, (String)mapValue);
                     absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
-                    handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
+                    handleAndProcessImport(repositoryId, absoluteImportPath, version, imports, (String)mapValue, sourceCodeRepoInterface);
                 } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used
                     handleMap(repositoryId, parentFilePath, version, imports, (Map)mapValue, sourceCodeRepoInterface);
                 }
             } else {
                 handleMapValue(repositoryId, parentFilePath, version, imports, mapValue, sourceCodeRepoInterface);
+            }
+        }
+    }
+
+    private void handleAndProcessImport(String repositoryId, String absolutePath, Version version, Map<String, SourceFile> imports, String relativePath, SourceCodeRepoInterface sourceCodeRepoInterface) {
+        if (!imports.containsKey(absolutePath)) {
+            handleImport(repositoryId, version, imports, relativePath, sourceCodeRepoInterface, absolutePath);
+            SourceFile imported = imports.get(absolutePath);
+            if (imported != null) {
+                processImport(repositoryId, imported.getContent(), version, sourceCodeRepoInterface, absolutePath, imports);
             }
         }
     }
@@ -589,52 +644,12 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Checks secondary file for docker pull information
-     *
-     * @param stepDockerRequirement
-     * @param secondaryFileContents
-     * @param gson
-     * @param yaml
-     * @return
-     */
-    private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) {
-        if (secondaryFileContents != null) {
-            Map<String, Object> entryMapping = yaml.loadAs(secondaryFileContents, Map.class);
-            JSONObject entryJson = new JSONObject(entryMapping);
-
-            List<Object> cltRequirements = null;
-            List<Object> cltHints = null;
-
-            // CWLAvro only supports requirements and hints as an array, must be converted
-            entryJson = convertJSONObjectToArray("requirements", entryJson);
-            entryJson = convertJSONObjectToArray("hints", entryJson);
-
-            if (isExpressionTool(secondaryFileContents, yaml)) {
-                final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), ExpressionTool.class);
-                cltRequirements = expressionTool.getRequirements();
-                cltHints = expressionTool.getHints();
-            } else if (isTool(secondaryFileContents, yaml)) {
-                final CommandLineTool commandLineTool = gson.fromJson(entryJson.toString(), CommandLineTool.class);
-                cltRequirements = commandLineTool.getRequirements();
-                cltHints = commandLineTool.getHints();
-            } else if (isWorkflow(secondaryFileContents, yaml)) {
-                final Workflow workflow = gson.fromJson(entryJson.toString(), Workflow.class);
-                cltRequirements = workflow.getRequirements();
-                cltHints = workflow.getHints();
-            }
-            // Check requirements and hints for docker pull info
-            stepDockerRequirement = getRequirementOrHint(cltRequirements, cltHints, stepDockerRequirement);
-        }
-        return stepDockerRequirement;
-    }
-
-    /**
      * Converts a JSON Object in CWL to JSON Array
      * @param keyName Name of key to convert (Ex. requirements, hints)
      * @param entryJson JSON representation of file
      * @return Updated JSON representation of file
      */
-    private JSONObject convertJSONObjectToArray(String keyName, JSONObject entryJson) {
+    private void convertJSONObjectToArray(String keyName, JSONObject entryJson) {
         if (entryJson.has(keyName)) {
             if (entryJson.get(keyName) instanceof JSONObject) {
                 JSONArray reqArray = new JSONArray();
@@ -647,7 +662,39 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 entryJson.put(keyName, reqArray);
             }
         }
-        return entryJson;
+    }
+
+    private void convertRequirementsAndHintsToArray(JSONObject entryJson) {
+
+        convertJSONObjectToArray("hints", entryJson);
+        convertJSONObjectToArray("requirements", entryJson);
+
+        // for each step, convert the hints and requirements in each step and in the entry that the step runs.
+        if (entryJson.has("steps")) {
+            Object steps = entryJson.get("steps");
+            List<Object> stepValues;
+            if (steps instanceof JSONObject) {
+                JSONObject stepsObject = (JSONObject)steps;
+                stepValues = stepsObject.keySet().stream().map(stepsObject::get).collect(Collectors.toList());
+            } else if (steps instanceof JSONArray) {
+                stepValues = ((JSONArray)steps).toList();
+            } else {
+                stepValues = Collections.emptyList();
+            }
+            for (Object stepValue: stepValues) {
+                if (stepValue instanceof JSONObject) {
+                    JSONObject stepObject = (JSONObject)stepValue;
+                    convertJSONObjectToArray("hints", stepObject);
+                    convertJSONObjectToArray("requirements", stepObject);
+                    if (stepObject.has("run")) {
+                        Object runValue = stepObject.get("run");
+                        if (runValue instanceof JSONObject) {
+                            convertRequirementsAndHintsToArray((JSONObject)runValue);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -702,14 +749,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
      */
     private boolean isWorkflow(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
-            try {
-                Yaml safeYaml = new Yaml(new SafeConstructor());
-                // This should throw an exception if there are unexpected blocks
-                safeYaml.load(content);
-            } catch (Exception e) {
-                LOG.info("An unsafe YAML could not be parsed.", e);
-                return false;
-            }
             Map<String, Object> mapping = yaml.loadAs(content, Map.class);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
@@ -887,5 +926,291 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     @Override
     public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, DescriptorLanguage.FileType.CWL_TEST_JSON);
+    }
+
+    /**
+     * Implements a preprocessor which "expands" a CWL, replacing $import, $include, $mixin, and "run" directives per the CWL
+     * spec https://www.commonwl.org/v1.2/Workflow.html, using the content of the referenced source files, with the exception
+     * of a "run" directive that points to a missing source file, which is normalized to the "run: file" syntax and otherwise
+     * left unchanged.
+     *
+     * <p>To facilitate the extraction of information from a CWL that is missing files, if an $import references a missing file,
+     * it is replaced by the empty Map.  If an $include references a missing file, it is replaced by the empty string.
+     *
+     * <p>Typically, a Preprocessor instance is one-time-use: a new Preprocessor instance is created to expand each root CWL
+     * descriptor.
+     *
+     * <p>As the preprocessor expands the CWL, it tracks the current file, and for each entry (workflow or tool) it encounters,
+     * it first ensures that the entry has a unique id (by assigning the missing or duplicate id to a UUID), then adds the
+     * id-to-current-file-path relationship to a Map.  Later, a parser can query the Map via the getPath method to determine
+     * what file the entry came from.
+     *
+     * <p>During expansion, the preprocessor tracks three quantities to prevent denial-of-service attacks or infinite
+     * loops due to a recursive CWL: the file import depth, the (approximate) total length of the expanded CWL in characters, and
+     * total number of files expanded (incremented for each $import, $include, $mixin, and "run" directive).  If any of those
+     * quantities exceed the maximum value, the preprocessor will call the handleMax function, the base implementation of which
+     * will throw an exception.
+     */
+    public static class Preprocessor {
+        private static final List<String> IMPORT_KEYS = Arrays.asList("$import", "import");
+        private static final List<String> INCLUDE_KEYS = Arrays.asList("$include", "include");
+        private static final List<String> MIXIN_KEYS = Arrays.asList("$mixin", "mixin");
+        private static final int DEFAULT_MAX_DEPTH = 10;
+        private static final long DEFAULT_MAX_CHAR_COUNT = 4L * 1024L * 1024L;
+        private static final long DEFAULT_MAX_FILE_COUNT = 1000L;
+
+        private final Set<SourceFile> sourceFiles;
+        private final Map<String, String> idToPath;
+        private long charCount;
+        private long fileCount;
+        private final int maxDepth;
+        private final long maxCharCount;
+        private final long maxFileCount;
+
+        /**
+         * Create a CWL Preprocessor with specified "max" values.  See the class javadoc regarding the meaning of the "max" arguments.
+         * @param sourceFiles files to search when expanding $import, $include, etc
+         * @param maxDepth the maximum file depth
+         * @param maxCharCount the maximum number of expanded characters (approximate)
+         * @param maxFileCount the maximum number of files expanded
+         */
+        public Preprocessor(Set<SourceFile> sourceFiles, int maxDepth, long maxCharCount, long maxFileCount) {
+            this.sourceFiles = sourceFiles;
+            this.idToPath = new HashMap<>();
+            this.charCount = 0;
+            this.fileCount = 0;
+            this.maxDepth = maxDepth;
+            this.maxCharCount = maxCharCount;
+            this.maxFileCount = maxFileCount;
+        }
+
+        /**
+         * Create a CWL Preprocessor with default "max" values.
+         */
+        public Preprocessor(Set<SourceFile> sourceFiles) {
+            this(sourceFiles, DEFAULT_MAX_DEPTH, DEFAULT_MAX_CHAR_COUNT, DEFAULT_MAX_FILE_COUNT);
+        }
+
+        /**
+         * Preprocess the specified root-level CWL, recursively expanding various directives as noted in the class javadoc.
+         * This method may, but does not necessarily, process the specified CWL in place.
+         * @param cwl a representation of the CWL file content, typically a Map, List, or String and the result of new Yaml().load(content)
+         * @param currentPath the path of the CWL file
+         * @return the preprocessed CWL
+         */
+        public Object preprocess(Object cwl, String currentPath) {
+            return preprocess(cwl, currentPath, null, 0);
+        }
+
+        /**
+         * Preprocess the specified CWL, recursively expanding various directives as noted in the class javadoc.
+         * This method may, but does not necessarily, process the specified CWL in place.
+         * @param cwl a representation of the CWL file content or portion thereof, typically a Map, List, or String and the result of new Yaml().load(content)
+         * @param currentPath the path of the CWL file
+         * @param version the CWL version of the parent entry, null if there is no parent entry
+         * @param depth the current file depth, where the root file is at depth 0, and the depth increases by one for each $import or $mixin
+         * @return the preprocessed CWL
+         */
+        private Object preprocess(Object cwl, String currentPath, String version, int depth) {
+
+            if (depth > maxDepth) {
+                handleMax(String.format("maximum file depth (%d) exceeded", maxDepth));
+            }
+
+            if (cwl instanceof Map) {
+
+                Map<String, Object> map = (Map<String, Object>)cwl;
+
+                // If the map represents a workflow or tool, ensure that it has a unique ID, record the ID->path relationship, and determine the CWL version
+                if (isEntry(map)) {
+                    idToPath.put(setUniqueIdIfAbsent(map), stripLeadingSlashes(currentPath));
+                    version = (String)map.getOrDefault("cwlVersion", version);
+                }
+
+                // Process $import, which is replaced by the parsed+preprocessed file content
+                String importPath = findString(IMPORT_KEYS, map);
+                if (importPath != null) {
+                    return loadFileAndPreprocess(resolvePath(importPath, currentPath), emptyMap(), version, depth);
+                }
+
+                // Process $include, which is replaced by the literal string representation of the file content
+                String includePath = findString(INCLUDE_KEYS, map);
+                if (includePath != null) {
+                    return loadFile(resolvePath(includePath, currentPath), "");
+                }
+
+                // Process $mixin, if supported by the current version
+                // The referenced file content should parse and preprocess to a map
+                // Then, for each (key,value) entry in the mixin map, (key,value) is added to the containing map if key does not already exist
+                if (supportsMixin(version)) {
+                    String mixinPath = findString(MIXIN_KEYS, map);
+                    if (mixinPath != null) {
+                        Object mixin = loadFileAndPreprocess(resolvePath(mixinPath, currentPath), emptyMap(), version, depth);
+                        if (mixin instanceof Map) {
+                            removeKey(MIXIN_KEYS, map);
+                            applyMixin(map, (Map<String, Object>)mixin);
+                        }
+                    }
+                }
+
+                // Process each value of the Map
+                preprocessMapValues(map, currentPath, version, depth);
+
+            } else if (cwl instanceof List) {
+
+                // Process each value of the List
+                preprocessListValues((List<Object>)cwl, currentPath, version, depth);
+
+            }
+
+            return cwl;
+        }
+
+        private void preprocessMapValues(Map<String, Object> cwl, String currentPath, String version, int depth) {
+
+            // Convert "run: {$import: <file>}" to "run: <file>"
+            Object runValue = cwl.get("run");
+            if (runValue instanceof Map) {
+                String importValue = findString(IMPORT_KEYS, (Map<String, Object>)runValue);
+                if (importValue != null) {
+                    cwl.put("run", importValue);
+                }
+            }
+
+            // Preprocess all values in the map
+            cwl.replaceAll((k, v) -> preprocess(v, currentPath, version, depth));
+
+            // Expand "run: <file>", leaving it unchanged if the file does not exist
+            runValue = cwl.get("run");
+            if (runValue instanceof String) {
+                String runPath = (String)runValue;
+                cwl.put("run", loadFileAndPreprocess(resolvePath(runPath, currentPath), runPath, version, depth));
+            }
+        }
+
+        private void preprocessListValues(List<Object> cwl, String currentPath, String version, int depth) {
+            cwl.replaceAll(v -> preprocess(v, currentPath, version, depth));
+        }
+
+        private boolean isEntry(Map<String, Object> cwl) {
+            String c = (String)cwl.get("class");
+            return Objects.equals(c, "CommandLineTool") || Objects.equals(c, "ExpressionTool") || Objects.equals(c, "Workflow");
+        }
+
+        private String setUniqueIdIfAbsent(Map<String, Object> entryCwl) {
+            String currentId = (String)entryCwl.get("id");
+            if (currentId == null || idToPath.containsKey(currentId)) {
+                entryCwl.put("id", java.util.UUID.randomUUID().toString());
+            }
+            return (String)entryCwl.get("id");
+        }
+
+        private boolean supportsMixin(String version) {
+            return version != null && version.startsWith("v1.0");
+        }
+
+        private String stripLeadingSlashes(String value) {
+            return StringUtils.stripStart(value, "/");
+        }
+
+        private Map<String, Object> emptyMap() {
+            return new LinkedHashMap<>();
+        }
+
+        private String findString(Collection<String> keys, Map<String, Object> map) {
+            String key = findKey(keys, map);
+            if (key == null) {
+                return null;
+            }
+            Object value = map.get(key);
+            if (value instanceof String) {
+                return (String)value;
+            }
+            return null;
+        }
+
+        private void removeKey(Collection<String> keys, Map<String, Object> map) {
+            String key = findKey(keys, map);
+            if (key != null) {
+                map.remove(key);
+            }
+        }
+
+        private String findKey(Collection<String> keys, Map<String, Object> map) {
+            for (String mapKey: map.keySet()) {
+                if (keys.contains(mapKey.toLowerCase())) {
+                    return (mapKey);
+                }
+            }
+            return null;
+        }
+
+        private void applyMixin(Map<String, Object> to, Map<String, Object> mixin) {
+            mixin.forEach(to::putIfAbsent);
+        }
+
+        private Object parse(String yaml) {
+            new Yaml(new SafeConstructor()).load(yaml);
+            return new Yaml().load(yaml);
+        }
+
+        private String resolvePath(String childPath, String parentPath) {
+            if (childPath.startsWith("http://") || childPath.startsWith("https://")) {
+                return null;
+            }
+            if (childPath.startsWith("file:")) {
+                // The path in a file url is always absolute
+                // See https://datatracker.ietf.org/doc/html/rfc8089
+                childPath = childPath.replaceFirst("^file:/*+", "/");
+            }
+            return LanguageHandlerHelper.convertRelativePathToAbsolutePath(parentPath, childPath);
+        }
+
+        private String loadFile(String loadPath, String notFoundValue) {
+            fileCount++;
+            if (fileCount > maxFileCount) {
+                handleMax(String.format("maximum file count (%d) exceeded", maxFileCount));
+            }
+
+            for (SourceFile sourceFile: sourceFiles) {
+                if (sourceFile.getAbsolutePath().equals(loadPath)) {
+                    String content = sourceFile.getContent();
+                    charCount += content.length();
+                    if (charCount > maxCharCount) {
+                        handleMax(String.format("maximum character count (%d) exceeded", maxCharCount));
+                    }
+                    return content;
+                }
+            }
+            return notFoundValue;
+        }
+
+        private Object loadFileAndPreprocess(String loadPath, Object notFoundValue, String version, int depth) {
+            String content = loadFile(loadPath, null);
+            if (content == null) {
+                return notFoundValue;
+            }
+            return preprocess(parse(content), loadPath, version, depth + 1);
+        }
+
+        /**
+         * Invoked by the preprocessor when one of the "max" conditions (excessive file depth, size, or number of files expanded) is detected.
+         * This method can be overidden to implement alternative behavior, such as returning instead of throwing, allowing preprocessing to continue.
+         * @param message a message decribing which "max" condition was met
+         */
+        public void handleMax(String message) {
+            String fullMessage = "CWL might be recursive: " + message;
+            LOG.error(fullMessage);
+            throw new CustomWebApplicationException(fullMessage, HttpStatus.SC_UNPROCESSABLE_ENTITY);
+        }
+
+        /**
+         * Determine the path of the file that contained the specified entry.
+         * @param id entry identifier
+         * @returns file path
+         */
+        public String getPath(String id) {
+            return idToPath.get(id);
+        }
     }
 }

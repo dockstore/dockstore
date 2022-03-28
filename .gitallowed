@@ -38,6 +38,11 @@ dockstore-webservice/src/test/resources/not-really-recursive.*.https://raw.githu
 
 # dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*
 dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*checksum=
+dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*checksum:
+
+# dockstore-webservice/src/main/resources/openapi3/openapi.yaml:.*
+dockstore-webservice/src/main/resources/swagger.yaml:.*c83478829802b4d36374870843821abe1b625a71/delly_docker
+dockstore-webservice/src/main/resources/swagger.yaml:.*pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b
 
 # dockstore-webservice/src/main/java/io/dockstore/webservice/helpers/GitHubSourceCodeRepo.java:.*
 dockstore-webservice/src/main/java/io/dockstore/webservice/helpers/GitHubSourceCodeRepo.java:.*https://raw.githubusercontent.com/denis-yuen/
@@ -92,6 +97,22 @@ dockstore-integration-testing/src/test/java/io/dockstore/client/cli/Organization
 
 # dockstore-common/src/test/java/io/dockstore/common/yaml/DockstoreYamlTest.java:.*
 dockstore-common/src/test/java/io/dockstore/common/yaml/DockstoreYamlTest.java:.*https://raw.githubusercontent.com/denis-yuen/
+
+# dockstore-common/src/test/resources/fixtures/dockerImages10.wdl
+dockstore-common/src/test/resources/fixtures.*:60:.*f63e020c4062e0be8d081a50de16562f2ba161166e896655868efdb5527a8640
+
+# dockstore-common/src/test/resources/fixtures/dockerImagesPre10.wdl
+dockstore-common/src/test/resources/fixtures/dockerImagesPre10.wdl:56:.*sha256:f63e020c4062e0be8d081a50de16562f2ba161166e896655868efdb5527a8640
+
+
+# dockstore-webservice/src/main/java/io/swagger/model/ToolDockerfile.java
+dockstore-webservice/src/main/java/io/swagger/model/ToolDockerfile.java:.*pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71
+
+# swagger-java-sam-client/pom.xml
+swagger-java-sam-client/pom.xml:.*broadinstitute/sam/de13d1d
+
+# dockstore-webservice/src/main/java/io/swagger/model/ToolDescriptor.java
+dockstore-webservice/src/main/java/io/swagger/model/ToolDescriptor.java:.*pcawg_delly_workflow/ea2a
 
 # README.md:.*
 README.md:.*https://github.com/dockstore/dockstore/blob/

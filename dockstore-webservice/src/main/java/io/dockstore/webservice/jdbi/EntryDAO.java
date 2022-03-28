@@ -16,33 +16,36 @@
 
 package io.dockstore.webservice.jdbi;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.Category;
+import io.dockstore.webservice.core.CategorySummary;
+import io.dockstore.webservice.core.CollectionEntry;
+import io.dockstore.webservice.core.CollectionOrganization;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.database.EntryLite;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.webservice.core.CollectionEntry;
-import io.dockstore.webservice.core.CollectionOrganization;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.database.EntryLite;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -77,6 +80,25 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     public MutablePair<String, Entry> findEntryByPath(String path, boolean isPublished) {
+        final int minEntryNamePathLength = 4; // <registry>/<org>/<repo>/<entry-name>
+        final int pathLength = path.split("/").length;
+        // Determine which type of path to look for first: path with an entry name or path without an entry name
+        boolean hasEntryName = pathLength >= minEntryNamePathLength;
+
+        MutablePair<String, Entry> results = findEntryByPath(path, hasEntryName, isPublished);
+
+        if (pathLength >= minEntryNamePathLength && results == null) {
+            // If <repo> contains slashes, there are two scenarios that can form the same entry path. In the following scenarios, assume that <registry> and <org> are the same.
+            // Scenario 1: <repo> = 'foo', <entry-name> = 'bar'
+            // Scenario 2: <repo> = 'foo/bar', <entry-name> = NULL
+            // Need to try the opposite scenario if we couldn't find the entry using the initial scenario (i.e. if we first tried to find a path with an entry name, try to find one without).
+            results = findEntryByPath(path, !hasEntryName, isPublished);
+        }
+
+        return results;
+    }
+
+    public MutablePair<String, Entry> findEntryByPath(String path, boolean hasEntryName, boolean isPublished) {
         String queryString = "Entry.";
         if (isPublished) {
             queryString += "getPublishedEntryByPath";
@@ -85,7 +107,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         }
 
         // split path
-        String[] splitPath = Tool.splitPath(path);
+        String[] splitPath = Tool.splitPath(path, hasEntryName);
 
         // Not a valid path
         if (splitPath == null) {
@@ -141,12 +163,42 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryById").setParameter("id", id));
     }
 
-    public Entry<? extends Entry, ? extends Version> getGenericEntryByAlias(String alias) {
+    public Entry<? extends Entry, ? extends Version>  getGenericEntryByAlias(String alias) {
         return uniqueResult(this.currentSession().getNamedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
     }
 
     public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
         return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId").setParameter("entryId", entryId));
+    }
+
+    public List<CategorySummary> findCategorySummariesByEntryId(long entryId) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategorySummariesByEntryId").setParameter("entryId", entryId));
+    }
+
+    public List<Category> findCategoriesByEntryId(long entryId) {
+        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findCategoriesByEntryId").setParameter("entryId", entryId));
+    }
+
+    /**
+     * Retrieve the list of categories containing each of the specified Entries.
+     * @param entryIds a list of Entry IDs
+     * @return a map of each Entry contained by one-or-more Categories to a list of all Categories that contain it, any Entry contained by zero Categories is not included in the map
+     */
+    public Map<Entry, List<Category>> findCategoriesByEntryIds(List<Long> entryIds) {
+        // run a query to determine the categories that contain the specified entries, where the result is a list of unique entry/category pairs.
+        // for example, if Entry E is in categories C and D, the result would be [[E, C], [E, D]].
+
+        List<Object[]> results = list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Entry.findEntryCategoryPairsByEntryIds").setParameterList("entryIds", entryIds));
+
+        // convert the list of entry/category pairs to a map (as described in the javadoc above).
+        Map<Entry, List<Category>> entryToCategories = new HashMap<>();
+        results.forEach(result -> {
+            Entry entry = (Entry)result[0];
+            Category category = (Category)result[1];
+            entryToCategories.computeIfAbsent(entry, k -> new ArrayList<>()).add(category);
+        });
+
+        return (entryToCategories);
     }
 
     public T findPublishedById(long id) {
@@ -266,6 +318,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return Arrays.asList(this.currentSession().getNamedQuery("Entry.findWorkflowsDescriptorTypes").setParameter("entryId", entryId).getSingleResult().toString());
     }
 
+    public List<Entry> findAllGitHubEntriesWithNoTopicAutomatic() {
+        return list(this.currentSession().getNamedQuery("Entry.findAllGitHubEntriesWithNoTopicAutomatic"));
+    }
+
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
         List<Predicate> predicates = new ArrayList<>();
         if (!Strings.isNullOrEmpty(filter)) {
@@ -323,7 +379,9 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
         final CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         final CriteriaQuery<T> q = cb.createQuery(typeOfT);
-        generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
+        final Root<T> tRoot = generatePredicate(descriptorLanguage, registry, organization, name, toolname, description, author, checker, cb, q);
+        // order by id
+        q.orderBy(cb.asc(tRoot.get("id")));
         TypedQuery<T> query = currentSession().createQuery(q);
         query.setFirstResult(startIndex);
         query.setMaxResults(pageRemaining);
@@ -333,4 +391,23 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     protected abstract Root<T> generatePredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
         CriteriaBuilder cb, CriteriaQuery<?> q);
+
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
+    protected Predicate getWorkflowPredicate(DescriptorLanguage descriptorLanguage, String registry, String organization, String name, String toolname, String description, String author, Boolean checker,
+        CriteriaBuilder cb, SourceControlConverter converter, Root<?> entryRoot) {
+        Predicate predicate = cb.isTrue(entryRoot.get("isPublished"));
+        predicate = andLike(cb, predicate, entryRoot.get("organization"), Optional.ofNullable(organization));
+        predicate = andLike(cb, predicate, entryRoot.get("repository"), Optional.ofNullable(name));
+        predicate = andLike(cb, predicate, entryRoot.get("workflowName"), Optional.ofNullable(toolname));
+        predicate = andLike(cb, predicate, entryRoot.get("description"), Optional.ofNullable(description));
+        predicate = andLike(cb, predicate, entryRoot.get("author"), Optional.ofNullable(author));
+
+        if (descriptorLanguage != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("descriptorType"), descriptorLanguage));
+        }
+        if (registry != null) {
+            predicate = cb.and(predicate, cb.equal(entryRoot.get("sourceControl"), converter.convertToEntityAttribute(registry)));
+        }
+        return predicate;
+    }
 }

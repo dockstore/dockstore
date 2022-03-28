@@ -16,24 +16,24 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.AppTool;
+import io.dockstore.webservice.core.Service;
+import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Workflow;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import javax.persistence.NoResultException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.SourceControl;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.SourceControlConverter;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -73,7 +73,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * @return A list of workflows with the given path
      */
     public List<Workflow> findAllByPath(String path, boolean findPublished) {
-        String[] splitPath = Workflow.splitPath(path);
+        String[] splitPath = Workflow.splitPath(path, false);
 
         // Not a valid path
         if (splitPath == null) {
@@ -96,7 +96,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
         SourceControlConverter converter = new SourceControlConverter();
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Workflow> query = namedTypedQuery(fullQueryName)
             .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
@@ -115,7 +115,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * @return Workflow matching the path
      */
     public List<Workflow> findByPath(String path, boolean findPublished) {
-        String[] splitPath = Workflow.splitPath(path);
+        String[] splitPath = Workflow.splitPath(path, true);
 
         // Not a valid path
         if (splitPath == null) {
@@ -150,7 +150,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         SourceControlConverter converter = new SourceControlConverter();
 
         // Create query
-        Query query = namedQuery(fullQueryName)
+        Query<Workflow> query = namedTypedQuery(fullQueryName)
             .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
@@ -163,7 +163,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     /**
-     * Finds a BioWorkflow or Service matching the given path.
+     * Finds a BioWorkflow, Apptool, or Service matching the given path.
      *
      * Initial implementation currently calls findByPath and filters the result; would ideally do it as a query with
      * no filtering instead.
@@ -187,6 +187,31 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return filteredWorkflows.size() == 1 ? Optional.of(filteredWorkflows.get(0)) : Optional.empty();
     }
 
+    /**
+     * Find if a path already exists in the BioWorkflow or Apptool table since we do not want duplicate names between them.
+     * If creating an apptool, check the workflow table and vice versa.
+     *
+     * @param path
+     * @param clazz the table you want to check for a duplicate for
+     * @return
+     */
+    public <T extends Workflow> void checkForDuplicateAcrossTables(String path, Class<T> clazz) {
+        final List<Workflow> workflows = findByPath(path, false);
+        final List<Workflow> filteredWorkflows = workflows.stream()
+            .filter(workflow -> workflow.getClass() != Service.class)
+            .collect(Collectors.toList());
+
+        if (filteredWorkflows.size() > 0) {
+            String workflowType;
+            if (clazz == AppTool.class) {
+                workflowType = "tool";
+            } else {
+                workflowType = "workflow";
+            }
+            throw new CustomWebApplicationException("A " + workflowType + " with the same path already exists. Add the 'name' field to the entry you are currently trying to register to give it a unique path.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {
         List<Predicate> predicates = new ArrayList<>();
         SourceControlConverter converter = new SourceControlConverter();
@@ -197,7 +222,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         Root<Workflow> entry = q.from(Workflow.class);
 
         for (String path : paths) {
-            String[] splitPath = Workflow.splitPath(path);
+            String[] splitPath = Workflow.splitPath(path, true);
 
             if (splitPath == null) {
                 continue;
@@ -243,30 +268,30 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     }
 
     public List<Workflow> findByGitUrl(String giturl) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
             .setParameter("gitUrl", giturl));
     }
 
     public List<Workflow> findPublishedByOrganization(String organization) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
             .setParameter("organization", organization));
     }
 
     public List<Workflow> findByOrganization(SourceControl sourceControl, String organization) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganization")
                 .setParameter("organization", organization)
                 .setParameter("sourceControl", sourceControl));
     }
 
     public List<Workflow> findByOrganizationWithoutUser(SourceControl sourceControl, String organization, User user) {
-        return list(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
+        return list(namedTypedQuery("io.dockstore.webservice.core.Workflow.findByOrganizationWithoutUser")
                 .setParameter("organization", organization)
                 .setParameter("user", user)
                 .setParameter("sourceControl", sourceControl));
     }
 
     public Workflow findByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.getByAlias").setParameter("alias", alias));
     }
 
     /**
@@ -278,7 +303,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      */
     public Optional<Workflow> getWorkflowByWorkflowVersionId(long workflowVersionId) {
         try {
-            Workflow workflow = uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
+            Workflow workflow = uniqueResult(namedTypedQuery("io.dockstore.webservice.core.Workflow.findWorkflowByWorkflowVersionId")
                     .setParameter("workflowVersionId", workflowVersionId));
             return Optional.of(workflow);
         } catch (NoResultException nre) {

@@ -16,15 +16,11 @@
 
 package io.dockstore.webservice;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import static javax.servlet.DispatcherType.REQUEST;
+import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
+import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
+import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
+import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -38,8 +34,10 @@ import io.dockstore.common.LanguagePluginManager;
 import io.dockstore.language.CompleteLanguageInterface;
 import io.dockstore.language.MinimalLanguageInterface;
 import io.dockstore.language.RecommendedLanguageInterface;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Checksum;
 import io.dockstore.webservice.core.CloudInstance;
 import io.dockstore.webservice.core.Collection;
@@ -68,17 +66,22 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.CacheConfigManager;
+import io.dockstore.webservice.helpers.ConstraintExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.MetadataResourceHelper;
+import io.dockstore.webservice.helpers.ORCIDHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
+import io.dockstore.webservice.helpers.statelisteners.PopulateEntryListener;
 import io.dockstore.webservice.helpers.statelisteners.TRSListener;
+import io.dockstore.webservice.jdbi.AppToolDAO;
 import io.dockstore.webservice.jdbi.BioWorkflowDAO;
 import io.dockstore.webservice.jdbi.DeletedUsernameDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -90,6 +93,7 @@ import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.resources.AdminPrivilegesFilter;
 import io.dockstore.webservice.resources.AliasResource;
+import io.dockstore.webservice.resources.CategoryResource;
 import io.dockstore.webservice.resources.CloudInstanceResource;
 import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
@@ -109,6 +113,7 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.ToolTesterResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.UserResourceDockerRegistries;
+import io.dockstore.webservice.resources.UsernameRenameRequiredFilter;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
 import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
@@ -140,6 +145,15 @@ import io.swagger.jaxrs.listing.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
@@ -153,12 +167,6 @@ import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static javax.servlet.DispatcherType.REQUEST;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
-import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
 /**
  * @author dyuen
@@ -186,7 +194,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<>(Token.class, Tool.class, User.class,
             Tag.class, Label.class, SourceFile.class, Workflow.class, CollectionOrganization.class, WorkflowVersion.class, FileFormat.class,
             Organization.class, Notification.class, OrganizationUser.class, Event.class, Collection.class, Validation.class, BioWorkflow.class, Service.class, VersionMetadata.class, Image.class, Checksum.class, LambdaEvent.class,
-            ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class) {
+            ParsedInformation.class, EntryVersion.class, DeletedUsername.class, CloudInstance.class, Author.class, OrcidAuthor.class,
+            AppTool.class, Category.class, FullWorkflowPath.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -314,6 +323,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         LanguageHandlerFactory.setLanguagePluginManager(languagePluginManager);
 
         final PublicStateManager publicStateManager = PublicStateManager.getInstance();
+        publicStateManager.reset();
         publicStateManager.setConfig(configuration);
         final TRSListener trsListener = new TRSListener();
         publicStateManager.addListener(trsListener);
@@ -331,12 +341,16 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final DeletedUsernameDAO deletedUsernameDAO = new DeletedUsernameDAO(hibernate.getSessionFactory());
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
+        final ServiceDAO serviceDAO = new ServiceDAO(hibernate.getSessionFactory());
         final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
+        final AppToolDAO appToolDAO = new AppToolDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final EventDAO eventDAO = new EventDAO(hibernate.getSessionFactory());
         final VersionDAO versionDAO = new VersionDAO(hibernate.getSessionFactory());
         final BioWorkflowDAO bioWorkflowDAO = new BioWorkflowDAO(hibernate.getSessionFactory());
+
+        publicStateManager.insertListener(new PopulateEntryListener(toolDAO), publicStateManager.getElasticListener());
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
@@ -350,12 +364,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         .setPrefix("Bearer").setRealm("Dockstore User Authentication").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
+        environment.jersey().register(new ConstraintExceptionMapper());
+
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
         final PermissionsInterface authorizer = PermissionsFactory.createAuthorizer(tokenDAO, configuration);
 
-        final EntryResource entryResource = new EntryResource(tokenDAO, toolDAO, versionDAO, userDAO, configuration);
+        final EntryResource entryResource = new EntryResource(hibernate.getSessionFactory(), tokenDAO, toolDAO, versionDAO, userDAO, configuration);
         environment.jersey().register(entryResource);
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), authorizer, entryResource, configuration);
@@ -370,9 +386,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO, eventDAO, versionDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, deletedUsernameDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, serviceResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
+        environment.jersey().register(new UserResource(httpClient, getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer, configuration));
 
         MetadataResourceHelper.init(configuration);
+        ORCIDHelper.init(configuration);
         environment.jersey().register(new UserResourceDockerRegistries(getHibernate().getSessionFactory()));
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
@@ -384,6 +401,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new EventResource(eventDAO, userDAO));
         environment.jersey().register(new ToolTesterResource(configuration));
         environment.jersey().register(new CloudInstanceResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new CategoryResource(getHibernate().getSessionFactory()));
 
         // disable odd extra endpoints showing up
         final SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().prettyPrint(true);
@@ -398,6 +416,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiServiceImpl.setBioWorkflowDAO(bioWorkflowDAO);
+        ToolsApiServiceImpl.setServiceDAO(serviceDAO);
+        ToolsApiServiceImpl.setAppToolDAO(appToolDAO);
         ToolsApiServiceImpl.setFileDAO(fileDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         ToolsApiServiceImpl.setTrsListener(trsListener);
@@ -405,6 +425,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setStateManager(publicStateManager);
         ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
+        ToolsApiExtendedServiceImpl.setAppToolDAO(appToolDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         DOIGeneratorFactory.setConfig(configuration);
@@ -452,6 +473,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // Filter used to log every request an admin user makes.
         environment.jersey().register(new AdminPrivilegesFilter());
+
+        environment.jersey().register(new UsernameRenameRequiredFilter());
 
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);

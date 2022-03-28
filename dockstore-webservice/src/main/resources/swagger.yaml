@@ -5,7 +5,7 @@ info:
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images. Explore swagger.json for a Swagger 2.0 description\
     \ of our API and explore openapi.yaml for OpenAPI 3.0 descriptions."
-  version: "1.11.13-SNAPSHOT"
+  version: "1.12.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -1233,7 +1233,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new quay IO token."
+      summary: "Add a new Quay.io token."
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
@@ -1347,6 +1347,13 @@ paths:
         description: "The descriptor type (Workflows only)"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -1530,7 +1537,7 @@ paths:
       tags:
       - "containers"
       summary: "Get a list of tools by path."
-      description: "Does not require tool name."
+      description: "Do not include tool name."
       operationId: "getContainerByPath"
       produces:
       - "application/json"
@@ -1554,7 +1561,7 @@ paths:
       tags:
       - "containers"
       summary: "Get a list of published tools by path."
-      description: "NO authentication"
+      description: "NO authentication. Do not include tool name."
       operationId: "getPublishedContainerByPath"
       produces:
       - "application/json"
@@ -1568,7 +1575,9 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/DockstoreTool"
+            type: "array"
+            items:
+              $ref: "#/definitions/DockstoreTool"
   /containers/published:
     get:
       tags:
@@ -1656,6 +1665,8 @@ paths:
       summary: "Register a tool manually, along with tags."
       description: ""
       operationId: "registerManual"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1753,10 +1764,12 @@ paths:
       tags:
       - "containers"
       summary: "Update the tool with the given tool."
-      description: "Updates default descriptor paths, default Docker paths, default\
+      description: "Updates default descriptor paths, default Dockerfile paths, default\
         \ test parameter paths, git url, and default version. Also updates tool maintainer\
         \ email, and private access for manual tools."
       operationId: "updateContainer"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2039,6 +2052,13 @@ paths:
         in: "query"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -2055,6 +2075,8 @@ paths:
       summary: "Star a tool."
       description: ""
       operationId: "starEntry"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2219,7 +2241,10 @@ paths:
         enum:
         - "CWL"
         - "WDL"
-        - "NFL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -2506,6 +2531,8 @@ paths:
       summary: "Update a notification"
       description: "Curator/admin only"
       operationId: "updateNotification"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2548,6 +2575,36 @@ paths:
           description: "successful operation"
       security:
       - BEARER: []
+  /entries/{entryId}/versions/{versionId}/descriptionMetrics:
+    get:
+      tags:
+      - "entries"
+      summary: "Retrieve metrics on the description of an entry"
+      description: ""
+      operationId: "calculateDescriptionMetrics"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/User"
+      - name: "entryId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "versionId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DescriptionMetrics"
   /entries/{id}/aliases:
     post:
       tags:
@@ -3184,6 +3241,8 @@ paths:
       summary: "Create a collection in the given organization."
       description: ""
       operationId: "createCollection"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3243,6 +3302,8 @@ paths:
       description: "Currently only name, display name, description, and topic can\
         \ be updated."
       operationId: "updateCollection"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3618,6 +3679,8 @@ paths:
       summary: "Star an organization."
       description: ""
       operationId: "starOrganization"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4085,6 +4148,25 @@ paths:
               $ref: "#/definitions/Organization"
       security:
       - BEARER: []
+  /users/starredServices:
+    get:
+      tags:
+      - "users"
+      summary: "Get the authenticated user's starred services."
+      description: ""
+      operationId: "getStarredServices"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /users/starredTools:
     get:
       tags:
@@ -4266,13 +4348,15 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
-  /users/user/{userId}:
-    delete:
+  /users/user/{userId}/bannedStatus:
+    put:
       tags:
       - "users"
-      summary: "Terminate user if possible."
+      summary: "Updated banned status of user. Removes all tokens for banned users."
       description: ""
-      operationId: "terminateUser"
+      operationId: "banUser"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4282,11 +4366,15 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - in: "body"
+        name: "body"
+        description: "isBanned"
+        required: true
+        schema:
+          type: "boolean"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            type: "boolean"
       security:
       - BEARER: []
   /users/user/{userId}/limits:
@@ -4437,6 +4525,28 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/{userId}/appTools:
+    get:
+      tags:
+      - "users"
+      operationId: "userAppTools"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          headers: {}
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
   /users/{userId}/containers:
     get:
       tags:
@@ -4778,6 +4888,13 @@ paths:
         description: "The descriptor type (Workflows only)"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       - name: "namespace"
         in: "query"
         description: "The Docker namespace (Tools only)"
@@ -5013,15 +5130,19 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
       responses:
         200:
           description: "successful operation"
@@ -5044,12 +5165,15 @@ paths:
         description: "repository path"
         required: true
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
       responses:
         200:
           description: "successful operation"
@@ -5190,15 +5314,19 @@ paths:
         type: "string"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
-      - name: "services"
+      - name: "subclass"
         in: "query"
-        description: "services"
-        required: false
-        type: "boolean"
-        default: false
+        description: "Which Workflow subclass to retrieve."
+        required: true
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
       - name: "versionName"
         in: "query"
         description: "Version name"
@@ -5214,7 +5342,7 @@ paths:
       tags:
       - "workflows"
       summary: "Get a list of workflows by path."
-      description: "Does not require workflow name."
+      description: "Do not include workflow name."
       operationId: "getAllWorkflowByPath"
       produces:
       - "application/json"
@@ -5282,10 +5410,21 @@ paths:
         - "desc"
       - name: "services"
         in: "query"
-        description: "services"
+        description: "Should only be used by Dockstore CLI versions < 1.12.0. Indicates\
+          \ whether to get a service or workflow"
         required: false
         type: "boolean"
         default: false
+      - name: "subclass"
+        in: "query"
+        description: "Which workflow subclass to retrieve. If present takes precedence\
+          \ over services parameter"
+        required: false
+        type: "string"
+        enum:
+        - "BIOWORKFLOW"
+        - "SERVICE"
+        - "APPTOOL"
       responses:
         200:
           description: "successful operation"
@@ -5311,7 +5450,8 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
       responses:
@@ -5452,12 +5592,16 @@ paths:
         format: "int64"
       - name: "descriptorType"
         in: "path"
-        description: "Descriptor type of the workflow, either cwl or wdl."
+        description: "Descriptor type of the workflow, only CWL or WDL are support."
         required: true
         type: "string"
         enum:
-        - "cwl"
-        - "wdl"
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -5484,7 +5628,8 @@ paths:
         format: "int64"
       - name: "include"
         in: "query"
-        description: "Comma-delimited list of fields to include: validations, aliases"
+        description: "Comma-delimited list of fields to include: versions, orcidputcodes,\
+          \ validations, aliases, images, authors, validations, aliases, images, authors"
         required: false
         type: "string"
       responses:
@@ -5611,6 +5756,13 @@ paths:
         in: "query"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -5693,6 +5845,8 @@ paths:
       summary: "Publish or unpublish a workflow."
       description: "Publish/publish a workflow (public or private)."
       operationId: "publish"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5894,6 +6048,13 @@ paths:
         in: "query"
         required: false
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "GXFORMAT2"
+        - "SWL"
+        - "NEXTFLOW"
+        - "SERVICE"
       responses:
         200:
           description: "successful operation"
@@ -5910,6 +6071,8 @@ paths:
       summary: "Star a workflow."
       description: ""
       operationId: "starEntry"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6214,6 +6377,13 @@ definitions:
     properties:
       content:
         type: "string"
+  AppTool:
+    allOf:
+    - $ref: "#/definitions/Workflow"
+    - type: "object"
+      properties: {}
+      description: "This describes one app tool in dockstore as a special degenerate\
+        \ case of a workflow"
   Author:
     type: "object"
     required:
@@ -6243,6 +6413,20 @@ definitions:
           format: "int64"
           readOnly: true
       description: "This describes one workflow in the dockstore"
+  CategorySummary:
+    type: "object"
+    properties:
+      description:
+        type: "string"
+      displayName:
+        type: "string"
+      id:
+        type: "integer"
+        format: "int64"
+      name:
+        type: "string"
+      topic:
+        type: "string"
   Checksum:
     type: "object"
     properties:
@@ -6287,12 +6471,12 @@ definitions:
         readOnly: true
       name:
         type: "string"
-        example: "Alignment"
+        example: "alignment"
         position: 1
         description: "Name of the collection."
         minLength: 3
         maxLength: 39
-        pattern: "[a-zA-Z][a-zA-Z\\d]*"
+        pattern: "[a-zA-Z](-?[a-zA-Z\\d]){0,38}"
       description:
         type: "string"
         position: 2
@@ -6322,6 +6506,10 @@ definitions:
   CollectionEntry:
     type: "object"
     properties:
+      categories:
+        type: "array"
+        items:
+          $ref: "#/definitions/CategorySummary"
       dbUpdateDate:
         type: "integer"
         format: "int64"
@@ -6354,6 +6542,8 @@ definitions:
         format: "int64"
       collectionName:
         type: "string"
+      organizationAvatarUrl:
+        type: "string"
       organizationDisplayName:
         type: "string"
       organizationId:
@@ -6372,7 +6562,11 @@ definitions:
         type: "string"
       bitBucketClientId:
         type: "string"
+      checkUrlLambdaVersion:
+        type: "string"
       composeSetupVersion:
+        type: "string"
+      cwlParsingLambdaVersion:
         type: "string"
       cwlVisualizerUri:
         type: "string"
@@ -6389,6 +6583,8 @@ definitions:
       featuredContentUrl:
         type: "string"
       featuredNewsUrl:
+        type: "string"
+      galaxyParsingPluginVersion:
         type: "string"
       gitBuildVersion:
         type: "string"
@@ -6416,6 +6612,8 @@ definitions:
         type: "string"
       googleScope:
         type: "string"
+      nextflowParsingLambdaVersion:
+        type: "string"
       orcidAuthUrl:
         type: "string"
       orcidClientId:
@@ -6436,6 +6634,8 @@ definitions:
         type: "string"
       terraImportUrl:
         type: "string"
+      wdlParsingLambdaVersion:
+        type: "string"
       zenodoAuthUrl:
         type: "string"
       zenodoClientId:
@@ -6445,6 +6645,18 @@ definitions:
       zenodoScope:
         type: "string"
     description: "Configuration information for UI clients of the Dockstore webservice."
+  DescriptionMetrics:
+    type: "object"
+    properties:
+      calculatedEntropy:
+        type: "integer"
+        format: "int64"
+      calculatedWordCount:
+        type: "integer"
+        format: "int64"
+      descriptionLength:
+        type: "integer"
+        format: "int64"
   DescriptorLanguageBean:
     type: "object"
     properties:
@@ -6499,19 +6711,32 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      orcidPutCode:
-        type: "string"
-        description: "The presence of the put code indicates the entry was exported\
-          \ to ORCID."
       tags:
         type: "array"
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
+      topic:
+        type: "string"
+      topicAutomatic:
+        type: "string"
       topicId:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      topicManual:
+        type: "string"
+      topicSelection:
+        type: "string"
+        enum:
+        - "AUTOMATIC"
+        - "MANUAL"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the entry\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
       author:
         type: "string"
         position: 1
@@ -6713,6 +6938,7 @@ definitions:
         - "GITLAB"
         - "AMAZON_ECR"
         - "SEVEN_BRIDGES"
+        - "GITHUB_CONTAINER_REGISTRY"
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
@@ -6745,14 +6971,27 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      orcidPutCode:
+      topic:
         type: "string"
-        description: "The presence of the put code indicates the entry was exported\
-          \ to ORCID."
+      topicAutomatic:
+        type: "string"
       topicId:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      topicManual:
+        type: "string"
+      topicSelection:
+        type: "string"
+        enum:
+        - "AUTOMATIC"
+        - "MANUAL"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the entry\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
       workflowVersions:
         type: "array"
         uniqueItems: true
@@ -6862,6 +7101,7 @@ definitions:
         - "TOOL"
         - "WORKFLOW"
         - "SERVICE"
+        - "APPTOOL"
       lastUpdateDate:
         type: "integer"
         format: "int64"
@@ -6936,13 +7176,20 @@ definitions:
         - "REJECT_ORG_INVITE"
         - "CREATE_COLLECTION"
         - "MODIFY_COLLECTION"
+        - "DELETE_COLLECTION"
         - "REMOVE_FROM_COLLECTION"
         - "ADD_TO_COLLECTION"
         - "ADD_VERSION_TO_ENTRY"
+        - "PUBLISH_ENTRY"
+        - "UNPUBLISH_ENTRY"
       version:
         position: 8
         description: "Version associated with the event."
         $ref: "#/definitions/Version"
+      apptool:
+        position: 9
+        description: "(github) apps tool that the event is acting on."
+        $ref: "#/definitions/AppTool"
     description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
@@ -6994,6 +7241,15 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The size of the image in bytes"
+      specifier:
+        type: "string"
+        description: "How the image is specified"
+        enum:
+        - "PARAMETER"
+        - "NO_TAG"
+        - "LATEST"
+        - "TAG"
+        - "DIGEST"
       checksums:
         type: "array"
         position: 1
@@ -7022,6 +7278,7 @@ definitions:
         - "GITLAB"
         - "AMAZON_ECR"
         - "SEVEN_BRIDGES"
+        - "GITHUB_CONTAINER_REGISTRY"
       architecture:
         type: "string"
         position: 6
@@ -7189,16 +7446,40 @@ definitions:
         format: "int64"
         position: 6
         description: "Timestamp at which the notification was last updated"
+  Optional:
+    type: "object"
+    properties:
+      empty:
+        type: "boolean"
+      present:
+        type: "boolean"
+  OptionalUser:
+    type: "object"
+    properties:
+      empty:
+        type: "boolean"
+      present:
+        type: "boolean"
   OrcidAuthor:
     type: "object"
     required:
+    - "id"
     - "orcid"
     properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the author in this web service"
       orcid:
         type: "string"
         position: 1
-        description: "ORCID id of the author"
+        description: "ORCID iD of the author"
     description: "This describes an ORCID-author of a version in Dockstore"
+  OrcidPutCode:
+    type: "object"
+    properties:
+      orcidPutCode:
+        type: "string"
   Organization:
     type: "object"
     required:
@@ -7211,6 +7492,9 @@ definitions:
         description: "aliases can be used as an alternate unique id for organizations"
         additionalProperties:
           $ref: "#/definitions/Alias"
+      categorizer:
+        type: "boolean"
+        description: "Does this organization manage categories?"
       collectionsLength:
         type: "integer"
         format: "int64"
@@ -7258,6 +7542,7 @@ definitions:
         - "PENDING"
         - "REJECTED"
         - "APPROVED"
+        - "HIDDEN"
       users:
         type: "array"
         position: 7
@@ -8144,6 +8429,11 @@ definitions:
         format: "int64"
         position: 16
         description: "Time privacy policy was accepted"
+      usernameChangeRequired:
+        type: "boolean"
+        position: 17
+        description: "Indicates whether the user is required to change their username\
+          \ before being allowed to do various operations on Dockstore."
     description: "End users for the dockstore"
   Validation:
     type: "object"
@@ -8351,17 +8641,25 @@ definitions:
   VersionMetadata:
     type: "object"
     properties:
+      description:
+        type: "string"
+        description: "This is a human-readable description of this container and what\
+          \ it is trying to accomplish, required GA4GH"
       id:
         type: "integer"
         format: "int64"
-      orcidPutCode:
-        type: "string"
-        description: "The presence of the put code indicates the version was exported\
-          \ to ORCID."
       parsedInformationSet:
         type: "array"
         items:
           $ref: "#/definitions/ParsedInformation"
+      publicAccessibleTestParameterFile:
+        type: "boolean"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the version\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
   Workflow:
     type: "object"
     required:
@@ -8407,16 +8705,29 @@ definitions:
         readOnly: true
       licenseInformation:
         $ref: "#/definitions/LicenseInformation"
-      orcidPutCode:
-        type: "string"
-        description: "The presence of the put code indicates the entry was exported\
-          \ to ORCID."
       parentEntry:
         $ref: "#/definitions/Entry"
+      topic:
+        type: "string"
+      topicAutomatic:
+        type: "string"
       topicId:
         type: "integer"
         format: "int64"
         description: "The Id of the corresponding topic on Dockstore Discuss"
+      topicManual:
+        type: "string"
+      topicSelection:
+        type: "string"
+        enum:
+        - "AUTOMATIC"
+        - "MANUAL"
+      userIdToOrcidPutCode:
+        type: "object"
+        description: "The presence of the put code for a userid indicates the entry\
+          \ was exported to ORCID for the corresponding Dockstore user."
+        additionalProperties:
+          $ref: "#/definitions/OrcidPutCode"
       author:
         type: "string"
         position: 1
@@ -8538,8 +8849,8 @@ definitions:
       sourceControl:
         type: "string"
         position: 17
-        description: "This is a specific source control provider like github or bitbucket\
-          \ or n/a?, required: GA4GH"
+        description: "This is a specific source control provider like github, bitbucket,\
+          \ gitlab, etc."
       descriptorType:
         type: "string"
         position: 18

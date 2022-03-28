@@ -15,6 +15,26 @@
  */
 package io.dockstore.webservice.helpers;
 
+import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
+import static io.dockstore.webservice.resources.TokenResource.HTTP_TRANSPORT;
+import static io.dockstore.webservice.resources.TokenResource.JSON_FACTORY;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
+import com.google.api.client.auth.oauth2.BearerToken;
+import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
+import com.google.api.client.auth.oauth2.TokenResponse;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.util.PemReader;
+import io.dockstore.common.Utilities;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -27,22 +47,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Calendar;
 import java.util.Date;
-
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
-import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
-import com.google.api.client.auth.oauth2.BearerToken;
-import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
-import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.util.PemReader;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.LicenseInformation;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.GHLicense;
@@ -50,10 +54,6 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.LAMBDA_FAILURE;
-import static io.dockstore.webservice.resources.TokenResource.HTTP_TRANSPORT;
-import static io.dockstore.webservice.resources.TokenResource.JSON_FACTORY;
 
 public final class GitHubHelper {
 
@@ -155,9 +155,9 @@ public final class GitHubHelper {
      */
     public static User findUserByGitHubUsername(TokenDAO tokenDAO, UserDAO userDAO, String username, boolean allowFail) {
         // Find user by github name
+        String msg = "No user with GitHub username " + Utilities.cleanForLogging(username) + " exists on Dockstore.";
         Token userGitHubToken = tokenDAO.findTokenByGitHubUsername(username);
         if (userGitHubToken == null) {
-            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
             LOG.info(msg);
             if (allowFail) {
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
@@ -169,7 +169,6 @@ public final class GitHubHelper {
         // Get user object for github token
         User sendingUser = userDAO.findById(userGitHubToken.getUserId());
         if (sendingUser == null) {
-            String msg = "No user with GitHub username " + username + " exists on Dockstore.";
             LOG.info(msg);
             if (allowFail) {
                 throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);

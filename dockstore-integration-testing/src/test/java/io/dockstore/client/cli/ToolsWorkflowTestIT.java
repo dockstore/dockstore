@@ -16,10 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -28,6 +24,9 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -101,22 +100,21 @@ public class ToolsWorkflowTestIT extends BaseIT {
         // Repo: test_workflow_cwl
         // Branch: master
         // Test: normal cwl workflow DAG
-        // Return: JSON string with two tools, in grep-and-count.cwl and arguments.cwl
+        // Return: JSON string with three tools, in arguments.cwl, grep.cwl, and wc.cwl
 
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two tools with docker images, has " + countNode, 2, countNode);
+        Assert.assertEquals("JSON should have tools with docker images, has " + countNode, 3, countNode);
         Assert.assertFalse("tool should not have untar since it has no docker image", strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
-            "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","
-                + "\"link\":\"https://hub.docker.com/_/java\""));
-        Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
-                "\"id\":\"wrkflow\"," + "\"file\":\"grep-and-count.cwl\"," + "\"docker\":\"java:7\","
-                        + "\"link\":\"https://hub.docker.com/_/java\""));
-
+            "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\",\"link\":\"https://hub.docker.com/_/java\""));
+        Assert.assertTrue("workflow.wc docker and link should not be blank" + strings.get(0), strings.get(0).contains(
+            "\"id\":\"wrkflow.wc\"," + "\"file\":\"wc.cwl\"," + "\"docker\":\"java:7\",\"link\":\"https://hub.docker.com/_/java\""));
+        Assert.assertTrue("workflow.grep docker and link should not be blank" + strings.get(0), strings.get(0).contains(
+            "\"id\":\"wrkflow.grep\"," + "\"file\":\"grep.cwl\"," + "\"docker\":\"java:7\",\"link\":\"https://hub.docker.com/_/java\""));
     }
 
     @Test

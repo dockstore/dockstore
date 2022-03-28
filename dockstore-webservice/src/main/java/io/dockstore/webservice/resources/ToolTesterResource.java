@@ -18,17 +18,6 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -39,9 +28,18 @@ import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 /**
  * @author gluu
@@ -78,7 +76,7 @@ public class ToolTesterResource {
         ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(this.bucketName);
         try {
             return toolTesterS3Client.getToolTesterLog(toolId, toolVersionName, testFilename, runner, filename);
-        } catch (AmazonS3Exception e) {
+        } catch (AwsServiceException e) {
             LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);
@@ -102,7 +100,7 @@ public class ToolTesterResource {
         try {
             ToolTesterS3Client toolTesterS3Client = new ToolTesterS3Client(this.bucketName);
             return toolTesterS3Client.getToolTesterLogs(toolId, toolVersionName);
-        } catch (AmazonS3Exception e) {
+        } catch (AwsServiceException e) {
             LOG.error(e.getMessage(), e);
             throw new CustomWebApplicationException("Dockstore Logging integration is currently not set up",
                     HttpStatus.SC_SERVICE_UNAVAILABLE);

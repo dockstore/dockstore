@@ -15,11 +15,10 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.Set;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
+import java.util.Set;
 import org.apache.http.HttpStatus;
 
 /**

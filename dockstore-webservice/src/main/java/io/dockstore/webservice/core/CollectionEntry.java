@@ -1,13 +1,13 @@
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.SourceControl;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import io.dockstore.common.SourceControl;
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Used to retrieve specific entry fields from workflows/tools.  Also used in response for all endpoints that return a single collection.
@@ -23,6 +23,8 @@ public class CollectionEntry implements Serializable {
     private List<String> descriptorTypes = new ArrayList<String>();
     private boolean verified = false;
     private List<String> labels = new ArrayList<String>();
+    @JsonProperty("categories")
+    private List<CategorySummary> categorySummaries = new ArrayList<>();
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public CollectionEntry(long id, Date dbUpdateDate, String entryTypeString, SourceControl sourceControl, String organization, String repository, String entryName)  {
@@ -34,7 +36,7 @@ public class CollectionEntry implements Serializable {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
-        setEntryPath(sourceControl.toString(), organization, repository, entryName);
+        setEntryPathFromFragments(sourceControl.toString(), organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
     }
@@ -49,12 +51,12 @@ public class CollectionEntry implements Serializable {
         setEntryType(entryTypeString);
         setDbUpdateDate(dbUpdateDate);
         setId(id);
-        setEntryPath(registry, organization, repository, entryName);
+        setEntryPathFromFragments(registry, organization, repository, entryName);
         setVersionName(versionName);
         setVerified(verified);
     }
 
-    private void setEntryPath(String sourceControl, String organization, String repository, String entryName) {
+    private void setEntryPathFromFragments(String sourceControl, String organization, String repository, String entryName) {
         setEntryPath(sourceControl + '/' + organization + '/' + repository + (entryName == null || "".equals(entryName) ? "" : '/' + entryName));
     }
 
@@ -120,5 +122,13 @@ public class CollectionEntry implements Serializable {
 
     public void setDescriptorTypes(List<String> descriptorTypes) {
         this.descriptorTypes = descriptorTypes;
+    }
+
+    public List<CategorySummary> getCategorySummaries() {
+        return categorySummaries;
+    }
+
+    public void setCategorySummaries(List<CategorySummary> categorySummaries) {
+        this.categorySummaries = categorySummaries;
     }
 }

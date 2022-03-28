@@ -15,12 +15,11 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.core.Service;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
-
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.webservice.core.Service;
 import org.hibernate.SessionFactory;
 
 /**

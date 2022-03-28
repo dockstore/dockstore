@@ -21,6 +21,9 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
 {{/useOas2}}
 
@@ -62,6 +65,7 @@ import javax.validation.constraints.*;
 @Tag(name = "GA4GHV20", description = ResourceConstants.GA4GHV20)
 {{>generatedAnnotation}}
 {{#operations}}
+@SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "BEARER", scheme = "bearer") })
 public class {{classname}}  {
    private final {{classname}}Service delegate;
 

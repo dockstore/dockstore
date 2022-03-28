@@ -9,6 +9,7 @@ public final class LanguageHandlerHelper {
     private LanguageHandlerHelper() {
 
     }
+
     /**
      * Resolves a relative path based on an absolute parent path
      * @param parentPath Absolute path to parent file

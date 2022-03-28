@@ -1,22 +1,22 @@
 package io.dockstore.webservice.jdbi;
 
+import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Event;
+import io.dockstore.webservice.core.Event.Builder;
+import io.dockstore.webservice.core.Event.EventType;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
+import io.dropwizard.hibernate.AbstractDAO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import com.google.common.base.MoreObjects;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Event;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
-import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -24,6 +24,7 @@ import org.hibernate.query.Query;
 public class EventDAO extends AbstractDAO<Event> {
     public static final int MAX_LIMIT = 100;
     public static final String PAGINATION_RANGE = "range[1,100]";
+
     public EventDAO(SessionFactory factory) {
         super(factory);
     }
@@ -41,7 +42,7 @@ public class EventDAO extends AbstractDAO<Event> {
     }
 
     public List<Event> findEventsForOrganization(long organizationId, Integer offset, Integer limit) {
-        Query query = namedQuery("io.dockstore.webservice.core.Event.findAllForOrganization")
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllForOrganization")
                 .setParameter("organizationId", organizationId)
                 .setFirstResult(offset)
                 .setMaxResults(limit);
@@ -59,7 +60,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (entryIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByEntryIds");
         query.setParameterList("entryIDs", entryIds).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
@@ -69,7 +70,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (organizationIds.isEmpty()) {
             return Collections.emptyList();
         }
-        Query<Event> query = this.currentSession().getNamedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
+        Query<Event> query = namedTypedQuery("io.dockstore.webservice.core.Event.findAllByOrganizationIds");
         query.setParameterList("organizationIDs", organizationIds).setFirstResult(offset).setMaxResults(newLimit);
         return list(query);
     }
@@ -91,6 +92,7 @@ public class EventDAO extends AbstractDAO<Event> {
         if (!entryIds.isEmpty()) {
             list.add(event.get("tool").in(entryIds));
             list.add(event.get("workflow").in(entryIds));
+            list.add(event.get("apptool").in(entryIds));
         }
         query.where(cb.or(list.toArray(new Predicate[0])));
         query.orderBy(cb.desc(event.get("id")));
@@ -129,5 +131,13 @@ public class EventDAO extends AbstractDAO<Event> {
             Event event = entry.getEventBuilder().withType(Event.EventType.ADD_VERSION_TO_ENTRY).withInitiatorUser(user).withVersion(version).build();
             create(event);
         }
+    }
+
+    public <T extends Entry> void publishEvent(boolean publish, User user, T entry) {
+        final Builder builder = entry.getEventBuilder()
+            .withType(publish ? EventType.PUBLISH_ENTRY : EventType.UNPUBLISH_ENTRY)
+            .withUser(user);
+        final Event event = builder.build();
+        create(event);
     }
 }

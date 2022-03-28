@@ -15,14 +15,12 @@
  */
 package io.swagger.model;
 
-import java.util.Objects;
-
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.DescriptorLanguage;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
+import javax.validation.constraints.NotNull;
 
 /**
  * A tool descriptor is a metadata document that describes one or more tools.
@@ -39,8 +37,8 @@ public class ToolDescriptor {
     @JsonProperty("url")
     private String url = null;
 
+    /** default constructor used by Jackson */
     public ToolDescriptor() {
-        /** default constructor used by Jackson */
     }
 
     public ToolDescriptor(ExtendedFileWrapper fileWrapper) {

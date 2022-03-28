@@ -15,13 +15,12 @@
  */
 package io.dockstore.webservice.core;
 
+import io.dockstore.common.EntryType;
+import io.swagger.annotations.ApiModel;
 import javax.persistence.Entity;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-
-import io.dockstore.common.EntryType;
-import io.swagger.annotations.ApiModel;
 
 @ApiModel(value = "Service", description = "This describes one service in the dockstore as a special degenerate case of a workflow", parent = Workflow.class)
 @Entity
@@ -36,7 +35,8 @@ import io.swagger.annotations.ApiModel;
 })
 public class Service extends Workflow {
 
-    public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM }
+    public enum SubClass { DOCKER_COMPOSE, SWARM, KUBERNETES, HELM
+    }
 
     @Override
     public Entry getParentEntry() {

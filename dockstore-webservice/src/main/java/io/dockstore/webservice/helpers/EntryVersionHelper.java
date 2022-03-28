@@ -16,25 +16,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
 import com.google.api.client.util.Charsets;
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
@@ -55,6 +36,24 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
@@ -128,13 +127,13 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     }
 
     default void stripContent(List<? extends Entry> entries) {
-        stripContent(entries, getDAO());
+        stripContentFromEntries(entries, getDAO());
     }
 
     /**
      * For convenience, filters a list of entries
      */
-    static void stripContent(List<? extends Entry> entries, AbstractDockstoreDAO dao) {
+    static void stripContentFromEntries(List<? extends Entry> entries, AbstractDockstoreDAO dao) {
         for (Entry entry : entries) {
             dao.evict(entry);
             // clear users which are also lazy loaded
@@ -325,8 +324,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         return resultMap;
     }
 
-
-
+    @SuppressWarnings("lgtm[java/path-injection]")
     default void createTestParameters(List<String> testParameterPaths, Version workflowVersion, Set<SourceFile> sourceFiles, DescriptorLanguage.FileType fileType, FileDAO fileDAO) {
         for (String path : testParameterPaths) {
             long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
@@ -335,7 +333,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
                 sourceFile.setPath(path);
-                sourceFile.setAbsolutePath(Paths.get(StringUtils.prependIfMissing(workflowVersion.getWorkingDirectory(), "/")).resolve(path).toString());
+                sourceFile.setAbsolutePath(Paths.get(StringUtils.prependIfMissing(workflowVersion.getWorkingDirectory(), "/")).resolve(path).toString()); // lgtm[java/path-injection]
                 sourceFile.setType(fileType);
 
                 long id = fileDAO.create(sourceFile);

@@ -15,18 +15,18 @@
  */
 package core;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedSet;
+import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT;
+import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Author;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Validation;
@@ -36,6 +36,14 @@ import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.languages.WDLHandler;
 import io.dropwizard.testing.ResourceHelpers;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -43,13 +51,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT;
-import static io.dockstore.webservice.languages.WDLHandler.ERROR_PARSING_WORKFLOW_YOU_MAY_HAVE_A_RECURSIVE_IMPORT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public class WDLParseTest {
 
@@ -75,8 +76,11 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertNull("incorrect email", entry.getEmail());
+        Set<Author> authors = entry.getAuthors();
+        assertEquals(3, authors.size());
+        for (Author author : authors) {
+            assertNull(author.getEmail());
+        }
     }
 
     @Test
@@ -85,8 +89,13 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(DescriptorLanguage.FileType.DOCKSTORE_WDL);
         Version entry = sInterface
             .parseWorkflowContent(filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>(), new Tag());
-        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
+        Set<Author> authors = entry.getAuthors();
+        assertEquals(3, authors.size());
+        Optional<Author> authorWithEmail = authors.stream().filter(author -> author.getName().equals("Mr. Foo")).findFirst();
+        assertTrue(authorWithEmail.isPresent());
+        assertEquals("foo@foo.com", authorWithEmail.get().getEmail());
+        authors.stream().filter(author -> !author.getName().equals("Mr. Foo")).forEach(authorWithoutEmail -> assertNull(authorWithoutEmail.getEmail()));
+        assertEquals("incorrect description", "This is a cool workflow", entry.getDescription());
     }
 
     @Test

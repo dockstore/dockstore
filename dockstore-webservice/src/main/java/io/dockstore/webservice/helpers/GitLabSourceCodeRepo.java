@@ -16,18 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.DescriptorLanguage;
@@ -38,6 +27,16 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.gitlab.api.GitlabAPI;
 import org.gitlab.api.TokenType;
 import org.gitlab.api.models.GitlabBranch;
@@ -47,8 +46,6 @@ import org.gitlab.api.models.GitlabRepositoryTree;
 import org.gitlab.api.models.GitlabTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.SKIP_COMMIT_ID;
 
 /**
  * @author aduncan on 05/10/16.
@@ -61,7 +58,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitLabSourceCodeRepo.class);
     private final GitlabAPI gitlabAPI;
 
-    GitLabSourceCodeRepo(String gitUsername, String gitlabTokenContent) {
+    public GitLabSourceCodeRepo(String gitUsername, String gitlabTokenContent) {
         this.gitUsername = gitUsername;
         this.gitlabAPI = GitlabAPI.connect("https://gitlab.com", gitlabTokenContent, TokenType.ACCESS_TOKEN);
     }
@@ -224,18 +221,16 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     public String getRepositoryId(Entry entry) {
         String repositoryId;
         String giturl = entry.getGitUrl();
-
-        Pattern p = Pattern.compile("git@gitlab.com:(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(giturl);
+        Optional<Map<String, String>> gitMap = SourceCodeRepoFactory.parseGitUrl(entry.getGitUrl(), Optional.of("gitlab.com"));
         LOG.info(gitUsername + ": " + giturl);
 
-        if (!m.find()) {
+        if (gitMap.isEmpty()) {
             LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
             return null;
         }
 
-        repositoryId = m.group(1) + "/" + m.group(2);
-
+        repositoryId = gitMap.get().get(SourceCodeRepoFactory.GIT_URL_USER_KEY) + "/"
+            + gitMap.get().get(SourceCodeRepoFactory.GIT_URL_REPOSITORY_KEY);
         return repositoryId;
     }
 

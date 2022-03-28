@@ -1,14 +1,14 @@
 package io.dockstore.webservice.core.database;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
 import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.Tool;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 /**
  * This class describes lightweight entry objects that are used for making type-safe named queries
@@ -103,6 +103,29 @@ public abstract class EntryLite {
         @Override
         public EntryType getEntryType() {
             return EntryType.SERVICE;
+        }
+    }
+
+    public static class EntryLiteAppTool extends EntryLite {
+        private final AppTool appTool = new AppTool();
+
+        public EntryLiteAppTool(final SourceControl sourceControl, final String organization, final String repository, final String workflowName, final Date entryUpdated, final Date versionUpdated) {
+            super(entryUpdated, versionUpdated);
+            this.appTool.setSourceControl(sourceControl);
+            this.appTool.setOrganization(organization);
+            this.appTool.setRepository(repository);
+            this.appTool.setWorkflowName(workflowName);
+
+        }
+
+        @Override
+        public String getEntryPath() {
+            return appTool.getEntryPath();
+        }
+
+        @Override
+        public EntryType getEntryType() {
+            return EntryType.APPTOOL;
         }
     }
 }

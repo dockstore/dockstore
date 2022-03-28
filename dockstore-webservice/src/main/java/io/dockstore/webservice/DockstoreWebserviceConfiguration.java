@@ -16,19 +16,17 @@
 
 package io.dockstore.webservice;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
+import java.util.ArrayList;
+import java.util.List;
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 public class DockstoreWebserviceConfiguration extends Configuration {
 
@@ -147,6 +145,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @Valid
     @NotNull
     private UIConfig uiConfig;
+
+    private String checkUrlLambdaUrl;
 
     @JsonProperty("toolTesterBucket")
     public String getToolTesterBucket() {
@@ -537,6 +537,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.languagePluginLocation = languagePluginLocation;
     }
 
+    public String getCheckUrlLambdaUrl() {
+        return checkUrlLambdaUrl;
+    }
+
+    public void setCheckUrlLambdaUrl(String checkUrlLambdaUrl) {
+        this.checkUrlLambdaUrl = checkUrlLambdaUrl;
+    }
+
     /**
      * This config defines values that define the webservice from the outside world.
      * Most notably, for swagger. But also to configure generated RSS paths and TRS paths
@@ -601,6 +609,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String protocol;
         private String user;
         private String password;
+        private Integer maxConcurrentSessions;
 
         public String getProtocol() {
             return protocol;
@@ -640,6 +649,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setPort(int port) {
             this.port = port;
+        }
+
+        public void setMaxConcurrentSessions(Integer maxConcurrentSessions) {
+            this.maxConcurrentSessions = maxConcurrentSessions;
+        }
+        public Integer getMaxConcurrentSessions() {
+            return this.maxConcurrentSessions;
         }
     }
 
@@ -727,6 +743,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         private String deployVersion;
 
         private String composeSetupVersion;
+
+        private String cwlParsingLambdaVersion;
+        private String wdlParsingLambdaVersion;
+        private String nextflowParsingLambdaVersion;
+        private String galaxyParsingPluginVersion;
+        private String checkUrlLambdaVersion;
 
         public String getDnaStackImportUrl() {
             return dnaStackImportUrl;
@@ -967,6 +989,46 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
         public void setFeaturedNewsUrl(String featuredNewsUrl) {
             this.featuredNewsUrl = featuredNewsUrl;
+        }
+
+        public String getCwlParsingLambdaVersion() {
+            return cwlParsingLambdaVersion;
+        }
+
+        public void setCwlParsingLambdaVersion(String cwlParsingLambdaVersion) {
+            this.cwlParsingLambdaVersion = cwlParsingLambdaVersion;
+        }
+
+        public String getWdlParsingLambdaVersion() {
+            return wdlParsingLambdaVersion;
+        }
+
+        public void setWdlParsingLambdaVersion(String wdlParsingLambdaVersion) {
+            this.wdlParsingLambdaVersion = wdlParsingLambdaVersion;
+        }
+
+        public String getNextflowParsingLambdaVersion() {
+            return nextflowParsingLambdaVersion;
+        }
+
+        public void setNextflowParsingLambdaVersion(String nextflowParsingLambdaVersion) {
+            this.nextflowParsingLambdaVersion = nextflowParsingLambdaVersion;
+        }
+
+        public String getGalaxyParsingPluginVersion() {
+            return galaxyParsingPluginVersion;
+        }
+
+        public void setGalaxyParsingPluginVersion(String galaxyParsingPluginVersion) {
+            this.galaxyParsingPluginVersion = galaxyParsingPluginVersion;
+        }
+
+        public String getCheckUrlLambdaVersion() {
+            return checkUrlLambdaVersion;
+        }
+
+        public void setCheckUrlLambdaVersion(String checkUrlLambdaVersion) {
+            this.checkUrlLambdaVersion = checkUrlLambdaVersion;
         }
     }
 }

@@ -1,39 +1,24 @@
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Utilities;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.CollectionEntry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
-import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
-import io.dockstore.webservice.core.Service;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.helpers.ParamHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
+import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.jdbi.CategoryDAO;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -58,16 +43,28 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Collection of collection endpoints
@@ -81,21 +78,23 @@ import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SE
 @SecuritySchemes({ @SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer") })
 public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
+    private static final String ORGANIZATION_NOT_FOUND_MESSAGE = "Organization not found.";
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
 
+    private final CategoryDAO categoryDAO;
     private final CollectionDAO collectionDAO;
     private final OrganizationDAO organizationDAO;
     private final WorkflowDAO workflowDAO;
     private final ToolDAO toolDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
-    private final SessionFactory sessionFactory;
     private final VersionDAO versionDAO;
+    private final CollectionHelper helper;
 
     public CollectionResource(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
+        this.categoryDAO = new CategoryDAO(sessionFactory);
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
@@ -103,6 +102,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
         this.versionDAO = new VersionDAO(sessionFactory);
+        this.helper = new CollectionHelper(sessionFactory, toolDAO);
     }
 
     /**
@@ -146,6 +146,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         if (user.isEmpty()) {
             // No user given, only show collections from approved organizations
             Collection collection = collectionDAO.findById(collectionId);
+            throwExceptionForNullCollection(collection);
             // check that organization id matches
             if (collection.getOrganizationID() != organizationId) {
                 collection = null;
@@ -154,7 +155,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
             Collection approvalForCollection = getApprovalForCollection(collection);
-            addCollectionEntriesToCollection(approvalForCollection);
+            evictAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
@@ -167,7 +168,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             }
             assert collection != null;
             Hibernate.initialize(collection.getAliases());
-            addCollectionEntriesToCollection(collection);
+            evictAndAddEntries(collection);
             return collection;
         }
     }
@@ -185,7 +186,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             // No user given, only show collections from approved organizations
             Organization organization = organizationDAO.findApprovedByName(organizationName);
             if (organization == null) {
-                String msg = "Organization " + organizationName + " not found.";
+                String msg = "Organization " + Utilities.cleanForLogging(organizationName) + " not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
@@ -193,62 +194,37 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
             throwExceptionForNullCollection(collection);
             Collection approvalForCollection = getApprovalForCollection(collection);
-            addCollectionEntriesToCollection(approvalForCollection);
+            evictAndAddEntries(approvalForCollection);
             return approvalForCollection;
         } else {
             // User is given, check if the collections organization is either approved or the user has access
             // Admins and curators should be able to see collections from unapproved organizations
             Organization organization = organizationDAO.findByName(organizationName);
-            if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO)) {
-                String msg = "Organization " + organizationName + " not found.";
+            if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO, userDAO)) {
+                String msg = "Organization " + Utilities.cleanForLogging(organizationName) + " not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
+            throwExceptionForNullCollection(collection);
+
             Hibernate.initialize(collection.getAliases());
-            addCollectionEntriesToCollection(collection);
+            evictAndAddEntries(collection);
             return collection;
         }
     }
 
-    private void addCollectionEntriesToCollection(Collection collection) {
-        Session currentSession = sessionFactory.getCurrentSession();
-        currentSession.evict(collection);
-        List<CollectionEntry> collectionWorkflows = workflowDAO.getCollectionWorkflows(collection.getId());
-        List<CollectionEntry> collectionServices = workflowDAO.getCollectionServices(collection.getId());
-        List<CollectionEntry> collectionTools = workflowDAO.getCollectionTools(collection.getId());
-        List<CollectionEntry> collectionWorkflowsWithVersions = workflowDAO.getCollectionWorkflowsWithVersions(collection.getId());
-        List<CollectionEntry> collectionServicesWithVersions = workflowDAO.getCollectionServicesWithVersions(collection.getId());
-        List<CollectionEntry> collectionToolsWithVersions = workflowDAO.getCollectionToolsWithVersions(collection.getId());
-        List<CollectionEntry> collectionEntries = new ArrayList<>();
-        collectionEntries.addAll(collectionWorkflows);
-        collectionEntries.addAll(collectionServices);
-        collectionEntries.addAll(collectionTools);        
-        collectionEntries.addAll(collectionWorkflowsWithVersions);
-        collectionEntries.addAll(collectionServicesWithVersions);
-        collectionEntries.addAll(collectionToolsWithVersions);
-        collectionEntries.forEach(entry -> {
-            List<Label> labels = workflowDAO.getLabelByEntryId(entry.getId());
-            List<String> labelStrings = labels.stream().map(Label::getValue).collect(Collectors.toList());
-            entry.setLabels(labelStrings);
-            if (entry.getEntryType().equals("tool")) {
-                entry.setDescriptorTypes(toolDAO.getToolsDescriptorTypes(entry.getId()));
-            } else if (entry.getEntryType().equals("workflow")) {
-                entry.setDescriptorTypes(workflowDAO.getWorkflowsDescriptorTypes(entry.getId()));
-            }
-        });
-        collection.setCollectionEntries(collectionEntries);
-        collection.setWorkflowsLength(collectionWorkflows.size() + collectionWorkflowsWithVersions.size());
-        collection.setToolsLength(collectionTools.size() + collectionToolsWithVersions.size());
+    private void evictAndSummarize(Collection collection) {
+        helper.evictAndSummarize(collection);
+    }
+
+    private void evictAndAddEntries(Collection collection) {
+        helper.evictAndAddEntries(collection);
     }
 
     private void throwExceptionForNullCollection(Collection collection) {
-        if (collection == null) {
-            String msg = "Collection not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
+        helper.throwExceptionForNullCollection(collection);
     }
 
     @POST
@@ -273,26 +249,22 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             entryAndCollection.getRight().addEntry(entryAndCollection.getLeft(), version);
         }
 
-
         // Event for addition
         Organization organization = organizationDAO.findById(organizationId);
 
-        Event.Builder eventBuild = new Event.Builder()
+        Event.Builder eventBuild = entryAndCollection.getLeft().getEventBuilder()
                 .withOrganization(organization)
                 .withCollection(entryAndCollection.getRight())
                 .withInitiatorUser(user)
                 .withType(Event.EventType.ADD_TO_COLLECTION);
 
-        if (entryAndCollection.getLeft() instanceof BioWorkflow) {
-            eventBuild = eventBuild.withBioWorkflow((BioWorkflow)entryAndCollection.getLeft());
-        } else if (entryAndCollection.getLeft() instanceof Service) {
-            eventBuild = eventBuild.withService((Service)entryAndCollection.getLeft());
-        } else if (entryAndCollection.getLeft() instanceof Tool) {
-            eventBuild = eventBuild.withTool((Tool)entryAndCollection.getLeft());
-        }
-
         Event addToCollectionEvent = eventBuild.build();
         eventDAO.create(addToCollectionEvent);
+
+        // If added to a Category, update the Entry in the index
+        if (entryAndCollection.getRight() instanceof Category) {
+            handleIndexUpdate(entryAndCollection.getLeft());
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -330,22 +302,19 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // Event for deletion
         Organization organization = organizationDAO.findById(organizationId);
 
-        Event.Builder eventBuild = new Event.Builder()
+        Event.Builder eventBuild = entryAndCollection.getLeft().getEventBuilder()
                 .withOrganization(organization)
                 .withCollection(entryAndCollection.getRight())
                 .withInitiatorUser(user)
                 .withType(Event.EventType.REMOVE_FROM_COLLECTION);
 
-        if (entryAndCollection.getLeft() instanceof BioWorkflow) {
-            eventBuild = eventBuild.withBioWorkflow((BioWorkflow)entryAndCollection.getLeft());
-        } else if (entryAndCollection.getLeft() instanceof Service) {
-            eventBuild = eventBuild.withService((Service)entryAndCollection.getLeft());
-        } else if (entryAndCollection.getLeft() instanceof Tool) {
-            eventBuild = eventBuild.withTool((Tool)entryAndCollection.getLeft());
-        }
-
         Event removeFromCollectionEvent = eventBuild.build();
         eventDAO.create(removeFromCollectionEvent);
+
+        // If deleted from a Category, update the Entry in the index
+        if (entryAndCollection.getRight() instanceof Category) {
+            handleIndexUpdate(entryAndCollection.getLeft());
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -415,37 +384,29 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             Organization organization = organizationDAO.findApprovedById(organizationId);
             throwExceptionForNullOrganization(organization);
         } else {
-            boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO);
+            boolean doesOrgExist = OrganizationResource.doesOrganizationExistToUser(organizationId, user.get().getId(), organizationDAO, userDAO);
             if (!doesOrgExist) {
-                String msg = "Organization not found.";
+                String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
         }
 
         List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
-        Session currentSession = sessionFactory.getCurrentSession();
-        if (checkIncludes(include, "entries")) {
-            collections.forEach(collection -> {
-                currentSession.evict(collection);
-                addCollectionEntriesToCollection(collection);
-            });
-        } else {
-            // Ensure that entries is empty
-            // This is probably unnecessary
-            collections.forEach(collection -> {
-                currentSession.evict(collection);
-                collection.setEntries(new HashSet<>());
-                collection.setWorkflowsLength(workflowDAO.getWorkflowsLength(collection.getId()));
-                collection.setToolsLength(workflowDAO.getToolsLength(collection.getId()));
-            });
-        }
+        boolean includeEntries = ParamHelper.csvIncludesField(include, "entries");
+        collections.forEach(collection -> {
+            if (includeEntries) {
+                evictAndAddEntries(collection);
+            } else {
+                evictAndSummarize(collection);
+            }
+        });
         return collections;
     }
 
     private void throwExceptionForNullOrganization(Organization organization) {
         if (organization == null) {
-            String msg = "Organization not found";
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -454,6 +415,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Create a collection in the given organization.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
@@ -465,7 +427,15 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         // First check if the organization exists and that the user is an admin or maintainer
         boolean isUserAdminOrMaintainer = OrganizationResource.isUserAdminOrMaintainer(organizationId, user.getId(), organizationDAO);
         if (!isUserAdminOrMaintainer) {
-            String msg = "Organization not found.";
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        // Get the organization
+        Organization organization = organizationDAO.findById(organizationId);
+        if (organization == null) {
+            String msg = ORGANIZATION_NOT_FOUND_MESSAGE;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -478,18 +448,37 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Get the organization
-        Organization organization = organizationDAO.findById(organizationId);
+        matchingCollection = collectionDAO.findByDisplayNameAndOrg(collection.getDisplayName(), organizationId);
+        if (matchingCollection != null) {
+            String msg = "A collection already exists with the display name '" + collection.getDisplayName() + "' in the specified organization.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        final Collection collectionOrCategory;
+
+        if (organization.isCategorizer()) {
+            // The organization is a categorizer, make sure there are no category name collisions and convert the Collection to a Category
+            Category matchingCategory = categoryDAO.findByName(collection.getName());
+            if (matchingCategory != null) {
+                String msg = "A category already exists with the name '" + collection.getName() + "'.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+            collectionOrCategory = constructCategory(collection);
+        } else {
+            collectionOrCategory = collection;
+        }
 
         // Save the collection
-        long id = collectionDAO.create(collection);
-        organization.addCollection(collection);
+        long id = collectionDAO.create(collectionOrCategory);
+        organization.addCollection(collectionOrCategory);
 
         // Event for creation
         User foundUser = userDAO.findById(user.getId());
         Event createCollectionEvent = new Event.Builder()
                 .withOrganization(organization)
-                .withCollection(collection)
+                .withCollection(collectionOrCategory)
                 .withInitiatorUser(foundUser)
                 .withType(Event.EventType.CREATE_COLLECTION)
                 .build();
@@ -501,6 +490,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @PUT
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name, display name, description, and topic can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     @Operation(operationId = "updateCollection", summary = "Update a collection.", description = "Update a collection. Currently only name, display name, description, and topic can be updated.", security = @SecurityRequirement(name = "bearer"))
@@ -514,13 +504,19 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         // Check if new name is valid
         if (!Objects.equals(existingCollection.getName(), collection.getName())) {
-            Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
-            if (duplicateName != null) {
-                if (duplicateName.getId() == existingCollection.getId()) {
+            boolean isCategory = existingCollection instanceof Category;
+            Collection duplicateCollection;
+            if (isCategory) {
+                duplicateCollection = categoryDAO.findByName(collection.getName());
+            } else {
+                duplicateCollection = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
+            }
+            if (duplicateCollection != null) {
+                if (duplicateCollection.getId() == existingCollection.getId()) {
                     // do nothing
                     LOG.debug("this appears to be a case change");
                 } else {
-                    String msg = "A collection already exists with the name '" + collection.getName() + "', please try another one.";
+                    String msg = "A " + (isCategory ? "category" : "collection") + " already exists with the name '" + collection.getName() + "', please try another one.";
                     LOG.info(msg);
                     throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
                 }
@@ -542,8 +538,66 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .build();
         eventDAO.create(updateCollectionEvent);
 
+        // If we are updating a Category, assume a property has changed and reindex the Entries.
+        if (existingCollection instanceof Category) {
+            reindexEntries(existingCollection);
+        }
+
         return collectionDAO.findById(collectionId);
 
+    }
+
+    private void reindexEntries(Collection collection) {
+        long id = collection.getId();
+
+        // Accumulate the entry,version combos, there can be multiple different versions per entry.
+        List<CollectionEntry> collectionEntries = new ArrayList<>();
+        collectionEntries.addAll(toolDAO.getCollectionWorkflows(id));
+        collectionEntries.addAll(toolDAO.getCollectionWorkflowsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getCollectionTools(id));
+        collectionEntries.addAll(toolDAO.getCollectionToolsWithVersions(id));
+        collectionEntries.addAll(toolDAO.getCollectionServices(id));
+        collectionEntries.addAll(toolDAO.getCollectionServicesWithVersions(id));
+
+        // Reduce to a set of entries and index.
+        Set<Entry> entries = new HashSet<>();
+        collectionEntries.forEach(collectionEntry -> entries.add(toolDAO.getGenericEntryById(collectionEntry.getId())));
+        entries.forEach(this::handleIndexUpdate);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("{organizationId}/collections/{collectionId}")
+    @ApiOperation(value = "Delete a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, hidden = true)
+    @Operation(operationId = "deleteCollection", summary = "Delete a collection.", description = "Delete a collection.", security = @SecurityRequirement(name = "bearer"))
+    @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully deleted the collection")
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "Collection not found")
+    @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")
+    public void deleteCollection(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
+        @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long organizationId,
+        @Parameter(description = "Collection ID.", name = "collectionId", in = ParameterIn.PATH, required = true) @PathParam("collectionId") Long collectionId) {
+        // Ensure collection exists to the user
+        Collection collection = this.getAndCheckCollection(Optional.of(organizationId), collectionId, user);
+        Organization organization = getOrganizationAndCheckModificationRights(user, collection);
+
+        // Soft delete the collection
+        collection.setDeleted(true);
+
+        // If the collection was a Category, reindex the entries.
+        if (collection instanceof Category) {
+            reindexEntries(collection);
+        }
+
+        // Create the delete collection event.
+        Event.Builder eventBuild = new Event.Builder()
+                .withOrganization(organization)
+                .withCollection(collection)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.DELETE_COLLECTION);
+
+        Event deleteCollectionEvent = eventBuild.build();
+        eventDAO.create(deleteCollectionEvent);
     }
 
     @PUT
@@ -570,6 +624,10 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 .withType(Event.EventType.MODIFY_ORG)
                 .build();
         eventDAO.create(updateCollectionEvent);
+
+        if (oldCollection instanceof Category) {
+            reindexEntries(oldCollection);
+        }
 
         return collectionDAO.findById(collectionId);
     }
@@ -619,19 +677,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO);
-    }
-
-    /**
-     * Checks if the include string (csv) includes some field
-     * @param include CSV string where each field is of the form [a-zA-Z]+
-     * @param field Field to query for
-     * @return True if include has the given field, false otherwise
-     */
-    private boolean checkIncludes(String include, String field) {
-        String includeString = (include == null ? "" : include);
-        List<String> includeSplit = Arrays.asList(includeString.split(","));
-        return includeSplit.contains(field);
+        return OrganizationResource.doesOrganizationExistToUser(collection.getOrganization().getId(), userId, organizationDAO, userDAO);
     }
 
     @Override
@@ -666,5 +712,19 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         Hibernate.initialize(byAlias.getAliases());
         return byAlias;
+    }
+
+    private void handleIndexUpdate(Entry entry) {
+        PublicStateManager.getInstance().handleIndexUpdate(entry, StateManagerMode.UPDATE);
+    }
+
+    private Category constructCategory(Collection collection) {
+        Category category = new Category();
+        category.setName(collection.getName());
+        category.setDescription(collection.getDescription());
+        category.setDisplayName(collection.getDisplayName());
+        category.setTopic(collection.getTopic());
+        category.setOrganization(collection.getOrganization());
+        return category;
     }
 }

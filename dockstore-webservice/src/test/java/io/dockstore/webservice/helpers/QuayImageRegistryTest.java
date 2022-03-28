@@ -1,13 +1,13 @@
 package io.dockstore.webservice.helpers;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -41,11 +41,44 @@ public class QuayImageRegistryTest {
         int size = tags.size();
         Assert.assertTrue("Should be able to get more than the default 500 tags", size > 3838);
         tags.forEach(tag -> {
-            Assert.assertNotEquals("Image ID should be populated", null, tag.getImageId());
             Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            Assert.assertTrue("things look kinda sane", !tag.getName().isEmpty() && tag.getImages().stream().noneMatch(img -> img.getImageUpdateDate().isEmpty()));
+            // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
+            if (tag.getSize() == null) {
+                tag.getImages().stream().forEach(image -> {
+                    boolean archOsInfoFilled = false;
+                    if (image.getOs() != null || image.getArchitecture() != null) {
+                        archOsInfoFilled = true;
+                    }
+                    Assert.assertTrue("The image's arch and/or os info should be filled in", archOsInfoFilled);
+                });
+            }
         });
         Set<String> collect = tags.parallelStream().map(Version::getName).collect(Collectors.toSet());
         int distinctSize = collect.size();
         Assert.assertEquals("There should be no tags with the same name", size, distinctSize);
+
+        // This Quay repo has tags with > 1 manifest per image
+        tool.setNamespace("openshift-release-dev");
+        tool.setName("ocp-release");
+        tags = quayImageRegistry.getTags(tool);
+        Optional<Tag> tagWithMoreThanOneImage = tags.stream().filter(tag -> tag.getImages().size() > 1).findFirst();
+        if (tagWithMoreThanOneImage.isEmpty()) {
+            Assert.fail("There should be at least one tag where there is more than one image");
+        }
+        tags.forEach(tag -> {
+            Assert.assertTrue("Images should be populated", tag.getImages().size() > 0);
+            Assert.assertTrue("things look kinda sane", !tag.getName().isEmpty() && tag.getImages().stream().noneMatch(img -> img.getImageUpdateDate().isEmpty()));
+            // If the tag size is null, that means at least one image with os/arch information was built and uploaded to Quay separately.
+            if (tag.getSize() == null) {
+                tag.getImages().stream().forEach(image -> {
+                    boolean archOsInfoFilled = false;
+                    if (image.getOs() != null || image.getArchitecture() != null) {
+                        archOsInfoFilled = true;
+                    }
+                    Assert.assertTrue("The image's arch and/or os info should be filled in", archOsInfoFilled);
+                });
+            }
+        });
     }
 }

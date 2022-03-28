@@ -15,17 +15,16 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.container.ContainerRequestContext;
-
 import com.github.zafarkhaja.semver.Version;
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
+import java.util.List;
+import java.util.Optional;
+import javax.ws.rs.container.ContainerRequestContext;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +35,21 @@ import org.slf4j.LoggerFactory;
 public interface AuthenticatedResourceInterface {
 
     Logger LOG = LoggerFactory.getLogger(AuthenticatedResourceInterface.class);
+
+    /**
+     * Check if admin or if container belongs to user
+     *
+     * @param user the user that is requesting something
+     * @param list
+     */
+    static void checkUserAccessEntries(User user, List<? extends Entry> list) {
+        for (Entry entry : list) {
+            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                    HttpStatus.SC_FORBIDDEN);
+            }
+        }
+    }
 
     /**
      * Check if tool is null
@@ -86,21 +100,6 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
-     * Check if admin or if container belongs to user
-     *
-     * @param user the user that is requesting something
-     * @param list
-     */
-    static void checkUser(User user, List<? extends Entry> list) {
-        for (Entry entry : list) {
-            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-            }
-        }
-    }
-
-    /**
      * Check if admin or correct user
      *
      * @param user the user that is requesting something
@@ -109,6 +108,17 @@ public interface AuthenticatedResourceInterface {
     default void checkUser(User user, long id) {
         if (!user.getIsAdmin() && user.getId() != id) {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
+        }
+    }
+
+    /**
+     * Check if user is null
+     *
+     * @param user user to check if null
+     */
+    default void checkUserExists(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -233,6 +243,17 @@ public interface AuthenticatedResourceInterface {
             } else {
                 checkUser(user.get(), entry);
             }
+        }
+    }
+
+    /**
+     * Check if token is null
+     *
+     * @param token token to check if null
+     */
+    default void checkTokenExists(Token token) {
+        if (token == null) {
+            throw new CustomWebApplicationException("Token not found.", HttpStatus.SC_NOT_FOUND);
         }
     }
 

@@ -16,13 +16,12 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.http.HttpStatus;
 
 /**

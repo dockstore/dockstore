@@ -15,17 +15,16 @@
  */
 package io.dockstore.webservice.languages;
 
+import static io.dockstore.common.DescriptorLanguage.FileType;
+
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.language.MinimalLanguageInterface;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.language.MinimalLanguageInterface;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginWrapper;
-
-import static io.dockstore.common.DescriptorLanguage.FileType;
 
 public final class LanguageHandlerFactory {
     private static Map<DescriptorLanguage, MinimalLanguageInterface> pluginMap = new HashMap<>();

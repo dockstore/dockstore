@@ -1,23 +1,6 @@
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Label;
@@ -38,13 +21,29 @@ import io.swagger.zenodo.client.model.Deposit;
 import io.swagger.zenodo.client.model.DepositMetadata;
 import io.swagger.zenodo.client.model.NestedDepositMetadata;
 import io.swagger.zenodo.client.model.RelatedIdentifier;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.swagger.api.impl.ToolsImplCommon.WORKFLOW_PREFIX;
 
 public final class ZenodoHelper {
     private static final Logger LOG = LoggerFactory.getLogger(ZenodoHelper.class);
@@ -133,8 +132,20 @@ public final class ZenodoHelper {
                 fillInMetadata(depositMetadata, workflow, workflowVersion);
             } catch (ApiException e) {
                 LOG.error("Could not create new deposition version on Zenodo. Error is " + e.getMessage(), e);
-                throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
+                if (e.getCode() == HttpStatus.SC_FORBIDDEN) {
+                    // Another user in the same organization already requested a DOI for a workflow version and created the workflow concept DOI.
+                    // We are unable to create a new deposition version using the current user's Zenodo credentials because they don't have permission to create a deposition version for the original concept DOI.
+                    // The workaround is for the user who created the concept DOI to request DOI's for other versions whenever it's needed by users from the same organization.
+                    // This will hopefully be revisited later when Zenodo implements a feature where a deposit can be shared among users.
+                    String errorMessage = String.format(
+                            "Could not create new deposition version on Zenodo because you do not have permission to create a deposition version for DOI %s. "
+                                    + "Please ask the person who created DOI %s to request a DOI for workflow version %s on Dockstore.",
+                            workflow.getConceptDoi(), workflow.getConceptDoi(), workflowVersion.getName());
+                    throw new CustomWebApplicationException(errorMessage, HttpStatus.SC_BAD_REQUEST);
+                } else {
+                    throw new CustomWebApplicationException("Could not create new deposition version on Zenodo."
                         + " Error is " + e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+                }
             }
         }
 
@@ -220,7 +231,7 @@ public final class ZenodoHelper {
      * @param workflowVersion workflow version for which DOI is registered
      * @param dockstoreGA4GHBaseUrl The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
      * @return TRS URL to workflow (e.g. https://dockstore.org/api/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FDataBiosphere
-     * %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
+     *     %2Ftopmed-workflows%2FUM_variant_caller_wdl/versions/1.32.0/PLAIN-WDL/descriptor/topmed_freeze3_calling.wdl)
      */
     protected static String createWorkflowTrsUrl(Workflow workflow, WorkflowVersion workflowVersion, String dockstoreGA4GHBaseUrl) {
         final String sourceControlPath = workflow.getWorkflowPath();

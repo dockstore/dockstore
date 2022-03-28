@@ -16,8 +16,8 @@
 
 package io.dockstore.common;
 
+import io.dockstore.common.DescriptorLanguage.FileType;
 import java.util.Optional;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,21 +28,21 @@ public class DescriptorLanguageTest {
 
     @Test
     public void testGetFileType() {
-        Assert.assertEquals(DescriptorLanguage.getFileType("CWL").get(), DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Assert.assertEquals(DescriptorLanguage.getFileType("PLAIN_CWL").get(), DescriptorLanguage.FileType.DOCKSTORE_CWL);
-        Assert.assertEquals(DescriptorLanguage.getFileType("WDL").get(), DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Assert.assertEquals(DescriptorLanguage.getFileType("PLAIN_WDL").get(), DescriptorLanguage.FileType.DOCKSTORE_WDL);
-        Assert.assertEquals(DescriptorLanguage.getFileType("GALAXY").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
-        Assert.assertEquals(DescriptorLanguage.getFileType("PLAIN_GALAXY").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
-        Assert.assertEquals("Should temporarily maintain compatibility with existing frontend", DescriptorLanguage.getFileType("GXFORMAT2").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
-        Assert.assertEquals("Should temporarily maintain compatibility with existing frontend", DescriptorLanguage.getFileType("PLAIN_GXFORMAT2").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
-        Assert.assertEquals(DescriptorLanguage.getFileType("FOO"), Optional.empty());
+        Assert.assertEquals(DescriptorLanguage.getOptionalFileType("CWL").get(), DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Assert.assertEquals(DescriptorLanguage.getOptionalFileType("PLAIN_CWL").get(), DescriptorLanguage.FileType.DOCKSTORE_CWL);
+        Assert.assertEquals(DescriptorLanguage.getOptionalFileType("WDL").get(), DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        Assert.assertEquals(DescriptorLanguage.getOptionalFileType("PLAIN_WDL").get(), DescriptorLanguage.FileType.DOCKSTORE_WDL);
+        Assert.assertEquals(DescriptorLanguage.getOptionalFileType("GALAXY").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
+        Assert.assertEquals(DescriptorLanguage.getOptionalFileType("PLAIN_GALAXY").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
+        Assert.assertEquals("Should temporarily maintain compatibility with existing frontend", DescriptorLanguage.getOptionalFileType("GXFORMAT2").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
+        Assert.assertEquals("Should temporarily maintain compatibility with existing frontend", DescriptorLanguage.getOptionalFileType("PLAIN_GXFORMAT2").get(), DescriptorLanguage.FileType.DOCKSTORE_GXFORMAT2);
+        Assert.assertEquals(DescriptorLanguage.getOptionalFileType("FOO"), Optional.empty());
     }
 
     @Test
     public void testGetTestParamFileType() {
-        Assert.assertEquals(DescriptorLanguage.getTestParameterType("CWL").get(), DescriptorLanguage.FileType.CWL_TEST_JSON);
-        Assert.assertEquals(DescriptorLanguage.getTestParameterType("WDL").get(), DescriptorLanguage.FileType.WDL_TEST_JSON);
-        Assert.assertEquals(DescriptorLanguage.getTestParameterType("FOO"), Optional.empty());
+        Assert.assertEquals(FileType.CWL_TEST_JSON, DescriptorLanguage.CWL.getTestParamType());
+        Assert.assertEquals(FileType.WDL_TEST_JSON, DescriptorLanguage.WDL.getTestParamType());
+        Assert.assertEquals(FileType.NEXTFLOW_TEST_PARAMS, DescriptorLanguage.NEXTFLOW.getTestParamType());
     }
 }

@@ -16,14 +16,13 @@
 
 package io.dockstore.client.cli;
 
+import io.dockstore.common.LanguageHandlerHelper;
+import io.dockstore.common.WdlBridge;
+import io.dropwizard.testing.ResourceHelpers;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.dockstore.common.LanguageHandlerHelper;
-import io.dockstore.common.WdlBridge;
-import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;

@@ -15,6 +15,14 @@
  */
 package io.dockstore.webservice.resources;
 
+import com.google.gson.Gson;
+import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,12 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.google.gson.Gson;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -113,7 +115,43 @@ public interface SourceControlResourceInterface {
     }
 
     /**
-     * Refreshes all tokens that require refreshing, and return all tokens
+     * For a given user and source control, retrieve the source control repository interface.
+     * @param user
+     * @param sourceControl     Appropriate source control repo interface or null if SourceControl is unrecognized or if the user does not have a token
+     * @return mapping of git url to repository path
+     */
+    default SourceCodeRepoInterface createSourceCodeRepo(User user, SourceControl sourceControl, TokenDAO tokenDAO, HttpClient client, String bitbucketClientID, String bitbucketClientSecret) {
+        if (sourceControl.equals(SourceControl.GITHUB)) {
+            List<Token> tokens = tokenDAO.findGithubByUserId(user.getId());
+            if (tokens.isEmpty()) {
+                return null;
+            } else {
+                return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            }
+        }
+        if (sourceControl.equals(SourceControl.BITBUCKET)) {
+            List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+            if (tokens.isEmpty()) {
+                return null;
+            } else {
+                // Refresh Bitbucket token
+                refreshBitbucketToken(tokens.get(0), client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+                return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            }
+        }
+        if (sourceControl.equals(SourceControl.GITLAB)) {
+            List<Token> tokens = tokenDAO.findGitlabByUserId(user.getId());
+            if (tokens.isEmpty()) {
+                return null;
+            } else {
+                return SourceCodeRepoFactory.createSourceCodeRepo(tokens.get(0));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Refreshes the first bitbucket token and return all tokens
      * @param user
      * @param tokenDAO
      * @param client
@@ -121,7 +159,7 @@ public interface SourceControlResourceInterface {
      * @param bitbucketClientSecret
      * @return All tokens
      */
-    default List<Token> getAndRefreshTokens(User user, TokenDAO tokenDAO, HttpClient client, String bitbucketClientID, String bitbucketClientSecret) {
+    default List<Token> getAndRefreshBitbucketTokens(User user, TokenDAO tokenDAO, HttpClient client, String bitbucketClientID, String bitbucketClientSecret) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
 
         if (!tokens.isEmpty()) {

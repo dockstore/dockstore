@@ -15,11 +15,10 @@
  */
 package io.dockstore.webservice.helpers;
 
+import io.dropwizard.jersey.errors.ErrorMessage;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
-import io.dropwizard.jersey.errors.ErrorMessage;
 import org.hibernate.TransactionException;
 
 @Provider

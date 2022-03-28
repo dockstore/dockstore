@@ -15,9 +15,8 @@
  */
 package io.dockstore.common.yaml;
 
-import javax.validation.constraints.NotNull;
-
 import io.dockstore.common.DescriptorLanguageSubclass;
+import javax.validation.constraints.NotNull;
 
 /**
  * A service defined in a 1.2 .dockstore.yml. It differs from 1.1 in that there is a subclass instead of a type property.

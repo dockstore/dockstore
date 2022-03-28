@@ -16,9 +16,8 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.WorkflowVersion;
+import java.util.List;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 
@@ -32,20 +31,19 @@ public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {
     }
 
     public WorkflowVersion findByAlias(String alias) {
-        return uniqueResult(this.currentSession().getNamedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
+        return uniqueResult(namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByAlias").setParameter("alias", alias));
     }
 
     public List<WorkflowVersion> getWorkflowVersionsByWorkflowId(long workflowId, int size, int firstResult) {
-        Query query = namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId");
+        Query<WorkflowVersion> query = namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowId");
         query.setParameter("id", workflowId);
         query.setFirstResult(firstResult);
         query.setMaxResults(size);
-        List<WorkflowVersion> workflowVersionIds = query.getResultList();
-        return workflowVersionIds;
+        return query.getResultList();
     }
 
     public WorkflowVersion getWorkflowVersionByWorkflowIdAndVersionName(long workflowId, String name) {
-        Query query = namedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName");
+        Query<WorkflowVersion> query = namedTypedQuery("io.dockstore.webservice.core.WorkflowVersion.getByWorkflowIdAndVersionName");
         query.setParameter("id", workflowId);
         query.setParameter("name", name);
         return uniqueResult(query);

@@ -18,7 +18,6 @@ package io.dockstore.common.yaml;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import javax.validation.constraints.NotNull;
 
 /**
@@ -183,16 +182,16 @@ public abstract class AbstractYamlService {
          */
         private String prestart;
 
-        @NotNull
         /**
          * The script to run to start up the service
          */
+        @NotNull
         private String start;
 
-        @NotNull
         /**
          * The script to run to start the service
          */
+        @NotNull
         private String stop;
 
         public String getPort() {

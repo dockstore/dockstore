@@ -15,24 +15,29 @@
  */
 package io.dockstore.webservice.core;
 
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.media.Schema;
+import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.Pattern;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -55,6 +60,7 @@ public class VersionMetadata {
     protected String verifiedSource;
 
     @Column()
+    @Pattern(regexp = "10\\.[^/]++/.++")
     protected String doiURL;
 
     @Column()
@@ -70,6 +76,7 @@ public class VersionMetadata {
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
+    @Schema(description = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     protected  String description;
 
     @Column(name = "description_source")
@@ -93,9 +100,13 @@ public class VersionMetadata {
     )
     protected List<ParsedInformation> parsedInformationSet = new ArrayList<>();
 
-    @Column
-    @ApiModelProperty(value = "The presence of the put code indicates the version was exported to ORCID.")
-    protected String orcidPutCode;
+    @ElementCollection(targetClass = OrcidPutCode.class, fetch = FetchType.EAGER)
+    @JoinTable(name = "version_metadata_orcidputcode", joinColumns = @JoinColumn(name = "version_metadata_id"),
+            uniqueConstraints = @UniqueConstraint(name = "unique_version_metadata_user_orcidputcode", columnNames = { "version_metadata_id", "userid", "orcidputcode" }))
+    @MapKeyColumn(name = "userid", columnDefinition = "bigint")
+    @ApiModelProperty(value = "The presence of the put code for a userid indicates the version was exported to ORCID for the corresponding Dockstore user.")
+    @Schema(description = "The presence of the put code for a userid indicates the version was exported to ORCID for the corresponding Dockstore user.")
+    protected Map<Long, OrcidPutCode> userIdToOrcidPutCode = new HashMap<>();
 
     @Id
     @Column(name = "id")
@@ -113,6 +124,9 @@ public class VersionMetadata {
     @Schema(type = "integer", format = "int64")
     private Timestamp dbUpdateDate;
 
+    @Column()
+    @ApiModelProperty()
+    private Boolean publicAccessibleTestParameterFile;
 
     public long getId() {
         return id;
@@ -136,11 +150,23 @@ public class VersionMetadata {
         }
     }
 
-    public String getOrcidPutCode() {
-        return orcidPutCode;
+    public Map<Long, OrcidPutCode> getUserIdToOrcidPutCode() {
+        return userIdToOrcidPutCode;
     }
 
-    public void setOrcidPutCode(String orcidPutCode) {
-        this.orcidPutCode = orcidPutCode;
+    public void setUserIdToOrcidPutCode(Map<Long, OrcidPutCode> userIdToOrcidPutCode) {
+        this.userIdToOrcidPutCode = userIdToOrcidPutCode;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Boolean getPublicAccessibleTestParameterFile() {
+        return publicAccessibleTestParameterFile;
+    }
+
+    public void setPublicAccessibleTestParameterFile(Boolean publicAccessibleTestParameterFile) {
+        this.publicAccessibleTestParameterFile = publicAccessibleTestParameterFile;
     }
 }

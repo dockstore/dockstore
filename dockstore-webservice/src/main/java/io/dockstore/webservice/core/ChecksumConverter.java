@@ -3,10 +3,8 @@ package io.dockstore.webservice.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +15,7 @@ public class ChecksumConverter implements AttributeConverter<List<Checksum>, Str
      * Checksums are stored in the database as a string with the format type:checksum and are comma separated.
      */
     private static final Logger LOG = LoggerFactory.getLogger(ChecksumConverter.class);
+
     @Override
     public String convertToDatabaseColumn(List<Checksum> checksums) {
         if (checksums != null && !checksums.isEmpty()) {

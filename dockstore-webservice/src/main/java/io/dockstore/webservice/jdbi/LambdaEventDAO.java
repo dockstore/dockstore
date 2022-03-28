@@ -1,18 +1,16 @@
 package io.dockstore.webservice.jdbi;
 
+import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.LambdaEvent;
+import io.dockstore.webservice.core.User;
+import io.dropwizard.hibernate.AbstractDAO;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import com.google.common.base.MoreObjects;
-import io.dockstore.webservice.core.LambdaEvent;
-import io.dockstore.webservice.core.User;
-import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -41,19 +39,19 @@ public class LambdaEventDAO extends AbstractDAO<LambdaEvent> {
     }
 
     public List<LambdaEvent> findByRepository(String repository) {
-        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByRepository")
+        Query<LambdaEvent> query = namedTypedQuery("io.dockstore.webservice.core.LambdaEvent.findByRepository")
                 .setParameter("repository", repository);
         return list(query);
     }
 
     public List<LambdaEvent> findByUsername(String username) {
-        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByUsername")
+        Query<LambdaEvent> query = namedTypedQuery("io.dockstore.webservice.core.LambdaEvent.findByUsername")
                 .setParameter("username", username);
         return list(query);
     }
 
     public List<LambdaEvent> findByUser(User user) {
-        Query query = namedQuery("io.dockstore.webservice.core.LambdaEvent.findByUser")
+        Query<LambdaEvent> query = namedTypedQuery("io.dockstore.webservice.core.LambdaEvent.findByUser")
                 .setParameter("user", user);
         return list(query);
     }

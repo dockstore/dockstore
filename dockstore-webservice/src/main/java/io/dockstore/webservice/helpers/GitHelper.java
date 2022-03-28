@@ -3,7 +3,6 @@ package io.dockstore.webservice.helpers;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +25,7 @@ public final class GitHelper {
      */
     public static Optional<String> parseGitHubReference(String gitReference) {
         // Match the github reference (ex. refs/heads/feature/foobar or refs/tags/1.0)
-        Pattern pattern = Pattern.compile("^refs/(tags|heads)/([a-zA-Z0-9]+([./_-]?[a-zA-Z0-9]+)*)$");
+        Pattern pattern = Pattern.compile("^refs/(tags|heads)/([a-zA-Z0-9]++([./_-]?[a-zA-Z0-9]+)*)$");
         Matcher matcher = pattern.matcher(gitReference);
 
         if (!matcher.find()) {

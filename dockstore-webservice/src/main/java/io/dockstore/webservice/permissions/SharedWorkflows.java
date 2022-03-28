@@ -1,8 +1,7 @@
 package io.dockstore.webservice.permissions;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Workflow;
+import java.util.List;
 
 /**
  * The representation of a role and all workflows

@@ -16,16 +16,17 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import javax.ws.rs.core.Response;
+import static io.dockstore.common.DescriptorLanguage.CWL;
+import static io.dockstore.webservice.core.SourceFile.SHA_TYPE;
+import static io.dockstore.webservice.core.Version.CANNOT_FREEZE_VERSIONS_WITH_NO_FILES;
+import static io.dockstore.webservice.helpers.EntryVersionHelper.CANNOT_MODIFY_FROZEN_VERSIONS_THIS_WAY;
+import static io.openapi.api.impl.ToolsApiServiceImpl.DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,8 +35,10 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
 import io.dockstore.openapi.client.api.Ga4Ghv20Api;
+import io.dockstore.openapi.client.model.DockstoreTool.ModeEnum;
 import io.dockstore.openapi.client.model.FileWrapper;
 import io.dockstore.openapi.client.model.Tool;
 import io.dockstore.openapi.client.model.VersionVerifiedPlatform;
@@ -52,7 +55,9 @@ import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.DockstoreTool.TopicSelectionEnum;
 import io.swagger.client.model.Entry;
+import io.swagger.client.model.Image;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -93,11 +98,11 @@ import static org.junit.Assert.fail;
 public class GeneralIT extends BaseIT {
     public static final String DOCKSTORE_TOOL_IMPORTS = "dockstore-tool-imports";
 
-    private static final String DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS = "sha1";
-
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";
 
     private static final String QUAY_TOOL_PATH = "quay.io/dockstoretestuser2/dockstore-tool-imports/test5";
+
+    private static final String DUMMY_DOI = "10.foo/bar";
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -360,6 +365,74 @@ public class GeneralIT extends BaseIT {
         return tool;
     }
 
+    private DockstoreTool registerManualGitHubContainerRegistryToolAndAddTag() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+
+        // This image is used for the tool: https://ghcr.io/homebrew/core/python/3.9:3.9.6
+        tool.setRegistryString(Registry.GITHUB_CONTAINER_REGISTRY.getDockerPath());
+        tool.setNamespace("homebrew");
+        tool.setName("core/python/3.9");
+        tool.setDefaultDockerfilePath("/Dockerfile");
+        tool.setDefaultCwlPath("/Dockstore.cwl");
+        tool.setDefaultWdlPath("/Dockstore.wdl");
+        tool.setDefaultCWLTestParameterFile("/test.cwl.json");
+        tool.setDefaultWDLTestParameterFile("/test.wdl.json");
+        tool.setIsPublished(false);
+        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+        tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/dockstore-whalesay-2.git");
+        tool.setPrivateAccess(false);
+
+        tool = toolApi.registerManual(tool);
+
+        // Add the 3.9.6 tag for the ghcr.io/homebrew/core/python/3.9 tool
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
+        tag.setName("3.9.6");
+        tag.setReference("master");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        return tool;
+    }
+
+    private DockstoreTool registerManualAmazonECRToolAndAddTag() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        ContainertagsApi toolTagsApi = new ContainertagsApi(webClient);
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+
+        // This image is used for the tool: public.ecr.aws/ubuntu/ubuntu:18.04
+        tool.setRegistryString(Registry.AMAZON_ECR.getDockerPath());
+        tool.setNamespace("ubuntu");
+        tool.setName("ubuntu");
+        tool.setDefaultDockerfilePath("/Dockerfile");
+        tool.setDefaultCwlPath("/Dockstore.cwl");
+        tool.setDefaultWdlPath("/Dockstore.wdl");
+        tool.setDefaultCWLTestParameterFile("/test.cwl.json");
+        tool.setDefaultWDLTestParameterFile("/test.wdl.json");
+        tool.setIsPublished(false);
+        // This actually exists: https://bitbucket.org/DockstoreTestUser/dockstore-whalesay-2/src/master/
+        tool.setGitUrl("git@bitbucket.org:DockstoreTestUser/dockstore-whalesay-2.git");
+        tool.setPrivateAccess(false);
+
+        tool = toolApi.registerManual(tool);
+
+        // Add the 18.04 tag for the public.ecr.aws/ubuntu/ubuntu tool
+        List<Tag> tags = new ArrayList<>();
+        Tag tag = new Tag();
+        tag.setName("18.04");
+        tag.setReference("master");
+        tags.add(tag);
+        toolTagsApi.addTags(tool.getId(), tags);
+        tool = toolApi.refresh(tool.getId());
+        return tool;
+    }
+
     /**
      * Tests adding tags to a manually registered container
      */
@@ -399,7 +472,7 @@ public class GeneralIT extends BaseIT {
         tool = toolApi.refresh(tool.getId());
 
         List<Tag> tags = tool.getWorkflowVersions();
-        verifySourcefileChecksumsSaved(tags);
+        verifySourcefileChecksums(tags);
 
         PublishRequest publishRequest = CommonTestUtilities.createPublishRequest(true);
         toolApi.publish(tool.getId(), publishRequest);
@@ -413,7 +486,7 @@ public class GeneralIT extends BaseIT {
         verifyTRSSourceFileConversion(fileWrappers);
     }
 
-    public void verifySourcefileChecksumsSaved(final List<Tag> tags) {
+    private void verifySourcefileChecksums(final List<Tag> tags) {
         assertTrue(tags.size() > 0);
         tags.stream().forEach(tag -> {
             List<io.dockstore.webservice.core.SourceFile> sourceFiles = fileDAO.findSourceFilesByVersion(tag.getId());
@@ -422,7 +495,7 @@ public class GeneralIT extends BaseIT {
                 assertTrue(sourceFile.getChecksums().size() > 0);
                 sourceFile.getChecksums().stream().forEach(checksum -> {
                     assertFalse(checksum.getChecksum().isEmpty());
-                    assertFalse(checksum.getType().isEmpty());
+                    assertEquals(SHA_TYPE, checksum.getType());
                 });
             });
         });
@@ -596,13 +669,13 @@ public class GeneralIT extends BaseIT {
         assertTrue(tool.getDescriptorType().get(0) != tool.getDescriptorType().get(1));
     }
 
-    public void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {
+    private void verifyTRSSourceFileConversion(final List<FileWrapper> fileWrappers) {
         assertTrue(fileWrappers.size() > 0);
         fileWrappers.stream().forEach(fileWrapper -> {
             assertTrue(fileWrapper.getChecksum().size() > 0);
             fileWrapper.getChecksum().stream().forEach(checksum -> {
                 assertFalse(checksum.getChecksum().isEmpty());
-                assertEquals(DESCRIPTOR_FILE_SHA_TYPE_FOR_TRS, checksum.getType());
+                assertEquals(DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS, checksum.getType());
             });
         });
     }
@@ -974,7 +1047,7 @@ public class GeneralIT extends BaseIT {
         containersApi.refresh(toolTest.getId());
         DockstoreTool container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
-        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId() != null && tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should overall refresh
@@ -982,7 +1055,7 @@ public class GeneralIT extends BaseIT {
         usersApi.refreshToolsByOrganization(userid, "dockstoretestuser2", DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
-        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId() != null && tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
 
         // so should organizational refresh
@@ -990,7 +1063,7 @@ public class GeneralIT extends BaseIT {
         usersApi.refreshToolsByOrganization(userid, container.getNamespace(), DOCKSTORE_TOOL_IMPORTS);
         container = containersApi.getContainer(toolTest.getId(), null);
         size = container.getWorkflowVersions().size();
-        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        size2 = container.getWorkflowVersions().stream().filter(tag -> tag.getImageId() != null && tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
     }
 
@@ -1158,8 +1231,49 @@ public class GeneralIT extends BaseIT {
         verifyChecksumsAreSaved(updatedTags);
     }
 
+    @Test
+    public void testGrabChecksumFromGitHubContainerRegistry() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        DockstoreTool tool = registerManualGitHubContainerRegistryToolAndAddTag();
+        List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(tags);
+
+        // Check for case where user deletes tag and creates new one of same name.
+        // Check that the new imageid and checksums are grabbed on refresh. Also check the old images have been deleted.
+        refreshAfterDeletedTag(toolApi, tool, tags);
+
+        // mimic getting a registry being slow/not responding and verify we do not delete the image information we already have by going to an invalid url.
+        testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where id=" + tool.getId());
+        toolApi.refresh(tool.getId());
+        List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(updatedTags);
+    }
+
+    @Test
+    public void testGrabChecksumFromAmazonECR() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi toolApi = new ContainersApi(webClient);
+        DockstoreTool tool = registerManualAmazonECRToolAndAddTag();
+        List<Tag> tags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(tags);
+
+        // Check for case where user deletes tag and creates new one of same name.
+        // Check that the new imageid and checksums are grabbed on refresh. Also check the old images have been deleted.
+        refreshAfterDeletedTag(toolApi, tool, tags);
+
+        // mimic getting a registry being slow/not responding and verify we do not delete the image information we already have by going to an invalid url.
+        testingPostgres.runUpdateStatement("update tool set name = 'thisnamedoesnotexist' where id=" + tool.getId());
+        toolApi.refresh(tool.getId());
+        List<Tag> updatedTags = toolApi.getContainer(tool.getId(), null).getWorkflowVersions();
+        verifyChecksumsAreSaved(updatedTags);
+    }
+
     private void verifyChecksumsAreSaved(List<Tag> tags) {
+        assertTrue("The list of tags should not be empty", tags.size() > 0);
         for (Tag tag : tags) {
+            List<Image> images = tag.getImages();
+            assertTrue("Tag should have an image", images.size() > 0);
             String hashType = tag.getImages().get(0).getChecksums().get(0).getType();
             String checksum = tag.getImages().get(0).getChecksums().get(0).getChecksum();
             assertNotNull(hashType);
@@ -1273,10 +1387,10 @@ public class GeneralIT extends BaseIT {
         // but should be able to change doi stuff
         master.setFrozen(true);
         master.setDoiStatus(Tag.DoiStatusEnum.REQUESTED);
-        master.setDoiURL("foo");
+        master.setDoiURL(DUMMY_DOI);
         tags = tagsApi.updateTags(refresh.getId(), Lists.newArrayList(master));
         master = tags.stream().filter(t -> t.getName().equals("1.0")).findFirst().get();
-        assertEquals("foo", master.getDoiURL());
+        assertEquals(DUMMY_DOI, master.getDoiURL());
         assertEquals(Tag.DoiStatusEnum.REQUESTED, master.getDoiStatus());
 
         // try modifying sourcefiles
@@ -1362,7 +1476,7 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolForumUrl() throws ApiException {
+    public void testUpdateToolForumUrlAndTopic() throws ApiException {
         final String forumUrl = "hello.com";
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
@@ -1370,14 +1484,55 @@ public class GeneralIT extends BaseIT {
         DockstoreTool toolTest = toolsApi.getContainerByToolPath(DOCKERHUB_TOOL_PATH, null);
         toolsApi.refresh(toolTest.getId());
 
+        assertEquals("Should default to automatic", TopicSelectionEnum.AUTOMATIC, toolTest.getTopicSelection());
+
         //change the forumurl
         toolTest.setForumUrl(forumUrl);
-        toolsApi.updateContainer(toolTest.getId(), toolTest);
-        toolsApi.refresh(toolTest.getId());
+        final String newTopic = "newTopic";
+        toolTest.setTopicManual(newTopic);
+        toolTest.setTopicSelection(TopicSelectionEnum.MANUAL);
+        DockstoreTool dockstoreTool = toolsApi.updateContainer(toolTest.getId(), toolTest);
 
         //check the tool's forumurl is updated in the database
         final String updatedForumUrl = testingPostgres.runSelectStatement("select forumurl from tool where id = " + toolTest.getId(), String.class);
         assertEquals("the forumurl should be hello.com", forumUrl, updatedForumUrl);
+
+        // check the tool's topicManual and topicSelection
+        assertEquals(newTopic, dockstoreTool.getTopicManual());
+        assertEquals(TopicSelectionEnum.MANUAL, toolTest.getTopicSelection());
+    }
+
+    @Test
+    public void testTopicAfterRegisterAndRefresh() throws ApiException {
+        ContainersApi toolsApi = setupWebService();
+
+        DockstoreTool tool = toolsApi.registerManual(createManualTool());
+
+        // confirm the tool topic settings
+        final String topicAutomatic = tool.getTopicAutomatic();
+        Assert.assertEquals("Test repo for dockstore", topicAutomatic);
+        Assert.assertEquals(null, tool.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.AUTOMATIC, tool.getTopicSelection());
+
+        // set the automatic topic to a garbage string, change the manual topic, and select it
+        final String topicManual = "a user-specified manual topic!";
+        final String garbage = "fooooo";
+        Assert.assertEquals(1, testingPostgres.runUpdateStatement(String.format("update tool set topicAutomatic = '%s', topicManual = '%s', topicSelection = '%s' where id = %d", garbage, topicManual, "MANUAL", tool.getId())));
+
+        // confirm the new topic settings
+        tool = toolsApi.getContainer(tool.getId(), null);
+        Assert.assertEquals(garbage, tool.getTopicAutomatic());
+        Assert.assertEquals(topicManual, tool.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, tool.getTopicSelection());
+
+        // refresh the Tool
+        DockstoreTool refreshedTool = toolsApi.refresh(tool.getId());
+
+        // make sure the automatic topic was refreshed, and that the manual topic and selection are the same
+        Assert.assertEquals(tool.getId(), refreshedTool.getId());
+        Assert.assertEquals(topicAutomatic, refreshedTool.getTopicAutomatic());
+        Assert.assertEquals(topicManual, refreshedTool.getTopicManual());
+        Assert.assertEquals(TopicSelectionEnum.MANUAL, refreshedTool.getTopicSelection());
     }
 
     /**
@@ -1389,6 +1544,21 @@ public class GeneralIT extends BaseIT {
     private DockstoreTool getQuayContainer(String gitUrl) {
         DockstoreTool tool = new DockstoreTool();
         tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        tool.setName("my-md5sum");
+        tool.setGitUrl(gitUrl);
+        tool.setDefaultDockerfilePath("/md5sum/Dockerfile");
+        tool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
+        tool.setRegistryString(Registry.QUAY_IO.getDockerPath());
+        tool.setNamespace("dockstoretestuser2");
+        tool.setToolname("altname");
+        tool.setPrivateAccess(false);
+        tool.setDefaultCWLTestParameterFile("/testcwl.json");
+        return tool;
+    }
+
+    private io.dockstore.openapi.client.model.DockstoreTool getOpenApiQuayContainer(String gitUrl) {
+        io.dockstore.openapi.client.model.DockstoreTool tool = new io.dockstore.openapi.client.model.DockstoreTool();
+        tool.setMode(ModeEnum.MANUAL_IMAGE_PATH);
         tool.setName("my-md5sum");
         tool.setGitUrl(gitUrl);
         tool.setDefaultDockerfilePath("/md5sum/Dockerfile");
@@ -1439,6 +1609,24 @@ public class GeneralIT extends BaseIT {
             "select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl
                 + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", long.class);
         assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
+
+    /**
+     * Tests that the tool name is validated when manually registering a tool
+     */
+    @Test
+    public void testManualToolNameValidation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
+        ContainersApi containersApi = new ContainersApi(webClient);
+        DockstoreTool tool = createManualTool();
+
+        try {
+            tool.setToolname("!@#$%^&<foo>/<bar>");
+            containersApi.registerManual(tool);
+            fail("Should not be able to register a tool with a tool name containing special characters that are not underscores and hyphens.");
+        } catch (ApiException ex) {
+            assertTrue(ex.getMessage().contains("Invalid tool name"));
+        }
     }
 
     /**
@@ -1602,4 +1790,108 @@ public class GeneralIT extends BaseIT {
         otherUserContainersApi.getToolZip(toolId, versionId);
     }
 
+    @Test
+    public void testUsernameRequiredFilter() {
+        String gitUrl = "git@github.com:DockstoreTestUser2/dockstore-whalesay-imports.git";
+        io.dockstore.openapi.client.ApiClient openApiClient = BaseIT.getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
+        final io.dockstore.openapi.client.api.HostedApi openApiHosted = new io.dockstore.openapi.client.api.HostedApi(openApiClient);
+        final io.dockstore.openapi.client.api.ContainersApi openApiContainers = new io.dockstore.openapi.client.api.ContainersApi(openApiClient);
+        final io.dockstore.openapi.client.api.WorkflowsApi openApiWorkflows = new io.dockstore.openapi.client.api.WorkflowsApi(openApiClient);
+        final io.dockstore.openapi.client.api.OrganizationsApi openApiOrganizations = new io.dockstore.openapi.client.api.OrganizationsApi(openApiClient);
+        io.dockstore.openapi.client.api.UsersApi openApiUsers = new io.dockstore.openapi.client.api.UsersApi(openApiClient);
+
+        io.dockstore.openapi.client.model.User user1 = openApiUsers.getUser();
+
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
+        try {
+            openApiHosted.createHostedTool("awesomeTool", Registry.QUAY_IO.getDockerPath().toLowerCase(), CWL.getShortName(), "coolNamespace", null);
+            fail("Should not be able to create a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        io.dockstore.openapi.client.model.DockstoreTool tool1 = getOpenApiQuayContainer(gitUrl);
+        try {
+            openApiContainers.registerManual(tool1);
+            fail("Should not be able to create a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        tool1 = openApiContainers.getContainerByToolPath("quay.io/dockstoretestuser2/quayandgithub", null);
+        try {
+            openApiContainers.refresh(tool1.getId());
+            fail("Should not be able to create a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        tool1 = openApiContainers.getContainerByToolPath("registry.hub.docker.com/seqware/seqware/test5", null);
+        io.dockstore.openapi.client.model.StarRequest starRequest1 = new io.dockstore.openapi.client.model.StarRequest();
+        starRequest1.setStar(true);
+        try {
+            openApiContainers.starEntry(starRequest1, tool1.getId());
+            fail("Should not be able to star a tool");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        try {
+            openApiWorkflows.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname",
+                DescriptorLanguage.WDL.getShortName(), "/test.json");
+            fail("Should not be able to register a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        // briefly switch so the workflow can get published and check that a previously blocked request works now
+        testingPostgres.runUpdateStatement("update tool set ispublished = 'f'");
+        openApiUsers.changeUsername("thisIsFine");
+        openApiContainers.starEntry(starRequest1, tool1.getId());
+        openApiWorkflows.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", DescriptorLanguage.WDL.getShortName(), "/test.json");
+        io.dockstore.openapi.client.model.Workflow workflow1 = openApiWorkflows.getWorkflow(1000L, null);
+
+        // Change back to continue testing
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'thisIsFine'");
+        testingPostgres.runUpdateStatement("update enduser set username = 'DockstoreTestUser2' where username = 'thisIsFine'");
+
+        try {
+            openApiWorkflows.starEntry1(workflow1.getId(), starRequest1);
+            fail("Should not be able to star a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        try {
+            openApiWorkflows.addWorkflow(SourceControl.GITHUB.name(), "dockstoretesting", "basic-workflow");
+            fail("Should not be able to add a workflow");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        io.dockstore.openapi.client.model.Organization organization = new io.dockstore.openapi.client.model.Organization();
+        organization.setName("testname");
+        organization.setDisplayName("test name");
+        organization.setEmail("test@email.com");
+        organization.setDescription("");
+        organization.setTopic("This is a short topic");
+
+        try {
+            openApiOrganizations.createOrganization(organization);
+            fail("Should not be able to create an organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 'f' where username = 'DockstoreTestUser2'");
+        organization = openApiOrganizations.createOrganization(organization);
+        testingPostgres.runUpdateStatement("update enduser set usernameChangeRequired = 't' where username = 'DockstoreTestUser2'");
+
+        try {
+            openApiOrganizations.starOrganization(starRequest1, organization.getId());
+            fail("Should not be able to star an organization");
+        } catch (io.dockstore.openapi.client.ApiException ex) {
+            assertTrue(ex.getMessage().contains("Your username contains one or more of the following keywords"));
+        }
+    }
 }

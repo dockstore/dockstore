@@ -15,20 +15,9 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.io.InputStream;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.MediaType;
+import static io.dockstore.common.DescriptorLanguage.getDefaultDescriptorPath;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -66,16 +55,25 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.common.DescriptorLanguage.getDefaultDescriptorPath;
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author dyuen
@@ -116,10 +114,12 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
+    @UsernameRenameRequired
     @Operation(operationId = "createHostedWorkflow", description = "Create a hosted workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted workflow.", content = @Content(schema = @Schema(implementation = Workflow.class)))
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+    public Workflow createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Workflow workflow = super.createHosted(user, registry, name, descriptorType, namespace, entryName);
         EntryVersionHelper.removeSourceFilesFromEntry(workflow, sessionFactory);
         return workflow;
@@ -268,6 +268,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             break;
         case DOCKSTORE_GXFORMAT2:
             testParameterType = DescriptorLanguage.FileType.GXFORMAT2_TEST_FILE;
+            break;
         case NEXTFLOW_CONFIG:
             // Nextflow does not have test parameter files, so do not fail
             break;
@@ -295,18 +296,13 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected DescriptorLanguage checkType(String descriptorType) {
-        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
-            if (Objects.equals(descriptorLanguage.toString().toLowerCase(), descriptorType.toLowerCase())) {
-                return descriptorLanguage;
-            }
-        }
-        throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
-    }
-
-    @Override
     protected String checkRegistry(String registry) {
         // Registry does not matter for workflows
         return null;
+    }
+
+    @Override
+    public void checkEntryName(String name) {
+        return; // Don't need to validate entry name because hosted workflows don't have entry names
     }
 }

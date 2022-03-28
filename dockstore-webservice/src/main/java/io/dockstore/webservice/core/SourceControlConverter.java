@@ -15,13 +15,12 @@
  */
 package io.dockstore.webservice.core;
 
-import java.util.Optional;
-
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
-
 import com.google.common.collect.Lists;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
+import java.util.Optional;
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +47,9 @@ public class SourceControlConverter implements AttributeConverter<SourceControl,
         if (first.isPresent()) {
             return first.get();
         } else {
-            LOG.error("could not convert source control: " + dbData);
+            if (LOG.isErrorEnabled()) {
+                LOG.error("could not convert source control: {}", Utilities.cleanForLogging(dbData));
+            }
             return null;
         }
     }

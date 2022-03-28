@@ -15,15 +15,13 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.core.Response;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import java.util.List;
+import java.util.Optional;
+import javax.ws.rs.core.Response;
 
 /**
  * Future home of code for managing cached TRS entries
@@ -33,7 +31,7 @@ public class TRSListener implements StateListenerInterface {
     // TODO: implementor should tune this https://github.com/google/guava/wiki/CachesExplained
     // arbitrarily picked 20
     private static final int MAXIMUM_SIZE = 20;
-    private Cache<Integer, Response.ResponseBuilder> trsResponses = CacheBuilder.newBuilder()
+    private Cache<Integer, Response.ResponseBuilder> trsResponses = Caffeine.newBuilder()
         // TODO: implementor should try to weight larger responses (like getting all tools without limits)
         .maximumSize(MAXIMUM_SIZE)
         // TODO: should refactor to use CacheLoader properly with a LoadingCache

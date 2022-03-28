@@ -15,23 +15,15 @@
  */
 package io.dockstore.webservice.helpers.statelisteners;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
+import io.dockstore.webservice.core.Category;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Service;
@@ -43,10 +35,25 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticSearchHelper;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dropwizard.jackson.Jackson;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BackoffPolicy;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkProcessor.Builder;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -54,6 +61,9 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
@@ -105,7 +115,7 @@ public class ElasticListener implements StateListenerInterface {
         }
         try {
             RestHighLevelClient client = ElasticSearchHelper.restHighLevelClient();
-            String entryType = entry instanceof Tool ? TOOLS_INDEX : WORKFLOWS_INDEX;
+            String entryType = entry instanceof Tool || entry instanceof AppTool ? TOOLS_INDEX : WORKFLOWS_INDEX;
             DocWriteResponse post;
             switch (command) {
             case PUBLISH:
@@ -172,7 +182,7 @@ public class ElasticListener implements StateListenerInterface {
         }
         // sort entries into workflows and tools
         List<Entry> workflowsEntryList = entries.stream().filter(entry -> (entry instanceof BioWorkflow)).collect(Collectors.toList());
-        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool)).collect(Collectors.toList());
+        List<Entry> toolsEntryList = entries.stream().filter(entry -> (entry instanceof Tool) || (entry instanceof AppTool)).collect(Collectors.toList());
         if (!workflowsEntryList.isEmpty()) {
             postBulkUpdate(WORKFLOWS_INDEX, workflowsEntryList);
         }
@@ -182,6 +192,7 @@ public class ElasticListener implements StateListenerInterface {
     }
 
     private void postBulkUpdate(String index, List<Entry> entries) {
+        final ArrayList<Throwable> afterBulkFailures = new ArrayList<>(); // Store information about failures encountered by the BulkProcessor.Listener
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
@@ -195,6 +206,13 @@ public class ElasticListener implements StateListenerInterface {
                     BulkResponse response) {
                 if (response.hasFailures()) {
                     LOGGER.error("Bulk [{}] executed with failures", executionId);
+                    for (BulkItemResponse bulkItemResponse : response.getItems()) {
+                        if (bulkItemResponse.isFailed()) {
+                            Throwable failure = bulkItemResponse.getFailure().getCause().getCause();
+                            LOGGER.error("Item {} in bulk [{}] executed with failure", bulkItemResponse.getItemId(), executionId, failure);
+                            afterBulkFailures.add(failure);
+                        }
+                    }
                 } else {
                     LOGGER.info("Bulk [{}] completed in {} milliseconds",
                             executionId, response.getTook().getMillis());
@@ -205,6 +223,7 @@ public class ElasticListener implements StateListenerInterface {
             public void afterBulk(long executionId, BulkRequest request,
                     Throwable failure) {
                 LOGGER.error("Failed to execute bulk", failure);
+                afterBulkFailures.add(failure);
             }
         };
 
@@ -214,7 +233,9 @@ public class ElasticListener implements StateListenerInterface {
                 (request, bulkListener) ->
                         client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
                 listener);
-            // Set size of actions with `builder.setBulkSize()`, defaults to 5 MB
+
+            configureBulkProcessorBuilder(builder);
+
             BulkProcessor bulkProcessor = builder.build();
             entries.forEach(entry -> {
                 try {
@@ -236,6 +257,9 @@ public class ElasticListener implements StateListenerInterface {
                     LOGGER.error("Could not submit " + index + " index to elastic search in time");
                     throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search in time", HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
+                if (!afterBulkFailures.isEmpty()) {
+                    throw new CustomWebApplicationException("Encountered failures while executing bulk index", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
             } catch (InterruptedException e) {
                 LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
                 throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -244,6 +268,39 @@ public class ElasticListener implements StateListenerInterface {
             LOGGER.error("Could not submit " + index + " index to elastic search. " + e.getMessage(), e);
             throw new CustomWebApplicationException("Could not submit " + index + " index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Configures the builder for the ES bulk processor. The default settings were causing AWS
+     * ES 429 (too many requests) errors with our current prod data. Drop the default size
+     * and increase the time between retries. Environment variables are there for emergency
+     * overrides, but current settings work when tested.
+     *
+     * See https://ucsc-cgl.atlassian.net/browse/SEAB-3829
+     * @param builder
+     */
+    private void configureBulkProcessorBuilder(Builder builder) {
+        // Default is 5MB
+        final int bulkSizeKb = getEnv("ESCLIENT_BULK_SIZE_KB", 2500);
+        builder.setBulkSize(new ByteSizeValue(bulkSizeKb, ByteSizeUnit.KB));
+
+        // Defaults are 50ms, 8 retries (leaving number of retries the same).
+        final int initialDelayMs = getEnv("ESCLIENT_BACKOFF_INITIAL_DELAY", 500);
+        final int maxNumberOfRetries = getEnv("ESCLIENT_BACKOFF_RETRIES", 8);
+        builder.setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(
+            initialDelayMs), maxNumberOfRetries));
+    }
+
+    private int getEnv(final String name, final int defaultValue) {
+        final String envValue = System.getenv(name);
+        if (envValue != null) {
+            try {
+                return Integer.parseInt(envValue);
+            } catch (NumberFormatException ex) {
+                LOGGER.error(MessageFormat.format("Value {0} specified for {1} is not numeric, defaulting back to {2}", envValue, name, defaultValue), ex);
+            }
+        }
+        return defaultValue;
     }
 
     /**
@@ -261,7 +318,25 @@ public class ElasticListener implements StateListenerInterface {
         JsonNode jsonNode = MAPPER.readTree(MAPPER.writeValueAsString(detachedEntry));
         ((ObjectNode)jsonNode).put("verified", verified);
         ((ObjectNode)jsonNode).put("verified_platforms", MAPPER.valueToTree(verifiedPlatforms));
+        addCategoriesJson(jsonNode, entry);
         return jsonNode;
+    }
+
+    private static void addCategoriesJson(JsonNode node, Entry<?, ?> entry) {
+
+        List<Map<String, Object>> values = new ArrayList<>();
+
+        for (Category category: entry.getCategories()) {
+            Map<String, Object> value = new LinkedHashMap<>();
+            value.put("id", category.getId());
+            value.put("name", category.getName());
+            value.put("description", category.getDescription());
+            value.put("displayName", category.getDisplayName());
+            value.put("topic", category.getTopic());
+            values.add(value);
+        }
+
+        ((ObjectNode)node).put("categories", MAPPER.valueToTree(values));
     }
 
     /**
@@ -290,23 +365,22 @@ public class ElasticListener implements StateListenerInterface {
             detachedTool.setGitUrl(tool.getGitUrl());
             detachedTool.setName(tool.getName());
             detachedTool.setToolname(tool.getToolname());
+            // This is some weird hack to always use topicAutomatic for search table
+            detachedTool.setTopicAutomatic(tool.getTopic());
             detachedEntry = detachedTool;
         } else if (entry instanceof BioWorkflow) {
             BioWorkflow bioWorkflow = (BioWorkflow) entry;
             BioWorkflow detachedBioWorkflow = new BioWorkflow();
-            // These are for facets
-            detachedBioWorkflow.setDescriptorType(bioWorkflow.getDescriptorType());
-            detachedBioWorkflow.setSourceControl(bioWorkflow.getSourceControl());
-            detachedBioWorkflow.setOrganization(bioWorkflow.getOrganization());
-
-            // These are for table
-            detachedBioWorkflow.setWorkflowName(bioWorkflow.getWorkflowName());
-            detachedBioWorkflow.setRepository(bioWorkflow.getRepository());
-            detachedBioWorkflow.setGitUrl(bioWorkflow.getGitUrl());
-            detachedEntry = detachedBioWorkflow;
+            detachedEntry = detachWorkflow(detachedBioWorkflow, bioWorkflow);
+        } else if (entry instanceof AppTool) {
+            AppTool appTool = (AppTool) entry;
+            AppTool detachedAppTool = new AppTool();
+            detachedEntry = detachWorkflow(detachedAppTool, appTool);
         } else {
             return entry;
         }
+
+
         detachedEntry.setDescription(entry.getDescription());
         detachedEntry.setAuthor(entry.getAuthor());
         detachedEntry.setAliases(entry.getAliases());
@@ -314,6 +388,9 @@ public class ElasticListener implements StateListenerInterface {
         detachedEntry.setCheckerWorkflow(entry.getCheckerWorkflow());
         Set<Version> detachedVersions = cloneWorkflowVersion(entry.getWorkflowVersions());
         detachedEntry.setWorkflowVersions(detachedVersions);
+        // This is some weird hack to always set the topic (which is either automatic or manual) into the ES topicAutomatic property for search table
+        // This is to avoid indexing both topicAutomatic and topicManual and having the frontend choose which one to display
+        detachedEntry.setTopicAutomatic(entry.getTopic());
         detachedEntry.setInputFileFormats(new TreeSet<>(entry.getInputFileFormats()));
         entry.getStarredUsers().forEach(user -> detachedEntry.addStarredUser((User)user));
         String defaultVersion = entry.getDefaultVersion();
@@ -356,6 +433,19 @@ public class ElasticListener implements StateListenerInterface {
             detachedVersions.add(detatchedVersion);
         });
         return detachedVersions;
+    }
+
+    private static Workflow detachWorkflow(Workflow detachedWorkflow, Workflow workflow) {
+        // These are for facets
+        detachedWorkflow.setDescriptorType(workflow.getDescriptorType());
+        detachedWorkflow.setSourceControl(workflow.getSourceControl());
+        detachedWorkflow.setOrganization(workflow.getOrganization());
+
+        // These are for table
+        detachedWorkflow.setWorkflowName(workflow.getWorkflowName());
+        detachedWorkflow.setRepository(workflow.getRepository());
+        detachedWorkflow.setGitUrl(workflow.getGitUrl());
+        return detachedWorkflow;
     }
 
 

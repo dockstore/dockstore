@@ -16,15 +16,19 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
+import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
+import static io.dockstore.common.CommonTestUtilities.checkToolList;
+import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
+import static org.junit.Assert.assertTrue;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
@@ -40,11 +44,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
-import static io.dockstore.common.CommonTestUtilities.checkToolList;
-import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests a variety of basic dockstore CLI commands along with some tool commands
@@ -90,14 +89,14 @@ public class ClientRegressionIT extends BaseIT {
 
     @Test
     public void testListEntriesOld() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
+        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }
 
     @Test
     public void testDebugModeListEntriesOld() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
+        String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list", "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         checkToolList(stringStringImmutablePair.getLeft());
     }

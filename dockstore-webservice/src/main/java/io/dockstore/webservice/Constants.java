@@ -16,6 +16,7 @@
 package io.dockstore.webservice;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @author gluu
@@ -29,6 +30,10 @@ public final class Constants {
     public static final String DOCKSTORE_YML_PATH = "/.dockstore.yml";
     public static final List<String> DOCKSTORE_YML_PATHS = List.of(DOCKSTORE_YML_PATH, "/.github/.dockstore.yml");
     public static final String SKIP_COMMIT_ID = "skip";
+    public static final Pattern AMAZON_ECR_PRIVATE_REGISTRY_REGEX = Pattern.compile("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9-]+\\.amazonaws\\.com");
+    public static final String USERNAME_CHANGE_REQUIRED = "Your username contains one or more of the following keywords: dockstore, admin, curator, system, or manager. "
+        + "Several operations will be blocked until you change your username via the Accounts page.";
+    public static final Pattern USERNAME_CONTAINS_KEYWORD_PATTERN = Pattern.compile("(?i)(dockstore|admin|curator|system|manager)");
 
     private Constants() {
         // not called

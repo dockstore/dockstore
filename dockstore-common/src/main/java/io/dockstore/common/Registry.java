@@ -28,11 +28,13 @@ public enum Registry {
     QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/", false, false),
     DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/", false, false),
     GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/", false, false),
-    AMAZON_ECR(null, "Amazon ECR", null, true, true),
-    SEVEN_BRIDGES(null, "Seven Bridges", null, true, true);
+    AMAZON_ECR("public.ecr.aws", "Amazon ECR", "https://gallery.ecr.aws/", false, true),
+    SEVEN_BRIDGES(null, "Seven Bridges", null, true, true),
+    GITHUB_CONTAINER_REGISTRY("ghcr.io", "GitHub Container Registry", "https://ghcr.io/", false, false);
 
     /**
-     * this name is what is actually used in commands like docker pull
+     * This name is what is actually used in commands like docker pull.
+     * For registries that have both a public facing site and private custom docker paths (ex: Amazon ECR), this name contains the public docker path
      */
     private final String dockerPath;
 
@@ -54,8 +56,9 @@ public enum Registry {
     private final boolean privateOnly;
 
     /**
-     * if set to true, then the registry has no public facing site and is only available through an authorized docker pull (the docker registry path is not set)
-     * if set to false, then the registry has a public facing site which can be linked to
+     * If set to true, then the registry has custom docker paths that are only available through an authorized docker pull.
+     * - Note: even if this is set to true, the registry may still have a public facing site and a public docker registry path (ex: Amazon ECR).
+     * If set to false, then the registry has a public facing site which can be linked to
      */
     private final boolean customDockerPath;
 

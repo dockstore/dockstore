@@ -15,16 +15,9 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-
-import javax.ws.rs.Path;
+import static io.dockstore.webservice.Constants.AMAZON_ECR_PRIVATE_REGISTRY_REGEX;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -42,6 +35,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.PublicStateManager;
 import io.dockstore.webservice.helpers.StateManagerMode;
+import io.dockstore.webservice.helpers.StringInputValidationHelper;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -50,15 +44,24 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import javax.ws.rs.Path;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
-import static io.dockstore.webservice.resources.ResourceConstants.OPENAPI_JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author dyuen
@@ -94,10 +97,12 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
+    @UsernameRenameRequired
     @Operation(operationId = "createHostedTool", description = "Create a hosted tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully created a hosted tool.", content = @Content(schema = @Schema(implementation = Tool.class)))
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+    public Tool createHosted(User user, String registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
@@ -236,16 +241,10 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     protected boolean isVersionTypeValidated(SortedSet<Validation> validations, DescriptorLanguage.FileType fileType) {
         Optional<Validation> foundFile = validations
                 .stream()
-                .filter(Validation -> Objects.equals(Validation.getType(), fileType))
+                .filter(validation -> Objects.equals(validation.getType(), fileType))
                 .findFirst();
 
         return foundFile.isPresent() && foundFile.get().isValid();
-    }
-
-    @Override
-    protected DescriptorLanguage checkType(String descriptorType) {
-        // Descriptor type does not matter for tools
-        return null;
     }
 
     @Override
@@ -254,7 +253,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
             if (Objects.equals(registry.toLowerCase(), registryObject.getDockerPath())) {
                 return registry;
             } else if (Objects.equals(registryObject.name(), Registry.AMAZON_ECR.name())) {
-                if (registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+                if (AMAZON_ECR_PRIVATE_REGISTRY_REGEX.matcher(registry).matches()) {
                     return registry;
                 }
             } else if (Objects.equals(registryObject.name(), Registry.SEVEN_BRIDGES.name())) {
@@ -265,5 +264,10 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         }
 
         throw new CustomWebApplicationException(registry + " is not a valid registry type", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Override
+    protected void checkEntryName(String entryName) {
+        StringInputValidationHelper.checkEntryName(Tool.class, entryName);
     }
 }
