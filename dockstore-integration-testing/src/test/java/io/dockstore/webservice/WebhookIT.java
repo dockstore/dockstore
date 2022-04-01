@@ -657,7 +657,7 @@ public class WebhookIT extends BaseIT {
     }
 
     /**
-     * This tests the GitHub release with .dockstore.yml located in /   .github/.dockstore.yml
+     * This tests the GitHub release with .dockstore.yml located in /.github/.dockstore.yml
      */
     @Test
     public void testGithubDirDockstoreYml() throws Exception {
