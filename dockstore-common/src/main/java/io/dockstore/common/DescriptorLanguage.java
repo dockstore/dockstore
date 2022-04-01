@@ -251,7 +251,7 @@ public enum DescriptorLanguage {
         case NEXTFLOW:
             return "/nextflow.config";
         case GXFORMAT2:
-            return "/Dockstore.yml";
+            return "/workflow-name.yml";
         default:
             return null;
         }
