@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
-    public static final String OLD_DOCKSTORE_VERSION = "1.11.0";
+    public static final String OLD_DOCKSTORE_VERSION = "1.12.0";
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
     public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
