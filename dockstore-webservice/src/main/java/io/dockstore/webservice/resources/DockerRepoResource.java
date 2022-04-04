@@ -995,8 +995,7 @@ public class DockerRepoResource
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
-        FileType fileType =
-            (descriptorType.equalsIgnoreCase(DescriptorLanguage.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
+        FileType fileType = DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(descriptorType);
         createTestParameters(testParameterPaths, tag, sourceFiles, fileType, fileDAO);
         PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
         return tag.getSourceFiles();
@@ -1031,8 +1030,7 @@ public class DockerRepoResource
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Remove test parameter files
-        FileType fileType =
-            (descriptorType.toUpperCase().equals(DescriptorLanguage.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
+        FileType fileType = DescriptorLanguage.getTestFileTypeFromDescriptorLanguageString(descriptorType);
         for (String path : testParameterPaths) {
             boolean fileDeleted = sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
             if (!fileDeleted) {
