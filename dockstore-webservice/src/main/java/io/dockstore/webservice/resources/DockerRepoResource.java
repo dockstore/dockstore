@@ -996,7 +996,7 @@ public class DockerRepoResource
 
         // Add new test parameter files
         FileType fileType =
-            (descriptorType.toUpperCase().equals(DescriptorLanguage.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
+            (descriptorType.equalsIgnoreCase(DescriptorLanguage.CWL.toString())) ? DescriptorLanguage.FileType.CWL_TEST_JSON : DescriptorLanguage.FileType.WDL_TEST_JSON;
         createTestParameters(testParameterPaths, tag, sourceFiles, fileType, fileDAO);
         PublicStateManager.getInstance().handleIndexUpdate(tool, StateManagerMode.UPDATE);
         return tag.getSourceFiles();
