@@ -167,7 +167,7 @@ public enum DescriptorLanguage {
     }
 
     public static FileType getTestFileTypeFromDescriptorLanguageString(String descriptorType) {
-       return convertShortStringToEnum(descriptorType).getTestParamType();
+        return convertShortStringToEnum(descriptorType).getTestParamType();
     }
 
     public FileType getTestParamType() {
