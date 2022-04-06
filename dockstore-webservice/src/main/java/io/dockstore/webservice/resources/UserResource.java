@@ -199,7 +199,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      */
     private boolean checkIncludes(String include, String field) {
         String includeString = (include == null ? "" : include);
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(includeString.split(",")));
+        List<String> includeSplit = Arrays.asList(includeString.split(","));
         return includeSplit.contains(field);
     }
 
