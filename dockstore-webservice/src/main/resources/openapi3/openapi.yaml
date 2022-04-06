@@ -4963,6 +4963,11 @@ paths:
         required: true
         schema:
           type: string
+      - description: "Comma-delimited list of fields to include: userProfiles, ..."
+        in: query
+        name: include
+        schema:
+          type: string
       responses:
         "200":
           content:

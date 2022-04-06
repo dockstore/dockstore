@@ -146,6 +146,9 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     private static final Pattern VALID_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
     private static final String CLOUD_INSTANCE_ID_DESCRIPTION = "ID of cloud instance to update/delete";
     private static final String USER_NOT_FOUND_DESCRIPTION = "User not found";
+    private static final String USER_PROFILES = "userProfiles";
+    private static final String USER_INCLUDE = USER_PROFILES + ", ...";
+    private static final String USER_INCLUDE_MESSAGE = "Comma-delimited list of fields to include: " + USER_INCLUDE;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
 
@@ -188,6 +191,30 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
     }
 
+    /**
+     * Checks if the include string (csv) includes some field
+     * @param include CSV string
+     * @param field Field to query for
+     * @return True if include has the given field, false otherwise
+     */
+    boolean checkIncludes(String include, String field) {
+        String includeString = (include == null ? "" : include);
+        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(includeString.split(",")));
+        return includeSplit.contains(field);
+    }
+
+    /**
+     * If include contains userProfiles, initialize the profiles for the user
+     *
+     * @param include
+     * @param user
+     */
+    private void initializeAdditionalFields(String include, User user) {
+        if (checkIncludes(include, USER_PROFILES)) {
+            Hibernate.initialize(user.getUserProfiles());
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -199,11 +226,14 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = USER_NOT_FOUND_DESCRIPTION)
     @ApiOperation(value = "Get a user by username.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User listUser(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User authUser,
-            @ApiParam("Username of user to return") @PathParam("username") @NotBlank String username) {
+            @ApiParam("Username of user to return") @PathParam("username") @NotBlank String username,
+        @Parameter(name = "include", description = USER_INCLUDE_MESSAGE, in = ParameterIn.QUERY) @ApiParam(value = USER_INCLUDE_MESSAGE) @QueryParam("include") String include) {
         @SuppressWarnings("deprecation")
         User user = userDAO.findByUsername(username);
         checkUserExists(user);
         checkUser(authUser, user.getId());
+
+        initializeAdditionalFields(include, user);
         return user;
     }
 
