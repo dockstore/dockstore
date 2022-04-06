@@ -197,7 +197,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      * @param field Field to query for
      * @return True if include has the given field, false otherwise
      */
-    boolean checkIncludes(String include, String field) {
+    private boolean checkIncludes(String include, String field) {
         String includeString = (include == null ? "" : include);
         ArrayList<String> includeSplit = new ArrayList(Arrays.asList(includeString.split(",")));
         return includeSplit.contains(field);
