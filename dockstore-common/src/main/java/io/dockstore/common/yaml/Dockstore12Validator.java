@@ -19,7 +19,7 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 /**
- * Validates that a DockstoreYaml12 instance has at least one workflow or at least one service
+ * Validates that a DockstoreYaml12 instance has at least one workflow, tool, or service
  */
 public class Dockstore12Validator implements ConstraintValidator<ValidDockstore12, DockstoreYaml12> {
     @Override
@@ -29,6 +29,8 @@ public class Dockstore12Validator implements ConstraintValidator<ValidDockstore1
 
     @Override
     public boolean isValid(final DockstoreYaml12 value, final ConstraintValidatorContext context) {
-        return value.getService() != null || !value.getWorkflows().isEmpty() || !value.getTools().isEmpty();
+        return value.getService() != null
+            || value.getWorkflows() != null && !value.getWorkflows().isEmpty()
+            || value.getTools() != null && !value.getTools().isEmpty();
     }
 }

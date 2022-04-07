@@ -26,6 +26,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,7 @@ public final class DockstoreYamlHelper {
     public static final String ERROR_READING_DOCKSTORE_YML = "Error reading .dockstore.yml: ";
     public static final String UNKNOWN_PROPERTY = "Unknown property: ";
     public static final Pattern WRONG_KEY_PATTERN = Pattern.compile("Unable to find property '(.+)'");
+    private static final int INVALID_VALUE_ECHO_LIMIT = 80;
 
     enum Version {
         ONE_ZERO("1.0") {
@@ -373,10 +375,29 @@ public final class DockstoreYamlHelper {
         final Set<ConstraintViolation<T>> violations = validator.validate(validatee);
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
-                    violations.stream()
-                            .map(v -> v.getMessage())
-                            .collect(Collectors.joining("; ")));
+                violations.stream()
+                    .map(v -> buildMessageFromViolation(v))
+                    .collect(Collectors.joining("; ")));
         }
+    }
+
+    private static <T> String buildMessageFromViolation(ConstraintViolation<T> violation) {
+        String message = violation.getMessage();
+
+        // If the violation contains a non-empty property path, add it to the message, with a summary of the invalid value, if present.
+        javax.validation.Path propertyPath = violation.getPropertyPath();
+        if (propertyPath != null) {
+            String propertyPathString = propertyPath.toString();
+            if (propertyPathString != null && !propertyPathString.isEmpty()) {
+                message = String.format("Property \"%s\" %s", propertyPathString, message);
+                Object invalidValue = violation.getInvalidValue();
+                if (invalidValue != null) {
+                    message = String.format("%s (current value: \"%s\")", message, StringUtils.abbreviate(invalidValue.toString(), INVALID_VALUE_ECHO_LIMIT));
+                }
+            }
+        }
+
+        return message;
     }
 
     private static Validator createValidator() {

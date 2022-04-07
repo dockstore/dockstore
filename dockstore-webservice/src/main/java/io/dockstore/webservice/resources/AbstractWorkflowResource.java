@@ -33,7 +33,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.CacheConfigManager;
 import io.dockstore.webservice.helpers.CheckUrlHelper;
 import io.dockstore.webservice.helpers.CheckUrlHelper.TestFileType;
 import io.dockstore.webservice.helpers.FileFormatHelper;
@@ -366,7 +365,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+            String errorMessage = createMessageFromException(ex);
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
             LOG.info(msg, ex);
             rollbackAndBeginNewTransaction();
@@ -389,6 +388,14 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             sessionFactory.getCurrentSession().getTransaction().commit();
             throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+    }
+
+    private String createMessageFromException(Exception ex) {
+        String message = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+        if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
+            message = "Error reading .dockstore.yml: " + message;
+        }
+        return message;
     }
 
     /**
