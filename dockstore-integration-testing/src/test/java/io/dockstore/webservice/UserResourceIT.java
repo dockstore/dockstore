@@ -137,6 +137,21 @@ public class UserResourceIT extends BaseIT {
     }
 
     @Test
+    public void testUserProfileLoading() throws ApiException {
+        // Get the user
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        UsersApi userApi = new UsersApi(client);
+
+        // Profiles are lazy loaded, and should not be present by default
+        User user = userApi.listUser(USER_2_USERNAME, null);
+        assertNull("User profiles should be null by default", user.getUserProfiles());
+
+        // Load profiles by specifying userProfiles as a query parameter in the API call
+        user = userApi.listUser(USER_2_USERNAME, "userProfiles");
+        assertNotNull("User profiles should be initialized", user.getUserProfiles());
+    }
+
+    @Test
     public void testChangingNameSuccess() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi userApi = new UsersApi(client);

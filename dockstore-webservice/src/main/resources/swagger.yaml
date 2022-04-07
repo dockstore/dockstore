@@ -4446,6 +4446,11 @@ paths:
         description: "Username of user to return"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: userProfiles, ..."
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
