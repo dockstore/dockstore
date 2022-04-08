@@ -15,8 +15,6 @@
  */
 package io.dockstore.common.yaml;
 
-import javax.validation.constraints.NotNull;
-
 public class YamlAuthor {
 
     private String name;
