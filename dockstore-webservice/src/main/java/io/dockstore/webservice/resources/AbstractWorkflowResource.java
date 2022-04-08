@@ -72,6 +72,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
@@ -528,20 +529,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             Workflow workflow = pair.getLeft();
             WorkflowVersion version = pair.getRight();
             Set<Validation> validations = version.getValidations();
-            if (isNonEmpty(validations)) {
+            if (isNotEmpty(validations)) {
                 String subMessage = computeMultiValidationMessage(validations);
-                if (isNonEmpty(subMessage)) {
+                if (StringUtils.isNotEmpty(subMessage)) {
                     return String.format("In version '%s' of entry '%s': %s", version.getName(), computeName(workflow), subMessage);
                 }
             }
             return null;
-        }).filter(this::isNonEmpty).collect(Collectors.joining(" "));
+        }).filter(StringUtils::isNotEmpty).collect(Collectors.joining(" "));
 
-        event.setMessage(message);
+        if (StringUtils.isNotEmpty(message)) {
+            event.setMessage(message);
+        }
     }
 
     private String computeMultiValidationMessage(Set<Validation> validations) {
-        return validations.stream().filter(v -> !v.isValid()).map(v -> computeValidationMessage(v)).filter(this::isNonEmpty).collect(Collectors.joining(" "));
+        return validations.stream().filter(v -> !v.isValid()).map(v -> computeValidationMessage(v)).filter(StringUtils::isNotEmpty).collect(Collectors.joining(" "));
     }
 
     private String computeValidationMessage(Validation validation) {
@@ -549,6 +552,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             JSONObject json = new JSONObject(validation.getMessage());
             return json.keySet().stream().map(key -> String.format("file '%s': %s", key, json.get(key))).collect(Collectors.joining(" "));
         } catch (JSONException ex) {
+            LOG.info("Exception processing validation message JSON", ex);
             return null;
         }
     }
@@ -559,11 +563,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return name != null ? name : repository;
     }
 
-    private boolean isNonEmpty(String s) {
-        return s != null && !s.isEmpty();
-    }
-
-    private boolean isNonEmpty(Collection<?> c) {
+    private boolean isNotEmpty(Collection<?> c) {
         return c != null && !c.isEmpty();
     }
 
