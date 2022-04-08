@@ -531,7 +531,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (isNonEmpty(validations)) {
                 String subMessage = computeMultiValidationMessage(validations);
                 if (isNonEmpty(subMessage)) {
-                    return String.format("In version '%s' of entry '%s': %s", version.getName(), workflow.getWorkflowName(), subMessage);
+                    return String.format("In version '%s' of entry '%s': %s", version.getName(), computeName(workflow), subMessage);
                 }
             }
             return null;
@@ -551,6 +551,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } catch (JSONException ex) {
             return null;
         }
+    }
+
+    private String computeName(Workflow workflow) {
+        String name = workflow.getWorkflowName();
+        String repository = workflow.getRepository();
+        return name != null ? name : repository;
     }
 
     private boolean isNonEmpty(String s) {
