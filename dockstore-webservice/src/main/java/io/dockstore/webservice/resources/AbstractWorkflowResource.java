@@ -78,6 +78,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.kohsuke.github.GHRateLimit;
 import org.slf4j.Logger;
@@ -527,25 +528,37 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             Workflow workflow = pair.getLeft();
             WorkflowVersion version = pair.getRight();
             Set<Validation> validations = version.getValidations();
-            if (validations != null && !validations.isEmpty()) {
+            if (isNonEmpty(validations)) {
                 String subMessage = computeMultiValidationMessage(validations);
-                if (subMessage != null && !subMessage.isEmpty()) {
-                    return String.format("In version \"%s\" of entry \"%s\": %s", version.getName(), workflow.getWorkflowName(), subMessage);
+                if (isNonEmpty(subMessage)) {
+                    return String.format("In version '%s' of entry '%s': %s", version.getName(), workflow.getWorkflowName(), subMessage);
                 }
             }
-            return "";
-        }).filter(s -> !s.isEmpty()).collect(Collectors.joining("\n"));
+            return null;
+        }).filter(this::isNonEmpty).collect(Collectors.joining(" "));
 
         event.setMessage(message);
     }
 
     private String computeMultiValidationMessage(Set<Validation> validations) {
-        return validations.stream().filter(v -> !v.isValid()).map(v -> computeValidationMessage(v)).collect(Collectors.joining("; "));
+        return validations.stream().filter(v -> !v.isValid()).map(v -> computeValidationMessage(v)).filter(this::isNonEmpty).collect(Collectors.joining(" "));
     }
 
     private String computeValidationMessage(Validation validation) {
-        JSONObject json = new JSONObject(validation.getMessage());
-        return json.keySet().stream().map(key -> String.format("in file \"%s\": %s", key, json.get(key))).collect(Collectors.joining("; "));
+        try {
+            JSONObject json = new JSONObject(validation.getMessage());
+            return json.keySet().stream().map(key -> String.format("file '%s': %s", key, json.get(key))).collect(Collectors.joining(" "));
+        } catch (JSONException ex) {
+            return null;
+        }
+    }
+
+    private boolean isNonEmpty(String s) {
+        return s != null && !s.isEmpty();
+    }
+
+    private boolean isNonEmpty(Collection<?> c) {
+        return c != null && !c.isEmpty();
     }
 
     /**
