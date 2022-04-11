@@ -139,7 +139,9 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readDockstoreYaml(content);
             fail("Invalid dockstore.yml not caught");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            System.out.println(e.getMessage());
+            // check that the error message contains the name of the property and an appropriate adjective
+            assertTrue(e.getMessage().contains("primaryDescriptor"));
+            assertTrue(e.getMessage().matches(".*([Mm]issing|[Rr]equired).*"));
         }
     }
 
@@ -165,9 +167,21 @@ public class DockstoreYamlTest {
     public void testEmptyDockstore12() {
         try {
             DockstoreYamlHelper.readAsDockstoreYaml12("version: 1.2");
-            fail("Dockstore yaml with no services and no workflows should fail");
+            fail("Dockstore yaml with no entries should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
             assertEquals(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testEffectivelyEmptyDockstore12() {
+        for (String emptyProperty: List.of("workflows", "tools", "service")) {
+            try {
+                DockstoreYamlHelper.readDockstoreYaml(String.format("version: 1.2\n%s:\n", emptyProperty));
+                fail("Dockstore yaml with no entries should fail");
+            } catch (DockstoreYamlHelper.DockstoreYamlException e) {
+                assertTrue(e.getMessage().contains(ValidDockstore12.AT_LEAST_1_WORKFLOW_OR_TOOL_OR_SERVICE));
+            }
         }
     }
 
