@@ -73,8 +73,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
@@ -361,12 +359,12 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
-            List<Pair<Workflow, WorkflowVersion>> updatedWorkflowVersionPairs = new ArrayList<>();
-            updatedWorkflowVersionPairs.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml));
-            updatedWorkflowVersionPairs.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml, false));
-            updatedWorkflowVersionPairs.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, user, dockstoreYml, true));
+            List<WorkflowAndVersion> updatedWorkflowAndVersions = new ArrayList<>();
+            updatedWorkflowAndVersions.addAll(createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml));
+            updatedWorkflowAndVersions.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml, false));
+            updatedWorkflowAndVersions.addAll(createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, user, dockstoreYml, true));
             LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-            addValidationsToLambdaEvent(lambdaEvent, updatedWorkflowVersionPairs);
+            addValidationsToLambdaEvent(lambdaEvent, updatedWorkflowAndVersions);
             lambdaEventDAO.create(lambdaEvent);
             endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             isSuccessful = true;
@@ -474,9 +472,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      */
     @SuppressWarnings("lgtm[java/path-injection]")
-    private List<Pair<Workflow, WorkflowVersion>> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
+    private List<WorkflowAndVersion> createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml, boolean isTool) {
-        List<Pair<Workflow, WorkflowVersion>> updatedVersions = new ArrayList<>();
+        List<WorkflowAndVersion> updatedWorkflowAndVersions = new ArrayList<>();
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
             final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
@@ -498,7 +496,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
                 Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                 WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-                updatedVersions.add(new ImmutablePair<>(workflow, version));
+                updatedWorkflowAndVersions.add(new WorkflowAndVersion(workflow, version));
 
                 if (publish != null && workflow.getIsPublished() != publish) {
                     LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
@@ -520,19 +518,17 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
 
-        return updatedVersions;
+        return updatedWorkflowAndVersions;
     }
 
-    private void addValidationsToLambdaEvent(LambdaEvent event, Collection<Pair<Workflow, WorkflowVersion>> workflowVersionPairs) {
+    private void addValidationsToLambdaEvent(LambdaEvent event, Collection<WorkflowAndVersion> workflowAndVersions) {
 
-        String message = workflowVersionPairs.stream().map(pair -> {
-            Workflow workflow = pair.getLeft();
-            WorkflowVersion version = pair.getRight();
-            Set<Validation> validations = version.getValidations();
+        String message = workflowAndVersions.stream().map(workflowAndVersion -> {
+            Set<Validation> validations = workflowAndVersion.getVersionValidations();
             if (isNotEmpty(validations)) {
                 String subMessage = computeMultiValidationMessage(validations);
                 if (StringUtils.isNotEmpty(subMessage)) {
-                    return String.format("In version '%s' of entry '%s': %s", version.getName(), computeName(workflow), subMessage);
+                    return String.format("In version '%s' of entry '%s': %s", workflowAndVersion.getVersionName(), computeWorkflowName(workflowAndVersion), subMessage);
                 }
             }
             return null;
@@ -557,9 +553,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private String computeName(Workflow workflow) {
-        String name = workflow.getWorkflowName();
-        String repository = workflow.getRepository();
+    private String computeWorkflowName(WorkflowAndVersion workflowAndVersion) {
+        String name = workflowAndVersion.getWorkflowName();
+        String repository = workflowAndVersion.getWorkflowRepository();
         return name != null ? name : repository;
     }
 
@@ -577,7 +573,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      */
     @SuppressWarnings("lgtm[java/path-injection]")
-    private List<Pair<Workflow, WorkflowVersion>> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
+    private List<WorkflowAndVersion> createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
             User user, final SourceFile dockstoreYml) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         if (service != null) {
@@ -604,7 +600,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 lambdaEventDAO.create(lambdaEvent);
             }
 
-            return List.of(new ImmutablePair<>(workflow, version));
+            return List.of(new WorkflowAndVersion(workflow, version));
         }
 
         return List.of();
@@ -944,4 +940,29 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
+    static class WorkflowAndVersion {
+        private final Workflow workflow;
+        private final WorkflowVersion version;
+
+        WorkflowAndVersion(Workflow workflow, WorkflowVersion version) {
+            this.workflow = workflow;
+            this.version = version;
+        }
+
+        public String getVersionName() {
+            return version.getName();
+        }
+
+        public Set<Validation> getVersionValidations() {
+            return version.getValidations();
+        }
+
+        public String getWorkflowName() {
+            return workflow.getWorkflowName();
+        }
+
+        public String getWorkflowRepository() {
+            return workflow.getRepository();
+        }
+    }
 }
