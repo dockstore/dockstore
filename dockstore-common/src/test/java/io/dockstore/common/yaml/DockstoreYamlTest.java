@@ -152,7 +152,7 @@ public class DockstoreYamlTest {
             DockstoreYamlHelper.readDockstoreYaml(content);
             fail("Did not catch invalid subclass");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertTrue(e.getMessage().startsWith(DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML));
+            assertTrue(e.getMessage().contains("subclass"));
         }
     }
 
@@ -202,7 +202,6 @@ public class DockstoreYamlTest {
                     "]\n");
             fail("Dockstore yaml breaking entities should fail");
         } catch (DockstoreYamlHelper.DockstoreYamlException e) {
-            assertTrue(e.getMessage().startsWith(DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML));
             // This message is emitted when SafeConstructor is used
             assertTrue(e.getMessage().contains("could not determine a constructor for the tag"));
         }

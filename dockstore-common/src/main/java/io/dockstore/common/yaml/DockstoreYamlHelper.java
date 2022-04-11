@@ -216,7 +216,7 @@ public final class DockstoreYamlHelper {
             String errorMsg = ERROR_READING_DOCKSTORE_YML;
             errorMsg += exceptionMsg;
             LOG.error(errorMsg, e);
-            throw new DockstoreYamlException(errorMsg);
+            throw new DockstoreYamlException(exceptionMsg);
         }
     }
 
