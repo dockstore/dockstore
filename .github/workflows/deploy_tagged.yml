@@ -22,6 +22,14 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
            ${{ runner.os }}-maven-
+
+      - name: Store Maven project version 
+        run: echo "maven_project_version=$(mvn help:evaluate -Dexpression=project.version -Dchangelist=.0-alpha.1 -q -DforceStdout)" >> $GITHUB_ENV
+
+      - name: Read exported variable
+        run: |
+          echo "${{ env.maven_project_version }}"  
+
       - name: Deploy with mvnw
         run: |
          git config --global user.email "${{ github.actor }}"
@@ -29,3 +37,29 @@ jobs:
          ./mvnw --batch-mode deploy -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist  }}
         env: 
           COLLAB_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
+      # neat, quay itself uses manual github actions https://github.com/quay/quay/blob/master/.github/workflows/build-and-publish.yaml
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USER }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: dockstore/dockstore-webservice:${{ env.maven_project_version }}
+
+      - name: Create checksums
+        run: |
+          docker inspect quay.io/dockstore/dockstore-webservice:${{ env.maven_project_version }} | grep -A 1 RepoDigests
+          docker inspect quay.io/dockstore/dockstore-webservice:${{ env.maven_project_version }} | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt        
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        # note to self: setup with https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services
+
+      - name: Copy checksum files
+        run: aws s3 cp image-digest.txt  s3://${AWS_BUCKET}/${{ env.maven_project_version }}-${{ GITHUB_SHA::8 }}/image-digest.txt
