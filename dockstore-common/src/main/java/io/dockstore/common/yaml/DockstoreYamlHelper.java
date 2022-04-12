@@ -213,9 +213,7 @@ public final class DockstoreYamlHelper {
             return yaml.load(content);
         } catch (Exception e) {
             final String exceptionMsg = createExceptionMessage(e);
-            String errorMsg = ERROR_READING_DOCKSTORE_YML;
-            errorMsg += exceptionMsg;
-            LOG.error(errorMsg, e);
+            LOG.error(ERROR_READING_DOCKSTORE_YML + exceptionMsg, e);
             throw new DockstoreYamlException(exceptionMsg);
         }
     }
