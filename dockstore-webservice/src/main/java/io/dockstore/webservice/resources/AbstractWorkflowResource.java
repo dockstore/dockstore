@@ -10,6 +10,7 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.DescriptorLanguageSubclass;
+import io.dockstore.common.EntryType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
@@ -528,7 +529,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (isNotEmpty(validations)) {
                 String subMessage = computeMultiValidationMessage(validations);
                 if (StringUtils.isNotEmpty(subMessage)) {
-                    return String.format("In version '%s' of entry '%s': %s", workflowAndVersion.getVersionName(), computeWorkflowName(workflowAndVersion), subMessage);
+                    return String.format("In version '%s' of %s '%s': %s", workflowAndVersion.getVersionName(), workflowAndVersion.getWorkflowType().getTerm(), computeWorkflowName(workflowAndVersion), subMessage);
                 }
             }
             return null;
@@ -955,6 +956,10 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         public Set<Validation> getVersionValidations() {
             return version.getValidations();
+        }
+
+        public EntryType getWorkflowType() {
+            return workflow.getEntryType();
         }
 
         public String getWorkflowName() {
