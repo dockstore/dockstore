@@ -212,12 +212,24 @@ public final class DockstoreYamlHelper {
             final Yaml yaml = new Yaml(constructor, representer);
             return yaml.load(content);
         } catch (Exception e) {
-            final String exceptionMsg = e.getMessage();
+            final String exceptionMsg = createExceptionMessage(e);
             String errorMsg = ERROR_READING_DOCKSTORE_YML;
             errorMsg += exceptionMsg;
             LOG.error(errorMsg, e);
             throw new DockstoreYamlException(exceptionMsg);
         }
+    }
+
+    private static String createExceptionMessage(Exception e) {
+        // For yaml ConstructorException, use `getProblem()`, which returns the line number, cause, and snippet.
+        // This is thrown on errors during the initial yaml parse, before validation, such as attempting to parse
+        // non-list information as a list, or create an enum from an input string that does not match any of the
+        // enum's values.  The full exception message contains lots of information about the surrounding context,
+        // formatted in a way that can be confusing and hard to read.
+        if (e instanceof org.yaml.snakeyaml.constructor.ConstructorException) {
+            return ((org.yaml.snakeyaml.constructor.ConstructorException)e).getProblem();
+        }
+        return e.getMessage();
     }
 
     /**
