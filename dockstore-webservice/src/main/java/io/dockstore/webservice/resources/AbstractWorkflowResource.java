@@ -394,7 +394,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private String createMessageFromException(Exception ex) {
         String message = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
         if (ex instanceof DockstoreYamlHelper.DockstoreYamlException) {
-            message = "Error reading .dockstore.yml: " + message;
+            message = DockstoreYamlHelper.ERROR_READING_DOCKSTORE_YML + message;
         }
         return message;
     }
