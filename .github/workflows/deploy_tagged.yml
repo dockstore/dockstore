@@ -16,9 +16,6 @@ jobs:
     permissions:
       id-token: write
 
-    env:
-      SHA8: ${GITHUB_SHA::8}        
-
     steps:
       - uses: actions/checkout@v3
       # Step that does that actual cache save and restore
@@ -43,6 +40,12 @@ jobs:
          ./mvnw --batch-mode deploy -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist  }}
         env: 
           COLLAB_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
+
+      - name: Create normal directory structure for Docker
+        run: |
+          mkdir -p dockstore-webservice/target
+          cp /home/runner/work/dockstore/dockstore/dockstore-webservice/target/* dockstore-webservice/target         
+
       # neat, quay itself uses manual github actions https://github.com/quay/quay/blob/master/.github/workflows/build-and-publish.yaml
       - name: Login to Quay.io
         uses: docker/login-action@v1
@@ -70,5 +73,9 @@ jobs:
           role-session-name: docker_checksum_upload_from_github
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Get short SHA
+        id: slug
+        run: echo "::set-output name=sha7::$(echo ${GITHUB_SHA} | cut -c1-7)"
+
       - name: Copy checksum files
-        run: aws s3 cp image-digest.txt  s3://${AWS_BUCKET}/${{ env.maven_project_version }}-$SHA8/image-digest.txt
+        run: aws s3 cp image-digest.txt  s3://${AWS_BUCKET}/${{ env.maven_project_version }}-${{ steps.slug.outputs.sha7 }}/image-digest.txt
