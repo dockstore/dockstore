@@ -27,7 +27,7 @@ jobs:
            ${{ runner.os }}-maven-
 
       - name: Store Maven project version 
-        run: echo "maven_project_version=$(mvn help:evaluate -Dexpression=project.version -Dchangelist=.0-alpha.1 -q -DforceStdout)" >> $GITHUB_ENV
+        run: echo "maven_project_version=$(mvn help:evaluate -Dexpression=project.version -Dchangelist=${{ github.event.inputs.changelist }} -q -DforceStdout)" >> $GITHUB_ENV
 
       - name: Read exported variable
         run: |
@@ -37,7 +37,7 @@ jobs:
         run: |
          git config --global user.email "${{ github.actor }}"
          git config --global user.name "${{ github.actor }}"
-         ./mvnw --batch-mode deploy -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist  }}
+         ./mvnw --batch-mode deploy -ntp -s .github/collab-mvn-settings.xml -DskipTests -Dchangelist=${{ github.event.inputs.changelist }}
         env: 
           COLLAB_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
 
