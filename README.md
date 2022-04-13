@@ -6,7 +6,6 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5781764.svg)](https://doi.org/10.5281/zenodo.5781764)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
-[![CircleCI](https://circleci.com/gh/dockstore/dockstore/tree/develop.svg?style=svg)](https://circleci.com/gh/dockstore/dockstore/tree/develop)
 [![Documentation Status](https://readthedocs.org/projects/dockstore/badge/?version=stable)](https://dockstore.readthedocs.io/en/stable/?badge=stable)
 
 
