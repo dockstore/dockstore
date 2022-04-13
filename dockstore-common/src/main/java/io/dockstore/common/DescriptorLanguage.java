@@ -166,6 +166,10 @@ public enum DescriptorLanguage {
             .filter(lang -> StringUtils.containsIgnoreCase(descriptorType, lang.toString())).findFirst().map(DescriptorLanguage::getFileType);
     }
 
+    public static FileType getTestFileTypeFromDescriptorLanguageString(String descriptorType) {
+        return convertShortStringToEnum(descriptorType).getTestParamType();
+    }
+
     public FileType getTestParamType() {
         return testParamType;
     }
@@ -251,7 +255,7 @@ public enum DescriptorLanguage {
         case NEXTFLOW:
             return "/nextflow.config";
         case GXFORMAT2:
-            return "/Dockstore.yml";
+            return "/workflow-name.yml";
         default:
             return null;
         }
