@@ -31,7 +31,14 @@ jobs:
 
       - name: Read exported variable
         run: |
-          echo "${{ env.maven_project_version }}"  
+          echo "${{ env.maven_project_version }}"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: docker_checksum_upload_from_github
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy with mvnw
         run: |
@@ -61,13 +68,6 @@ jobs:
         run: |
           docker inspect quay.io/dockstore/dockstore-webservice:${{ env.maven_project_version }} | grep -A 1 RepoDigests
           docker inspect quay.io/dockstore/dockstore-webservice:${{ env.maven_project_version }} | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt        
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-session-name: docker_checksum_upload_from_github
-          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Get short SHA
         id: slug
