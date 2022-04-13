@@ -16,6 +16,9 @@ jobs:
     permissions:
       id-token: write
 
+    env:
+      SHA8: ${GITHUB_SHA::8}        
+
     steps:
       - uses: actions/checkout@v3
       # Step that does that actual cache save and restore
@@ -68,4 +71,4 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Copy checksum files
-        run: aws s3 cp image-digest.txt  s3://${AWS_BUCKET}/${{ env.maven_project_version }}-${{ github.sha::8 }}/image-digest.txt
+        run: aws s3 cp image-digest.txt  s3://${AWS_BUCKET}/${{ env.maven_project_version }}-$SHA8/image-digest.txt
