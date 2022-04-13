@@ -41,11 +41,6 @@ jobs:
         env: 
           COLLAB_DEPLOY_TOKEN: ${{ secrets.COLLAB_DEPLOY_TOKEN }}
 
-      - name: Create normal directory structure for Docker
-        run: |
-          mkdir -p dockstore-webservice/target
-          cp /home/runner/work/dockstore/dockstore/dockstore-webservice/target/* dockstore-webservice/target         
-
       # neat, quay itself uses manual github actions https://github.com/quay/quay/blob/master/.github/workflows/build-and-publish.yaml
       - name: Login to Quay.io
         uses: docker/login-action@v1
@@ -58,6 +53,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
+          context: .
           push: true
           tags: dockstore/dockstore-webservice:${{ env.maven_project_version }}
 
