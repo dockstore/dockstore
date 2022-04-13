@@ -13,6 +13,9 @@ jobs:
   build:
     runs-on: ubuntu-20.04
 
+    permissions:
+      id-token: write
+
     steps:
       - uses: actions/checkout@v3
       # Step that does that actual cache save and restore
@@ -59,7 +62,10 @@ jobs:
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
-        # note to self: setup with https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: docker_checksum_upload_from_github
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Copy checksum files
         run: aws s3 cp image-digest.txt  s3://${AWS_BUCKET}/${{ env.maven_project_version }}-${{ GITHUB_SHA::8 }}/image-digest.txt
