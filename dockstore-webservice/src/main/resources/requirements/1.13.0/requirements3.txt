@@ -1,7 +1,9 @@
+argcomplete==2.0.0
 bagit==1.8.1
 CacheControl==0.12.10
 certifi==2021.10.8
 chardet==4.0.0
+charset-normalizer==2.0.12
 coloredlogs==15.0.1
 cwlref-runner==1.0
 cwltool==3.1.20220224085855
@@ -17,6 +19,7 @@ mypy-extensions==0.4.3
 networkx==2.8
 prov==1.5.1
 psutil==5.9.0
+pydot==1.4.2
 pyparsing==3.0.8
 python-dateutil==2.8.2
 rdflib==6.1.1
@@ -25,6 +28,7 @@ requests==2.27.1
 ruamel.yaml==0.17.21
 scandir==1.10.0
 schema-salad==8.2.20220204150214
+setuptools==62.1.0
 shellescape==3.8.1
 six==1.16.0
 typing-extensions==4.1.1
