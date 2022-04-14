@@ -557,7 +557,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private String computeWorkflowName(WorkflowAndVersion workflowAndVersion) {
         String name = workflowAndVersion.getWorkflowName();
         String repository = workflowAndVersion.getWorkflowRepository();
-        return name != null ? name : repository;
+        return name != null ? String.format("%s/%s", repository, name) : repository;
     }
 
     private boolean isNotEmpty(Collection<?> c) {
