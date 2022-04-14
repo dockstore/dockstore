@@ -386,7 +386,7 @@ public final class DockstoreYamlHelper {
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
                 violations.stream()
-                    .map(v -> buildMessageFromViolation(v))
+                    .map(v -> buildMessageFromViolation(v))  // NOSONAR here, a lambda is more understandable than method reference
                     .collect(Collectors.joining("; ")));
         }
     }
