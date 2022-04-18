@@ -560,6 +560,7 @@ public class WebhookIT extends BaseIT {
         assertEquals("Should be type DOCKSTORE_YML", Workflow.ModeEnum.DOCKSTORE_YML, workflow.getMode());
         assertEquals("Should have one version 0.1", 1, workflow.getWorkflowVersions().size());
         assertTrue("Should be valid", workflow.getWorkflowVersions().get(0).isValid());
+        assertTrue("Lambda event message should be empty", getLatestLambdaEventMessage("0", usersApi) == null);
 
         // Push missingPrimaryDescriptor on GitHub - one existing wdl workflow, missing primary descriptor
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingPrimaryDescriptor", installationId);
@@ -580,6 +581,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should not have doesnotexist.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/doesnotexist.wdl")).findFirst().isEmpty());
         assertFalse("Should have invalid .dockstore.yml", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertFalse("Should have invalid doesnotexist.wdl", missingPrimaryDescriptorVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
+        assertTrue("Refers to missing primary descriptor", getLatestLambdaEventMessage("0", usersApi).contains("descriptor"));
 
         // Push missingTestParameterFile on GitHub - one existing wdl workflow, missing a test parameter file
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/missingTestParameterFile", installationId);
@@ -601,13 +603,14 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should have Dockstore2.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
         assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
+        assertTrue("Refers to missing test file", getLatestLambdaEventMessage("0", usersApi).contains("/idonotexist.json"));
 
         // Push unknownProperty on GitHub - one existing wdl workflow, incorrectly spelled testParameterFiles property
         client.handleGitHubRelease(workflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/unknownProperty", installationId);
         workflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", long.class);
         assertEquals(1, workflowCount);
 
-        // Ensure that new version is in the correct state (invalid)
+        // Ensure that new version is in the correct state (valid)
         workflow = client.getWorkflowByPath("github.com/" + workflowRepo + "/foobar", BIOWORKFLOW, "validations");
         assertNotNull(workflow);
         assertEquals("Should have four versions", 4, workflow.getWorkflowVersions().size());
@@ -622,6 +625,7 @@ public class WebhookIT extends BaseIT {
         assertTrue("Should have Dockstore2.wdl file", sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore2.wdl")).findFirst().isPresent());
         assertFalse("Should have invalid .dockstore.yml", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_YML)).findFirst().get().isValid());
         assertTrue("Should have valid Dockstore2.wdl", missingTestParameterFileVersion.getValidations().stream().filter(validation -> Objects.equals(validation.getType(), Validation.TypeEnum.DOCKSTORE_WDL)).findFirst().get().isValid());
+        assertTrue("Refers to misspelled property", getLatestLambdaEventMessage("0", usersApi).contains("testParameterFilets"));
 
         // There should be 4 successful lambda events
         List<LambdaEvent> events = usersApi.getUserGitHubEvents("0", 10);
@@ -638,6 +642,10 @@ public class WebhookIT extends BaseIT {
                     failEvents.stream().filter(lambdaEvent -> !lambdaEvent.isSuccess()).count());
             assertEquals("Number of versions should be the same", versionCountBeforeInvalidDockstoreYml, getFoobar1Workflow(client).getWorkflowVersions().size());
         }
+    }
+
+    private String getLatestLambdaEventMessage(String user, UsersApi usersApi) {
+        return usersApi.getUserGitHubEvents(user, 1).get(0).getMessage();
     }
 
     /**
