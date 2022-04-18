@@ -61,7 +61,7 @@ public class LambdaEventResource {
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
         User authUser = userDAO.findById(user.getId());
         List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
-        if (githubTokens.size() == 0) {
+        if (githubTokens.isEmpty()) {
             throw new CustomWebApplicationException("You do not have GitHub connected to your account.", HttpStatus.SC_BAD_REQUEST);
         }
         Token githubToken = githubTokens.get(0);
@@ -69,7 +69,7 @@ public class LambdaEventResource {
         // If the organization isn't the user's github account, check github to see if we have access to the organization.
         if (!organization.equals(githubToken.getUsername())) {
             GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
-            if (!sourceCodeRepoInterface.canAccessOrganization(organization)) {
+            if (!sourceCodeRepoInterface.isOneOfMyOrganizations(organization)) {
                 throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_UNAUTHORIZED);
             }
         }

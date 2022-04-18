@@ -324,7 +324,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      * Determine if the user can access the specified organization.
      * Incorporates some optimizations for the common cases, and falls back to getMyOrganizations()
      */
-    public boolean canAccessOrganization(String organization) {
+    public boolean isOneOfMyOrganizations(String organization) {
         try {
             // The following could be an OR conditional, but it would be hard to comment, and you would have to grok the short-circuiting to understand it...
             // The user can always access their own account.
