@@ -302,7 +302,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Get a list of all the orgs a user has access to
-     * Based on the ALL repository filter, since getAllOrganizations() does not return user accounts.
+     * Based on the ALL repository filter, since getAllOrganizations() does not return personal user accounts.
      * @return
      */
     public Set<String> getMyOrganizations() {
@@ -321,18 +321,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Determine if the user can access the specified organization.
+     * Determine if the specified organization is one that github considers the user has "access" to.
      * Incorporates some optimizations for the common cases, and falls back to getMyOrganizations()
      */
     public boolean isOneOfMyOrganizations(String organization) {
         try {
-            // The following could be an OR conditional, but it would be hard to comment, and you would have to grok the short-circuiting to understand it...
+            // The following statements could be condensed into a single OR conditional, but it would be hard to comment, and you would have to grok the short-circuiting to understand it...
             // The user can always access their own account.
             if (organization.equals(githubTokenUsername)) {
                 return true;
             }
             // Check the list of organizations that github says the user can "access".
-            // Note that getAllOrganizations() only returns organizations, not user accounts.
+            // Note that getAllOrganizations() only returns organizations, not personal user accounts.
             if (github.getMyself().getAllOrganizations().stream().anyMatch(org -> org.getLogin().equals(organization))) {
                 return true;
             }
