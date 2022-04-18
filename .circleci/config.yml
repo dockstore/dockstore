@@ -317,22 +317,6 @@ jobs:
           command: cp /tmp/dockstore-web-cache.misses.log /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
-      - setup_remote_docker
-      - run:
-          name: Build and publish Docker
-          command: |
-            export tagOrBranch=${CIRCLE_TAG-$CIRCLE_BRANCH}
-            # Convert slashes to underscores, e.g., feature/seab-1675/pushtoquay to feature_seab-1675_pushtoquay
-            export dockerVersion=${tagOrBranch//\//_}
-            docker build -t quay.io/dockstore/dockstore-webservice:$dockerVersion .
-            echo "$QUAY_PASSWORD" | docker login -u=$QUAY_USERNAME --password-stdin quay.io
-            # Gather the checksum information
-            docker push quay.io/dockstore/dockstore-webservice:$dockerVersion
-            docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests
-            docker inspect quay.io/dockstore/dockstore-webservice:$dockerVersion | grep -A 1 RepoDigests | grep -oPm1 'sha256:\K\w+' > image-digest.txt
-      - aws-s3/copy:
-          from: image-digest.txt
-          to: 's3://${AWS_BUCKET}/${CIRCLE_TAG:-$CIRCLE_BRANCH}-$(echo $CIRCLE_SHA1 | cut -c -7)/image-digest.txt'
 commands:
   install-postgres:
     steps:
