@@ -1,7 +1,10 @@
 name: Develop Deploy
 
-on: [push]
-
+on:
+  push:
+    branches:
+      - develop
+      
 jobs:
   build:
     runs-on: ubuntu-20.04
