@@ -45,8 +45,7 @@ jobs:
             # If this isn't a tag, it must be a branch
             S3_FOLDER=${GITHUB_REF##refs/heads/}
           fi
-          export dockerVersion=${S3_FOLDER//\//_}
-          echo "S3_FOLDER=${dockerVersion}-$(echo $GITHUB_SHA | cut -c -7)" >> $GITHUB_ENV
+          echo "S3_FOLDER=${S3_FOLDER//\//_}" >> $GITHUB_ENV
 
       - name: Build and push
         id: docker_build
@@ -66,4 +65,4 @@ jobs:
         run: echo "::set-output name=sha7::$(echo ${GITHUB_SHA} | cut -c1-7)"
 
       - name: Copy checksum files
-        run: aws s3 cp image-digest.txt  s3://${{ secrets.AWS_BUCKET }}/${{env.S3_FOLDER}}/image-digest.txt
+        run: aws s3 cp image-digest.txt  s3://${{ secrets.AWS_BUCKET }}/${{ env.S3_FOLDER }}-${{ steps.slug.outputs.sha7 }}/image-digest.txt
