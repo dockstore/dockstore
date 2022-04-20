@@ -91,7 +91,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
-    public static final Response BAD_DECODE_RESPONSE = Response.status(getExtendedStatus(Status.BAD_REQUEST, "Could not decode version")).build();
+    public static final Response BAD_DECODE_VERSION_RESPONSE = Response.status(getExtendedStatus(Status.BAD_REQUEST, "Could not decode version id")).build();
+    public static final Response BAD_DECODE_REGISTRY_RESPONSE = Response.status(getExtendedStatus(Status.BAD_REQUEST, "Could not decode registry id")).build();
 
     // Algorithms should come from: https://github.com/ga4gh-discovery/ga4gh-checksum/blob/master/hash-alg.csv
     public static final String DESCRIPTOR_FILE_SHA256_TYPE_FOR_TRS = "sha-256";
@@ -165,7 +166,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             parsedID = new ParsedRegistryID(id);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_REGISTRY_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, false);
@@ -177,7 +178,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             parsedID = new ParsedRegistryID(id);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_REGISTRY_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, true);
@@ -218,13 +219,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             parsedID = new ParsedRegistryID(id);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_REGISTRY_RESPONSE;
         }
         String newVersionId;
         try {
             newVersionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_VERSION_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         return buildToolResponse(entry, newVersionId, false);
@@ -346,7 +347,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             numEntries = getEntries(all, id, alias, toolClass, descriptorType, registry, organization, name, toolname, description, author, checker, user, actualLimit,
                 startIndex);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_REGISTRY_RESPONSE;
         }
 
         List<io.openapi.model.Tool> results = new ArrayList<>();
@@ -588,13 +589,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             parsedID = new ParsedRegistryID(registryId);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_REGISTRY_RESPONSE;
         }
         String versionId;
         try {
             versionId = URLDecoder.decode(versionIdParam, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_VERSION_RESPONSE;
         }
 
         // The performance of this method was poor: to retrieve a single file for a particular entry, it iterates through the entry's Versions, checking them one-by-one until it finds a match.
@@ -812,7 +813,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         try {
             parsedID = new ParsedRegistryID(id);
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
-            return BAD_DECODE_RESPONSE;
+            return BAD_DECODE_REGISTRY_RESPONSE;
         }
         Entry<?, ?> entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
