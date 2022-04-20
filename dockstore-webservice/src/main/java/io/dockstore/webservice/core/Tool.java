@@ -55,6 +55,7 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
+import org.hibernate.annotations.Filter;
 
 /**
  * This describes one tool in the dockstore, extending entry with fields necessary to describe bioinformatics tools.
@@ -164,6 +165,7 @@ public class Tool extends Entry<Tool, Tag> {
     @OrderBy("id")
     @Cascade(CascadeType.DETACH)
     @BatchSize(size = 25)
+    @Filter(name = "versionNameFilter")
     private final SortedSet<Tag> workflowVersions;
 
     @JsonIgnore

@@ -49,6 +49,7 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
@@ -112,6 +113,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static TRSListener trsListener = null;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
     private static BioWorkflowDAO bioWorkflowDAO;
+    private static VersionDAO versionDAO;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -143,6 +145,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setFileDAO(FileDAO fileDAO) {
         ToolsApiServiceImpl.fileDAO = fileDAO;
+    }
+
+    public static void setVersionDAO(VersionDAO versionDAO) {
+        ToolsApiServiceImpl.versionDAO = versionDAO;
     }
 
     public static void setTrsListener(TRSListener listener) {
@@ -563,6 +569,19 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return urlBuilder.toString();
     }
 
+    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
+        boolean unwrap, Optional<User> user) {
+        try {
+            String decoded = URLDecoder.decode(versionIdParam, StandardCharsets.UTF_8.displayName());
+            versionDAO.enableNameFilter(decoded);
+            return getFileByToolVersionIDCore(registryId, versionIdParam, type, parameterPath, unwrap, user);
+        } catch (UnsupportedEncodingException /*| IllegalArgumentException*/ e) {
+            return BAD_DECODE_RESPONSE;
+        } finally {
+            versionDAO.disableNameFilter();
+        }
+    }
+
     /**
      * @param registryId   registry id
      * @param versionIdParam    git reference
@@ -571,7 +590,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param unwrap       unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
+    private Response getFileByToolVersionIDCore(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
         boolean unwrap, Optional<User> user) {
         Response.StatusType fileNotFoundStatus = getExtendedStatus(Status.NOT_FOUND,
             "version found, but file not found (bad filename, invalid file, etc.)");
