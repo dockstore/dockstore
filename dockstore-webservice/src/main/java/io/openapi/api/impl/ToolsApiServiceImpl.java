@@ -597,6 +597,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return BAD_DECODE_RESPONSE;
         }
 
+        // The performance of this method was poor: to retrieve a single file for a particular entry, it iterates through the entry's Versions, checking them one-by-one until it finds a match.
+        // See the related ticket: https://ucsc-cgl.atlassian.net/browse/DOCK-1921
+        //
+        // To improve performance, we added the following try block which enables a Filter which limits the subsequent queries to return only Version objects that match the specified version name.
+        // Similarly, when the filter is enabled, properly-annotated associations only contain Versions that match the specified version name.
+        // The associated finally disables the Filter upon exit from the try block, so that any subsequently-executed code will see all the Versions, like normal.
+        // Essentially, the following code works the same as the original, except that, from its point-of-view, the only Versions that exist are the ones with the specified name.
+        // Thus, only the Version-of-interest is retrieved from the db, and all the superfluous db version queries are avoided.
         try {
             versionDAO.enableNameFilter(versionId);
 
