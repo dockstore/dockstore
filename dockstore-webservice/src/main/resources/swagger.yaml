@@ -7668,11 +7668,11 @@ definitions:
         type: "string"
       bio:
         type: "string"
-      blogLink:
-        type: "string"
       company:
         type: "string"
       email:
+        type: "string"
+      link:
         type: "string"
       location:
         type: "string"

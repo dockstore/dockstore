@@ -19,9 +19,9 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
                    context="1.13.0">
     <changeSet author="ktran" id="migrateBioToBlogLink">
-        <!-- Rename 'bio' to 'bloglink' because the bio we were retrieving was actually the blog link -->
-        <renameColumn tableName="user_profile" oldColumnName="bio" newColumnName="bloglink" columnDataType="text"/>
-        <!-- Add the bio column back -->
+        <!-- Rename 'bio' to 'link' because the bio we were retrieving was actually the blog link in the GitHub user profile -->
+        <renameColumn tableName="user_profile" oldColumnName="bio" newColumnName="link" columnDataType="text"/>
+        <!-- Add the 'bio' column back -->
         <addColumn tableName="user_profile">
             <column name="bio" type="text"/>
         </addColumn>

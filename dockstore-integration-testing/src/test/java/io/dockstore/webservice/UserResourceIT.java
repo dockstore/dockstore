@@ -606,7 +606,7 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getBio());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getCompany());
-        assertNull(userProfile.getBlogLink());
+        assertNull(userProfile.getLink());
         assertEquals("DockstoreTestUser2", userProfile.getUsername());
 
         usersApi.updateLoggedInUserMetadata("github.com");
@@ -618,7 +618,7 @@ public class UserResourceIT extends BaseIT {
         assertEquals("I am a test user", userProfile.getBio());
         assertEquals("Toronto", userProfile.getLocation());
         assertNull(userProfile.getCompany());
-        assertEquals("", userProfile.getBlogLink());
+        assertEquals("", userProfile.getLink());
         assertEquals("DockstoreTestUser2", userProfile.getUsername());
 
         io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -731,7 +731,7 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
         assertNull(userProfile.getCompany());
-        assertNull(userProfile.getBlogLink());
+        assertNull(userProfile.getLink());
 
         // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
         // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
@@ -743,7 +743,7 @@ public class UserResourceIT extends BaseIT {
         assertEquals("Toronto", userProfile.getLocation());
         assertEquals("I am a test user", userProfile.getBio());
         assertNull(userProfile.getCompany());
-        assertEquals("", userProfile.getBlogLink());
+        assertEquals("", userProfile.getLink());
         assertEquals("DockstoreTestUser2", userProfile.getUsername());
     }
 
@@ -767,7 +767,7 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
         assertNull(userProfile.getCompany());
-        assertNull(userProfile.getBlogLink());
+        assertNull(userProfile.getLink());
 
         // Call the API method while the caller has no token
         // An error should not be thrown and the call should pass, but every user should not have their GitHub information synced
@@ -779,7 +779,7 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getBio());
         assertNull(userProfile.getCompany());
-        assertNull(userProfile.getBlogLink());
+        assertNull(userProfile.getLink());
     }
 
     @Test

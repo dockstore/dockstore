@@ -575,7 +575,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         @Column(columnDefinition = "text")
         public String bio;
         @Column(columnDefinition = "text")
-        public String blogLink;
+        public String link;
         /**
          * Redundant with token, but needed since tokens can be deleted.
          * i.e. if usernames can change and tokens can be deleted, we need somewhere to let

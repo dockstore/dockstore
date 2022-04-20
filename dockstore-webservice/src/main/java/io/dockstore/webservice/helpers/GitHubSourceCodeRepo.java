@@ -1189,7 +1189,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         profile.name = ghUser.getName();
         profile.avatarURL = ghUser.getAvatarUrl();
         profile.bio = ghUser.getBio();
-        profile.blogLink = ghUser.getBlog();
+        profile.link = ghUser.getBlog();
         profile.location = ghUser.getLocation();
         profile.company = ghUser.getCompany();
         Map<String, User.Profile> userProfile = user.getUserProfiles();
