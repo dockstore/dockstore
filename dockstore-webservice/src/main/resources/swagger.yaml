@@ -7668,6 +7668,8 @@ definitions:
         type: "string"
       bio:
         type: "string"
+      blogLink:
+        type: "string"
       company:
         type: "string"
       email:

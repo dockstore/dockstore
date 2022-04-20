@@ -1188,7 +1188,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         profile.username = ghUser.getLogin();
         profile.name = ghUser.getName();
         profile.avatarURL = ghUser.getAvatarUrl();
-        profile.bio = ghUser.getBlog();  // ? not sure about this mapping in the new api
+        profile.bio = ghUser.getBio();
+        profile.blogLink = ghUser.getBlog();
         profile.location = ghUser.getLocation();
         profile.company = ghUser.getCompany();
         Map<String, User.Profile> userProfile = user.getUserProfiles();
