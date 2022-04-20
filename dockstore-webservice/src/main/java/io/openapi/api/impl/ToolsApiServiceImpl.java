@@ -569,19 +569,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         return urlBuilder.toString();
     }
 
-    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
-        boolean unwrap, Optional<User> user) {
-        try {
-            String decoded = URLDecoder.decode(versionIdParam, StandardCharsets.UTF_8.displayName());
-            versionDAO.enableNameFilter(decoded);
-            return getFileByToolVersionIDCore(registryId, versionIdParam, type, parameterPath, unwrap, user);
-        } catch (UnsupportedEncodingException /*| IllegalArgumentException*/ e) {
-            return BAD_DECODE_RESPONSE;
-        } finally {
-            versionDAO.disableNameFilter();
-        }
-    }
-
     /**
      * @param registryId   registry id
      * @param versionIdParam    git reference
@@ -590,7 +577,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      * @param unwrap       unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionIDCore(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
+    @SuppressWarnings("checkstyle:methodlength")
+    private Response getFileByToolVersionID(String registryId, String versionIdParam, DescriptorLanguage.FileType type, String parameterPath,
         boolean unwrap, Optional<User> user) {
         Response.StatusType fileNotFoundStatus = getExtendedStatus(Status.NOT_FOUND,
             "version found, but file not found (bad filename, invalid file, etc.)");
@@ -608,137 +596,144 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         } catch (UnsupportedEncodingException | IllegalArgumentException e) {
             return BAD_DECODE_RESPONSE;
         }
-        Entry<?, ?> entry = getEntry(parsedID, user);
 
-        // check whether this is registered
-        if (entry == null) {
-            Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "incorrect id");
-            return Response.status(status).build();
-        }
+        try {
+            versionDAO.enableNameFilter(versionId);
 
-        boolean showHiddenVersions = false;
-        if (user.isPresent() && !AuthenticatedResourceInterface
-                .userCannotRead(user.get(), entry)) {
-            showHiddenVersions = true;
-        }
+            Entry<?, ?> entry = getEntry(parsedID, user);
 
-        final io.openapi.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config, showHiddenVersions);
+            // check whether this is registered
+            if (entry == null) {
+                Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "incorrect id");
+                return Response.status(status).build();
+            }
 
-        String finalVersionId = versionId;
-        if (convertedTool == null || convertedTool.getVersions() == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
-        final Optional<ToolVersion> convertedToolVersion = convertedTool.getVersions().stream()
-            .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-        Optional<? extends Version<?>> entryVersion;
-        if (entry instanceof Tool) {
-            Tool toolEntry = (Tool)entry;
-            entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
-                .findFirst();
-        } else {
-            Workflow workflowEntry = (Workflow)entry;
-            entryVersion = workflowEntry.getWorkflowVersions().stream()
+            boolean showHiddenVersions = false;
+            if (user.isPresent() && !AuthenticatedResourceInterface
+                    .userCannotRead(user.get(), entry)) {
+                showHiddenVersions = true;
+            }
+
+            final io.openapi.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config, showHiddenVersions);
+
+            String finalVersionId = versionId;
+            if (convertedTool == null || convertedTool.getVersions() == null) {
+                return Response.status(Status.NOT_FOUND).build();
+            }
+            final Optional<ToolVersion> convertedToolVersion = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-        }
-
-        if (entryVersion.isEmpty()) {
-            Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "version not found");
-            return Response.status(status).build();
-        }
-
-        String urlBuilt;
-        String gitUrl = entry.getGitUrl();
-        if (gitUrl.startsWith(GITHUB_PREFIX)) {
-            urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), GITHUB_PREFIX, "https://raw.githubusercontent.com/");
-        } else if (gitUrl.startsWith(BITBUCKET_PREFIX)) {
-            urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), BITBUCKET_PREFIX, "https://bitbucket.org/");
-        } else {
-            LOG.error("Found a git url neither from BitBucket nor GitHub " + gitUrl);
-            urlBuilt = "https://unimplemented_git_repository/";
-        }
-
-        if (convertedToolVersion.isPresent()) {
-            final ToolVersion toolVersion = convertedToolVersion.get();
-            if (type.getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)) {
-                // this only works for test parameters associated with tools
-                List<SourceFile> testSourceFiles = new ArrayList<>();
-                try {
-                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
-                } catch (CustomWebApplicationException e) {
-                    LOG.warn("intentionally ignoring failure to get test parameters", e);
-                }
-                try {
-                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
-                } catch (CustomWebApplicationException e) {
-                    LOG.warn("intentionally ignoring failure to get source files", e);
-                }
-
-                List<FileWrapper> toolTestsList = new ArrayList<>();
-
-                for (SourceFile file : testSourceFiles) {
-                    FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
-                    toolTestsList.add(toolTests);
-                }
-                return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
-                    unwrap ? toolTestsList.stream().map(FileWrapper::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n"))
-                        : toolTestsList).build();
-            }
-            if (type == DOCKERFILE) {
-                Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
-                    .filter(sourcefile -> sourcefile.getType() == DOCKERFILE).findFirst();
-                if (potentialDockerfile.isPresent()) {
-                    ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
-                    //TODO: hook up file checksum here
-                    dockerfile.setChecksum(convertToTRSChecksums(potentialDockerfile.get()));
-                    dockerfile.setContent(potentialDockerfile.get().getContent());
-                    dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
-                    dockerfile.setOriginalFile(potentialDockerfile.get());
-                    toolVersion.setContainerfile(true);
-                    List<FileWrapper> containerfilesList = new ArrayList<>();
-                    containerfilesList.add(dockerfile);
-                    return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
-                } else {
-                    return Response.status(fileNotFoundStatus).build();
-                }
-            }
-            String path;
-            // figure out primary descriptors and use them if no relative path is specified
+            Optional<? extends Version<?>> entryVersion;
             if (entry instanceof Tool) {
-                if (type == DOCKSTORE_WDL) {
-                    path = ((Tag)entryVersion.get()).getWdlPath();
-                } else if (type == DOCKSTORE_CWL) {
-                    path = ((Tag)entryVersion.get()).getCwlPath();
-                } else {
-                    return Response.status(Status.NOT_FOUND).build();
+                Tool toolEntry = (Tool)entry;
+                entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
+                    .findFirst();
+            } else {
+                Workflow workflowEntry = (Workflow)entry;
+                entryVersion = workflowEntry.getWorkflowVersions().stream()
+                    .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+            }
+
+            if (entryVersion.isEmpty()) {
+                Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "version not found");
+                return Response.status(status).build();
+            }
+
+            String urlBuilt;
+            String gitUrl = entry.getGitUrl();
+            if (gitUrl.startsWith(GITHUB_PREFIX)) {
+                urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), GITHUB_PREFIX, "https://raw.githubusercontent.com/");
+            } else if (gitUrl.startsWith(BITBUCKET_PREFIX)) {
+                urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), BITBUCKET_PREFIX, "https://bitbucket.org/");
+            } else {
+                LOG.error("Found a git url neither from BitBucket nor GitHub " + gitUrl);
+                urlBuilt = "https://unimplemented_git_repository/";
+            }
+
+            if (convertedToolVersion.isPresent()) {
+                final ToolVersion toolVersion = convertedToolVersion.get();
+                if (type.getCategory().equals(DescriptorLanguage.FileTypeCategory.TEST_FILE)) {
+                    // this only works for test parameters associated with tools
+                    List<SourceFile> testSourceFiles = new ArrayList<>();
+                    try {
+                        testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
+                    } catch (CustomWebApplicationException e) {
+                        LOG.warn("intentionally ignoring failure to get test parameters", e);
+                    }
+                    try {
+                        testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user, fileDAO));
+                    } catch (CustomWebApplicationException e) {
+                        LOG.warn("intentionally ignoring failure to get source files", e);
+                    }
+
+                    List<FileWrapper> toolTestsList = new ArrayList<>();
+
+                    for (SourceFile file : testSourceFiles) {
+                        FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
+                        toolTestsList.add(toolTests);
+                    }
+                    return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                        unwrap ? toolTestsList.stream().map(FileWrapper::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n"))
+                            : toolTestsList).build();
                 }
-            } else {
-                path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
-            }
-            String searchPath;
-            if (parameterPath != null) {
-                searchPath = parameterPath;
-            } else {
-                searchPath = path;
-            }
+                if (type == DOCKERFILE) {
+                    Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
+                        .filter(sourcefile -> sourcefile.getType() == DOCKERFILE).findFirst();
+                    if (potentialDockerfile.isPresent()) {
+                        ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
+                        //TODO: hook up file checksum here
+                        dockerfile.setChecksum(convertToTRSChecksums(potentialDockerfile.get()));
+                        dockerfile.setContent(potentialDockerfile.get().getContent());
+                        dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
+                        dockerfile.setOriginalFile(potentialDockerfile.get());
+                        toolVersion.setContainerfile(true);
+                        List<FileWrapper> containerfilesList = new ArrayList<>();
+                        containerfilesList.add(dockerfile);
+                        return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                            .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
+                    } else {
+                        return Response.status(fileNotFoundStatus).build();
+                    }
+                }
+                String path;
+                // figure out primary descriptors and use them if no relative path is specified
+                if (entry instanceof Tool) {
+                    if (type == DOCKSTORE_WDL) {
+                        path = ((Tag)entryVersion.get()).getWdlPath();
+                    } else if (type == DOCKSTORE_CWL) {
+                        path = ((Tag)entryVersion.get()).getCwlPath();
+                    } else {
+                        return Response.status(Status.NOT_FOUND).build();
+                    }
+                } else {
+                    path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
+                }
+                String searchPath;
+                if (parameterPath != null) {
+                    searchPath = parameterPath;
+                } else {
+                    searchPath = path;
+                }
 
-            final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
+                final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
 
-            Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
-            if (correctSourceFile.isPresent()) {
-                SourceFile sourceFile = correctSourceFile.get();
-                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
-                // so in this stream we need to standardize relative to the main descriptor
-                final Path workingPath = Paths.get("/", entryVersion.get().getWorkingDirectory());
-                final Path relativize = workingPath.relativize(Paths.get(StringUtils.prependIfMissing(sourceFile.getAbsolutePath(), "/")));
-                String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
-                    .prependIfMissing(relativize.toString(), "/");
-                ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
-                return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                    .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
+                Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
+                if (correctSourceFile.isPresent()) {
+                    SourceFile sourceFile = correctSourceFile.get();
+                    // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+                    // so in this stream we need to standardize relative to the main descriptor
+                    final Path workingPath = Paths.get("/", entryVersion.get().getWorkingDirectory());
+                    final Path relativize = workingPath.relativize(Paths.get(StringUtils.prependIfMissing(sourceFile.getAbsolutePath(), "/")));
+                    String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
+                        .prependIfMissing(relativize.toString(), "/");
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
+                    return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                        .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
+                }
             }
+            return Response.status(fileNotFoundStatus).build();
+        } finally {
+            versionDAO.disableNameFilter();
         }
-        return Response.status(fileNotFoundStatus).build();
     }
 
     public static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
