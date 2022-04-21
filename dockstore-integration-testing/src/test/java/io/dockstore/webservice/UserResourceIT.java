@@ -606,18 +606,19 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getBio());
         assertNull(userProfile.getLocation());
         assertNull(userProfile.getCompany());
+        assertNull(userProfile.getLink());
         assertEquals("DockstoreTestUser2", userProfile.getUsername());
 
-        final User user = usersApi.updateLoggedInUserMetadata("github.com");
+        usersApi.updateLoggedInUserMetadata("github.com");
         userProfile = usersApi.getUser().getUserProfiles().get("github.com");
 
-        System.out.println(usersApi.getUser().getUserProfiles().get("github.com"));
         assertNull(userProfile.getName());
         assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
-        assertEquals("", userProfile.getBio());
+        assertEquals("I am a test user", userProfile.getBio());
         assertEquals("Toronto", userProfile.getLocation());
         assertNull(userProfile.getCompany());
+        assertEquals("", userProfile.getLink());
         assertEquals("DockstoreTestUser2", userProfile.getUsername());
 
         io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
@@ -728,6 +729,9 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
+        assertNull(userProfile.getBio());
+        assertNull(userProfile.getCompany());
+        assertNull(userProfile.getLink());
 
         // The API call updateUserMetadata() should not throw an error and exit if any users' tokens are out of date or absent
         // Additionally, the API call should go through and sync DockstoreTestUser2's GitHub data
@@ -737,6 +741,10 @@ public class UserResourceIT extends BaseIT {
         assertEquals("dockstore.test.user2@gmail.com", userProfile.getEmail());
         assertTrue(userProfile.getAvatarURL().endsWith("githubusercontent.com/u/17859829?v=4"));
         assertEquals("Toronto", userProfile.getLocation());
+        assertEquals("I am a test user", userProfile.getBio());
+        assertNull(userProfile.getCompany());
+        assertEquals("", userProfile.getLink());
+        assertEquals("DockstoreTestUser2", userProfile.getUsername());
     }
 
     /**
@@ -757,6 +765,9 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
+        assertNull(userProfile.getBio());
+        assertNull(userProfile.getCompany());
+        assertNull(userProfile.getLink());
 
         // Call the API method while the caller has no token
         // An error should not be thrown and the call should pass, but every user should not have their GitHub information synced
@@ -766,6 +777,9 @@ public class UserResourceIT extends BaseIT {
         assertNull(userProfile.getEmail());
         assertNull(userProfile.getAvatarURL());
         assertNull(userProfile.getLocation());
+        assertNull(userProfile.getBio());
+        assertNull(userProfile.getCompany());
+        assertNull(userProfile.getLink());
     }
 
     @Test

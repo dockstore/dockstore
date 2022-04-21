@@ -8534,6 +8534,8 @@ components:
           type: string
         email:
           type: string
+        link:
+          type: string
         location:
           type: string
         name:
