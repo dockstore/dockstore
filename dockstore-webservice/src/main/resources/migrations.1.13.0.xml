@@ -26,4 +26,14 @@
             <column name="bio" type="text"/>
         </addColumn>
     </changeSet>
+    <changeSet author="ktran" id="convertUserProfileEmptyStringToNull">
+        <update tableName="user_profile">
+            <column name="link"/>
+            <where>link = ''</where>
+        </update>
+        <update tableName="user_profile">
+            <column name="name"/>
+            <where>name = ''</where>
+        </update>
+    </changeSet>
 </databaseChangeLog>
