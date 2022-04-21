@@ -302,12 +302,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Get a list of all the orgs a user has access to
-     * Based on the ALL repository filter, since getAllOrganizations() only returns organizations the user owns
+     * Based on the ALL repository filter, since getAllOrganizations() does not return personal user accounts.
      * @return
      */
     public Set<String> getMyOrganizations() {
         try {
-            final int pageSize = 30;
+            final int pageSize = 100;
             return github.getMyself()
                 .listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL)
                 .asList()
@@ -317,6 +317,30 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             LOG.error("could not find organizations due to ", e);
             throw new CustomWebApplicationException("could not read organizations from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Determine if the specified organization is one that github considers the user has "access" to.
+     * Incorporates some optimizations for the common cases, and falls back to getMyOrganizations()
+     */
+    public boolean isOneOfMyOrganizations(String organization) {
+        try {
+            // The following statements could be condensed into a single OR conditional, but it would be hard to comment, and you would have to grok the short-circuiting to understand it...
+            // The user can always access their own account.
+            if (organization.equals(githubTokenUsername)) {
+                return true;
+            }
+            // Check the list of organizations that github says the user can "access".
+            // Note that getAllOrganizations() only returns organizations, not personal user accounts.
+            if (github.getMyself().getAllOrganizations().stream().anyMatch(org -> org.getLogin().equals(organization))) {
+                return true;
+            }
+            // getMyOrganizations() should enumerate the other possibilities.
+            return getMyOrganizations().contains(organization);
+        } catch (IOException e) {
+            LOG.error("could not determine organization accessibility due to ", e);
+            throw new CustomWebApplicationException("could not determine organization accessibility on github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import java.util.Set;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -61,15 +60,18 @@ public class LambdaEventResource {
             @ApiParam(value = PAGINATION_OFFSET_TEXT) @QueryParam("offset") @DefaultValue("0") String offset,
             @ApiParam(value = PAGINATION_LIMIT_TEXT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit) {
         User authUser = userDAO.findById(user.getId());
-        List<Token> githubToken = tokenDAO.findGithubByUserId(authUser.getId());
-        if (githubToken.size() == 0) {
+        List<Token> githubTokens = tokenDAO.findGithubByUserId(authUser.getId());
+        if (githubTokens.isEmpty()) {
             throw new CustomWebApplicationException("You do not have GitHub connected to your account.", HttpStatus.SC_BAD_REQUEST);
         }
+        Token githubToken = githubTokens.get(0);
 
-        GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken.get(0));
-        Set<String> organizations = sourceCodeRepoInterface.getMyOrganizations();
-        if (!organizations.contains(organization)) {
-            throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_UNAUTHORIZED);
+        // If the organization isn't the user's github account, check github to see if we have access to the organization.
+        if (!organization.equals(githubToken.getUsername())) {
+            GitHubSourceCodeRepo sourceCodeRepoInterface = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken);
+            if (!sourceCodeRepoInterface.isOneOfMyOrganizations(organization)) {
+                throw new CustomWebApplicationException("You do not have access to the GitHub organization '" + organization + "'", HttpStatus.SC_UNAUTHORIZED);
+            }
         }
 
         return lambdaEventDAO.findByOrganization(organization, offset, limit);
