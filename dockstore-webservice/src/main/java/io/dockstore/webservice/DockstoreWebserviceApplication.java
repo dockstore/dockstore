@@ -419,6 +419,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setServiceDAO(serviceDAO);
         ToolsApiServiceImpl.setAppToolDAO(appToolDAO);
         ToolsApiServiceImpl.setFileDAO(fileDAO);
+        ToolsApiServiceImpl.setVersionDAO(versionDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         ToolsApiServiceImpl.setTrsListener(trsListener);
         ToolsApiServiceImpl.setAuthorizer(authorizer);

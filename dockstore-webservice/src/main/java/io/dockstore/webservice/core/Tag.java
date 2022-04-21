@@ -44,6 +44,7 @@ import org.apache.commons.lang3.ObjectUtils;
 @Entity
 @SuppressWarnings("checkstyle:magicnumber")
 @Table(name = "tag", uniqueConstraints = @UniqueConstraint(name = "unique_tag_names", columnNames = { "parentid", "name" }))
+
 public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
