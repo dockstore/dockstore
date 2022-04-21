@@ -598,14 +598,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return BAD_DECODE_VERSION_RESPONSE;
         }
 
-        // The performance of this method was poor: to retrieve a single file for a particular entry, it iterates through the entry's Versions, checking them one-by-one until it finds a match.
-        // See the related ticket: https://ucsc-cgl.atlassian.net/browse/DOCK-1921
+        // The performance of this method was poor: to retrieve a single file for a particular version of an entry, it iterates through all of the entry's Versions, checking them one-by-one until it finds a match.
+        // See the related issue: https://github.com/dockstore/dockstore/issues/4480
         //
-        // To improve performance, we added the following try block which enables a Filter which limits the subsequent queries to return only Version objects that match the specified version name.
+        // To improve performance, we enable a Filter that limits the subsequent queries to return only Version objects that match the specified version name.
         // Similarly, when the filter is enabled, properly-annotated associations only contain Versions that match the specified version name.
-        // The associated finally disables the Filter upon exit from the try block, so that any subsequently-executed code will see all the Versions, like normal.
-        // Essentially, the following code works the same as the original, except that, from its point-of-view, the only Versions that exist are the ones with the specified name.
-        // Thus, only the Version-of-interest is retrieved from the db, and all the superfluous db version queries are avoided.
+        // Upon exit from the following try block, the Filter is disabled, so that any subsequently-executed code will see all Versions, like normal.
+        // Essentially, the new code works/is the same as the original, except that, from its point-of-view, the only Versions that exist are the ones with the specified name.
+        // Thus, only the Version-of-interest is retrieved from the db, and all of the superfluous version db queries are avoided.
         try {
             versionDAO.enableNameFilter(versionId);
 
