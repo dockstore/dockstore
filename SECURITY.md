@@ -3,7 +3,7 @@
 ## Supported Versions
 
 The Dockstore system routinely receives security updates to the most recently
-released tagged version. All previous versions are unsupported.
+released tagged minor version. All previous versions are unsupported.
 
 ## Reporting a Vulnerability
 
