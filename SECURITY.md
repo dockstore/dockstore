@@ -7,14 +7,14 @@ released tagged version. All previous versions are unsupported.
 
 ## Reporting a Vulnerability
 
-Users are able to open helpdesk tickets on Discourse. Users can create helpdesk tickets in case of privacy complaints, security vulnerabilities, or any other urgent matter related to Dockstore. Helpdesk tickets will be addressed by Dockstore administrators.
+Users are able to open helpdesk tickets on [Discourse](https://discuss.dockstore.org/). Users can create helpdesk tickets in case of privacy complaints, security vulnerabilities, or any other urgent matter related to Dockstore. Helpdesk tickets will be addressed by Dockstore administrators.
 
-The following steps can be taken to create a helpdesk ticket (also shown here).
+The following steps can be taken to create a helpdesk ticket (also shown [here](https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506)).
 
-1. Navigate to Discourse and login.
+1. Navigate to [Discourse](https://discuss.dockstore.org/) and login.
 2. Select your profile icon, located in the top right corner of the screen.
-3. Select the mail icon, located in the dropdown.
-4. Send a message to the dockstore_admins group.
+3. Select the `mail` icon, located in the dropdown.
+4. Send a message to the `dockstore_admins` group.
 
 Note
 
