@@ -1213,7 +1213,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         profile.name = ghUser.getName();
         profile.avatarURL = ghUser.getAvatarUrl();
         profile.bio = ghUser.getBio();
-        profile.link = ghUser.getBlog();
+        // The GitHub blog field is the only one that uses an empty string for an unset value. Set it to null if there's no value.
+        profile.link = StringUtils.isNotEmpty(ghUser.getBlog()) ? ghUser.getBlog() : null;
         profile.location = ghUser.getLocation();
         profile.company = ghUser.getCompany();
         Map<String, User.Profile> userProfile = user.getUserProfiles();
