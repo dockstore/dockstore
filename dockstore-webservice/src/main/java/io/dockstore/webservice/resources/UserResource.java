@@ -783,13 +783,12 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
         entriesLite.addAll(serviceDAO.findEntryVersions(userId));
 
         //cleanup fields for UI: filter(if applicable), sort, and limit by count(if applicable)
-        List<EntryUpdateTime> filteredEntries = entriesLite
+        return entriesLite
                 .stream().map(e -> new EntryUpdateTime(e.getEntryPath(), e.getPrettyPath(), e.getEntryType(), new Timestamp(e.getLastUpdated().getTime())))
                 .filter((EntryUpdateTime entryUpdateTime) -> filter == null || filter.isBlank() || entryUpdateTime.getPath().toLowerCase().contains(filter.toLowerCase()))
                 .sorted(Comparator.comparing(EntryUpdateTime::getLastUpdateDate, Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(count != null ? count : Integer.MAX_VALUE)
                 .collect(Collectors.toList());
-        return filteredEntries;
     }
 
     @GET

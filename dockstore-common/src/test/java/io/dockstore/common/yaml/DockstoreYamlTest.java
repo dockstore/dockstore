@@ -227,9 +227,8 @@ public class DockstoreYamlTest {
 
     @Test
     public void testWrongKeys() {
-        final String content = DOCKSTORE_GALAXY_YAML;
         try {
-            DockstoreYamlHelper.readAsDockstoreYaml12(content);
+            DockstoreYamlHelper.readAsDockstoreYaml12(DOCKSTORE_GALAXY_YAML);
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             Assert.fail("Should be able to parse correctly");
         }

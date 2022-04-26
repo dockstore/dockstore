@@ -41,8 +41,7 @@ public class WdlBridgeTest {
         final WdlBridge wdlBridge = new WdlBridge();
         final WomBundle bundleFromContent = wdlBridge.getBundleFromContent(filePath, filePath, filePath);
         final ExecutableCallable executableCallable = wdlBridge.convertBundleToExecutableCallable(bundleFromContent);
-        final Map<String, DockerParameter> callsToDockerMap = wdlBridge.getCallsToDockerMap(executableCallable);
-        return callsToDockerMap;
+        return wdlBridge.getCallsToDockerMap(executableCallable);
     }
 
     @Test
