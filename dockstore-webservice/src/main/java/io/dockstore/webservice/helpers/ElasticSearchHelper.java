@@ -41,12 +41,8 @@ public final class  ElasticSearchHelper implements Managed {
         } else {
             final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(config.getUser(), config.getPassword()));
-            return builder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                @Override
-                public HttpAsyncClientBuilder customizeHttpClient(final HttpAsyncClientBuilder httpAsyncClientBuilder) {
-                    return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                }
-            });
+            return builder.setHttpClientConfigCallback(httpAsyncClientBuilder ->
+                    httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
         }
     }
 

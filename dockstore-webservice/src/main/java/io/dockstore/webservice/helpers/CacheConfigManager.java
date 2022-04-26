@@ -92,12 +92,9 @@ public class CacheConfigManager {
                     .maximumSize(maxSize)
                     .expireAfterWrite(timeOutInMinutes, TimeUnit.MINUTES)
                     .recordStats()
-                    .build(new CacheLoader<>() {
-                        @Override
-                        public String load(String installationId) throws Exception {
-                            LOG.info("Fetching installation " + installationId + " from cache.");
-                            return getInstallationAccessTokenFromInstallationId(installationId);
-                        }
+                    .build(installationId -> {
+                        LOG.info("Fetching installation " + installationId + " from cache.");
+                        return getInstallationAccessTokenFromInstallationId(installationId);
                     });
         }
     }
