@@ -164,12 +164,11 @@ public class ExtendedNextflowIT extends BaseIT {
             if (workflowVersion.getName().equals(versionWithReadmeDescription)) {
                 Assert.assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
                 Assert.assertNull(workflowVersion.getAuthor());
-                Assert.assertNull(workflowVersion.getEmail());
             } else {
                 Assert.assertNotNull(descriptorDescription, workflowVersion.getDescription());
                 Assert.assertEquals("test.user@test.com", workflowVersion.getAuthor());
-                Assert.assertNull(workflowVersion.getEmail());
             }
+            Assert.assertNull(workflowVersion.getEmail());
         });
     }
 

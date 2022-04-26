@@ -641,12 +641,10 @@ public abstract class AbstractImageRegistry {
     private void updateImageInformation(Tool tool, Tag newTag, Tag oldTag) {
         // If old tag does not have image information yet, try to set it. If it does, potentially old tag could have been deleted on
         // GitHub and replaced with tag of the same name. Check that the image is the same. If not, replace.
-        if (oldTag.getImages().isEmpty() && tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
-            oldTag.getImages().addAll(newTag.getImages());
-        } else {
+        if (!oldTag.getImages().isEmpty() || !tool.getRegistry().equals(Registry.QUAY_IO.getDockerPath())) {
             oldTag.getImages().removeAll(oldTag.getImages());
-            oldTag.getImages().addAll(newTag.getImages());
         }
+        oldTag.getImages().addAll(newTag.getImages());
     }
 
     private List<Tag> getTagsGitLab(Tool tool) {

@@ -354,11 +354,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 Path<Object> sortPath = entry.get(sortCol);
                 if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
                     query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id")));
-                    predicates.add(sortPath.isNotNull());
                 } else {
                     query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id")));
-                    predicates.add(sortPath.isNotNull());
                 }
+                predicates.add(sortPath.isNotNull());
             }
         }
         query.where(predicates.toArray(new Predicate[]{}));
