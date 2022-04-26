@@ -22,6 +22,7 @@ import io.swagger.sam.client.model.ErrorReport;
 import io.swagger.sam.client.model.ResourceAndAccessPolicy;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -164,11 +165,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
             return weedOutDuplicateResourceIds(resourceAndAccessPolicies).stream()
                     .collect(Collectors.groupingBy(ResourceAndAccessPolicy::getAccessPolicyName)).entrySet().stream()
                     .collect(Collectors.toMap(e -> samPolicyNameToRole(e.getKey()), e -> e.getValue().stream().map(r -> {
-                        try {
-                            return URLDecoder.decode(r.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()), "UTF-8");
-                        } catch (UnsupportedEncodingException e1) {
-                            return null;
-                        }
+                        return URLDecoder.decode(r.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()), StandardCharsets.UTF_8);
                     }).collect(Collectors.toList())));
         } catch (ApiException e) {
             LOG.error("Error getting shared workflows", e);
