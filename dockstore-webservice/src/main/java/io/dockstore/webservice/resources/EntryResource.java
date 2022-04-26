@@ -206,8 +206,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
 
         checkEntryPermissions(user, entry);
 
-        List<VersionVerifiedPlatform> verifiedVersions = versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
-        return verifiedVersions;
+        return versionDAO.findEntryVersionsWithVerifiedPlatforms(entryId);
     }
 
     @GET
@@ -443,8 +442,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         // Use the GitHub token of the admin making this call
         Token t = tokenDAO.findGithubByUserId(user.getId()).get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(t);
-        int numOfEntriesNotUpdatedWithTopic = gitHubSourceCodeRepo.syncTopics(githubEntries);
-        return numOfEntriesNotUpdatedWithTopic;
+        return gitHubSourceCodeRepo.syncTopics(githubEntries);
     }
 
     /**

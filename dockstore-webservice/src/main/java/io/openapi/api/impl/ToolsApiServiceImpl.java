@@ -625,21 +625,20 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             final io.openapi.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config, showHiddenVersions);
 
-            String finalVersionId = versionId;
             if (convertedTool == null || convertedTool.getVersions() == null) {
                 return Response.status(Status.NOT_FOUND).build();
             }
             final Optional<ToolVersion> convertedToolVersion = convertedTool.getVersions().stream()
-                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(versionId)).findFirst();
             Optional<? extends Version<?>> entryVersion;
             if (entry instanceof Tool) {
                 Tool toolEntry = (Tool)entry;
-                entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
+                entryVersion = toolEntry.getWorkflowVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(versionId))
                     .findFirst();
             } else {
                 Workflow workflowEntry = (Workflow)entry;
                 entryVersion = workflowEntry.getWorkflowVersions().stream()
-                    .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+                    .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(versionId)).findFirst();
             }
 
             if (entryVersion.isEmpty()) {

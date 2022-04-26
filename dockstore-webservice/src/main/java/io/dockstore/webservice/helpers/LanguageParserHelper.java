@@ -41,8 +41,7 @@ public final class LanguageParserHelper {
         HttpRequest request = convertLanguageParsingRequestToHttpRequest(languageParsingRequest);
         HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() == HttpURLConnection.HTTP_OK) {
-            LanguageParsingResponse languageParsingResponse = MAPPER.readValue(response.body(), LanguageParsingResponse.class);
-            return languageParsingResponse;
+            return MAPPER.readValue(response.body(), LanguageParsingResponse.class);
         } else {
             LOGGER.error("Language parsing failed.");
             return new LanguageParsingResponse();

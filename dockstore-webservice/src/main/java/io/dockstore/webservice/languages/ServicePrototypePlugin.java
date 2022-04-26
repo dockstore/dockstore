@@ -77,8 +77,7 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
         if (!validationMessage.isEmpty()) {
             validationMessageObject.put(initialPath, validationMessage);
         }
-        VersionTypeValidation validation = new VersionTypeValidation(validationMessageObject.isEmpty(), validationMessageObject);
-        return validation;
+        return new VersionTypeValidation(validationMessageObject.isEmpty(), validationMessageObject);
     }
 
     @Override
@@ -113,9 +112,8 @@ public class ServicePrototypePlugin implements RecommendedLanguageInterface {
             // TODO: Temporary; followup with https://github.com/dockstore/dockstore/issues/3356
             final Service12 service = dockstoreYaml12.getService();
             if (service != null) {
-                final Service12 service12 = service;
-                metadata.setAuthor(service12.getAuthor());
-                metadata.setDescription(service12.getDescription());
+                metadata.setAuthor(service.getAuthor());
+                metadata.setDescription(service.getDescription());
             }
         } catch (DockstoreYamlHelper.DockstoreYamlException ex) {
             LOG.error("Error parsing service metadata.", ex);

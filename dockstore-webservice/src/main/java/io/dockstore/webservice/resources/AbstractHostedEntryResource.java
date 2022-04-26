@@ -137,8 +137,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         T entry = getEntry(user, convertedRegistry, name, descriptorLanguage, namespace, entryName);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
-        T byId = getEntryDAO().findById(l);
-        return byId;
+        return getEntryDAO().findById(l);
     }
 
     protected abstract void checkForDuplicatePath(T entry);

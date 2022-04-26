@@ -556,8 +556,7 @@ public final class ToolsImplCommon {
     }
 
     private static List<Checksum> convertToTRSChecksums(final SourceFile sourceFile) {
-        List<Checksum> trsChecksums = ToolsApiServiceImpl.convertToTRSChecksums(sourceFile);
-        return trsChecksums;
+        return ToolsApiServiceImpl.convertToTRSChecksums(sourceFile);
     }
 
     /**
