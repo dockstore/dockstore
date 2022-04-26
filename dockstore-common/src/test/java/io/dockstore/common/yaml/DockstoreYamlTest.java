@@ -87,7 +87,7 @@ public class DockstoreYamlTest {
         final List<YamlWorkflow> workflows = dockstoreYaml.getWorkflows();
         assertEquals(3, workflows.size());
         final Optional<YamlWorkflow> workflowFoobar = workflows.stream().filter(w -> "foobar".equals(w.getName())).findFirst();
-        if (!workflowFoobar.isPresent()) {
+        if (workflowFoobar.isEmpty()) {
             fail("Could not find workflow foobar");
         }
 

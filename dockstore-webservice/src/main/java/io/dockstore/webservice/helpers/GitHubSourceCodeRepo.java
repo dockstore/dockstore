@@ -822,7 +822,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                 return (Objects.equals(dockstoreWorkflowPath, workflow.getEntryPath()));
             }).findFirst();
-            if (!maybeWorkflow.isPresent()) {
+            if (maybeWorkflow.isEmpty()) {
                 return null;
             }
             theWf = maybeWorkflow.get();

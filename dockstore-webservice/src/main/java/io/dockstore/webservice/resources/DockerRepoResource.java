@@ -1108,7 +1108,7 @@ public class DockerRepoResource
     private static boolean isGit(String url) {
         final Optional<Map<String, String>> stringStringGitUrlMap = SourceCodeRepoFactory
             .parseGitUrl(url);
-        return !stringStringGitUrlMap.isEmpty();
+        return stringStringGitUrlMap.isPresent();
     }
 
     /**

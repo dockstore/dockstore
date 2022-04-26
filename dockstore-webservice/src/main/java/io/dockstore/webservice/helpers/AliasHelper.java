@@ -33,7 +33,7 @@ public final class AliasHelper {
      */
     public static Workflow getWorkflow(WorkflowDAO workflowDAO, long workflowVersionId) {
         Optional<Workflow> workflow = workflowDAO.getWorkflowByWorkflowVersionId(workflowVersionId);
-        if (!workflow.isPresent()) {
+        if (workflow.isEmpty()) {
             LOG.error("Could not get workflow based on workflow version id " + workflowVersionId);
             throw new CustomWebApplicationException("Could not get workflow based on workflow version id " + workflowVersionId, HttpStatus.SC_NOT_FOUND);
         }

@@ -1755,7 +1755,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
             gitUrl = tool.getGitUrl();
             final Optional<Map<String, String>> stringStringGitUrlMapOpt = SourceCodeRepoFactory
                 .parseGitUrl(gitUrl);
-            if (!stringStringGitUrlMapOpt.isEmpty()) {
+            if (stringStringGitUrlMapOpt.isPresent()) {
                 SourceControlConverter converter = new SourceControlConverter();
                 final Map<String, String> stringStringGitUrlMap = stringStringGitUrlMapOpt.get();
                 sourceControl = converter.convertToEntityAttribute(stringStringGitUrlMap.get(SourceCodeRepoFactory.GIT_URL_SOURCE_KEY));
