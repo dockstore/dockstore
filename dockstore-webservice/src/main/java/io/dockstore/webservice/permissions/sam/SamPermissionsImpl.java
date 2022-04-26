@@ -468,7 +468,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @return
      */
     List<Permission> accessPolicyResponseEntryToUserPermissions(List<AccessPolicyResponseEntry> accessPolicyList) {
-        return accessPolicyList.stream().map(accessPolicy -> {
+        return accessPolicyList.stream().flatMap(accessPolicy -> {
             Role role = samPermissionMap.get(accessPolicy.getPolicy().getRoles().get(0));
             return accessPolicy.getPolicy().getMemberEmails().stream().map(email -> {
                 Permission permission = new Permission();
@@ -476,7 +476,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
                 permission.setEmail(email);
                 return permission;
             });
-        }).flatMap(s -> s).collect(Collectors.toList());
+        }).collect(Collectors.toList());
 
     }
 
