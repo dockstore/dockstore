@@ -18,9 +18,6 @@ public final class DeletedUserHelper {
         LocalDateTime threeYearsAgoDateTime = LocalDateTime.now().minus(NO_REUSE_TIME_LIMIT);
         Timestamp threeYearsAgoTimestamp = Timestamp.valueOf(threeYearsAgoDateTime);
         DeletedUsername deletedUsername = deletedUsernameDAO.findNonReusableUsername(username, threeYearsAgoTimestamp);
-        if (deletedUsername != null) {
-            return true;
-        }
-        return false;
+        return deletedUsername != null;
     }
 }

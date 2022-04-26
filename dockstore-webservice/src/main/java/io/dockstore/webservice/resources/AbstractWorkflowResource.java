@@ -433,9 +433,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (ex instanceof CustomWebApplicationException) {
             final CustomWebApplicationException customWebAppEx = (CustomWebApplicationException)ex;
             final String errorMessage = customWebAppEx.getErrorMessage();
-            if (errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT)) {
-                return true;
-            }
+            return errorMessage != null && errorMessage.startsWith(GitHubSourceCodeRepo.OUT_OF_GIT_HUB_RATE_LIMIT);
         }
         return false;
     }

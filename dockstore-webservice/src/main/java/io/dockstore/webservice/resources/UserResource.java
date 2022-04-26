@@ -466,10 +466,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
                                    @ApiParam("User name to check") @PathParam("username") @NotBlank String username) {
         @SuppressWarnings("deprecation")
         User foundUser = userDAO.findByUsername(username);
-        if (foundUser == null && !DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO)) {
-            return false;
-        }
-        return true;
+        return foundUser != null || DeletedUserHelper.nonReusableUsernameFound(username, deletedUsernameDAO);
     }
 
     @GET

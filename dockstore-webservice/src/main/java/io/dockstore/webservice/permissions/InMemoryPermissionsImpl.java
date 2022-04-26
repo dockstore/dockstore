@@ -195,9 +195,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
         return user.getEntries().stream().anyMatch(e -> {
             if (e instanceof Workflow) {
                 final Map<String, Role> map = resourceToUsersAndRolesMap.get(((Workflow)e).getWorkflowPath());
-                if (map != null && map.keySet().stream().anyMatch(u -> !userKey.equals(u))) {
-                    return true;
-                }
+                return map != null && map.keySet().stream().anyMatch(u -> !userKey.equals(u));
             }
             return false;
         });
