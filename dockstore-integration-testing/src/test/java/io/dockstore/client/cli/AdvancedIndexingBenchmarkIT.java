@@ -171,7 +171,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         });
         int actualToolCount = tools.size();
         assertEquals("Supposed to have " + TOOL_COUNT + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount, TOOL_COUNT);
-        LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
+        LOGGER.error("Amount of tools created: " + actualToolCount);
         for (Long indexTime : indexTimes) {
             LOGGER.error(String.valueOf(indexTime));
         }
