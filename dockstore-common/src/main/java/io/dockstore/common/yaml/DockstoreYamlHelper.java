@@ -53,7 +53,7 @@ public final class DockstoreYamlHelper {
 
             @Override
             public void validateDockstoreYamlProperties(final String content) throws DockstoreYamlException {
-                return; // Don't validate properties for 1.0
+                // Don't validate properties for 1.0
             }
         },
         ONE_ONE("1.1") {
