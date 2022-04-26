@@ -185,11 +185,7 @@ public interface LanguageHandlerInterface {
 
     default String getCleanDAG(String mainDescriptorPath, String mainDescriptor, Set<SourceFile> secondarySourceFiles, Type type, ToolDAO dao) {
         Optional<String> content = getContent(mainDescriptorPath, mainDescriptor, secondarySourceFiles, type, dao);
-        if (content.isPresent()) {
-            return DAGHelper.cleanDAG(content.get());
-        } else {
-            return null;
-        }
+        return content.map(DAGHelper::cleanDAG).orElse(null);
     }
 
     default ParsedInformation getParsedInformation(Version version, DescriptorLanguage descriptorLanguage) {

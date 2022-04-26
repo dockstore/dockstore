@@ -418,11 +418,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(position = 21)
     public String getAuthor() {
         Optional<Author> author = this.authors.stream().findFirst();
-        if (author.isPresent()) {
-            return author.get().getName();
-        } else {
-            return null;
-        }
+        return author.map(Author::getName).orElse(null);
     }
 
     @ApiModelProperty(position = 22)
@@ -438,11 +434,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(position = 24)
     public String getEmail() {
         Optional<Author> author = this.authors.stream().findFirst();
-        if (author.isPresent()) {
-            return author.get().getEmail();
-        } else {
-            return null;
-        }
+        return author.map(Author::getEmail).orElse(null);
     }
 
     public Set<Author> getAuthors() {

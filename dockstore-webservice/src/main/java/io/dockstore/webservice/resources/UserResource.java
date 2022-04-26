@@ -1254,10 +1254,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
      */
     private boolean canDeleteWorkflow(String path) {
         Optional<BioWorkflow> workflow = workflowDAO.findByPath(path, false, BioWorkflow.class);
-        if (workflow.isPresent()) {
-            return workflow.get().getMode() == WorkflowMode.STUB;
-        }
-        return false;
+        return workflow.filter(bioWorkflow -> bioWorkflow.getMode() == WorkflowMode.STUB).isPresent();
     }
 
     /**

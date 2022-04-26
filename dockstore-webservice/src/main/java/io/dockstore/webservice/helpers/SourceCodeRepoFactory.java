@@ -140,8 +140,8 @@ public final class SourceCodeRepoFactory {
         final String githubRepositoryRegex1 = "[^\\s:]++";
         final String githubRepositoryRegex2 = "[^\\s/]++";
 
-        String sourceNameRegex1 = sourceName.isPresent() ? sourceName.get() : githubRepositoryRegex1;
-        String sourceNameRegex2 = sourceName.isPresent() ? sourceName.get() : githubRepositoryRegex2;
+        String sourceNameRegex1 = sourceName.orElse(githubRepositoryRegex1);
+        String sourceNameRegex2 = sourceName.orElse(githubRepositoryRegex2);
         // Avoid SonarCloud warning: Using slow regular expressions is security-sensitive
         // https://sonarcloud.io/organizations/dockstore/rules?open=java%3AS5852&rule_key=java%3AS5852
         // See Prevent Catastrophic Backtracking and Possessive Quantifiers and Atomic Grouping to The Rescue
