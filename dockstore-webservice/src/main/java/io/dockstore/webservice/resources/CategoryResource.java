@@ -71,7 +71,7 @@ public class CategoryResource implements AuthenticatedResourceInterface {
         List<Category> categories;
         if (name != null) {
             Category category = categoryDAO.findByName(name);
-            categories = (category != null) ? Arrays.asList(category) : Collections.emptyList();
+            categories = (category != null) ? Collections.singletonList(category) : Collections.emptyList();
         } else {
             categories = categoryDAO.getCategories();
         }

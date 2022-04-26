@@ -7,6 +7,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -64,7 +65,7 @@ public class VerifiedInformationMigrationIT {
 
         // Run full 1.5.0 migration
         try {
-            List<String> migrationList = Arrays.asList("1.5.0");
+            List<String> migrationList = Collections.singletonList("1.5.0");
             CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
         } catch (Exception e) {
             Assert.fail("Could not run 1.5.0 migration");

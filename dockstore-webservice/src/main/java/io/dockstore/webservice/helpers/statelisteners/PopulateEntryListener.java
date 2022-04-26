@@ -49,7 +49,7 @@ public class PopulateEntryListener implements StateListenerInterface {
 
     @Override
     public void handleIndexUpdate(Entry entry, StateManagerMode command) {
-        populate(Arrays.asList(entry));
+        populate(Collections.singletonList(entry));
     }
 
     @Override
