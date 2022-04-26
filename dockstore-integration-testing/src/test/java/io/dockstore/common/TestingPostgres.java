@@ -32,7 +32,7 @@ public class TestingPostgres {
 
     private static final String SELECT_COUNT_FROM_EVENT_E_WHERE_E_TYPE =
         "select count(*) from event e where e.type = ";
-    private Jdbi jdbi;
+    private final Jdbi jdbi;
 
     public TestingPostgres(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
         DataSourceFactory dataSourceFactory = support.getConfiguration().getDataSourceFactory();

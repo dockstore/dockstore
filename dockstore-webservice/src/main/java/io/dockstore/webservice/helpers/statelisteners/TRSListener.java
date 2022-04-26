@@ -31,7 +31,7 @@ public class TRSListener implements StateListenerInterface {
     // TODO: implementor should tune this https://github.com/google/guava/wiki/CachesExplained
     // arbitrarily picked 20
     private static final int MAXIMUM_SIZE = 20;
-    private Cache<Integer, Response.ResponseBuilder> trsResponses = Caffeine.newBuilder()
+    private final Cache<Integer, Response.ResponseBuilder> trsResponses = Caffeine.newBuilder()
         // TODO: implementor should try to weight larger responses (like getting all tools without limits)
         .maximumSize(MAXIMUM_SIZE)
         // TODO: should refactor to use CacheLoader properly with a LoadingCache

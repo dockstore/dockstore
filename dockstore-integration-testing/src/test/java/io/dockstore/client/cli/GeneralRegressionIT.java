@@ -59,7 +59,7 @@ import org.junit.rules.TemporaryFolder;
 @Category({ RegressionTest.class })
 public class GeneralRegressionIT extends BaseIT {
     @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public static final TemporaryFolder temporaryFolder = new TemporaryFolder();
     static URL url;
     static File dockstore;
     private static final String DOCKERHUB_TOOL_PATH = "registry.hub.docker.com/testPath/testUpdatePath/test5";

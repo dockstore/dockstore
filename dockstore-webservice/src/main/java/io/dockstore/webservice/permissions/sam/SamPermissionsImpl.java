@@ -49,7 +49,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
     /**
      * A map of SAM policy names to Dockstore roles.
      */
-    private static Map<String, Role> samPermissionMap = new HashMap<>();
+    private static final Map<String, Role> samPermissionMap = new HashMap<>();
 
     static {
         samPermissionMap.put(SamConstants.OWNER_POLICY, Role.OWNER);
@@ -61,7 +61,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * A map of Dockstore roles to SAM policy names. Created by swapping the keys and values
      * in the <code>samPermissionMap</code>.
      */
-    private static Map<Role, String> permissionSamMap = samPermissionMap.entrySet().stream()
+    private static final Map<Role, String> permissionSamMap = samPermissionMap.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
     private DockstoreWebserviceConfiguration config;

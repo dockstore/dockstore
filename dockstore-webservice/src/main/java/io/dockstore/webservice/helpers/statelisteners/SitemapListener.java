@@ -31,7 +31,7 @@ public class SitemapListener implements StateListenerInterface {
     // The cache only has one key, arbitrarily choosing it to be this
     public static final String SITEMAP_KEY = "sitemap";
     private static final Logger LOGGER = LoggerFactory.getLogger(SitemapListener.class);
-    private Cache<String, SortedSet<String>> cache = Caffeine.newBuilder().build();
+    private final Cache<String, SortedSet<String>> cache = Caffeine.newBuilder().build();
 
     /**
      * Custom getter

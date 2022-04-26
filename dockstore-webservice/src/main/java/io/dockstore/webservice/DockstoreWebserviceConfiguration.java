@@ -43,7 +43,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     @Valid
     @NotNull
-    private ExternalConfig externalConfig = new ExternalConfig();
+    private final ExternalConfig externalConfig = new ExternalConfig();
 
     @Valid
     private SamConfiguration samConfiguration = new SamConfiguration();
@@ -134,7 +134,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String sqsURL;
 
-    private String toolTesterBucket = null;
+    private final String toolTesterBucket = null;
 
     private String authorizerType = null;
 

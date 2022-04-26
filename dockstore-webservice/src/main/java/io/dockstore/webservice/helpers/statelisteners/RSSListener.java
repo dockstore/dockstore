@@ -30,7 +30,7 @@ public class RSSListener implements StateListenerInterface {
 
     public static final String RSS_KEY = "rss";
     private static final Logger LOGGER = LoggerFactory.getLogger(RSSListener.class);
-    private Cache<String, String> cache = Caffeine.newBuilder().build();
+    private final Cache<String, String> cache = Caffeine.newBuilder().build();
 
     /**
      * Custom getter

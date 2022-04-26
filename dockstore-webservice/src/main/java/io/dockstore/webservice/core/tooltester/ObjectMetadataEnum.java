@@ -27,7 +27,7 @@ public enum ObjectMetadataEnum {
     TEST_FILE_PATH("test_file_path"),
     RUNNER("runner");
 
-    private String metadataKey;
+    private final String metadataKey;
 
     ObjectMetadataEnum(String metadata) {
         this.metadataKey = metadata;

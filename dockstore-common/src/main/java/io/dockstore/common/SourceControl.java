@@ -63,9 +63,9 @@ public enum SourceControl {
      */
     public static class SourceControlBean {
 
-        public String value;
+        public final String value;
 
-        public String friendlyName;
+        public final String friendlyName;
 
         public SourceControlBean(SourceControl sourceControl) {
             this.value = sourceControl.toString();

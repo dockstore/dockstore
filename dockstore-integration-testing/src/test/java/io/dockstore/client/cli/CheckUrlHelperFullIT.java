@@ -44,7 +44,7 @@ import org.junit.runner.Description;
 @Category(ConfidentialTest.class)
 public class CheckUrlHelperFullIT {
 
-    public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
+    public static final String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
 
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE =

@@ -119,7 +119,7 @@ public class SwaggerClientIT extends BaseIT {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
 
     @Before
     @Override

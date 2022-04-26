@@ -26,7 +26,7 @@ import javax.ws.rs.core.SecurityContext;
 
 public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
 
-    private static io.openapi.api.impl.ToolsApiServiceImpl finalConverterImpl = new io.openapi.api.impl.ToolsApiServiceImpl();
+    private static final io.openapi.api.impl.ToolsApiServiceImpl finalConverterImpl = new io.openapi.api.impl.ToolsApiServiceImpl();
 
     @Override
     public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {

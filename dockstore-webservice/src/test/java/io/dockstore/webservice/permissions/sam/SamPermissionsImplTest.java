@@ -63,7 +63,7 @@ public class SamPermissionsImplTest {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
     @Rule
     public TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
@@ -73,8 +73,8 @@ public class SamPermissionsImplTest {
     private AccessPolicyResponseEntry ownerPolicy;
     private AccessPolicyResponseEntry writerPolicy;
     private SamPermissionsImpl samPermissionsImpl;
-    private User userMock = Mockito.mock(User.class);
-    private User noGoogleUser = Mockito.mock(User.class);
+    private final User userMock = Mockito.mock(User.class);
+    private final User noGoogleUser = Mockito.mock(User.class);
     private ResourcesApi resourcesApiMock;
     private Workflow workflowInstance;
     private Permission ownerPermission;

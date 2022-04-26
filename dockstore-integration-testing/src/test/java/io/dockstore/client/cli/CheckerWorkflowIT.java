@@ -65,7 +65,7 @@ public class CheckerWorkflowIT extends BaseIT {
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
 
     @Before
     @Override

@@ -37,10 +37,10 @@ import org.junit.Test;
 
 public class CheckUrlHelperIT {
 
-    public static String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
+    public static final String fakeCheckUrlLambdaBaseURL = "http://fakecheckurllambdabaseurl:3000";
 
     @ClassRule
-    public static HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(CHECK_URL_SOURCE, localConfigs().destination(fakeCheckUrlLambdaBaseURL));
+    public static final HoverflyRule hoverflyRule = HoverflyRule.inSimulationMode(CHECK_URL_SOURCE, localConfigs().destination(fakeCheckUrlLambdaBaseURL));
 
     @Test
     public void checkUrlsFromLambdaGood() throws IOException {

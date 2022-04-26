@@ -17,7 +17,7 @@ public final class  ElasticSearchHelper implements Managed {
 
     private static RestHighLevelClient restHighLevelClient = null;
 
-    private DockstoreWebserviceConfiguration.ElasticSearchConfig config;
+    private final DockstoreWebserviceConfiguration.ElasticSearchConfig config;
 
     public ElasticSearchHelper(DockstoreWebserviceConfiguration.ElasticSearchConfig config) {
         this.config = config;

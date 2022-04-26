@@ -29,8 +29,8 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 public class SQSDOIScheduler implements DOIGeneratorInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(SQSDOIScheduler.class);
-    private String sqsURL;
-    private Gson gson = new GsonBuilder().create();
+    private final String sqsURL;
+    private final Gson gson = new GsonBuilder().create();
 
     SQSDOIScheduler(String sqsURL) {
         this.sqsURL = sqsURL;

@@ -428,7 +428,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * Looks like this is used just to denote which descriptor is the primary descriptor
      */
     class FileDescription {
-        boolean primaryDescriptor;
+        final boolean primaryDescriptor;
 
         FileDescription(boolean isPrimaryDescriptor) {
             this.primaryDescriptor = isPrimaryDescriptor;

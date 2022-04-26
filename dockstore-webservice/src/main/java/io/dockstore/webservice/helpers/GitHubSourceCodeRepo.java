@@ -106,7 +106,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public static final String OUT_OF_GIT_HUB_RATE_LIMIT = "Out of GitHub rate limit";
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
-    private String githubTokenUsername;
+    private final String githubTokenUsername;
 
     /**
      *  @param githubTokenUsername the username for githubTokenContent

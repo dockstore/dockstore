@@ -24,7 +24,7 @@ public class PermissionsInterfaceTest {
     private static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
     private static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
     private User userJohn;
     private Permission janeDoeOwnerPermission;
     private Permission janeDoeWriterPermission;

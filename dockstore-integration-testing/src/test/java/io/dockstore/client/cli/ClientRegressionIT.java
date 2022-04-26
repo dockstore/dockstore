@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
 @Category({ RegressionTest.class })
 public class ClientRegressionIT extends BaseIT {
     @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public static final TemporaryFolder temporaryFolder = new TemporaryFolder();
     private static File dockstore;
     private static File testJson;
 

@@ -35,7 +35,7 @@ import org.hibernate.SessionFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Cloud Instances")
 public class CloudInstanceResource implements AuthenticatedResourceInterface {
-    private CloudInstanceDAO cloudInstanceDAO;
+    private final CloudInstanceDAO cloudInstanceDAO;
 
     public CloudInstanceResource(SessionFactory sessionFactory) {
         this.cloudInstanceDAO = new CloudInstanceDAO(sessionFactory);

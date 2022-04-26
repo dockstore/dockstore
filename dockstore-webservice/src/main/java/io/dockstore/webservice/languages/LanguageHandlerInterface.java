@@ -990,7 +990,7 @@ public interface LanguageHandlerInterface {
         /**
          * A list if ids for tools, processes that had to come before
          */
-        List<String> toolDependencyList;
+        final List<String> toolDependencyList;
 
         ToolInfo(String dockerContainer, List<String> toolDependencyList) {
             this(dockerContainer, toolDependencyList, null);

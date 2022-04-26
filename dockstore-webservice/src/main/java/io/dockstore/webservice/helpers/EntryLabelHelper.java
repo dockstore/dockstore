@@ -33,7 +33,7 @@ import org.apache.http.HttpStatus;
  * Created by dyuen on 10/03/16.
  */
 public class EntryLabelHelper<T extends Entry> {
-    private LabelDAO labelDAO;
+    private final LabelDAO labelDAO;
 
     public EntryLabelHelper(LabelDAO lDAO) {
         this.labelDAO = lDAO;

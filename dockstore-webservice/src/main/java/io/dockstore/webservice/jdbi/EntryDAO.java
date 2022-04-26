@@ -65,7 +65,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     final int repoIndex = 2;
     final int entryNameIndex = 3;
 
-    private Class<T> typeOfT;
+    private final Class<T> typeOfT;
 
     EntryDAO(SessionFactory factory) {
         super(factory);

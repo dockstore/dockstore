@@ -58,7 +58,7 @@ import org.junit.Test;
  */
 public class ToolsImplCommonTest {
     private static final String PLACEHOLDER_CONTENT = "potato";
-    private static DockstoreWebserviceConfiguration actualConfig = new DockstoreWebserviceConfiguration();
+    private static final DockstoreWebserviceConfiguration actualConfig = new DockstoreWebserviceConfiguration();
 
     @BeforeClass
     public static void setup() {

@@ -91,7 +91,7 @@ public class LimitedCRUDClientIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
 
     //TODO: duplicates BaseIT but with a different config file, attempt to simplify after release
     @Rule

@@ -28,8 +28,8 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 public final class RSSWriter {
-    private static String xmlBlock = "\n";
-    private static String xmlIndent = "\t";
+    private static final String xmlBlock = "\n";
+    private static final String xmlIndent = "\t";
 
     private RSSWriter() {
 

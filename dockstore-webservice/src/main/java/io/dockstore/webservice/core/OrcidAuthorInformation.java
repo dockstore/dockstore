@@ -20,7 +20,7 @@ import java.io.Serializable;
 
 public class OrcidAuthorInformation extends Author implements Serializable {
 
-    private String orcid;
+    private final String orcid;
 
     public OrcidAuthorInformation(String orcid) {
         this.orcid = orcid;

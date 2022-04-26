@@ -211,7 +211,7 @@ public class ToolVersionV1  {
 
         WDL("WDL");
 
-        private String value;
+        private final String value;
 
         DescriptorTypeEnum(String value) {
             this.value = value;

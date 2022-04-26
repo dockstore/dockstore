@@ -66,7 +66,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     public static final String KNOWN_BREAKAGE_MOVING_TO_1_9_0 = "Known breakage moving to 1.9.0";
 
     @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public static final TemporaryFolder temporaryFolder = new TemporaryFolder();
     static URL url;
     static File dockstore;
     private static File md5sumJson;

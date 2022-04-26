@@ -23,10 +23,10 @@ public class InMemoryPermissionsImplTest {
     private static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
     private static final String DOCKSTORE_ORG_JOHN_MYWORKFLOW = "dockstore.org/john/myworkflow";
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public final ExpectedException thrown = ExpectedException.none();
     private InMemoryPermissionsImpl inMemoryPermissions;
-    private User johnDoeUser = new User();
-    private User janeDoeUser = new User();
+    private final User johnDoeUser = new User();
+    private final User janeDoeUser = new User();
     private Workflow fooWorkflow;
     private Workflow gooWorkflow;
     private Workflow dockstoreOrgWorkflow;

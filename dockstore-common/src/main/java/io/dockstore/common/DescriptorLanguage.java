@@ -266,9 +266,9 @@ public enum DescriptorLanguage {
      */
     public static class DescriptorLanguageBean {
 
-        public String value;
+        public final String value;
 
-        public String friendlyName;
+        public final String friendlyName;
 
         public DescriptorLanguageBean(DescriptorLanguage descriptorLanguage) {
             this.value = descriptorLanguage.toString();

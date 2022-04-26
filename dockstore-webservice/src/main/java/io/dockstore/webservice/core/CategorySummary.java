@@ -28,11 +28,11 @@ import java.io.Serializable;
  * unnecessary properties, etc, and any possibly cyclical relationships.
  */
 public class CategorySummary implements Serializable {
-    private long id;
-    private String name;
-    private String description;
-    private String displayName;
-    private String topic;
+    private final long id;
+    private final String name;
+    private final String description;
+    private final String displayName;
+    private final String topic;
 
     public CategorySummary(long id, String name, String description, String displayName, String topic) {
         this.id = id;
