@@ -88,7 +88,7 @@ Setup your copy of Dockstore as a third-party application able to communicate wi
 Demo the webservice and test communication with GitHub and quay.io
 
 1. Build the project and run the webservice. NOTE: The webservice will grab and use the IP of the server running the API. For example, if running on a docker container with IP 172.17.0.24, the API will use this for the curl commands and request URLs.
-2. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
+2. Add your Github token. Follow the steps above to get your Github token. This will create a user with the same username.
 3. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
 4. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
 5. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.

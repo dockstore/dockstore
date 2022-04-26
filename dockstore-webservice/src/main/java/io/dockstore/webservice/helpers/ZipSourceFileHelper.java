@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * For protection,
  * <ol>
  *     <li>Only write up to ZIP_SIZE_LIMIT of bytes to disk.</li>
- *     <li>Look at the the compressed sizes and also only allow up to ZIP_SIZE_LIMIT of bytes</li>
+ *     <li>Look at the compressed sizes and also only allow up to ZIP_SIZE_LIMIT of bytes</li>
  *     <li>Also ensure that there are no more than ZIP_ENTRIES_LIMIT number of entries, e.g., so</li>
  * </ol>
  *
