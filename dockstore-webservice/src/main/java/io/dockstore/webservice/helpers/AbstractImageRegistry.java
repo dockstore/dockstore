@@ -758,7 +758,6 @@ public abstract class AbstractImageRegistry {
         // copy content over to existing files
         for (SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
-            List<Checksum> checksums = new ArrayList<>();
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
