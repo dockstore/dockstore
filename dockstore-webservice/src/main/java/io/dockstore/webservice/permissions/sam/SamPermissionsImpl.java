@@ -62,7 +62,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * in the <code>samPermissionMap</code>.
      */
     private static Map<Role, String> permissionSamMap = samPermissionMap.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getValue, c -> c.getKey()));
+            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
     private DockstoreWebserviceConfiguration config;
     private final TokenDAO tokenDAO;
@@ -115,7 +115,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
             }
             return getPermissionsForWorkflow(requester, workflow);
         } catch (ApiException e) {
-            String errorMessage = readValue(e, ErrorReport.class).map(errorReport -> errorReport.getMessage())
+            String errorMessage = readValue(e, ErrorReport.class).map(ErrorReport::getMessage)
                     .orElse("Error setting permission");
             LOG.error(errorMessage, e);
             throw new CustomWebApplicationException(errorMessage, e.getCode());
@@ -396,7 +396,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
             return resourcesApi.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)
                     .stream()
                     .filter(p -> SamConstants.OWNER_POLICY.equals(p.getAccessPolicyName()))
-                    .map(p -> p.getResourceId())
+                    .map(ResourceAndAccessPolicy::getResourceId)
                     .collect(Collectors.toList());
         } catch (ApiException e) {
             if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {

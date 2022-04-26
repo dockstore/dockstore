@@ -103,7 +103,7 @@ public final class ZipSourceFileHelper {
         if (zipFile.stream().limit(maxEntries + 1).count() > maxEntries) {
             throw new CustomWebApplicationException("Too many entries in the zip", HttpStatus.SC_BAD_REQUEST);
         }
-        final Optional<Long> uncompressedSize = zipFile.stream().map(z -> z.getSize()).reduce(Long::sum);
+        final Optional<Long> uncompressedSize = zipFile.stream().map(ZipEntry::getSize).reduce(Long::sum);
         uncompressedSize.ifPresent(s -> {
             if (s > maxSize) {
                 throw new CustomWebApplicationException("Zip contents too large", HttpStatus.SC_BAD_REQUEST);

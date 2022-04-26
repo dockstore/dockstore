@@ -230,7 +230,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         }
 
         SortedSet<SourceFile> sourceFiles = version.getSourceFiles();
-        return sourceFiles.stream().map(sourceFile -> sourceFile.getType()).collect(Collectors.toCollection(TreeSet::new));
+        return sourceFiles.stream().map(SourceFile::getType).collect(Collectors.toCollection(TreeSet::new));
     }
 
     public void checkEntryPermissions(final Optional<User> user, final Entry<? extends Entry, ? extends Version> entry) {

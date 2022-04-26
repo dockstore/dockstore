@@ -20,10 +20,8 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.http.HttpStatus;
 
@@ -147,7 +145,7 @@ public interface PermissionsInterface {
      */
     static List<Permission> mergePermissions(List<Permission> dockstoreOwners, List<Permission> nativePermissions) {
         final ArrayList<Permission> permissions = new ArrayList<>(dockstoreOwners);
-        final Set<String> dockstoreOwnerEmails = permissions.stream().map(p -> p.getEmail()).collect(Collectors.toSet());
+        final Set<String> dockstoreOwnerEmails = permissions.stream().map(Permission::getEmail).collect(Collectors.toSet());
         permissions.addAll(nativePermissions.stream()
                 .filter(p -> !dockstoreOwnerEmails.contains(p.getEmail())).collect(Collectors.toList()));
         return permissions;
@@ -172,7 +170,7 @@ public interface PermissionsInterface {
                         return user.getUsername();
                     }
                 })
-                .filter(email -> email != null)
+                .filter(Objects::nonNull)
                 .map(email -> {
                     final Permission permission = new Permission();
                     permission.setEmail(email);

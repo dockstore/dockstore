@@ -319,7 +319,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         @ApiParam(value = "Organization ID.", required = true) @Parameter(description = "Organization ID.", name = "organizationId", in = ParameterIn.PATH, required = true) @PathParam("organizationId") Long id) {
         Set<OrganizationUser> acceptedUsers = getOrganizationByIdOptionalAuth(user, id).getUsers()
             .stream()
-            .filter(orgUser -> orgUser.isAccepted())
+            .filter(OrganizationUser::isAccepted)
             .collect(Collectors.toSet());
 
         return acceptedUsers;

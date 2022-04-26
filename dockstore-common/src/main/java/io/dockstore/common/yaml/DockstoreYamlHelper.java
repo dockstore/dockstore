@@ -374,7 +374,7 @@ public final class DockstoreYamlHelper {
         if (!violations.isEmpty()) {
             throw new DockstoreYamlException(
                     violations.stream()
-                            .map(v -> v.getMessage())
+                            .map(ConstraintViolation::getMessage)
                             .collect(Collectors.joining("; ")));
         }
     }
