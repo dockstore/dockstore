@@ -94,8 +94,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                         throw new ParseException(ERROR_PARSING_WORKFLOW_RECURSIVE_LOCAL_IMPORT + absolutePath, 0);
                     }
                     // Creating a new set to avoid false positive caused by multiple "branches" that have the same import
-                    Set<String> newAbsolutePaths = new HashSet<>();
-                    newAbsolutePaths.addAll(absolutePaths);
+                    Set<String> newAbsolutePaths = new HashSet<>(absolutePaths);
                     newAbsolutePaths.add(absolutePath);
                     Optional<SourceFile> sourcefile = sourceFiles.stream()
                             .filter(sourceFile -> sourceFile.getAbsolutePath().equals(absolutePath)).findFirst();
