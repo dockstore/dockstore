@@ -529,7 +529,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             if (isNotEmpty(validations)) {
                 String subMessage = computeMultiValidationMessage(validations);
                 if (StringUtils.isNotEmpty(subMessage)) {
-                    return String.format("In version '%s' of %s '%s': %s", workflowAndVersion.getVersionName(), workflowAndVersion.getWorkflowType().getTerm(), computeWorkflowName(workflowAndVersion), subMessage);
+                    return String.format("In version '%s' of %s '%s':\n%s", workflowAndVersion.getVersionName(), workflowAndVersion.getWorkflowType().getTerm(), computeWorkflowName(workflowAndVersion), subMessage);
                 }
             }
             return null;
