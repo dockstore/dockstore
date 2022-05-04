@@ -367,7 +367,7 @@ commands:
           command: |
             sudo add-apt-repository ppa:deadsnakes/ppa
             sudo apt-get update
-            sudo apt-get install python3.6 python3.6-dev python3.6-virtualenv python3-distutils
+            sudo apt-get install python3.6 python3.6-dev python3.6-distutils python3-virtualenv
             virtualenv -p /usr/bin/python3.6 venv
             echo 'source venv/bin/activate' >> ~/.bashrc
   setup_machine:
