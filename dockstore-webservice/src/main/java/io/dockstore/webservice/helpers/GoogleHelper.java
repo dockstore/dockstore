@@ -11,6 +11,7 @@ import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -65,14 +66,14 @@ public final class GoogleHelper {
      * @param user      The pre-updated User object
      */
     public static void updateUserFromGoogleUserinfoplus(Userinfoplus userinfo, User user) {
-        User.Profile profile = new User.Profile();
+        Profile profile = new Profile();
         profile.avatarURL = userinfo.getPicture();
         profile.email = userinfo.getEmail();
         profile.name = userinfo.getName();
         profile.username = userinfo.getEmail();
         profile.onlineProfileId = userinfo.getId();
         user.setAvatarUrl(userinfo.getPicture());
-        Map<String, User.Profile> userProfile = user.getUserProfiles();
+        Map<String, Profile> userProfile = user.getUserProfiles();
         userProfile.put(TokenType.GOOGLE_COM.toString(), profile);
     }
 

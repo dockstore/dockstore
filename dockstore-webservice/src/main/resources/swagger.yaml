@@ -4241,7 +4241,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/User"
+            $ref: "#/definitions/User_PrivateInfo"
       security:
       - BEARER: []
     delete:
@@ -4286,7 +4286,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/User"
+            $ref: "#/definitions/User_PrivateInfo"
       security:
       - BEARER: []
   /users/user/extended:
@@ -4348,7 +4348,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/User"
+            $ref: "#/definitions/User_PrivateInfo"
       security:
       - BEARER: []
   /users/user/{userId}/bannedStatus:
@@ -4455,7 +4455,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/User"
+            $ref: "#/definitions/User_PrivateInfo"
       security:
       - BEARER: []
   /users/users/entries:
@@ -4530,7 +4530,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/User"
+            $ref: "#/definitions/User_PrivateInfo"
       security:
       - BEARER: []
   /users/{userId}/appTools:
@@ -7680,6 +7680,23 @@ definitions:
         type: "string"
       username:
         type: "string"
+  Profile_PrivateInfo:
+    type: "object"
+    properties:
+      avatarURL:
+        type: "string"
+      bio:
+        type: "string"
+      company:
+        type: "string"
+      link:
+        type: "string"
+      location:
+        type: "string"
+      name:
+        type: "string"
+      username:
+        type: "string"
   PublishRequest:
     type: "object"
     properties:
@@ -8413,6 +8430,79 @@ definitions:
           \ (GitHub, Google, etc)"
         additionalProperties:
           $ref: "#/definitions/Profile"
+      username:
+        type: "string"
+        position: 1
+        description: "Username on dockstore"
+      isAdmin:
+        type: "boolean"
+        position: 2
+        description: "Indicates whether this user is an admin"
+      avatarUrl:
+        type: "string"
+        position: 7
+        description: "URL of user avatar on GitHub/Google that can be selected by\
+          \ the user"
+      name:
+        type: "string"
+        position: 8
+      curator:
+        type: "boolean"
+        position: 11
+        description: "Indicates whether this user is a curator"
+      setupComplete:
+        type: "boolean"
+        position: 12
+        description: "Indicates whether this user has accepted their username"
+      tosacceptanceDate:
+        type: "integer"
+        format: "int64"
+        position: 15
+        description: "Time TOS was accepted"
+        readOnly: true
+      privacyPolicyVersionAcceptanceDate:
+        type: "integer"
+        format: "int64"
+        position: 16
+        description: "Time privacy policy was accepted"
+      usernameChangeRequired:
+        type: "boolean"
+        position: 17
+        description: "Indicates whether the user is required to change their username\
+          \ before being allowed to do various operations on Dockstore."
+    description: "End users for the dockstore"
+  User_PrivateInfo:
+    type: "object"
+    required:
+    - "curator"
+    - "isAdmin"
+    - "setupComplete"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the container in this web service"
+        readOnly: true
+      orcid:
+        type: "string"
+      privacyPolicyVersion:
+        type: "string"
+        description: "Indicates which version of the privacy policy the user has accepted"
+        enum:
+        - "NONE"
+        - "PRIVACY_POLICY_VERSION_2_5"
+      tosversion:
+        type: "string"
+        enum:
+        - "NONE"
+        - "TOS_VERSION_1"
+        - "TOS_VERSION_2"
+      userProfiles:
+        type: "object"
+        description: "Profile information of the user retrieved from 3rd party sites\
+          \ (GitHub, Google, etc)"
+        additionalProperties:
+          $ref: "#/definitions/Profile_PrivateInfo"
       username:
         type: "string"
         position: 1

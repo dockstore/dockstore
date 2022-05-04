@@ -17,6 +17,7 @@
 package io.dockstore.webservice.permissions;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -217,7 +218,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     }
 
     private String userKey(User user) {
-        User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
         if (profile == null || profile.email == null) {
             return user.getUsername();
         } else {

@@ -40,6 +40,7 @@ import io.dockstore.webservice.core.AppTool;
 import io.dockstore.webservice.core.BioWorkflow;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.LicenseInformation;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.Service;
 import io.dockstore.webservice.core.SourceControlOrganization;
 import io.dockstore.webservice.core.SourceFile;
@@ -1126,7 +1127,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
-            User.Profile profile = getProfile(user, myself);
+            Profile profile = getProfile(user, myself);
             profile.email = getEmail(myself);
 
             // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
@@ -1150,7 +1151,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 throw new CustomWebApplicationException("Could not find GitHub user profile information on Dockstore with username: " + user.getUsername() + "dockstore userid: " + user.getId(), HttpStatus.SC_NOT_FOUND);
             }
             GHUser ghUser = github.getUser(user.getUserProfiles().get(TokenType.GITHUB_COM.toString()).username);
-            User.Profile profile = getProfile(user, ghUser);
+            Profile profile = getProfile(user, ghUser);
             profile.email = ghUser.getEmail();
 
             // Update token. Username on GitHub could have changed and need to collect the GitHub user id as well
@@ -1205,9 +1206,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return numOfEntriesNotUpdatedWithTopic;
     }
 
-    public User.Profile getProfile(final User user, final GHUser ghUser) throws IOException {
+    public Profile getProfile(final User user, final GHUser ghUser) throws IOException {
         LOG.info("GitHub user profile id is {} and GitHub username is {} for Dockstore user {}", ghUser.getId(), ghUser.getLogin(), user.getUsername());
-        User.Profile profile = new User.Profile();
+        Profile profile = new Profile();
         profile.onlineProfileId = String.valueOf(ghUser.getId());
         profile.username = ghUser.getLogin();
         profile.name = ghUser.getName();
@@ -1217,7 +1218,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         profile.link = StringUtils.isNotEmpty(ghUser.getBlog()) ? ghUser.getBlog() : null;
         profile.location = ghUser.getLocation();
         profile.company = ghUser.getCompany();
-        Map<String, User.Profile> userProfile = user.getUserProfiles();
+        Map<String, Profile> userProfile = user.getUserProfiles();
         userProfile.put(TokenType.GITHUB_COM.toString(), profile);
         user.setAvatarUrl(ghUser.getAvatarUrl());
         return profile;

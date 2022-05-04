@@ -4761,7 +4761,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User_PrivateInfo'
           description: The logged-in user
       security:
       - bearer: []
@@ -4781,7 +4781,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User_PrivateInfo'
           description: Successfully changed username
         "400":
           description: Bad request
@@ -4832,7 +4832,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User_PrivateInfo'
           description: User with updated TOS/Privacy Policy
       security:
       - bearer: []
@@ -4861,7 +4861,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User_PrivateInfo'
           description: Successfully updated metadata for logged in user
         "403":
           description: Forbidden
@@ -4973,7 +4973,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User_PrivateInfo'
           description: A user with the specified username
         "400":
           description: Bad request
@@ -5060,7 +5060,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User_PrivateInfo'
           description: A user with the specified userId
         "403":
           description: Forbidden
@@ -5341,14 +5341,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PrivilegeRequest'
+              $ref: '#/components/schemas/PrivilegeRequest_PrivateInfo'
         required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User_PrivateInfo'
           description: Successfully updated user to admin or curator status
         "403":
           description: Forbidden
@@ -8516,7 +8516,7 @@ components:
           - OWNER
           - WRITER
           - READER
-    PrivilegeRequest:
+    PrivilegeRequest_PrivateInfo:
       type: object
       properties:
         admin:
@@ -8533,6 +8533,23 @@ components:
         company:
           type: string
         email:
+          type: string
+        link:
+          type: string
+        location:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+    Profile_PrivateInfo:
+      type: object
+      properties:
+        avatarURL:
+          type: string
+        bio:
+          type: string
+        company:
           type: string
         link:
           type: string
@@ -9305,6 +9322,55 @@ components:
           type: string
         tokenType:
           type: string
+    User_PrivateInfo:
+      type: object
+      properties:
+        avatarUrl:
+          type: string
+        curator:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        isAdmin:
+          type: boolean
+        name:
+          type: string
+        orcid:
+          type: string
+        privacyPolicyVersion:
+          type: string
+          enum:
+          - NONE
+          - PRIVACY_POLICY_VERSION_2_5
+        privacyPolicyVersionAcceptanceDate:
+          type: integer
+          format: int64
+        setupComplete:
+          type: boolean
+        tosacceptanceDate:
+          type: integer
+          format: int64
+        tosversion:
+          type: string
+          enum:
+          - NONE
+          - TOS_VERSION_1
+          - TOS_VERSION_2
+        tosversionAcceptanceDate:
+          type: integer
+          format: int64
+          writeOnly: true
+        userProfiles:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Profile_PrivateInfo'
+        username:
+          type: string
+        usernameChangeRequired:
+          type: boolean
+          description: Indicates whether the user is required to change their username
+            before being allowed to do various operations on Dockstore.
     Validation:
       type: object
       properties:

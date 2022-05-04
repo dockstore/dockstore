@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import org.junit.Assert;
@@ -45,7 +46,7 @@ public class GoogleHelperTest {
         when(userinfoplus.getName()).thenReturn(username);
         GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoplus, user);
         Assert.assertEquals(pictureUrl, user.getAvatarUrl());
-        final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        final Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
         Assert.assertEquals(email, profile.email);
         Assert.assertEquals(username, profile.name);
         Assert.assertEquals(pictureUrl, profile.avatarURL);

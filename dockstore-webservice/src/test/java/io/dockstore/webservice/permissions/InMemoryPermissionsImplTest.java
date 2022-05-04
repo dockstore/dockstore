@@ -3,6 +3,7 @@ package io.dockstore.webservice.permissions;
 import static org.mockito.Mockito.when;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -39,7 +40,7 @@ public class InMemoryPermissionsImplTest {
         dockstoreOrgWorkflow = Mockito.mock(Workflow.class);
         when(fooWorkflow.getWorkflowPath()).thenReturn("foo");
 
-        User.Profile profile = new User.Profile();
+        Profile profile = new Profile();
         profile.email = JOHN_DOE_EXAMPLE_COM;
         johnDoeUser.getUserProfiles().put(TokenType.GOOGLE_COM.toString(), profile);
         johnDoeUser.setUsername(JOHN_DOE_EXAMPLE_COM);

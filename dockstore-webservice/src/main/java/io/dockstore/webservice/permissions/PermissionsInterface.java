@@ -17,6 +17,7 @@
 package io.dockstore.webservice.permissions;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -165,7 +166,7 @@ public interface PermissionsInterface {
         return workflow.getUsers().stream()
                 .map(user -> {
                     // This is ugly in order to support both SAM and InMemory authorizers
-                    final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+                    final Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
                     if (profile != null && profile.email != null) {
                         return profile.email;
                     } else {

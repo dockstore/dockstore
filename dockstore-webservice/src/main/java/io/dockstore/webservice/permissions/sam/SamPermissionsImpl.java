@@ -3,6 +3,7 @@ package io.dockstore.webservice.permissions.sam;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -283,7 +284,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
             if (email.equals(u.getUsername())) {
                 return true;
             }
-            final User.Profile profile = u.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+            final Profile profile = u.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
             return profile != null && email.equals(profile.email);
         });
         if (isOwner) {

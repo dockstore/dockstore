@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -143,9 +144,9 @@ public class SamPermissionsImplTest {
         readerAccessPolicyResponseEntry.getPolicy().addRolesItem(SamConstants.READ_POLICY);
         readerAccessPolicyResponseEntry.getPolicy().addMemberEmailsItem(JANE_DOE_GMAIL_COM);
 
-        final User.Profile profile = new User.Profile();
+        final Profile profile = new Profile();
         profile.email = JANE_DOE_GMAIL_COM;
-        final Map<String, User.Profile> map = new HashMap<>();
+        final Map<String, Profile> map = new HashMap<>();
         map.put(TokenType.GOOGLE_COM.toString(), profile);
         when(userMock.getUserProfiles()).thenReturn(map);
     }

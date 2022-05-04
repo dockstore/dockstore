@@ -3,6 +3,7 @@ package io.dockstore.webservice.permissions;
 import static org.mockito.Mockito.when;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -36,13 +37,13 @@ public class PermissionsInterfaceTest {
     public void setup() {
         userJohn = new User();
         userJohn.setUsername(JOHN_DOE_EXAMPLE_COM);
-        final User.Profile profile1 = new User.Profile();
+        final Profile profile1 = new Profile();
         profile1.email = JOHN_DOE_EXAMPLE_COM;
         userJohn.getUserProfiles().put(TokenType.GOOGLE_COM.toString(), profile1);
 
         userJane = new User();
         userJane.setUsername(JANE_DOE_EXAMPLE_COM);
-        final User.Profile profile2 = new User.Profile();
+        final Profile profile2 = new Profile();
         profile2.email = JANE_DOE_EXAMPLE_COM;
         userJane.getUserProfiles().put(TokenType.GOOGLE_COM.toString(), profile2);
 

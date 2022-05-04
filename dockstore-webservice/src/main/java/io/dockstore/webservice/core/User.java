@@ -18,7 +18,6 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -46,7 +45,6 @@ import java.util.TreeSet;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -555,45 +553,5 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setUsernameChangeRequired(boolean usernameChangeRequired) {
         this.usernameChangeRequired = usernameChangeRequired;
-    }
-
-    /**
-     * The profile of a user using a token (Google profile, GitHub profile, etc)
-     * The order of the properties are important, the UI lists these properties in this order.
-     */
-    @Embeddable
-    public static class Profile implements Serializable {
-        @Column(columnDefinition = "text")
-        public String name;
-        @Column(columnDefinition = "text")
-        @JsonView(UserProfilesViews.PrivateInfo.class)
-        public String email;
-        @Column(columnDefinition = "text")
-        public String avatarURL;
-        @Column(columnDefinition = "text")
-        public String company;
-        @Column(columnDefinition = "text")
-        public String location;
-        @Column(columnDefinition = "text")
-        public String bio;
-        @Column(columnDefinition = "text")
-        public String link;
-        /**
-         * Redundant with token, but needed since tokens can be deleted.
-         * i.e. if usernames can change and tokens can be deleted, we need somewhere to let
-         * token-less users login
-         */
-        @Column(columnDefinition = "text")
-        public String username;
-        @Column
-        @JsonIgnore
-        public String onlineProfileId;
-
-        @Column(updatable = false)
-        @CreationTimestamp
-        private Timestamp dbCreateDate;
-        @Column()
-        @UpdateTimestamp
-        private Timestamp dbUpdateDate;
     }
 }
