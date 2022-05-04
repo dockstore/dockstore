@@ -86,7 +86,7 @@ public class LanguagePluginHandler implements LanguageHandlerInterface {
                 content = mainDescriptor.get().getContent();
             } else {
                 Map<String, String> validationMessage = new HashMap<>();
-                validationMessage.put("Unknown", "Missing the primary descriptor.");
+                validationMessage.put("Unknown", "Primary descriptor file not found.");
                 return new VersionTypeValidation(false, validationMessage);
             }
 

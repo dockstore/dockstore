@@ -711,7 +711,7 @@ public abstract class SourceCodeRepoInterface {
             version.addOrUpdateValidation(descriptorValidation);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
-            validationMessage.put(mainDescriptorPath, "Missing the primary descriptor.");
+            validationMessage.put(mainDescriptorPath, "Primary descriptor file not found.");
             VersionTypeValidation noPrimaryDescriptor = new VersionTypeValidation(false, validationMessage);
             Validation noPrimaryDescriptorValidation = new Validation(identifiedType, noPrimaryDescriptor);
             version.addOrUpdateValidation(noPrimaryDescriptorValidation);

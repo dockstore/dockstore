@@ -547,7 +547,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private String computeValidationMessage(Validation validation) {
         try {
             JSONObject json = new JSONObject(validation.getMessage());
-            return json.keySet().stream().map(key -> String.format("In file '%s': %s", key, json.get(key))).collect(Collectors.joining("\n"));
+            return json.keySet().stream().map(key -> String.format("File '%s': %s", key, json.get(key))).collect(Collectors.joining("\n"));
         } catch (JSONException ex) {
             LOG.info("Exception processing validation message JSON", ex);
             return null;
