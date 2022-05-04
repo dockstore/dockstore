@@ -296,6 +296,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
         objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
         objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+
+        // Set the default ObjectMapper view type. This causes attributes that are annotated with an explicit view type
+        // be ignored in the view response unless their view class is explicitly specified. Attributes that aren't annotated with
+        // a view type are included by default.
+        objectMapper.setConfig(objectMapper.getSerializationConfig().withView(Object.class));
+
         // To convert every Date we have to RFC 3339, we can use this
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));
     }

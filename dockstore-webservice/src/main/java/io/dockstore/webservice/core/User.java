@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -565,6 +566,7 @@ public class User implements Principal, Comparable<User>, Serializable {
         @Column(columnDefinition = "text")
         public String name;
         @Column(columnDefinition = "text")
+        @JsonView(UserProfilesViews.PrivateInfo.class)
         public String email;
         @Column(columnDefinition = "text")
         public String avatarURL;
