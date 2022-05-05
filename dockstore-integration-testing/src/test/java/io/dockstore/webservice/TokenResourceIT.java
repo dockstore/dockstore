@@ -38,6 +38,7 @@ import static org.junit.Assert.fail;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.NonConfidentialTest;
 import io.dockstore.common.TestingPostgres;
+import io.dockstore.webservice.core.Profile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -50,6 +51,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.UserPrivateInfo;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -254,7 +256,7 @@ public class TokenResourceIT {
 
         // Change Account 1 username to CUSTOM_USERNAME2
         UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1, testingPostgres));
-        io.swagger.client.model.User user = mainUsersApi.changeUsername(CUSTOM_USERNAME2);
+        UserPrivateInfo user = mainUsersApi.changeUsername(CUSTOM_USERNAME2);
         Assert.assertEquals(CUSTOM_USERNAME2, user.getUsername());
 
         registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
@@ -601,7 +603,7 @@ public class TokenResourceIT {
      */
     private void checkUserProfiles(Long userId, List<String> profileKeys) {
         User user = userDAO.findById(userId);
-        Map<String, User.Profile> userProfiles = user.getUserProfiles();
+        Map<String, Profile> userProfiles = user.getUserProfiles();
         profileKeys.forEach(profileKey -> assertTrue(userProfiles.containsKey(profileKey)));
         if (profileKeys.contains(TokenType.GOOGLE_COM.toString())) {
             checkGoogleUserProfile(userProfiles);
@@ -613,8 +615,8 @@ public class TokenResourceIT {
      *
      * @param userProfiles the user profile to look into and validate
      */
-    private void checkGoogleUserProfile(Map<String, User.Profile> userProfiles) {
-        User.Profile googleProfile = userProfiles.get(TokenType.GOOGLE_COM.toString());
+    private void checkGoogleUserProfile(Map<String, Profile> userProfiles) {
+        Profile googleProfile = userProfiles.get(TokenType.GOOGLE_COM.toString());
         assertTrue(googleProfile.email.equals(GOOGLE_ACCOUNT_USERNAME1) && googleProfile.avatarURL
             .equals("https://dockstore.org/assets/images/dockstore/logo.png") && googleProfile.company == null
             && googleProfile.location == null && googleProfile.name.equals("Beef Stew"));

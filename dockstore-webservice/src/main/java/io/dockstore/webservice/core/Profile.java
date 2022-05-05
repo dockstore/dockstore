@@ -16,6 +16,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Embeddable
 public class Profile implements Serializable {
     @Column(columnDefinition = "text")
+    @JsonView(UserProfileViews.PublicInfo.class)
     public String name;
     @Column(columnDefinition = "text")
     @JsonView(UserProfileViews.PrivateInfo.class)

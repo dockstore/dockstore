@@ -8551,6 +8551,8 @@ components:
           type: string
         company:
           type: string
+        email:
+          type: string
         link:
           type: string
         location:

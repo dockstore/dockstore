@@ -300,7 +300,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Set the default ObjectMapper view type. This causes attributes that are annotated with an explicit view type
         // be ignored in the view response unless their view class is explicitly specified. Attributes that aren't annotated with
         // a view type are included by default.
-        objectMapper.setConfig(objectMapper.getSerializationConfig().withView(Object.class));
+        // objectMapper.setConfig(objectMapper.getSerializationConfig().withView(Object.class));
 
         // To convert every Date we have to RFC 3339, we can use this
         // objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssz"));

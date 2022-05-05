@@ -29,7 +29,8 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
-import io.dockstore.openapi.client.model.PrivilegeRequest;
+import io.dockstore.openapi.client.model.PrivilegeRequestPrivateInfo;
+import io.dockstore.openapi.client.model.ProfilePrivateInfo;
 import io.dockstore.openapi.client.model.SourceControlOrganization;
 import io.dockstore.openapi.client.model.UserInfo;
 import io.dockstore.openapi.client.model.WorkflowSubClass;
@@ -45,9 +46,8 @@ import io.swagger.client.model.Collection;
 import io.swagger.client.model.EntryUpdateTime;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.OrganizationUpdateTime;
-import io.swagger.client.model.Profile;
 import io.swagger.client.model.Repository;
-import io.swagger.client.model.User;
+import io.swagger.client.model.UserPrivateInfo;
 import io.swagger.client.model.Workflow;
 import java.util.Arrays;
 import java.util.List;
@@ -143,7 +143,7 @@ public class UserResourceIT extends BaseIT {
         UsersApi userApi = new UsersApi(client);
 
         // Profiles are lazy loaded, and should not be present by default
-        User user = userApi.listUser(USER_2_USERNAME, null);
+        UserPrivateInfo user = userApi.listUser(USER_2_USERNAME, null);
         assertNull("User profiles should be null by default", user.getUserProfiles());
 
         // Load profiles by specifying userProfiles as a query parameter in the API call
@@ -172,7 +172,7 @@ public class UserResourceIT extends BaseIT {
 
         UsersApi userUserWebClient = new UsersApi(userWebClient);
         io.dockstore.openapi.client.api.UsersApi openApiUserWebClient = new io.dockstore.openapi.client.api.UsersApi(openApiAdminWebClient);
-        final User user = userUserWebClient.getUser();
+        final UserPrivateInfo user = userUserWebClient.getUser();
         assertFalse(user.getUsername().isEmpty());
 
         openApiUserWebClient.banUser(true, user.getId());
@@ -261,7 +261,7 @@ public class UserResourceIT extends BaseIT {
 
         final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
 
-        User user = userApi.getUser();
+        UserPrivateInfo user = userApi.getUser();
         assertNotNull(user);
 
         // try to delete with published workflows & service
@@ -396,7 +396,7 @@ public class UserResourceIT extends BaseIT {
         ApiClient adminWebClient = getWebClient(ADMIN_USERNAME, testingPostgres);
         UsersApi adminUserApi = new UsersApi(adminWebClient);
 
-        User user = userApi.getUser();
+        UserPrivateInfo user = userApi.getUser();
 
         // Test that deleting a user creates a deleteduser entry
         long count = testingPostgres.runSelectStatement("select count(*) from deletedusername", long.class);
@@ -598,7 +598,7 @@ public class UserResourceIT extends BaseIT {
     public void testUpdateUserMetadataFromGithub() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         UsersApi usersApi = new UsersApi(client);
-        Profile userProfile = usersApi.getUser().getUserProfiles().get("github.com");
+        io.swagger.client.model.ProfilePrivateInfo userProfile = usersApi.getUser().getUserProfiles().get("github.com");
 
         assertNull(userProfile.getName());
         assertNull(userProfile.getEmail());
@@ -642,11 +642,11 @@ public class UserResourceIT extends BaseIT {
         io.dockstore.openapi.client.ApiClient adminWebClient = getOpenAPIWebClient(ADMIN_USERNAME, testingPostgres);
         io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
 
-        io.dockstore.openapi.client.model.PrivilegeRequest privilegeRequest = new PrivilegeRequest();
+        io.dockstore.openapi.client.model.PrivilegeRequestPrivateInfo privilegeRequest = new PrivilegeRequestPrivateInfo();
         io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.User admin = adminApi.getUser();
-        io.dockstore.openapi.client.model.User user = userApi.getUser();
+        io.dockstore.openapi.client.model.UserPrivateInfo admin = adminApi.getUser();
+        io.dockstore.openapi.client.model.UserPrivateInfo user = userApi.getUser();
 
         privilegeRequest.setAdmin(false);
         privilegeRequest.setCurator(false);
@@ -712,8 +712,8 @@ public class UserResourceIT extends BaseIT {
         io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.User admin = adminApi.getUser();
-        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
+        io.dockstore.openapi.client.model.UserPrivateInfo admin = adminApi.getUser();
+        ProfilePrivateInfo userProfile = userApi.getUser().getUserProfiles().get("github.com");
 
         // Should add a test above this to check that the API call should pass once the admin tokens are up to date
         // Testing that the updateLoggedInUserMetadata() should fail if GitHub tokens are expired or absent
@@ -758,7 +758,7 @@ public class UserResourceIT extends BaseIT {
         io.dockstore.openapi.client.ApiClient userWebClient = getOpenAPIWebClient(USER_2_USERNAME, testingPostgres);
         io.dockstore.openapi.client.api.UsersApi adminApi = new io.dockstore.openapi.client.api.UsersApi(adminWebClient);
         io.dockstore.openapi.client.api.UsersApi userApi = new io.dockstore.openapi.client.api.UsersApi(userWebClient);
-        io.dockstore.openapi.client.model.Profile userProfile = userApi.getUser().getUserProfiles().get("github.com");
+        ProfilePrivateInfo userProfile = userApi.getUser().getUserProfiles().get("github.com");
 
         // Delete all of the tokens (except for Dockstore tokens) for every user
         testingPostgres.runUpdateStatement("DELETE FROM token WHERE tokensource <> 'dockstore'");
