@@ -1051,7 +1051,7 @@ public class WorkflowIT extends BaseIT {
         List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null, false, null);
         // test offset
         assertEquals("offset does not seem to be working",
-            workflowApi.allPublishedWorkflows("1", null, null, null, null, false, null).get(0).getId(), workflows.get(1).getId());
+            workflowApi.allPublishedWorkflows(1, null, null, null, null, false, null).get(0).getId(), workflows.get(1).getId());
         // test limit
         assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null, false, null).size());
         // test custom sort column
