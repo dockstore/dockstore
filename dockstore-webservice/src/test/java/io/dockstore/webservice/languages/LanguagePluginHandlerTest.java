@@ -122,7 +122,7 @@ public class LanguagePluginHandlerTest {
         sourceFileSet.add(secondaryDescriptorSourceFile);
         versionTypeValidation = minimalLanguageHandler.validateWorkflowSet(sourceFileSet, MAIN_DESCRIPTOR_CWL);
         Assert.assertTrue(!versionTypeValidation.isValid()
-            && versionTypeValidation.getMessage().containsValue("Missing the primary descriptor."));
+            && versionTypeValidation.getMessage().containsValue("Primary descriptor file not found."));
 
     }
 
