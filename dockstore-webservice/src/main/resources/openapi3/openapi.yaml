@@ -2499,14 +2499,14 @@ paths:
           format: int32
           default: 0
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Event'
-          description: default response
+                $ref: '#/components/schemas/Event'
+          description: A list of events
+        "404":
+          description: User not found
       summary: Get events based on filter and user id.
       tags:
       - events

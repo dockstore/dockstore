@@ -364,7 +364,7 @@ public class BasicIT extends BaseIT {
         starRequest.setStar(true);
         toolsApi.starEntry(tool.getId(), starRequest);
 
-        // Events API should return
+        // Events API should return 1 event
         events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
         assertEquals("The user should return 1 starred entry", 1, events.size());
 
@@ -384,7 +384,18 @@ public class BasicIT extends BaseIT {
 
         // Assert the event client2 was able to identify is the same event caused by the first client
         assertEquals("The two events should have the same ID", event.getId(), event2.getId());
+    }
 
+    @Test
+    public void testRecentEventsByUserWithNullInput() {
+
+        // Create a second client and query for the starred event from the first user
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        EventsApi eventsApi = new EventsApi(client);
+
+        // This should throw an error because no user exists with ID -1
+        systemExit.expectSystemExitWithStatus(org.apache.http.HttpStatus.SC_NOT_FOUND);
+        List<Event> events = eventsApi.getUserEvents(-1L, EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
     }
 
     /**

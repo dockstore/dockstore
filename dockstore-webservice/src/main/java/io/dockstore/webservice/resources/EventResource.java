@@ -20,6 +20,7 @@ import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
 import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
@@ -34,7 +35,9 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
@@ -50,6 +53,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 
 /**
@@ -75,6 +79,12 @@ public class EventResource {
         this.userDAO = userDAO;
     }
 
+    private void checkUserExists(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
@@ -92,8 +102,14 @@ public class EventResource {
     @Path("/{userId}")
     @Operation(description = "No authentication.", summary = "Get events based on filter and user id.")
     @ApiOperation(value = "List recent events for a user.", notes = "No authentication.", response = Event.class, responseContainer = "List")
-    public List<Event> getUserEvents(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(schema = @Schema(implementation = Event.class)))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    public List<Event> getUserEvents(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+        @QueryParam("event_search_type") EventSearchType eventSearchType,
+        @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit,
+        @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User user = this.userDAO.findById(userId);
+        checkUserExists(user);
         return getEventsForUser(user, eventSearchType, limit, offset);
     }
 
