@@ -2452,14 +2452,14 @@ paths:
           format: int32
           default: 0
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
-          description: default response
+          description: A list of events
       security:
       - bearer: []
       summary: Get events based on filters.
@@ -2503,7 +2503,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
           description: A list of events
         "404":
           description: User not found
