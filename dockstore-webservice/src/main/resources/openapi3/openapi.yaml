@@ -2465,6 +2465,51 @@ paths:
       summary: Get events based on filters.
       tags:
       - events
+  /events/{userId}:
+    get:
+      description: No authentication.
+      operationId: getUserEvents
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: event_search_type
+        schema:
+          type: string
+          enum:
+          - STARRED_ENTRIES
+          - STARRED_ORGANIZATION
+          - ALL_STARRED
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 10
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+          description: default response
+      summary: Get events based on filter and user id.
+      tags:
+      - events
   /ga4gh/trs/v2/service-info:
     get:
       operationId: getServiceInfo

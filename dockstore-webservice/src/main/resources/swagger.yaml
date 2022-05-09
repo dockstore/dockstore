@@ -2724,6 +2724,51 @@ paths:
               $ref: "#/definitions/Event"
       security:
       - BEARER: []
+  /events/{userId}:
+    get:
+      tags:
+      - "events"
+      summary: "List recent events for a user."
+      description: "No authentication."
+      operationId: "getUserEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "event_search_type"
+        in: "query"
+        required: false
+        type: "string"
+        enum:
+        - "STARRED_ENTRIES"
+        - "STARRED_ORGANIZATION"
+        - "ALL_STARRED"
+      - name: "limit"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 10
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "offset"
+        in: "query"
+        required: false
+        type: "integer"
+        default: 0
+        format: "int32"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
   /lambdaEvents/{organization}:
     get:
       tags:
