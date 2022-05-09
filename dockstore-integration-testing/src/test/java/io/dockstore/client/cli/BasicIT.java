@@ -394,8 +394,13 @@ public class BasicIT extends BaseIT {
         EventsApi eventsApi = new EventsApi(client);
 
         // This should throw an error because no user exists with ID -1
-        systemExit.expectSystemExitWithStatus(org.apache.http.HttpStatus.SC_NOT_FOUND);
-        List<Event> events = eventsApi.getUserEvents(-1L, EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        try {
+            List<Event> events = eventsApi.getUserEvents(-1L, EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+            fail("No user exists with ID -1");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("User not found."));
+
+        }
     }
 
     /**
