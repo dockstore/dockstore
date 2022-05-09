@@ -761,7 +761,7 @@ public class DockerRepoResource
     @ApiOperation(value = "List all published tools.", tags = {
         "containers"}, notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> allPublishedContainers(
-        @ApiParam(value = "Start index of paging. If not specified in the request, this will start at the beginning of the results.") @DefaultValue("0") @QueryParam("offset") Integer offset,
+        @ApiParam(value = "Start index of paging. If not specified in the request, this will start at the beginning of the results.", defaultValue = "0") @DefaultValue("0") @QueryParam("offset") Integer offset,
         @ApiParam(value = "Amount of records to return in a given page, limited to "
             + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,

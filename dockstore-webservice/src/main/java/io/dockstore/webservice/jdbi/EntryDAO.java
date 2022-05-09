@@ -262,7 +262,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
         query.select(entry);
 
-        TypedQuery<T> typedQuery = currentSession().createQuery(query).setFirstResult(offset).setMaxResults(limit);
+        int primitiveOffset = (offset != null) ? offset : 0;
+        TypedQuery<T> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
     }
 
