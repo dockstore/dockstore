@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -93,7 +94,10 @@ public class EventResource {
     @ApiOperation(value = SUMMARY, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
-    public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user, @QueryParam("eventSearchType") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user,
+        @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
+        @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit,
+        @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User userWithSession = this.userDAO.findById(user.getId());
         return getEventsForUser(userWithSession, eventSearchType, limit, offset);
     }
@@ -107,7 +111,7 @@ public class EventResource {
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
     @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
     public List<Event> getUserEvents(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
-        @QueryParam("eventSearchType") EventSearchType eventSearchType,
+        @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
         @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit,
         @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User user = this.userDAO.findById(userId);
@@ -124,10 +128,6 @@ public class EventResource {
      * @return A list of events
      */
     private List<Event> getEventsForUser(User user, EventSearchType eventSearchType, int limit, Integer offset) {
-        if (eventSearchType == null) {
-            return Collections.emptyList();
-        }
-
         switch (eventSearchType) {
         case STARRED_ENTRIES:
             Set<Long> entryIDs = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
