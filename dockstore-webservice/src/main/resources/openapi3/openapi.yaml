@@ -2430,7 +2430,8 @@ paths:
       operationId: getEvents
       parameters:
       - in: query
-        name: event_search_type
+        name: eventSearchType
+        required: true
         schema:
           type: string
           enum:
@@ -2477,7 +2478,8 @@ paths:
           type: integer
           format: int64
       - in: query
-        name: event_search_type
+        name: eventSearchType
+        required: true
         schema:
           type: string
           enum:

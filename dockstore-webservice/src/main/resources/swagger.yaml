@@ -2693,9 +2693,9 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "event_search_type"
+      - name: "eventSearchType"
         in: "query"
-        required: false
+        required: true
         type: "string"
         enum:
         - "STARRED_ENTRIES"
@@ -2740,9 +2740,9 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      - name: "event_search_type"
+      - name: "eventSearchType"
         in: "query"
-        required: false
+        required: true
         type: "string"
         enum:
         - "STARRED_ENTRIES"
