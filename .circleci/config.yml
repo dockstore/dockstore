@@ -56,7 +56,6 @@ workflows:
             - build
           context:
             - sonarcloud
-            - aws
       - workflow-integration-tests:
           <<: *common_filters
           requires:

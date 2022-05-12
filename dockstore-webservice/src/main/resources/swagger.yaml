@@ -1591,12 +1591,12 @@ paths:
       parameters:
       - name: "offset"
         in: "query"
-        description: "Start index of paging. Pagination results can be based on numbers\
-          \ or other values chosen by the registry implementor (for example, SHA values).\
-          \ If this exceeds the current result set return an empty set.  If not specified\
-          \ in the request, this will start at the beginning of the results."
+        description: "Start index of paging. If not specified in the request, this\
+          \ will start at the beginning of the results."
         required: false
-        type: "string"
+        type: "integer"
+        default: 0
+        format: "int32"
       - name: "limit"
         in: "query"
         description: "Amount of records to return in a given page, limited to 100"
@@ -5427,12 +5427,13 @@ paths:
       parameters:
       - name: "offset"
         in: "query"
-        description: "Start index of paging. Pagination results can be based on numbers\
-          \ or other values chosen by the registry implementor (for example, SHA values).\
-          \ If this exceeds the current result set return an empty set.  If not specified\
-          \ in the request, this will start at the beginning of the results."
+        description: "Start index of paging. If this exceeds the current result set\
+          \ return an empty set.  If not specified in the request, this will start\
+          \ at the beginning of the results."
         required: false
-        type: "string"
+        type: "integer"
+        default: 0
+        format: "int32"
       - name: "limit"
         in: "query"
         description: "Amount of records to return in a given page, limited to 100"

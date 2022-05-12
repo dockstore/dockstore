@@ -160,9 +160,9 @@ public class SwaggerClientIT extends BaseIT {
 
         // do some minor testing on pagination, majority of tests are in WorkflowIT.testPublishingAndListingOfPublished for now
         // TODO: better testing of pagination when we use it
-        List<DockstoreTool> pagedToolsLowercase = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
+        List<DockstoreTool> pagedToolsLowercase = containersApi.allPublishedContainers(0, 1, "test", "stars", "desc");
         assertEquals(1, pagedToolsLowercase.size());
-        List<DockstoreTool> pagedToolsUppercase = containersApi.allPublishedContainers("0", 1, "TEST", "stars", "desc");
+        List<DockstoreTool> pagedToolsUppercase = containersApi.allPublishedContainers(0, 1, "TEST", "stars", "desc");
         assertEquals(1, pagedToolsUppercase.size());
         assertEquals(pagedToolsLowercase, pagedToolsUppercase);
 

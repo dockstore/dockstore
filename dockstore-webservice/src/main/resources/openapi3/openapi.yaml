@@ -1206,7 +1206,9 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
+          type: integer
+          format: int32
+          default: 0
       - in: query
         name: limit
         schema:
@@ -6141,7 +6143,9 @@ paths:
       - in: query
         name: offset
         schema:
-          type: string
+          type: integer
+          format: int32
+          default: 0
       - in: query
         name: limit
         schema:
