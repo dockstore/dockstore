@@ -2432,7 +2432,8 @@ paths:
       operationId: getEvents
       parameters:
       - in: query
-        name: event_search_type
+        name: eventSearchType
+        required: true
         schema:
           type: string
           enum:
@@ -2454,17 +2455,65 @@ paths:
           format: int32
           default: 0
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
-          description: default response
+          description: A list of events
       security:
       - bearer: []
       summary: Get events based on filters.
+      tags:
+      - events
+  /events/{userId}:
+    get:
+      description: No authentication.
+      operationId: getUserEvents
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - in: query
+        name: eventSearchType
+        required: true
+        schema:
+          type: string
+          enum:
+          - STARRED_ENTRIES
+          - STARRED_ORGANIZATION
+          - ALL_STARRED
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 10
+          maximum: 100
+          minimum: 1
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+          description: A list of events
+        "404":
+          description: User not found
+      summary: Get events based on filter and user id.
       tags:
       - events
   /ga4gh/trs/v2/service-info:

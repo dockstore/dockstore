@@ -20,6 +20,7 @@ import static io.dockstore.webservice.jdbi.EventDAO.MAX_LIMIT;
 import static io.dockstore.webservice.jdbi.EventDAO.PAGINATION_RANGE;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
@@ -34,7 +35,10 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
@@ -43,12 +47,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 
 /**
@@ -74,30 +81,69 @@ public class EventResource {
         this.userDAO = userDAO;
     }
 
+    private void checkUserExists(User user) {
+        if (user == null) {
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_NOT_FOUND);
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork(readOnly = true)
     @Operation(description = DESCRIPTION, summary = SUMMARY, security = @SecurityRequirement(name = "bearer"))
     @ApiOperation(value = SUMMARY, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = DESCRIPTION, responseContainer = "List", response = Event.class)
-    public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user, @QueryParam("event_search_type") EventSearchType eventSearchType, @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") int limit, @QueryParam("offset") @DefaultValue("0") Integer offset) {
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
+    public List<Event> getEvents(@Parameter(hidden = true) @ApiParam(hidden = true) @Auth User user,
+        @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
+        @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
+        @QueryParam("offset") @DefaultValue("0") Integer offset) {
         User userWithSession = this.userDAO.findById(user.getId());
+        return getEventsForUser(userWithSession, eventSearchType, limit, offset);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork(readOnly = true)
+    @Path("/{userId}")
+    @Operation(description = "No authentication.", summary = "Get events based on filter and user id.")
+    @ApiOperation(value = "List recent events for a user.", notes = "No authentication.", response = Event.class, responseContainer = "List")
+    @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "A list of events", content = @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Event.class))))
+    @ApiResponse(responseCode = HttpStatus.SC_NOT_FOUND + "", description = "User not found")
+    public List<Event> getUserEvents(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+        @NotNull @QueryParam("eventSearchType") EventSearchType eventSearchType,
+        @Min(1) @Max(MAX_LIMIT) @DefaultValue(PAGINATION_DEFAULT_STRING) @ApiParam(defaultValue = PAGINATION_DEFAULT_STRING, allowableValues = PAGINATION_RANGE) @Parameter(schema = @Schema(maximum = "100", minimum = "1")) @QueryParam("limit") Integer limit,
+        @QueryParam("offset") @DefaultValue("0") Integer offset) {
+        User user = this.userDAO.findById(userId);
+        checkUserExists(user);
+        return getEventsForUser(user, eventSearchType, limit, offset);
+    }
+
+    /**
+     * Returns events for the provided user
+     * @param user The user we are getting events for
+     * @param eventSearchType The types of events
+     * @param limit Event list limit
+     * @param offset Event list offest
+     * @return A list of events
+     */
+    private List<Event> getEventsForUser(User user, EventSearchType eventSearchType, int limit, Integer offset) {
         switch (eventSearchType) {
         case STARRED_ENTRIES:
-            Set<Long> entryIDs = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
+            Set<Long> entryIDs = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
             List<Event> eventsByEntryIDs = this.eventDAO.findEventsByEntryIDs(entryIDs, offset, limit);
             eagerLoadEventEntries(eventsByEntryIDs);
             return eventsByEntryIDs;
         case STARRED_ORGANIZATION:
-            Set<Long> organizationIDs = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
+            Set<Long> organizationIDs = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
             List<Event> allByOrganizationIds = this.eventDAO.findAllByOrganizationIds(organizationIDs, offset, limit);
             eagerLoadEventEntries(allByOrganizationIds);
             return allByOrganizationIds;
         case ALL_STARRED:
-            Set<Long> organizationIDs2 = userWithSession.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
-            Set<Long> entryIDs2 = userWithSession.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
+            Set<Long> organizationIDs2 = user.getStarredOrganizations().stream().map(Organization::getId).collect(Collectors.toSet());
+            Set<Long> entryIDs2 = user.getStarredEntries().stream().map(Entry::getId).collect(Collectors.toSet());
             List<Event> allByOrganizationIdsOrEntryIds = this.eventDAO
-                    .findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit);
+                .findAllByOrganizationIdsOrEntryIds(organizationIDs2, entryIDs2, offset, limit);
             eagerLoadEventEntries(allByOrganizationIdsOrEntryIds);
             return allByOrganizationIdsOrEntryIds;
         default:

@@ -45,6 +45,7 @@ import io.swagger.client.model.Event;
 import io.swagger.client.model.Event.TypeEnum;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.model.DescriptorType;
 import java.util.ArrayList;
@@ -337,6 +338,69 @@ public class BasicIT extends BaseIT {
         final long count3 = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", long.class);
         Assert.assertEquals("there should be no tags", 0, count3);
 
+    }
+    @Test
+    public void testRecentEventsByUser() {
+
+        // Create API client for user
+        ApiClient client = getWebClient(USER_1_USERNAME, testingPostgres);
+
+        UsersApi usersApi = new UsersApi(client);
+        User user = usersApi.getUser();
+        ContainersApi toolsApi = new ContainersApi(client);
+
+        // Register a tool
+        DockstoreTool tool = manualRegisterAndPublish(toolsApi, "dockstoretestuser", "dockerhubandgithub", "regular",
+            "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "/Dockstore.cwl", "/Dockstore.wdl", "/Dockerfile",
+            DockstoreTool.RegistryEnum.DOCKER_HUB, "master", "latest", true);
+
+        // Nothing has been starred so the events API should return an empty collection for the user
+        EventsApi eventsApi = new EventsApi(client);
+        List<Event> events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        Assert.assertTrue("No starred entries, so there should be no events returned", events.isEmpty());
+
+        // Star the tool that was registered above
+        StarRequest starRequest = new StarRequest();
+        starRequest.setStar(true);
+        toolsApi.starEntry(tool.getId(), starRequest);
+
+        // Events API should return 1 event
+        events = eventsApi.getEvents(EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        assertEquals("The user should return 1 starred entry", 1, events.size());
+
+        // Get the event to compare with another user's request
+        Event event = events.get(0);
+
+        // Create a second client and query for the starred event from the first user
+        ApiClient client2 = getWebClient(USER_2_USERNAME, testingPostgres);
+        EventsApi client2EventsApi = new EventsApi(client2);
+
+        // Get events by user id
+        List<Event> eventsForFirstClient = client2EventsApi.getUserEvents(user.getId(), EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+        assertEquals("The user should return 1 starred entry", 1, eventsForFirstClient.size());
+
+        // Get the identified event
+        Event event2 = eventsForFirstClient.get(0);
+
+        // Assert the event client2 was able to identify is the same event caused by the first client
+        assertEquals("The two events should have the same ID", event.getId(), event2.getId());
+    }
+
+    @Test
+    public void testRecentEventsByUserWithNullInput() {
+
+        // Create a second client and query for the starred event from the first user
+        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
+        EventsApi eventsApi = new EventsApi(client);
+
+        // This should throw an error because no user exists with ID -1
+        try {
+            List<Event> events = eventsApi.getUserEvents(-1L, EventSearchType.STARRED_ENTRIES.toString(), 10, 0);
+            fail("No user exists with ID -1");
+        } catch (ApiException e) {
+            assertTrue(e.getMessage().contains("User not found."));
+
+        }
     }
 
     /**
