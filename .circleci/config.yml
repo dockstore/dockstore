@@ -243,7 +243,7 @@ jobs:
           name: run the actual tests
           command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Punit-tests,coverage -ntp
       - run:
-          name: send coverage
+          name: send coverage for the unit tests
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE_UNIT_TEST//-} || echo "Codecov did not collect coverage reports"
       - run:
           name: run the non-confidential integration tests
@@ -258,7 +258,7 @@ jobs:
             ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
             # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
-          name: send coverage
+          name: send coverage for the non-confidential integration tests
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE_NON_CONFIDENTIAL_INTEGRATION_TEST//-} || echo "Codecov did not collect coverage reports"
       - run:
           name: check that JPA classes are consistent with migrations
