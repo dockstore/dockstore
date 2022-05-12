@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.jdbi;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Category;
@@ -252,18 +251,18 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(this.currentSession().getNamedQuery("Entry.getCollectionEntries").setParameter("collectionId", collectionId));
     }
 
-    public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
+    public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder) {
         return findAllPublished(offset, limit, filter, sortCol, sortOrder, typeOfT);
     }
 
-    public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
+    public List<T> findAllPublished(Integer offset, Integer limit, String filter, String sortCol, String sortOrder, Class<T> classType) {
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<T> query = criteriaQuery();
         Root<T> entry = query.from(classType != null ? classType : typeOfT);
         processQuery(filter, sortCol, sortOrder, cb, query, entry);
         query.select(entry);
 
-        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
+        int primitiveOffset = (offset != null) ? offset : 0;
         TypedQuery<T> typedQuery = currentSession().createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
         return typedQuery.getResultList();
     }
