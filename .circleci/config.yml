@@ -242,7 +242,7 @@ jobs:
       - run:
           name: run the actual tests
           environment:
-            TESTING_PROFILE: TESTING_PROFILE_UNIT_TEST
+            TESTING_PROFILE: ${TESTING_PROFILE_UNIT_TEST}
           command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P${TESTING_PROFILE},coverage -ntp
       - run:
           name: send coverage for the unit testsfeature/flynn/2032/Unit_test_coverage_not_in_build_report
@@ -250,7 +250,7 @@ jobs:
       - run:
           name: run the non-confidential integration tests
           environment:
-            TESTING_PROFILE: TESTING_PROFILE_NON_CONFIDENTIAL_INTEGRATION_TEST
+            TESTING_PROFILE: ${TESTING_PROFILE_NON_CONFIDENTIAL_INTEGRATION_TEST}
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
             /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
