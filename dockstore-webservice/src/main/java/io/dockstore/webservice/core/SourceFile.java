@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -51,6 +52,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import org.apache.http.HttpStatus;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -73,6 +76,8 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
     public static final String SHA_TYPE = "SHA-256";
+    private static final String REGEXP = "[-a-zA-Z0-9./_]*";
+    private static final String VIOLATION_MESSAGE = "files/paths must not contain non-alphanumeric characters other than '.', '/', '-', and '_'";
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -95,11 +100,13 @@ public class SourceFile implements Comparable<SourceFile> {
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
     @Schema(description = "Path to sourcefile relative to its parent", required = true)
+    @Pattern(regexp = REGEXP, message = VIOLATION_MESSAGE)
     private String path;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
     @Schema(description = "Absolute path of sourcefile in git repo", required = true)
+    @Pattern(regexp = REGEXP, message = VIOLATION_MESSAGE)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")
@@ -165,7 +172,7 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public void setPath(String path) {
-        this.path = path;
+        this.path = checkPath(path);
     }
 
     public String getAbsolutePath() {
@@ -186,7 +193,7 @@ public class SourceFile implements Comparable<SourceFile> {
     public void setAbsolutePath(String absolutePath) {
         // TODO: Figure out the actual absolute path before this workaround
         // FIXME: it looks like dockstore tool test_parameter --add and a number of other CLI commands depend on this now
-        this.absolutePath = ZipSourceFileHelper.addLeadingSlashIfNecessary((absolutePath));
+        this.absolutePath = checkPath(ZipSourceFileHelper.addLeadingSlashIfNecessary(absolutePath));
         if (!this.absolutePath.equals(absolutePath)) {
             LOG.warn("Absolute path workaround used, this should be fixed at some point");
         }
@@ -224,6 +231,13 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    private static String checkPath(String path) {
+        if (!path.matches(REGEXP)) {
+            throw new CustomWebApplicationException(VIOLATION_MESSAGE, HttpStatus.SC_BAD_REQUEST);
+        }
+        return path;
     }
 
     /**

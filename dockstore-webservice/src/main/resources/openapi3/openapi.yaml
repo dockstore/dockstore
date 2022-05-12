@@ -8621,6 +8621,7 @@ components:
         absolutePath:
           type: string
           description: Absolute path of sourcefile in git repo
+          pattern: "[-a-zA-Z0-9./_]*"
         checksums:
           type: array
           items:
@@ -8635,6 +8636,7 @@ components:
         path:
           type: string
           description: Path to sourcefile relative to its parent
+          pattern: "[-a-zA-Z0-9./_]*"
         type:
           type: string
           description: Enumerates the type of file
