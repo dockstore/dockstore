@@ -241,7 +241,7 @@ jobs:
             python3 -V
       - run:
           name: run the actual tests
-          enviroment:
+          environment:
             TESTING_PROFILE: TESTING_PROFILE_UNIT_TEST
           command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P${TESTING_PROFILE},coverage -ntp
       - run:
@@ -249,7 +249,7 @@ jobs:
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE_UNIT_TEST//-} || echo "Codecov did not collect coverage reports"
       - run:
           name: run the non-confidential integration tests
-          enviroment:
+          environment:
             TESTING_PROFILE: TESTING_PROFILE_NON_CONFIDENTIAL_INTEGRATION_TEST
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
