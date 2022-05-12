@@ -242,15 +242,15 @@ jobs:
       - run:
           name: run the actual tests
           environment:
-            TESTING_PROFILE: ${TESTING_PROFILE_UNIT_TEST}
-          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P${TESTING_PROFILE},coverage -ntp
+            TESTING_PROFILE: $TESTING_PROFILE_UNIT_TEST
+          command: ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -ntp
       - run:
           name: send coverage for the unit testsfeature/flynn/2032/Unit_test_coverage_not_in_build_report
           command: bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE_UNIT_TEST//-} || echo "Codecov did not collect coverage reports"
       - run:
           name: run the non-confidential integration tests
           environment:
-            TESTING_PROFILE: ${TESTING_PROFILE_NON_CONFIDENTIAL_INTEGRATION_TEST}
+            TESTING_PROFILE: $TESTING_PROFILE_NON_CONFIDENTIAL_INTEGRATION_TEST
           command: |
             # Adding all "normal" certs into this local one that has the Hoverfly cert (instead of adding Hoverfly cert to the global one so it doesn't potentially affect other tests)
             /usr/local/jdk-<< pipeline.parameters.java-tag >>/bin/keytool -importkeystore -srckeystore $JAVA_HOME/lib/security/cacerts -destkeystore LocalTrustStore -srcstorepass changeit -deststorepass changeit
@@ -259,7 +259,7 @@ jobs:
               # If it is a branch, skip the signature check
               export SKIP_SIGNATURE_CHECK=true
             fi
-            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P${TESTING_PROFILE},coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
+            ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -P$TESTING_PROFILE,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit  -DskipSignatureCheck=$SKIP_SIGNATURE_CHECK -ntp
             # ./mvnw -B org.jacoco:jacoco-maven-plugin:report org.jacoco:jacoco-maven-plugin:report-aggregate clean install -Pnon-confidential-tests,coverage -Djavax.net.ssl.trustStore=../LocalTrustStore -Djavax.net.ssl.trustStorePassword=changeit -ntp
       - run:
           name: send coverage for the non-confidential integration tests
