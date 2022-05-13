@@ -172,7 +172,8 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public void setPath(String path) {
-        this.path = checkPath(path);
+        checkPath(path);
+        this.path = path;
     }
 
     public String getAbsolutePath() {
@@ -193,8 +194,10 @@ public class SourceFile implements Comparable<SourceFile> {
     public void setAbsolutePath(String absolutePath) {
         // TODO: Figure out the actual absolute path before this workaround
         // FIXME: it looks like dockstore tool test_parameter --add and a number of other CLI commands depend on this now
-        this.absolutePath = checkPath(ZipSourceFileHelper.addLeadingSlashIfNecessary(absolutePath));
-        if (!this.absolutePath.equals(absolutePath)) {
+        String modifiedPath = ZipSourceFileHelper.addLeadingSlashIfNecessary(absolutePath);
+        checkPath(modifiedPath);
+        this.absolutePath = modifiedPath;
+        if (!this.absolutePath.equals(modifiedPath)) {
             LOG.warn("Absolute path workaround used, this should be fixed at some point");
         }
     }
@@ -233,11 +236,10 @@ public class SourceFile implements Comparable<SourceFile> {
         this.frozen = frozen;
     }
 
-    private static String checkPath(String path) {
+    private static void checkPath(String path) {
         if (path != null && !path.matches(PATH_REGEXP)) {
             throw new CustomWebApplicationException(PATH_VIOLATION_MESSAGE, HttpStatus.SC_BAD_REQUEST);
         }
-        return path;
     }
 
     /**
