@@ -36,4 +36,11 @@
             <where>name = ''</where>
         </update>
     </changeSet>
+    <changeSet author="svonworl" id="constrainSourceFilePaths">
+        <sql dbms="postgresql">
+            <comment>Add some constraints to limit SourceFile paths to a "safe" set of characters</comment>
+            alter table sourcefile add constraint sourcefile_path_limit check (path ~ '^[-a-zA-Z0-9./_]*$');
+            alter table sourcefile add constraint sourcefile_absolutepath_limit check (absolutepath ~ '^[-a-zA-Z0-9./_]*$');
+        </sql>
+    </changeSet>
 </databaseChangeLog>
