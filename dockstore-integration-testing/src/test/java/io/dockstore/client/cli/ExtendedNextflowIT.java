@@ -17,6 +17,7 @@ package io.dockstore.client.cli;
 
 import static org.junit.Assert.assertNotSame;
 
+import io.dockstore.common.BitBucketTest; // To delete
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.DescriptorLanguage;
@@ -41,7 +42,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-@Category({ ConfidentialTest.class, WorkflowTest.class })
+@Category({ ConfidentialTest.class, WorkflowTest.class, BitBucketTest.class })
 public class ExtendedNextflowIT extends BaseIT {
 
     // workflow with a bin directory
