@@ -141,7 +141,7 @@ jobs:
   BitBucket-tests:
     executor: integration_test_exec
     environment:
-      TESTING_PROFILE: BitBuckets-tests
+      TESTING_PROFILE: BitBucket-tests
     steps:
       - setup_test
       - install-postgres
