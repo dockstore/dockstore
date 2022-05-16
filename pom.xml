@@ -698,7 +698,7 @@
             </activation>
             <properties>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
-                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest
+                    io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest
                 </excludeGroups>
             </properties>
 
@@ -754,11 +754,11 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
-                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest,io.dockstore.common.SlowTest,io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ToolTest, io.dockstore.common.WorkflowTest, io.dockstore.common.SlowTest, io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest</excludeGroups>
             </properties>
         </profile>
         <profile>
-            <id>non-confidential-tests</id>
+            <id>non-confidential-tests</id>io.dockstore.common.BitBucketTest
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
@@ -774,12 +774,20 @@
             </properties>
         </profile>
         <profile>
+            <id>BitBuckets-tests</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.BitBucketTest</groups>
+            </properties>
+        </profile>
+        <profile>
             <id>unit-tests</id>
             <!-- run all non-integration tests -->
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
-                <excludeGroups>io.dockstore.common.LanguageParsingTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest</excludeGroups>
             </properties>
             <build>
                 <plugins>
