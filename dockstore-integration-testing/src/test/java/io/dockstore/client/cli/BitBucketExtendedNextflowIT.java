@@ -113,6 +113,31 @@ public class ExtendedNextflowIT extends BaseIT {
         Assert.assertEquals(4, sourceFileList.size());
     }
 
+    /**
+     * This tests the DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW metadata is correct after a refresh
+     * @param workflow  The DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW workflow
+     */
+    private void testWorkflowVersionMetadata(Workflow workflow) {
+
+        final String partialReadmeDescription = "AMPA-NF is a pipeline for assessing the antimicrobial domains of proteins,";
+        final String descriptorDescription = "Fast automated prediction of protein antimicrobial regions";
+        final String versionWithReadmeDescription = "v1.0";
+
+        Assert.assertEquals(descriptorDescription, workflow.getDescription());
+        Assert.assertTrue(workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> workflowVersion.getName().equals(versionWithReadmeDescription)));
+        workflow.getWorkflowVersions().forEach(workflowVersion -> {
+            if (workflowVersion.getName().equals(versionWithReadmeDescription)) {
+                Assert.assertTrue(workflowVersion.getDescription().contains(partialReadmeDescription));
+                Assert.assertNull(workflowVersion.getAuthor());
+                Assert.assertNull(workflowVersion.getEmail());
+            } else {
+                Assert.assertNotNull(descriptorDescription, workflowVersion.getDescription());
+                Assert.assertEquals("test.user@test.com", workflowVersion.getAuthor());
+                Assert.assertNull(workflowVersion.getEmail());
+            }
+        });
+    }
+
 
     @Test
     public void testBitbucketBinaryWorkflow() throws Exception {

@@ -133,6 +133,15 @@ jobs:
       - setup_postgres
       - setup_integration_test
       - save_test_results
+  BitBucket-tests:
+    executor: BitBuckets-tests
+      TESTING_PROFILE: BitBuckets-tests
+    steps:
+      - setup_test
+      - install-postgres
+      - setup_postgres
+      - setup_integration_test
+      - save_test_results    
   language-parsing-tests:
     executor: machine_integration_test_exec
     environment:

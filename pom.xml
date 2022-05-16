@@ -758,7 +758,7 @@
             </properties>
         </profile>
         <profile>
-            <id>non-confidential-tests</id>io.dockstore.common.BitBucketTest
+            <id>non-confidential-tests</id>
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
@@ -774,7 +774,7 @@
             </properties>
         </profile>
         <profile>
-            <id>BitBuckets-tests</id>
+            <id>BitBucket-tests</id>
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>false</skipITs>
