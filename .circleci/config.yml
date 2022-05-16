@@ -66,7 +66,7 @@ workflows:
           requires:
             - build
           context: sonarcloud
-      - language-parsing-tests:
+      # - language-parsing-tests:
       #     <<: *common_filters
       #     requires:
       #       - build
@@ -81,16 +81,16 @@ workflows:
       #     requires:
       #       - build
       #     context: sonarcloud
-#       - regression-integration-tests:
-#           filters:
-#             branches:
-#               only:
-#                 - master
-#                 - /^release.*$/
-#           requires:
-#             - build
-#           context: sonarcloud
-# jobs:
+      # - regression-integration-tests:
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #           - /^release.*$/
+      #     requires:
+      #       - build
+      #     context: sonarcloud
+jobs:
   regression-integration-tests:
     executor: machine_integration_test_exec
     environment:
