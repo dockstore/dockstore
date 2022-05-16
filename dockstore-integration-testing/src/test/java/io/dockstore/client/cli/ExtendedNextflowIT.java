@@ -43,7 +43,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-@Category({ ConfidentialTest.class, WorkflowTest.class, BitBucketTest.class })
 public class ExtendedNextflowIT extends BaseIT {
 
     // workflow with a bin directory
@@ -75,7 +74,8 @@ public class ExtendedNextflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
-    @Test
+    @Test 
+    @Category({ ConfidentialTest.class, WorkflowTest.class })
     public void testNextflowSecondaryFiles() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
         final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
@@ -110,7 +110,8 @@ public class ExtendedNextflowIT extends BaseIT {
         Assert.assertEquals("Fast automated prediction of protein antimicrobial regions", refreshGithub.getDescription());
     }
 
-    @Test
+    @Test 
+    @Category(BitBucketTest.class)
     public void testBitbucketNextflowWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
@@ -174,12 +175,14 @@ public class ExtendedNextflowIT extends BaseIT {
         });
     }
 
-    @Test
+    @Test 
+    @Category({ ConfidentialTest.class, WorkflowTest.class })
     public void testGitlabNextflowWorkflow() {
         // TODO: need to look into the SlowTest situation but we also need to reactivate the tests against API V4 for 1.5.0
     }
 
-    @Test
+    @Test 
+    @Category(BitBucketTest.class)
     public void testBitbucketBinaryWorkflow() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
