@@ -16,14 +16,11 @@
 
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertNotSame;
-
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.UsersApi;
@@ -43,7 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 @Category(BitBucketTest.class)
-public class ExtendedNextflowIT extends BaseIT {
+public class BitBucketExtendedNextflowIT extends BaseIT {
 
     // workflow with a bin directory
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser/ampa-nf";
