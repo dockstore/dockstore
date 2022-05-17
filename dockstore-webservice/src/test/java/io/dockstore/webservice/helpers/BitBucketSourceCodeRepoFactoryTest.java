@@ -18,7 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import static org.junit.Assert.assertEquals;
 
-import io.dockstore.common.io.BitBucketTest;
+import io.dockstore.common.BitBucketTest;
 import io.dockstore.webservice.core.BioWorkflow;
 import org.junit.Test;
 
