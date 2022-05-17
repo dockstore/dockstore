@@ -21,11 +21,12 @@ import static org.junit.Assert.assertEquals;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.webservice.core.BioWorkflow;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen
  */
-@Category(BitBucketTest)
+@Category(BitBucketTest.class)
 public class BitBucketSourceCodeRepoFactoryTest {
 
     /**
