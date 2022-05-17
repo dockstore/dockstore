@@ -76,8 +76,9 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public static final EnumSet<DescriptorLanguage.FileType> TEST_FILE_TYPES = EnumSet.of(DescriptorLanguage.FileType.CWL_TEST_JSON, DescriptorLanguage.FileType.WDL_TEST_JSON, DescriptorLanguage.FileType.NEXTFLOW_TEST_PARAMS);
     public static final String SHA_TYPE = "SHA-256";
-    private static final String PATH_REGEXP = "[-a-zA-Z0-9./_]*";
-    private static final String PATH_VIOLATION_MESSAGE = "filenames must not contain characters other than letters, digits, '.', '/', '-', and '_'";
+    private static final String PATH_REGEX = "[-a-zA-Z0-9./_]*";
+    private static final java.util.regex.Pattern PATH_REGEX_COMPILED = java.util.regex.Pattern.compile(PATH_REGEX);
+    private static final String PATH_VIOLATION_MESSAGE = "Filenames and paths must not contain characters other than letters, digits, '.', '/', '-', and '_'";
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
@@ -100,13 +101,13 @@ public class SourceFile implements Comparable<SourceFile> {
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
     @Schema(description = "Path to sourcefile relative to its parent", required = true)
-    @Pattern(regexp = PATH_REGEXP, message = PATH_VIOLATION_MESSAGE)
+    @Pattern(regexp = PATH_REGEX, message = PATH_VIOLATION_MESSAGE)
     private String path;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
     @Schema(description = "Absolute path of sourcefile in git repo", required = true)
-    @Pattern(regexp = PATH_REGEXP, message = PATH_VIOLATION_MESSAGE)
+    @Pattern(regexp = PATH_REGEX, message = PATH_VIOLATION_MESSAGE)
     private String absolutePath;
 
     @Column(columnDefinition = "boolean default false")
@@ -237,7 +238,7 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     private static void checkPath(String path) {
-        if (path != null && !path.matches(PATH_REGEXP)) {
+        if (path != null && !PATH_REGEX_COMPILED.matcher(path).matches()) {
             throw new CustomWebApplicationException(PATH_VIOLATION_MESSAGE, HttpStatus.SC_BAD_REQUEST);
         }
     }
