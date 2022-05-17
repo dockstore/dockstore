@@ -54,7 +54,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -148,14 +147,6 @@ public class GeneralWorkflowIT extends BaseIT {
     @Test
     public void testSmartRefreshGitlab() {
         commonSmartRefreshTest(SourceControl.GITLAB, "dockstore.test.user2/dockstore-workflow-example", "master");
-    }
-
-    /**
-     * This tests that smart refresh correctly refreshes the right versions based on some scenarios for BitBucket
-     */
-    @Test
-    public void testSmartRefreshBitbucket() {
-        commonSmartRefreshTest(SourceControl.BITBUCKET, "dockstore_testuser2/dockstore-workflow", "cwl_import");
     }
 
     private void commonSmartRefreshTest(SourceControl sourceControl, String workflowPath, String versionOfInterest) {
@@ -529,61 +520,6 @@ public class GeneralWorkflowIT extends BaseIT {
 
     }
 
-    /**
-     * Tests that refreshing with valid imports will work (for WDL)
-     */
-    @Test
-    public void testRefreshWithImportsWDL() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        UsersApi usersApi = new UsersApi(client);
-
-        // refresh all
-        workflowsApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/dockstore.wdl", "",
-                DescriptorLanguage.WDL.getShortName(), "");
-
-
-        // refresh individual that is valid
-        Workflow workflow = workflowsApi
-            .getWorkflowByPath(SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", BIOWORKFLOW, "");
-
-        // Update workflow path
-        workflow.setDescriptorType(Workflow.DescriptorTypeEnum.WDL);
-        workflow.setWorkflowPath("/Dockstore.wdl");
-
-        // Update workflow descriptor type
-        workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-
-        // Refresh workflow
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-
-        // Publish workflow
-        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-
-        // Unpublish workflow
-        workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(false));
-
-        // Restub
-        workflow = workflowsApi.restub(workflow.getId());
-
-        // Refresh a single version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "master", false);
-        assertEquals("Should only have one version", 1, workflow.getWorkflowVersions().size());
-        assertTrue("Should have master version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "master")));
-        assertEquals("Should no longer be a stub workflow", Workflow.ModeEnum.FULL, workflow.getMode());
-
-        // Refresh another version
-        workflow = workflowsApi.refreshVersion(workflow.getId(), "cwl_import", false);
-        assertEquals("Should now have two versions", 2, workflow.getWorkflowVersions().size());
-        assertTrue("Should have cwl_import version", workflow.getWorkflowVersions().stream().anyMatch(workflowVersion -> Objects.equals(workflowVersion.getName(), "cwl_import")));
-
-        try {
-            workflowsApi.refreshVersion(workflow.getId(), "fakeVersion", false);
-            fail("Should not be able to refresh a version that does not exist");
-        } catch (ApiException ex) {
-            assertEquals(HttpStatus.BAD_REQUEST_400, ex.getCode());
-        }
-    }
 
     @Test
     public void testUpdateWorkflowPath() throws ApiException {
@@ -1032,57 +968,7 @@ public class GeneralWorkflowIT extends BaseIT {
         assertTrue("there should be at least 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 3 <= count2);
     }
 
-    /**
-     * This tests the dirty bit attribute for workflow versions with bitbucket
-     */
-    @Test
-    public void testBitbucketDirtyBit() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-
-        // refresh all and individual
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore_testuser2/dockstore-workflow", "testname", "cwl",
-            SourceControl.BITBUCKET, "/Dockstore.cwl", false);
-
-        final long nullLastModifiedWorkflowVersions = testingPostgres
-            .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All Bitbucket workflow versions should have last modified populated after refreshing", 0,
-            nullLastModifiedWorkflowVersions);
-
-        // Check that no versions have a true dirty bit
-        final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
-        assertEquals("there should be no versions with dirty bit, there are " + count, 0, count);
-
-        // Update workflow version to new path
-        Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream()
-            .filter(version -> Objects.equals(version.getName(), "master")).findFirst();
-        if (workflowVersion.isEmpty()) {
-            fail("Master version should exist");
-        }
-
-        List<WorkflowVersion> workflowVersions = new ArrayList<>();
-        WorkflowVersion updateWorkflowVersion = workflowVersion.get();
-        updateWorkflowVersion.setWorkflowPath("/Dockstoredirty.cwl");
-        workflowVersions.add(updateWorkflowVersion);
-        workflowVersions = workflowsApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-
-        // There should be on dirty bit
-        final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", long.class);
-        assertEquals("there should be 1 versions with dirty bit, there are " + count1, 1, count1);
-
-        // Update default cwl
-        workflow.setWorkflowPath("/Dockstoreclean.cwl");
-        workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
-        workflowsApi.refresh(workflow.getId(), false);
-
-        // There should be 3 versions with new cwl
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", long.class);
-        assertEquals("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, 4, count2);
-
-    }
-
+ 
     /**
      * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
      */
@@ -1186,44 +1072,6 @@ public class GeneralWorkflowIT extends BaseIT {
         }
     }
 
-    /**
-     * This tests manually publishing a Bitbucket workflow, this test is all messed up and somehow depends on GitHub
-     */
-    @Test
-    @Ignore
-    public void testManualPublishBitbucket() {
-        ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowsApi = new WorkflowsApi(client);
-
-        // manual publish
-        Workflow workflow = manualRegisterAndPublish(workflowsApi, "dockstore_testuser2/dockstore-workflow", "testname", "wdl",
-            SourceControl.BITBUCKET, "/Dockstore.wdl", true);
-
-        // Check for two valid versions (wdl_import and surprisingly, cwl_import)
-        final long count = testingPostgres
-            .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')",
-                long.class);
-        assertEquals("There should be a valid 'wdl_import' version and a valid 'cwl_import' version", 2, count);
-
-        final long count2 = testingPostgres
-            .runSelectStatement("select count(*) from workflowversion where lastmodified is null", long.class);
-        assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
-
-        // Check that commit ID is set
-        workflow.getWorkflowVersions().forEach(workflowVersion -> {
-            assertNotNull(workflowVersion.getCommitID());
-        });
-
-        // grab wdl file
-        Optional<WorkflowVersion> version = workflow.getWorkflowVersions().stream()
-            .filter(workflowVersion -> Objects.equals(workflowVersion.getName(), "wdl_import")).findFirst();
-        if (version.isEmpty()) {
-            fail("wdl_import version should exist");
-        }
-        assertTrue(
-            fileDAO.findSourceFilesByVersion(version.get().getId()).stream().filter(sourceFile -> Objects.equals(sourceFile.getAbsolutePath(), "/Dockstore.wdl"))
-                .findFirst().isPresent());
-    }
 
     /**
      * This tests manually publishing a gitlab workflow
