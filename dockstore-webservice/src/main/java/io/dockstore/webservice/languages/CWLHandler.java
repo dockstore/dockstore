@@ -356,7 +356,7 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 return Optional.empty();
             }
 
-            processWorkflow(workflow, null, 0, null, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+            processWorkflow(workflow, null, null, 0, null, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
 
             if (type == LanguageHandlerInterface.Type.DAG) {
                 // Determine steps that point to end
@@ -401,12 +401,16 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
-    private void processWorkflow(Workflow workflow, String defaultDockerPath, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
+    private void processWorkflow(Workflow workflow, Map<String, Map> parentRequirements, Map<String, Map> parentHints, int depth, String parentStepId, LanguageHandlerInterface.Type type, Preprocessor preprocessor, ToolDAO dao, List<Pair<String, String>> nodePairs, Map<String, ToolInfo> toolInfoMap, Map<String, String> stepToType, Map<String, DockerInfo> nodeDockerInfo) {
         Yaml yaml = new Yaml();
         Gson gson = CWL.getTypeSafeCWLToolDocument();
 
+        // Join parent and current requirements and hints.
+        Map<String, Map> requirements = joinRequirementsOrHints(parentRequirements, workflow.getRequirements());
+        Map<String, Map> hints = joinRequirementsOrHints(parentHints, workflow.getHints());
+
         // Determine default docker path (Check requirement first and then hint)
-        String workflowDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), defaultDockerPath);
+        String workflowDockerPath = getRequirementOrHint(requirements, hints);
 
         // Store workflow steps in json and then read it into map <String, WorkflowStep>
         Object steps = workflow.getSteps();
@@ -463,7 +467,9 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
             }
 
             // Check workflow step for docker requirement and hints
-            String stepDockerPath = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(), workflowDockerPath);
+            Map<String, Map> stepRequirements = joinRequirementsOrHints(requirements, workflowStep.getRequirements());
+            Map<String, Map> stepHints = joinRequirementsOrHints(hints, workflowStep.getHints());
+            String stepDockerPath = getRequirementOrHint(stepRequirements, stepHints);
 
             // Check for docker requirement within workflow step file
             Object run = workflowStep.getRun();
@@ -475,19 +481,22 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 String entryId;
                 if (isWorkflow(runAsJson, yaml)) {
                     Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
-                    stepDockerPath = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), stepDockerPath);
+                    stepDockerPath = getRequirementOrHint(joinRequirementsOrHints(stepRequirements, stepWorkflow.getRequirements()), 
+                        joinRequirementsOrHints(stepHints, stepWorkflow.getHints()));
                     stepToType.put(workflowStepId, WORKFLOW_TYPE);
                     entryId = convertToString(stepWorkflow.getId());
                     // Process the subworkflow
-                    processWorkflow(stepWorkflow, stepDockerPath, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
+                    processWorkflow(stepWorkflow, stepRequirements, stepHints, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 } else if (isTool(runAsJson, yaml)) {
                     CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
-                    stepDockerPath = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), stepDockerPath);
+                    stepDockerPath = getRequirementOrHint(joinRequirementsOrHints(stepRequirements, clTool.getRequirements()),
+                        joinRequirementsOrHints(stepHints, clTool.getHints()));
                     stepToType.put(workflowStepId, TOOL_TYPE);
                     entryId = convertToString(clTool.getId());
                 } else if (isExpressionTool(runAsJson, yaml)) {
                     ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
-                    stepDockerPath = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), stepDockerPath);
+                    stepDockerPath = getRequirementOrHint(joinRequirementsOrHints(stepRequirements, expressionTool.getRequirements()),
+                        joinRequirementsOrHints(stepHints, expressionTool.getHints()));
                     stepToType.put(workflowStepId, EXPRESSION_TOOL_TYPE);
                     entryId = convertToString(expressionTool.getId());
                 } else {
@@ -629,18 +638,18 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Will determine dockerPull from requirements or hints (requirements takes precedence)
+     * Will determine dockerPull from requirements or hints (requirements take precedence)
      *
      * @param requirements
      * @param hints
      * @return
      */
-    private String getRequirementOrHint(List<Object> requirements, List<Object> hints, String dockerPull) {
-        dockerPull = getDockerRequirement(requirements, dockerPull);
-        if (dockerPull == null) {
-            dockerPull = getDockerHint(hints, dockerPull);
+    private String getRequirementOrHint(Map<String, Map> requirements, Map<String, Map> hints) {
+        String requirementPull = getDockerPull(requirements);
+        if (requirementPull != null) {
+            return requirementPull;
         }
-        return dockerPull;
+        return getDockerPull(hints);
     }
 
     /**
@@ -698,47 +707,42 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
-     * Given a list of CWL requirements, will return the DockerPull information if present.
-     * If not will return the current docker path (currentDefault)
-     *
-     * @param requirements
-     * @param currentDefault
-     * @return
+     * Return the DockerPull from the specified CWL requirements/hints, null if not present.
      */
-    private String getDockerRequirement(List<Object> requirements, String currentDefault) {
-        if (requirements != null) {
-            for (Object requirement : requirements) {
-                Object dockerRequirement = ((Map)requirement).get("class");
-                Object dockerPull = ((Map)requirement).get("dockerPull");
-                if (Objects.equals(dockerRequirement, "DockerRequirement") && dockerPull != null) {
-                    return dockerPull.toString();
-                }
+    private String getDockerPull(Map<String, Map> requirementsOrHints) {
+        Map requirementOrHint = requirementsOrHints.get("DockerRequirement");
+        if (requirementOrHint != null) {
+            Object dockerPull = requirementOrHint.get("dockerPull");
+            if (dockerPull != null) {
+                return dockerPull.toString();
             }
         }
-
-        return currentDefault;
+        return null;
     }
 
     /**
-     * Given a list of CWL hints, will return the DockerPull information if present.
-     * If not will return the current docker path (currentDefault)
-     *
-     * @param hints
-     * @param currentDefault
-     * @return
+     * Adds the List of new CWL requirements/hints to the specified Map of CWL requirements/hints.
+     * Requirements/hints from the List take precedence over those in the Map.
+     * If there are no requirements/hints to be added, the original Map is returned.
      */
-    private String getDockerHint(List<Object> hints, String currentDefault) {
-        if (hints != null) {
-            for (Object hint : hints) {
-                Object dockerRequirement = ((Map)hint).get("class");
-                Object dockerPull = ((Map)hint).get("dockerPull");
-                if (Objects.equals(dockerRequirement, "DockerRequirement") && dockerPull != null) {
-                    return dockerPull.toString();
+    private Map<String, Map> joinRequirementsOrHints(Map<String, Map> existing, List<Object> add) {
+        if (existing == null) {
+            existing = Map.of();
+        }
+        if (add == null || add.isEmpty()) {
+            return existing;
+        }
+        Map<String, Map> sum = new HashMap<>(existing);
+        add.forEach(obj -> {
+            if (obj instanceof Map) {
+                Map map = (Map)obj;
+                Object klass = map.get("class");
+                if (klass instanceof String) { 
+                    sum.put((String)klass, map);
                 }
             }
-        }
-
-        return currentDefault;
+        });
+        return sum;
     }
 
     /**
