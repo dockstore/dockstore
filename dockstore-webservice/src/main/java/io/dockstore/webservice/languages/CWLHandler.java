@@ -653,6 +653,20 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
     }
 
     /**
+     * Return the DockerPull from the specified CWL requirements/hints, null if not present.
+     */
+    private String getDockerPull(Map<String, Map> requirementsOrHints) {
+        Map requirementOrHint = requirementsOrHints.get("DockerRequirement");
+        if (requirementOrHint != null) {
+            Object dockerPull = requirementOrHint.get("dockerPull");
+            if (dockerPull != null) {
+                return dockerPull.toString();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Converts a JSON Object in CWL to JSON Array
      * @param keyName Name of key to convert (Ex. requirements, hints)
      * @param entryJson JSON representation of file
@@ -704,20 +718,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 }
             }
         }
-    }
-
-    /**
-     * Return the DockerPull from the specified CWL requirements/hints, null if not present.
-     */
-    private String getDockerPull(Map<String, Map> requirementsOrHints) {
-        Map requirementOrHint = requirementsOrHints.get("DockerRequirement");
-        if (requirementOrHint != null) {
-            Object dockerPull = requirementOrHint.get("dockerPull");
-            if (dockerPull != null) {
-                return dockerPull.toString();
-            }
-        }
-        return null;
     }
 
     /**
