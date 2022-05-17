@@ -20,10 +20,6 @@ import static org.junit.Assert.assertEquals;
 
 import io.dockstore.common.io.BitBucketTest;
 import io.dockstore.webservice.core.BioWorkflow;
-import io.dockstore.webservice.core.Tool;
-import java.util.Map;
-import java.util.Optional;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
