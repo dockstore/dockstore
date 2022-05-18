@@ -783,10 +783,10 @@
         <profile>
             <id>BitBucket-tests</id>
             <properties>
-                <skipTests>false</skipTests>
+                <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.BitBucketTest</groups>
-                <rerunFailingTestsCount>10</rerunFailingTestsCount>
+                <rerunFailingTestsCount>6</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
