@@ -24,7 +24,7 @@
 
     <name>dockstore</name>
     <description>dockstore parent POM</description>
-    <url>https://github.com/dockstore/dockstore</url>
+    <url>https://github.com/dockstore/dockstore</uskipITrl>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -304,7 +304,7 @@
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
                         <!-- re-run flaky tests once -->
-                        <rerunFailingTestsCount>1</rerunFailingTestsCount>
+                        <rerunFailingTestsCount>${rerunFailingTestsCount}</rerunFailingTestsCount>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -317,7 +317,7 @@
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
                         <!-- re-run flaky tests once -->
-                        <rerunFailingTestsCount>1</rerunFailingTestsCount>
+                        <rerunFailingTestsCount>${rerunFailingTestsCount}</rerunFailingTestsCount>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -700,6 +700,7 @@
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest,
                     io.dockstore.common.BenchmarkTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest
                 </excludeGroups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
 
             <build>
@@ -728,6 +729,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.RegressionTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
@@ -737,6 +739,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.WorkflowTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
@@ -746,6 +749,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.ToolTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
@@ -755,6 +759,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <excludeGroups>io.dockstore.common.ToolTest, io.dockstore.common.WorkflowTest, io.dockstore.common.SlowTest, io.dockstore.common.RegressionTest, io.dockstore.common.NonConfidentialTest, io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest</excludeGroups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
@@ -763,6 +768,7 @@
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.NonConfidentialTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
@@ -771,6 +777,7 @@
                 <skipTests>false</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.LanguageParsingTest</groups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
@@ -779,6 +786,7 @@
                 <skipTests>false</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.BitBucketTest</groups>
+                <rerunFailingTestsCount>5</rerunFailingTestsCount>
             </properties>
         </profile>
         <profile>
@@ -788,6 +796,7 @@
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
                 <excludeGroups>io.dockstore.common.LanguageParsingTest, io.dockstore.common.BitBucketTest</excludeGroups>
+                <rerunFailingTestsCount>1</rerunFailingTestsCount>
             </properties>
             <build>
                 <plugins>
