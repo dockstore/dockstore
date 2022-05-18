@@ -28,14 +28,16 @@ public class SourceFileTest {
     }
 
     private void testBadPath(String badPath) {
+        SourceFile a = new SourceFile();
         try {
-            new SourceFile().setPath(badPath);
+            a.setPath(badPath);
             Assert.fail("should have thrown the appropriate exception");
         } catch (CustomWebApplicationException e) {
             // expected execution path on successful test
         }
+        SourceFile b = new SourceFile();
         try {
-            new SourceFile().setAbsolutePath(badPath);
+            b.setAbsolutePath(badPath);
             Assert.fail("should have thrown the appropriate exception");
         } catch (CustomWebApplicationException e) {
             // expected execution path on successful test
