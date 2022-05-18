@@ -295,8 +295,8 @@ public class WorkflowIT extends BaseIT {
     /**
      * Test the precedence of CWL requirements and hints.
      * The workflow steps in the referenced workflow are named to indicate whether the step and invoked command
-     * had requirements and hints.  For example, the workflow step id "requirement_none" means that the workflow
-     * step had a requirments, and the invoked command did not have a requirement or a hint.
+     * defined requirements or hints.  For example, the workflow step id "requirement_none" means that the workflow
+     * step defined a requirement, and the invoked command did not define a requirement or a hint.
      *
      * <p> According to the CWL spec, a child inherits requirements and hints from its parent.  Child requirements
      * override parent requirements, child hints override parent hints, and if both are present at a node,
