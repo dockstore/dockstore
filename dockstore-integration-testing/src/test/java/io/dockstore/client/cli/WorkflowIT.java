@@ -320,9 +320,9 @@ public class WorkflowIT extends BaseIT {
             String id = tool.get("id");
             String docker = tool.get("docker");
             if (Set.of("requirement_none", "requirement_hint", "hint_none").contains(id)) {
-                assertEquals(docker, "step");
+                assertEquals("step", docker);
             } else {
-                assertEquals(docker, "child");
+                assertEquals("child", docker);
             }
         }
         assertEquals("there should be a dockerPull for all workflow steps except the one with no requirements/hints", 3 * 3 - 1, list.size());

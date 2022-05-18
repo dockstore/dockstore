@@ -409,9 +409,6 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
         Map<String, Map> requirements = joinRequirementsOrHints(parentRequirements, workflow.getRequirements());
         Map<String, Map> hints = joinRequirementsOrHints(parentHints, workflow.getHints());
 
-        // Determine default docker path (Check requirement first and then hint)
-        String workflowDockerPath = getDockerPull(requirements, hints);
-
         // Store workflow steps in json and then read it into map <String, WorkflowStep>
         Object steps = workflow.getSteps();
         String stepJson = gson.toJson(steps);
