@@ -481,7 +481,8 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                 String entryId;
                 if (isWorkflow(runAsJson, yaml)) {
                     Workflow stepWorkflow = gson.fromJson(runAsJson, Workflow.class);
-                    stepDockerPath = getDockerPull(joinRequirementsOrHints(stepRequirements, stepWorkflow.getRequirements()), 
+                    stepDockerPath = getDockerPull(
+                        joinRequirementsOrHints(stepRequirements, stepWorkflow.getRequirements()),
                         joinRequirementsOrHints(stepHints, stepWorkflow.getHints()));
                     stepToType.put(workflowStepId, WORKFLOW_TYPE);
                     entryId = convertToString(stepWorkflow.getId());
@@ -489,13 +490,15 @@ public class CWLHandler extends AbstractLanguageHandler implements LanguageHandl
                     processWorkflow(stepWorkflow, stepRequirements, stepHints, depth + 1, workflowStepId, type, preprocessor, dao, nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 } else if (isTool(runAsJson, yaml)) {
                     CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
-                    stepDockerPath = getDockerPull(joinRequirementsOrHints(stepRequirements, clTool.getRequirements()),
+                    stepDockerPath = getDockerPull(
+                        joinRequirementsOrHints(stepRequirements, clTool.getRequirements()),
                         joinRequirementsOrHints(stepHints, clTool.getHints()));
                     stepToType.put(workflowStepId, TOOL_TYPE);
                     entryId = convertToString(clTool.getId());
                 } else if (isExpressionTool(runAsJson, yaml)) {
                     ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
-                    stepDockerPath = getDockerPull(joinRequirementsOrHints(stepRequirements, expressionTool.getRequirements()),
+                    stepDockerPath = getDockerPull(
+                        joinRequirementsOrHints(stepRequirements, expressionTool.getRequirements()),
                         joinRequirementsOrHints(stepHints, expressionTool.getHints()));
                     stepToType.put(workflowStepId, EXPRESSION_TOOL_TYPE);
                     entryId = convertToString(expressionTool.getId());
