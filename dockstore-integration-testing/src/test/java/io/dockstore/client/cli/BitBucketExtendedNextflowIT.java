@@ -23,7 +23,6 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
 import java.util.List;
@@ -74,7 +73,6 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        UsersApi usersApi = new UsersApi(webClient);
         // get workflow stubs
         Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
