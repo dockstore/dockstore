@@ -25,7 +25,6 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import java.util.List;
 import org.hibernate.Session;
