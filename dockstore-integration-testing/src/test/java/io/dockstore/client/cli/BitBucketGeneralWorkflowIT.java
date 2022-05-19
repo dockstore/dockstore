@@ -59,8 +59,6 @@ import org.junit.experimental.categories.Category;
 @Category(BitBucketTest.class)
 public class BitBucketGeneralWorkflowIT extends BaseIT {
 
-    private static final String DUMMY_DOI = "10.foo/bar";
-
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 

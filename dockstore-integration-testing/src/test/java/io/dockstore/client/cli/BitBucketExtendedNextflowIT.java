@@ -42,8 +42,6 @@ import org.junit.rules.ExpectedException;
 @Category(BitBucketTest.class)
 public class BitBucketExtendedNextflowIT extends BaseIT {
 
-    // workflow with a bin directory
-    private static final String DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser/ampa-nf";
     // bitbucket workflow
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW =
         SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/ampa-nf";

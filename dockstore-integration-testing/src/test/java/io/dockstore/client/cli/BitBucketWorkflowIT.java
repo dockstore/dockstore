@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -78,26 +77,6 @@ public class BitBucketWorkflowIT extends BaseIT {
         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW =
         SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
-    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
-    private static final String DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/gdc-dnaseq-cwl";
-    // workflow with external library in lib directory
-    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
-    // workflow that uses containers
-    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/galaxy-workflows";
-    // workflow with includeConfig in config file directory
-    private static final String DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/vipr";
-    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL =
-        Registry.QUAY_IO.getDockerPath() + "/dockstoretestuser2/dockstore-cgpmap";
-    private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE =
-        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
-    private static final String GATK_SV_TAG = "dockstore-test";
-    private static final String DOCKER_IMAGE_SHA_TYPE_FOR_TRS = "sha-256";
-    private final String installationId = "1179416";
-    private final String toolAndWorkflowRepo = "DockstoreTestUser2/test-workflows-and-tools";
-    private final String toolAndWorkflowRepoToolPath = "DockstoreTestUser2/test-workflows-and-tools/md5sum";
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -110,8 +89,8 @@ public class BitBucketWorkflowIT extends BaseIT {
 
 
     private WorkflowDAO workflowDAO;
-    private WorkflowVersionDAO workflowVersionDAO;
     private FileDAO fileDAO;
+    private WorkflowVersionDAO workflowVersionDAO;
 
     @Before
     public void setup() {
@@ -131,40 +110,6 @@ public class BitBucketWorkflowIT extends BaseIT {
     @Override
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-    }
-
-    /**
-     * Manually register and publish a workflow with the given path and name
-     *
-     * @param workflowsApi
-     * @param workflowPath
-     * @param workflowName
-     * @param descriptorType
-     * @param sourceControl
-     * @param descriptorPath
-     * @param toPublish
-     * @return Published workflow
-     */
-    private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
-        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
-        // Manually register
-        Workflow workflow = workflowsApi
-            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
-                "/test.json");
-        Assert.assertEquals(0, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
-        assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
-
-        // Refresh
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-        assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
-
-        // Publish
-        if (toPublish) {
-            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-        }
-        assertEquals(workflow.isIsPublished(), toPublish);
-        Assert.assertEquals(toPublish ? 1 : 0, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
-        return workflow;
     }
 
 
