@@ -638,7 +638,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             WorkflowVersion updatedWorkflowVersion;
             // Update existing source files, add new source files, remove deleted sourcefiles, clear json for dag and tool table
             if (existingWorkflowVersion != null) {
-                // Copy over workflow version level information. Don't copy over non-ORCID and ORCID authors. It will be updated later by addDockstoreYmlAuthorsToVersion
+                // Copy over workflow version level information.
+                // Don't copy over non-ORCID and ORCID authors because they are not added to remoteWorkflowVersion. They will be added to the updated workflow version
                 existingWorkflowVersion.setWorkflowPath(remoteWorkflowVersion.getWorkflowPath());
                 existingWorkflowVersion.setLastModified(remoteWorkflowVersion.getLastModified());
                 existingWorkflowVersion.setLegacyVersion(remoteWorkflowVersion.isLegacyVersion());
