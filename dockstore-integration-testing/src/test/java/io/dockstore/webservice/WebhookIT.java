@@ -812,7 +812,6 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, version.getOrcidAuthors().size());
         final String nextflowDescriptorAuthorName = "Nextflow Test Author";
         assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
-
         // WDL workflow containing 1 descriptor author, 1 ORCID author, and 0 non-ORCID authors
         workflow = client.getWorkflowByPath(wdl2WorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
