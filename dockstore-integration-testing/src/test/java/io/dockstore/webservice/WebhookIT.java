@@ -797,7 +797,6 @@ public class WebhookIT extends BaseIT {
         assertEquals(2, version.getOrcidAuthors().size());
         final String wdlDescriptorAuthorName = "Descriptor Author";
         assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
-
         // CWL workflow
         workflow = client.getWorkflowByPath(cwlWorkflowRepoPath, BIOWORKFLOW, "versions,authors");
         version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
