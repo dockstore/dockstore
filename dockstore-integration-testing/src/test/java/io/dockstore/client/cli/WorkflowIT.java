@@ -312,7 +312,7 @@ public class WorkflowIT extends BaseIT {
         Long cwlId = cwlWorkflow.getId();
         workflowApi.refresh(cwlId, false);
         Workflow workflow = workflowApi.getWorkflow(cwlId, null);
-        WorkflowVersion version = workflow.getWorkflowVersions().stream().findFirst().get();
+        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
         String tableToolContent = workflowApi.getTableToolContent(cwlId, version.getId());
         Gson gson = new Gson();
         List<Map<String, String>> list = gson.fromJson(tableToolContent, List.class);
