@@ -15,8 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertNotSame;
-
 import io.dockstore.common.BitBucketTest;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.DescriptorLanguage;
@@ -73,40 +71,6 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         ManagedSessionContext.bind(session);
     }
 
-    @Test
-    public void testNextflowSecondaryFiles() throws Exception {
-        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
-        final ApiClient webClient = getWebClient(USER_1_USERNAME, testingPostgres);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        UsersApi usersApi = new UsersApi(webClient);
-        User user = usersApi.getUser();
-
-        Workflow workflow = workflowApi.manualRegister(SourceControl.GITHUB.name(), "DockstoreTestUser/ampa-nf", "/nextflow.config", "",
-                DescriptorLanguage.NEXTFLOW.getShortName(), "");
-        assertNotSame("", workflow.getWorkflowName());
-
-        // do targeted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
-        // need to set paths properly
-        workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(Workflow.DescriptorTypeEnum.NFL);
-        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
-
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW, BIOWORKFLOW, null);
-        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId(), false);
-
-        // Tests that nf-core nextflow.config files can be parsed
-        List<io.dockstore.webservice.core.SourceFile> sourceFileList = fileDAO.findSourceFilesByVersion(refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("nfcore")).findFirst().get().getId());
-        Assert.assertEquals(4, sourceFileList.size());
-        Assert.assertTrue("files are not what we expected",
-            sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/AMPA-BIGTABLE.pl")) && sourceFileList.stream()
-                .anyMatch(file -> file.getPath().equals("bin/multi-AMPA-BIGTABLE.pl")));
-
-        // check that metadata made it through properly
-        Assert.assertEquals("test.user@test.com", refreshGithub.getAuthor());
-        Assert.assertEquals("Fast automated prediction of protein antimicrobial regions", refreshGithub.getDescription());
-    }
 
     @Test
     public void testBitbucketNextflowWorkflow() throws Exception {
@@ -172,10 +136,6 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         });
     }
 
-    @Test
-    public void testGitlabNextflowWorkflow() {
-        // TODO: need to look into the SlowTest situation but we also need to reactivate the tests against API V4 for 1.5.0
-    }
 
     @Test
     public void testBitbucketBinaryWorkflow() throws Exception {
