@@ -252,7 +252,6 @@ public class BitBucketGeneralWorkflowIT extends BaseIT {
     public void testRefreshWithImportsWDL() {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        UsersApi usersApi = new UsersApi(client);
 
         // refresh all
         workflowsApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/dockstore-workflow", "/dockstore.wdl", "",

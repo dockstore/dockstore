@@ -781,7 +781,7 @@
             </properties>
         </profile>
         <profile>
-            <id>BitBucket-tests</id>
+            <id>bitbucket-tests</id>
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>false</skipITs>

@@ -76,7 +76,6 @@ public class BitBucketExtendedNextflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
-        User user = usersApi.getUser();
         // get workflow stubs
         Workflow workflow = workflowApi.manualRegister(SourceControl.BITBUCKET.name(), "dockstore_testuser2/ampa-nf", "/nextflow.config", "",
                 DescriptorLanguage.NEXTFLOW.getShortName(), "/foo.json");
