@@ -784,6 +784,7 @@ public class WebhookIT extends BaseIT {
         String wdlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar");
         String cwlWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar2");
         String nextflowWorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar3");
+        String wdl2WorkflowRepoPath = String.format("github.com/%s/%s", authorsRepo, "foobar4");
         Workflow workflow;
         WorkflowVersion version;
 
@@ -811,6 +812,13 @@ public class WebhookIT extends BaseIT {
         assertEquals(1, version.getOrcidAuthors().size());
         final String nextflowDescriptorAuthorName = "Nextflow Test Author";
         assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(nextflowDescriptorAuthorName)));
+
+        // WDL workflow containing 1 descriptor author, 1 ORCID author, and 0 non-ORCID authors
+        workflow = client.getWorkflowByPath(wdl2WorkflowRepoPath, BIOWORKFLOW, "versions,authors");
+        version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
+        assertEquals(0, version.getAuthors().size());
+        assertEquals(1, version.getOrcidAuthors().size());
+        assertTrue("Should not have any author from the descriptor", version.getAuthors().stream().noneMatch(author -> author.getName().equals(wdlDescriptorAuthorName)));
 
         // WDL workflow containing only .dockstore.yml authors
         client.handleGitHubRelease(authorsRepo, BasicIT.USER_2_USERNAME, "refs/heads/onlyDockstoreYmlAuthors", installationId);
