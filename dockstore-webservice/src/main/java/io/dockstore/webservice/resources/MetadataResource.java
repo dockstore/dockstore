@@ -274,7 +274,7 @@ public class MetadataResource {
         schema = @Schema(implementation = String.class)))
     @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
     public Response getRunnerDependencies(
-            @Parameter(name = "client_version", description = "The Dockstore client version")
+            @Parameter(name = "client_version", description = "The Dockstore client version", schema = @Schema(pattern = "(^(\\d+)\\.(\\d+)\\.(\\d+)$)|(^development-build$)"))
             @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
             @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "2"))
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("3") @QueryParam("python_version") String pythonVersion,
@@ -287,6 +287,9 @@ public class MetadataResource {
             return Response.noContent().build();
         }
         boolean unwrap = !("json").equals(output);
+        if (!PipHelper.validateSemVer(clientVersion)) {
+            throw new CustomWebApplicationException("Invalid client version: " + clientVersion + ". Must match pattern: " + PipHelper.SEM_VER_PATTERN.pattern(), HttpStatus.SC_BAD_REQUEST);
+        }
         String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
         try {
             String content = Resources.toString(this.getClass().getClassLoader()
