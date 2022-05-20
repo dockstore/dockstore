@@ -43,7 +43,7 @@ import org.junit.experimental.categories.Category;
  * @author aduncan
  */
 @Category(BitBucketTest.class)
-public class BitBucketBasicIT extends BaseIT {
+public class BitBucketGitHubBasicIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
