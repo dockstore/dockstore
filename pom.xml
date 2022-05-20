@@ -303,7 +303,7 @@
                         <skipTests>${skipTests}</skipTests>
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
-                        <!-- re-run flaky tests once -->
+                        <!-- profiles can set how many times flakey tests should be rerun -->
                         <rerunFailingTestsCount>${rerunFailingTestsCount}</rerunFailingTestsCount>
                     </configuration>
                 </plugin>
@@ -316,7 +316,6 @@
                         <excludedGroups>${excludeGroups}</excludedGroups>
                         <!-- enforce that tests should be independent -->
                         <runOrder>random</runOrder>
-                        <!-- re-run flaky tests once -->
                         <rerunFailingTestsCount>${rerunFailingTestsCount}</rerunFailingTestsCount>
                     </configuration>
                 </plugin>
@@ -782,10 +781,12 @@
         </profile>
         <profile>
             <id>bitbucket-tests</id>
+            <!-- run all tests involving bitbucket -->
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>false</skipITs>
                 <groups>io.dockstore.common.BitBucketTest</groups>
+                <!-- Found through trial and error -->
                 <rerunFailingTestsCount>5</rerunFailingTestsCount>
             </properties>
         </profile>

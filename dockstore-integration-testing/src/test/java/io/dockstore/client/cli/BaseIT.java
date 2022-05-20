@@ -64,7 +64,7 @@ import org.junit.runner.Description;
 
 /**
  * Base integration test class
- * A default configuration that cleans the database between tests
+ * A default configuration that cleans the database between tests and provides some basic methods
  */
 @Category(ConfidentialTest.class)
 public class BaseIT {
