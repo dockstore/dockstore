@@ -192,7 +192,7 @@ public class WorkflowIT extends BaseIT {
      * @param descriptorPath
      * @param toPublish
      * @return Published workflow
-     */
+     *
     private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
         SourceControl sourceControl, String descriptorPath, boolean toPublish) {
         // Manually register
@@ -214,7 +214,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertEquals(toPublish ? 1 : 0, testingPostgres.getPublishEventCountForWorkflow(workflow.getId()));
         return workflow;
     }
-
+    */
     // Tests 3 things:
     // WDL workflow with local imports
     // WDL workflow with HTTP imports

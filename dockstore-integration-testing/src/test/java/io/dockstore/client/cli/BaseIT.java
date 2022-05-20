@@ -16,6 +16,7 @@
 package io.dockstore.client.cli;
 
 import static io.swagger.client.model.DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.codahale.metrics.Gauge;
@@ -23,6 +24,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.TestingPostgres;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -31,9 +33,11 @@ import io.dockstore.webservice.resources.WorkflowSubClass;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Workflow;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,6 +132,38 @@ public class BaseIT {
         String versionName, boolean toPublish) {
         return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
             gitReference, versionName, toPublish, false, null, null);
+    }
+
+    /**
+     * Manually register and publish a workflow with the given path and name
+     *
+     * @param workflowsApi
+     * @param workflowPath
+     * @param workflowName
+     * @param descriptorType
+     * @param sourceControl
+     * @param descriptorPath
+     * @param toPublish
+     * @return Published workflow
+     */
+    public static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
+        // Manually register
+        Workflow workflow = workflowsApi
+            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
+                "/test.json");
+        assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
+
+        // Refresh
+        workflow = workflowsApi.refresh(workflow.getId(), false);
+        assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
+
+        // Publish
+        if (toPublish) {
+            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
+            assertTrue(workflow.isIsPublished());
+        }
+        return workflow;
     }
 
     @Rule

@@ -87,40 +87,6 @@ public class BitBucketGeneralWorkflowIT extends BaseIT {
     }
 
 
-
-
-    /**
-     * Manually register and publish a workflow with the given path and name
-     *
-     * @param workflowsApi
-     * @param workflowPath
-     * @param workflowName
-     * @param descriptorType
-     * @param sourceControl
-     * @param descriptorPath
-     * @param toPublish
-     * @return Published workflow
-     */
-    private Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
-        SourceControl sourceControl, String descriptorPath, boolean toPublish) {
-        // Manually register
-        Workflow workflow = workflowsApi
-            .manualRegister(sourceControl.getFriendlyName().toLowerCase(), workflowPath, descriptorPath, workflowName, descriptorType,
-                "/test.json");
-        assertEquals(Workflow.ModeEnum.STUB, workflow.getMode());
-
-        // Refresh
-        workflow = workflowsApi.refresh(workflow.getId(), false);
-        assertEquals(Workflow.ModeEnum.FULL, workflow.getMode());
-
-        // Publish
-        if (toPublish) {
-            workflow = workflowsApi.publish(workflow.getId(), CommonTestUtilities.createPublishRequest(true));
-            assertTrue(workflow.isIsPublished());
-        }
-        return workflow;
-    }
-
     /**
      * This tests that smart refresh correctly refreshes the right versions based on some scenarios for BitBucket
      */
