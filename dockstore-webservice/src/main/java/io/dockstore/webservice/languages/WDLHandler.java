@@ -178,10 +178,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                 });
 
                 // Add authors from descriptor
-                if (!newAuthors.isEmpty()) {
-                    for (Author author: newAuthors) {
-                        version.addAuthor(author);
-                    }
+                for (Author author: newAuthors) {
+                    version.addAuthor(author);
                 }
 
                 if (!Strings.isNullOrEmpty(mainDescription[0])) {

@@ -663,7 +663,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // Add .dockstore.yml authors to updatedWorkflowVersion. We're adding .dockstore.yml authors to updatedWorkflowVersion instead of remoteWorkflowVersion because
             // updatedWorkflowVersion may contain descriptor authors and we want to overwrite them if .dockstore.yml authors are present.
             if (!yamlAuthors.isEmpty()) {
-                addDockstoreYmlAuthorsToVersion(yamlAuthors, updatedWorkflowVersion);
+                setDockstoreYmlAuthorsForVersion(yamlAuthors, updatedWorkflowVersion);
             }
             if (workflow.getLastModified() == null || (updatedWorkflowVersion.getLastModified() != null && workflow.getLastModifiedDate().before(updatedWorkflowVersion.getLastModified()))) {
                 workflow.setLastModified(updatedWorkflowVersion.getLastModified());
@@ -698,11 +698,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     }
 
     /**
-     * Add authors from .dockstore.yml to a version
+     * Sets a version's authors to .dockstore.yml authors. This will overwrite any existing authors in the version.
      * @param yamlAuthors
      * @param version
      */
-    private void addDockstoreYmlAuthorsToVersion(final List<YamlAuthor> yamlAuthors, Version version) {
+    private void setDockstoreYmlAuthorsForVersion(final List<YamlAuthor> yamlAuthors, Version version) {
         final Set<Author> authors = yamlAuthors.stream()
                 .filter(yamlAuthor -> yamlAuthor.getOrcid() == null)
                 .map(yamlAuthor -> {
