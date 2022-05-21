@@ -11,7 +11,7 @@ steps:
     run: hint.cwl
   none_requirement:
     run: requirement.cwl
-  
+
   hint_none:
     hints:
       - class: DockerRequirement
@@ -27,7 +27,7 @@ steps:
       - class: DockerRequirement
         dockerPull: step
     run: requirement.cwl
-    
+
   requirement_none:
     requirements:
       - class: DockerRequirement
