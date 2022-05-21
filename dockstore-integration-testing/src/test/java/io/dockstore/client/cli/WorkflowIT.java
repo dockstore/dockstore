@@ -292,42 +292,6 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue(parsedInformation.isHasHTTPImports());
     }
 
-    /**
-     * Test the precedence of CWL requirements and hints.
-     * The workflow steps in the referenced workflow are named to indicate whether the step and invoked command
-     * defined requirements or hints.  For example, the workflow step id "requirement_none" means that the workflow
-     * step defined a requirement, and the invoked command did not define a requirement or a hint.
-     *
-     * <p> According to the CWL spec, a child inherits requirements and hints from its parent.  Child requirements
-     * override parent requirements, child hints override parent hints, and if both are present at a node,
-     * requirements take precedence over hints.
-     */
-    @Test
-    public void testCWLRequirementsAndHints() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        Workflow cwlWorkflow = workflowApi
-               .manualRegister(SourceControl.GITHUB.name(), "dockstore-testing/cwl-requirements-and-hints", "/parent.cwl", "CWL",
-                       DescriptorLanguage.CWL.toString(), "/parent.json");
-        Long cwlId = cwlWorkflow.getId();
-        workflowApi.refresh(cwlId, false);
-        Workflow workflow = workflowApi.getWorkflow(cwlId, null);
-        WorkflowVersion version = workflow.getWorkflowVersions().stream().filter(v -> v.getName().equals("main")).findFirst().get();
-        String tableToolContent = workflowApi.getTableToolContent(cwlId, version.getId());
-        Gson gson = new Gson();
-        List<Map<String, String>> list = gson.fromJson(tableToolContent, List.class);
-        for (Map<String, String> tool: list) {
-            String id = tool.get("id");
-            String docker = tool.get("docker");
-            if (Set.of("requirement_none", "requirement_hint", "hint_none").contains(id)) {
-                assertEquals("step", docker);
-            } else {
-                assertEquals("child", docker);
-            }
-        }
-        assertEquals("there should be a dockerPull for all workflow steps except the one with no requirements/hints", 3 * 3 - 1, list.size());
-    }
-
     @Test
     public void testStubRefresh() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME, testingPostgres);
