@@ -7,7 +7,7 @@ public final class TransactionHelper {
 
     private TransactionHelper() {
     }
- 
+
     public static void begin(SessionFactory sessionFactory) {
         sessionFactory.getCurrentSession().beginTransaction();
     }
