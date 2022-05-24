@@ -79,8 +79,8 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
                 version.setDescriptionAndDescriptionSource(configuration.getString("manifest.description"), DescriptionSource.DESCRIPTOR);
                 descriptionInProgress = version.getDescription();
             }
-            // Add authors from descriptor if there are no .dockstore.yml authors
-            if (configuration.containsKey("manifest.author") && version.getAuthors().isEmpty()) {
+            // Add authors from descriptor
+            if (configuration.containsKey("manifest.author")) {
                 String[] authors = configuration.getString("manifest.author").split(",");
                 for (String author : authors) {
                     Author newAuthor = new Author(author.trim());
