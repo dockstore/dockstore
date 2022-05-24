@@ -86,7 +86,7 @@ public class BaseIT {
     public static final String APPTOOL = WorkflowSubClass.APPTOOL.toString();
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
+    static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish, boolean isPrivate, String email, String customDockerPath) {
         DockstoreTool newTool = new DockstoreTool();
@@ -133,7 +133,7 @@ public class BaseIT {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
+    static DockstoreTool manualRegisterAndPublish(ContainersApi containersApi, String namespace, String name, String toolName,
         String gitUrl, String cwlPath, String wdlPath, String dockerfilePath, DockstoreTool.RegistryEnum registry, String gitReference,
         String versionName, boolean toPublish) {
         return manualRegisterAndPublish(containersApi, namespace, name, toolName, gitUrl, cwlPath, wdlPath, dockerfilePath, registry,
@@ -152,7 +152,7 @@ public class BaseIT {
      * @param toPublish
      * @return Published workflow
      */
-    public static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
+    static Workflow manualRegisterAndPublish(WorkflowsApi workflowsApi, String workflowPath, String workflowName, String descriptorType,
         SourceControl sourceControl, String descriptorPath, boolean toPublish) {
         // Manually register
         Workflow workflow = workflowsApi
@@ -172,7 +172,7 @@ public class BaseIT {
         return workflow;
     }
 
-    public static void commonSmartRefreshTest(SourceControl sourceControl, String workflowPath, String versionOfInterest) {
+    static void commonSmartRefreshTest(SourceControl sourceControl, String workflowPath, String versionOfInterest) {
         ApiClient client = getWebClient(USER_2_USERNAME, testingPostgres);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
 
