@@ -19,6 +19,7 @@ package io.openapi.api.impl;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKERFILE;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_CWL;
 import static io.dockstore.common.DescriptorLanguage.FileType.DOCKSTORE_WDL;
+import static io.dockstore.webservice.resources.EntryResource.checkCanReadAcrossEntryTypes;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.COMMAND_LINE_TOOL;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.SERVICE;
 import static io.openapi.api.impl.ToolClassesApiServiceImpl.WORKFLOW;
@@ -50,6 +51,7 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.ServiceDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.openapi.api.ToolsApiService;
 import io.openapi.model.Checksum;
@@ -112,6 +114,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private static TRSListener trsListener = null;
     private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
     private static BioWorkflowDAO bioWorkflowDAO;
+    private static PermissionsInterface permissionsInterface;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -151,6 +154,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ToolsApiServiceImpl.config = config;
+    }
+
+    public static void setAuthorizer(PermissionsInterface authorizer) {
+        ToolsApiServiceImpl.permissionsInterface = authorizer;
     }
 
     @Override
@@ -247,7 +254,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return entry;
         }
         if (entry != null && user.isPresent()) {
-            checkUser(user.get(), entry);
+            checkCanRead(user.get(), entry);
             return entry;
         }
         return null;
@@ -879,6 +886,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private String cleanRelativePath(String relativePath) {
         String cleanRelativePath = StringUtils.removeStart(relativePath, "./");
         return StringUtils.removeStart(cleanRelativePath, "/");
+    }
+
+
+    @Override
+    public void checkCanRead(User user, Entry workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            checkCanReadAcrossEntryTypes(user, workflow, permissionsInterface, ex);
+        }
     }
 
     /**
