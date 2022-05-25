@@ -477,6 +477,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return lambdaEvent;
     }
 
+    private boolean hasDuplicateNames(List<YamlWorkflow> yamlWorkflows) {
+        Set<String> names = new HashSet<>();
+        for (YamlWorkflow yamlWorkflow: yamlWorkflows) {
+            if (!names.add(yamlWorkflow.getName())) {
+                return (true);
+            }
+        }
+        return (false);
+    }
+
     /**
      * Create or retrieve workflows/GitHub App Tools based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.2
@@ -489,6 +499,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
     private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
             final SourceFile dockstoreYml, boolean isTool, PrintWriter messageWriter) {
+        if (hasDuplicateNames(yamlWorkflows)) {
+            String message = String.format("Duplicate %s names in .dockstore.yml", isTool ? "tool" : "workflow");
+            LOG.error(message);
+            messageWriter.println(message);
+            return;
+        }
+
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         try {
             final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
