@@ -61,6 +61,11 @@ workflows:
           requires:
             - build
           context: sonarcloud
+      - bitbucket-tests:
+          <<: *common_filters
+          requires:
+            - build
+          context: sonarcloud
       - language-parsing-tests:
           <<: *common_filters
           requires:
@@ -133,6 +138,16 @@ jobs:
       - setup_postgres
       - setup_integration_test
       - save_test_results
+  bitbucket-tests:
+    executor: integration_test_exec
+    environment:
+      TESTING_PROFILE: bitbucket-tests
+    steps:
+      - setup_test
+      - install-postgres
+      - setup_postgres
+      - setup_integration_test
+      - save_test_results    
   language-parsing-tests:
     executor: machine_integration_test_exec
     environment:
