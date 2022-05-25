@@ -1,5 +1,5 @@
 
-Lists of 354 third-party dependencies.
+Lists of 355 third-party dependencies.
      (Apache License, Version 2.0) akka-actor (com.typesafe.akka:akka-actor_2.12:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-protobuf (com.typesafe.akka:akka-protobuf_2.12:2.5.32 - https://akka.io/)
      (Apache License, Version 2.0) akka-slf4j (com.typesafe.akka:akka-slf4j_2.12:2.5.32 - https://akka.io/)
@@ -353,4 +353,5 @@ Lists of 354 third-party dependencies.
      (WDL License https://github.com/openwdl/wdl/blob/master/LICENSE) wdl-draft2 (org.broadinstitute:wdl-draft2_2.12:77 - no url defined)
      (WDL License https://github.com/openwdl/wdl/blob/master/LICENSE) wdl-draft3 (org.broadinstitute:wdl-draft3_2.12:77 - no url defined)
      (The MIT license) winp (org.jvnet.winp:winp:1.23 - http://kohsuke.org/winp/)
+     (The Apache License, Version 2.0) Woodstox (com.fasterxml.woodstox:woodstox-core:6.2.7 - https://github.com/FasterXML/woodstox)
      (The Apache Software License, Version 2.0) ZT Process Executor (org.zeroturnaround:zt-exec:1.10 - https://github.com/zeroturnaround/zt-exec)
