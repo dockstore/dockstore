@@ -565,7 +565,7 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
      * @param permissionsInterface
      * @param ex
      */
-    public static void checkCanReadAcrossEntryTypes(User user, Entry workflow, PermissionsInterface permissionsInterface, CustomWebApplicationException ex) {
+    public static void checkCanReadAcrossEntryTypes(User user, Entry<?, ?> workflow, PermissionsInterface permissionsInterface, CustomWebApplicationException ex) {
         if (workflow instanceof Workflow) {
             if (!permissionsInterface.canDoAction(user, (Workflow) workflow, Role.Action.READ)) {
                 throw ex;
