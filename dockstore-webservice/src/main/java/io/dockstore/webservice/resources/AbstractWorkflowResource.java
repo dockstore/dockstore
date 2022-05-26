@@ -46,6 +46,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.StateManagerMode;
 import io.dockstore.webservice.helpers.StringInputValidationHelper;
+import io.dockstore.webservice.helpers.TransactionHelper;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
@@ -77,7 +78,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.kohsuke.github.GHRateLimit;
@@ -346,14 +346,15 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @return List of new and updated workflows
      */
     protected void githubWebhookRelease(String repository, String username, String gitReference, String installationId) {
-        // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-        User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
         // Grab Dockstore YML from GitHub
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-
         GHRateLimit startRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-        GHRateLimit endRateLimit;
+
         boolean isSuccessful = false;
+
+        StringWriter stringLogMessageWriter = new StringWriter();
+        PrintWriter logMessageWriter = new PrintWriter(stringLogMessageWriter);
+
         try {
 
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
@@ -361,46 +362,35 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 
-            StringWriter stringLogMessageWriter = new StringWriter();
-            PrintWriter logMessageWriter = new PrintWriter(stringLogMessageWriter);
-
-            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, user, dockstoreYml, logMessageWriter);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, user, dockstoreYml, false, logMessageWriter);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, user, dockstoreYml, true, logMessageWriter);
-
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-            setEventMessage(lambdaEvent, stringLogMessageWriter.toString());
-
-            lambdaEventDAO.create(lambdaEvent);
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, username, dockstoreYml, logMessageWriter);
+            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, false, logMessageWriter);
+            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, true, logMessageWriter);
             isSuccessful = true;
-            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-        } catch (CustomWebApplicationException | ClassCastException | DockstoreYamlHelper.DockstoreYamlException | UnsupportedOperationException ex) {
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
-            gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            String errorMessage = ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
-            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + errorMessage;
-            LOG.info(msg, ex);
-            rollbackAndBeginNewTransaction();
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-            lambdaEvent.setSuccess(false);
-            lambdaEvent.setMessage(errorMessage);
-            lambdaEventDAO.create(lambdaEvent);
-            sessionFactory.getCurrentSession().getTransaction().commit();
-            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
+
         } catch (Exception ex) {
-            endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
+
+            String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
+            LOG.info(msg, ex);
+            logMessageWriter.println("Unexpected error parsing .dockstore.yml:");
+            logMessageWriter.println(msg);
+            logMessageWriter.println("Processing terminated.");
+
+            throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
+
+        } finally {
+
+            final boolean finalIsSuccessful = isSuccessful;
+            TransactionHelper.transaction(sessionFactory, () -> {
+                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
+                lambdaEvent.setSuccess(finalIsSuccessful);
+                setEventMessage(lambdaEvent, stringLogMessageWriter.toString());
+                lambdaEventDAO.create(lambdaEvent);
+            });
+            
+            GHRateLimit endRateLimit = gitHubSourceCodeRepo.getGhRateLimitQuietly();
             gitHubSourceCodeRepo.reportOnGitHubRelease(startRateLimit, endRateLimit, repository, username, gitReference, isSuccessful);
-            String msg = "User " + username + ": Unhandled error while handling push event for repository " + repository + " and reference " + gitReference + "\n" + ex.getMessage();
-            LOG.error(msg, ex);
-            rollbackAndBeginNewTransaction();
-            LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
-            lambdaEvent.setSuccess(false);
-            lambdaEvent.setMessage(ex.getMessage());
-            lambdaEventDAO.create(lambdaEvent);
-            sessionFactory.getCurrentSession().getTransaction().commit();
-            throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
         }
+
     }
 
     public void setEventMessage(LambdaEvent lambdaEvent, String message) {
@@ -408,25 +398,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         if (StringUtils.isNotEmpty(message)) {
             lambdaEvent.setMessage(message);
         }
-    }
-
-    // addValidationsToLambdaEvent(lambdaEvent, updatedWorkflowAndVersions);
-
-    /**
-     * Rollback current DB transaction then start a new one so we can record a lambda event.
-     * https://github.com/dockstore/dockstore/issues/4434
-     */
-    private void rollbackAndBeginNewTransaction() {
-        final Transaction transaction = sessionFactory.getCurrentSession().getTransaction();
-        final boolean isActive = transaction.isActive();
-        final boolean canRollback = transaction.getStatus().canRollback();
-        if (isActive && canRollback) {
-            transaction.rollback();
-        } else {
-            // I don't think this should ever happen
-            LOG.error("Transaction is not active or cannot be rolled back. Active: {}; Can rollback: {}", isActive, canRollback);
-        }
-        sessionFactory.getCurrentSession().beginTransaction();
     }
 
     /**
@@ -497,8 +468,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
-    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, User user,
+    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, String username,
             final SourceFile dockstoreYml, boolean isTool, PrintWriter messageWriter) {
+
         if (hasDuplicateNames(yamlWorkflows)) {
             String message = String.format("Duplicate %s names in .dockstore.yml", isTool ? "tool" : "workflow");
             LOG.error(message);
@@ -507,47 +479,52 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
 
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-        try {
-            final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
-            for (YamlWorkflow wf : yamlWorkflows) {
-                if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
-                    continue;
-                }
+        final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
 
-                String subclass = wf.getSubclass();
-                if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
-                    throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
-                }
-
-                String workflowName = wf.getName();
-                Boolean publish = wf.getPublish();
-                final var defaultVersion = wf.getLatestTagAsDefault();
-                final List<YamlAuthor> yamlAuthors = wf.getAuthors();
-
-                Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
-                Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
-                WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-
-                addValidationsToMessage(workflow, version, messageWriter);
-
-                if (publish != null && workflow.getIsPublished() != publish) {
-                    LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
-                    try {
-                        publishWorkflow(workflow, publish, user);
-                    } catch (CustomWebApplicationException ex) {
-                        LOG.warn("Could not set publish state from YML.", ex);
-                        lambdaEvent.setSuccess(false);
-                        lambdaEvent.setMessage(ex.getMessage());
+        for (YamlWorkflow wf : yamlWorkflows) {
+            try {
+                TransactionHelper.transaction(sessionFactory, () -> {
+                    if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
+                        return;
                     }
-                    lambdaEventDAO.create(lambdaEvent);
-                }
+
+                    String subclass = wf.getSubclass();
+                    if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
+                        throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
+                    }
+
+                    String workflowName = wf.getName();
+                    Boolean publish = wf.getPublish();
+                    final var defaultVersion = wf.getLatestTagAsDefault();
+                    final List<YamlAuthor> yamlAuthors = wf.getAuthors();
+
+                    // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
+                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
+
+                    Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
+                    Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
+                    WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+
+                    addValidationsToMessage(workflow, version, messageWriter);
+
+                    if (publish != null && workflow.getIsPublished() != publish) {
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+                        try {
+                            publishWorkflow(workflow, publish, user);
+                        } catch (CustomWebApplicationException ex) {
+                            LOG.warn("Could not set publish state from YML.", ex);
+                            lambdaEvent.setSuccess(false);
+                            lambdaEvent.setMessage(ex.getMessage());
+                        }
+                        lambdaEventDAO.create(lambdaEvent);
+                    }
+                });
+            } catch (Exception ex) {
+                final String message = String.format("Error processing entry %s in .dockstore.yml:\n%s", wf.getName(), generateMessageFromException(ex));
+                LOG.error(message, ex);
+                messageWriter.println(message);
+                messageWriter.println("Entry skipped.");
             }
-        } catch (ClassCastException ex) { // This has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
-            // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
-            // so display a generic one.
-            final String message = "Error processing .dockstore.yml";
-            LOG.error(message, ex);
-            throw new CustomWebApplicationException(message, LAMBDA_FAILURE);
         }
     }
 
@@ -574,6 +551,16 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return name != null ? String.format("%s/%s", repository, name) : repository;
     }
 
+    private String generateMessageFromException(Exception ex) {
+        // ClassCastException has been seen from WDL parsing wrapper: https://github.com/dockstore/dockstore/issues/4431
+        // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
+        // so return a generic one.
+        if (ex instanceof ClassCastException) {
+            return "unexpected input encountered";
+        }
+        return ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
+    }
+
     /**
      * Create or retrieve services based on Dockstore.yml, add or update tag version
      * ONLY WORKS FOR v1.1
@@ -585,32 +572,46 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      */
     @SuppressWarnings("lgtm[java/path-injection]")
     private void createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
-            User user, final SourceFile dockstoreYml, PrintWriter messageWriter) {
+            String username, final SourceFile dockstoreYml, PrintWriter messageWriter) {
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
+        final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
+
         if (service != null) {
-            if (!DockstoreYamlHelper.filterGitReference(Path.of(gitReference), service.getFilters())) { // lgtm[java/path-injection]
-                return;
-            }
-            final DescriptorLanguageSubclass subclass = service.getSubclass();
-            final Boolean publish = service.getPublish();
-            final var defaultVersion = service.getLatestTagAsDefault();
-            final List<YamlAuthor> yamlAuthors = service.getAuthors();
+            try {
+                TransactionHelper.transaction(sessionFactory, () -> {
+                    if (!DockstoreYamlHelper.filterGitReference(gitRefPath, service.getFilters())) {
+                        return;
+                    }
+                    final DescriptorLanguageSubclass subclass = service.getSubclass();
+                    final Boolean publish = service.getPublish();
+                    final var defaultVersion = service.getLatestTagAsDefault();
+                    final List<YamlAuthor> yamlAuthors = service.getAuthors();
 
-            Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
-            WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
+                    // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
+                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
-            addValidationsToMessage(workflow, version, messageWriter);
+                    Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
+                    WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
-            if (publish != null && workflow.getIsPublished() != publish) {
-                LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
-                try {
-                    publishWorkflow(workflow, publish, user);
-                } catch (CustomWebApplicationException ex) {
-                    LOG.warn("Could not set publish state from YML.", ex);
-                    lambdaEvent.setSuccess(false);
-                    lambdaEvent.setMessage(ex.getMessage());
-                }
-                lambdaEventDAO.create(lambdaEvent);
+                    addValidationsToMessage(workflow, version, messageWriter);
+
+                    if (publish != null && workflow.getIsPublished() != publish) {
+                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
+                        try {
+                            publishWorkflow(workflow, publish, user);
+                        } catch (CustomWebApplicationException ex) {
+                            LOG.warn("Could not set publish state from YML.", ex);
+                            lambdaEvent.setSuccess(false);
+                            lambdaEvent.setMessage(ex.getMessage());
+                        }
+                        lambdaEventDAO.create(lambdaEvent);
+                    }
+                });
+            } catch (Exception ex) {
+                final String message = String.format("Error processing service in .dockstore.yml:\n%s", generateMessageFromException(ex));
+                LOG.error(message, ex);
+                messageWriter.println(message);
+                messageWriter.println("Entry skipped.");
             }
         }
     }
