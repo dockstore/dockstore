@@ -371,9 +371,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
             LOG.info(msg, ex);
-            logMessageWriter.println("Unexpected error parsing .dockstore.yml:");
             logMessageWriter.println(msg);
-            logMessageWriter.println("Processing terminated.");
+            logMessageWriter.println("Terminated processing of .dockstore.yml.");
 
             throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
 
@@ -393,7 +392,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
     }
 
-    public void setEventMessage(LambdaEvent lambdaEvent, String message) {
+    private void setEventMessage(LambdaEvent lambdaEvent, String message) {
         message = StringUtils.stripEnd(message, "\n");
         if (StringUtils.isNotEmpty(message)) {
             lambdaEvent.setMessage(message);
@@ -522,7 +521,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 });
             } catch (RuntimeException ex) {
                 transactionHelper.rethrow();
-                final String message = String.format("Error processing entry %s in .dockstore.yml:\n%s", wf.getName(), generateMessageFromException(ex));
+                final String message = String.format("Error processing entry %s in .dockstore.yml:\n%s", computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);
                 messageWriter.println("Entry skipped.");
@@ -533,7 +532,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     private void addValidationsToMessage(Workflow workflow, WorkflowVersion version, PrintWriter messageWriter) {
         List<Validation> validations = version.getValidations().stream().filter(v -> !v.isValid()).collect(Collectors.toList());
         if (!validations.isEmpty()) {
-            messageWriter.printf("In version '%s' of %s '%s':\n", version.getName(), workflow.getEntryType().getTerm(), computeWorkflowName(workflow));
+            messageWriter.printf("In version '%s' of %s '%s':\n", version.getName(), workflow.getEntryType().getTerm(), computeFullWorkflowName(workflow));
             validations.forEach(validation -> addValidationToMessage(validation, messageWriter));
         }
     }
@@ -547,9 +546,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         }
     }
 
-    private String computeWorkflowName(Workflow workflow) {
-        String name = workflow.getWorkflowName();
-        String repository = workflow.getRepository();
+    private String computeFullWorkflowName(Workflow workflow) {
+        return computeFullWorkflowName(workflow.getWorkflowName(), workflow.getRepository());
+    }
+
+    private String computeFullWorkflowName(String name, String repository) {
         return name != null ? String.format("%s/%s", repository, name) : repository;
     }
 

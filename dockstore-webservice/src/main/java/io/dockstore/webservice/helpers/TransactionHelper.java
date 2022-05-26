@@ -26,22 +26,22 @@ public final class TransactionHelper {
     }
 
     public boolean transaction(Runnable runnable) {
-        boolean ran = false;
+        boolean success = false;
         clear();
         begin();
         try {
             runnable.run();
-            ran = true;
+            success = true;
         } catch (RollbackException e) {
             // keep the RollbackException from propagating
         } finally {
-            if (ran) {
+            if (success) {
                 commit();
             } else {
                 rollback();
             }
         }
-        return ran;
+        return success;
     }
 
     public void clear() {
