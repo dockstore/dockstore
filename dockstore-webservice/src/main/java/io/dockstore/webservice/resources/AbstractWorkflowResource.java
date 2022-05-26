@@ -355,7 +355,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         PrintWriter messageWriter = new PrintWriter(stringMessageWriter);
 
         try {
-
             SourceFile dockstoreYml = gitHubSourceCodeRepo.getDockstoreYml(repository, gitReference);
             // If this method doesn't throw an exception, it's a valid .dockstore.yml with at least one workflow or service.
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
@@ -519,7 +518,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                 });
             } catch (RuntimeException ex) {
-                transactionHelper.rethrow();
+                transactionHelper.rethrowIfMatches(ex);
                 final String message = String.format("Error processing %s %s in .dockstore.yml:\n%s",
                     computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);

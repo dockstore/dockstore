@@ -27,6 +27,7 @@ public final class TransactionHelper {
 
     public boolean transaction(Runnable runnable) {
         boolean success = false;
+        rollback();
         clear();
         begin();
         try {
@@ -90,8 +91,8 @@ public final class TransactionHelper {
         return thrown != null;
     }
 
-    public void rethrow() {
-        if (thrown != null) {
+    public void rethrowIfMatches(Exception ex) {
+        if (ex == thrown) {
             throw thrown;
         }
     }
