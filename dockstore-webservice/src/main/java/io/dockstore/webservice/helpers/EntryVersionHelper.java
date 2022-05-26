@@ -241,7 +241,6 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
             DescriptorLanguage.FileType fileType, Optional<User> user, FileDAO fileDAO) {
         T entry = getDAO().findById(workflowId);
-        checkEntry(entry);
         checkOptionalAuthRead(user, entry);
 
         // tighten permissions for hosted tools and workflows
