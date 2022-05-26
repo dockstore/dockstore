@@ -9,7 +9,6 @@ import static io.dockstore.webservice.core.WorkflowMode.STUB;
 
 import com.google.common.collect.Sets;
 import io.dockstore.common.DescriptorLanguage;
-import io.dockstore.common.DescriptorLanguageSubclass;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
@@ -17,7 +16,6 @@ import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
 import io.dockstore.common.yaml.Workflowish;
 import io.dockstore.common.yaml.YamlAuthor;
-import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.AppTool;
@@ -353,8 +351,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         boolean isSuccessful = false;
 
-        StringWriter stringLogMessageWriter = new StringWriter();
-        PrintWriter logMessageWriter = new PrintWriter(stringLogMessageWriter);
+        StringWriter stringMessageWriter = new StringWriter();
+        PrintWriter messageWriter = new PrintWriter(stringMessageWriter);
 
         try {
 
@@ -363,17 +361,18 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 
-            createServicesAndVersionsFromDockstoreYml(dockstoreYaml12.getService(), repository, gitReference, installationId, username, dockstoreYml, logMessageWriter);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, false, logMessageWriter);
-            createBioWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, true, logMessageWriter);
+            List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
+            createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
+            createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
+            createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getTools(), repository, gitReference, installationId, username, dockstoreYml, AppTool.class, messageWriter);
             isSuccessful = true;
 
         } catch (Exception ex) {
 
             String msg = "User " + username + ": Error handling push event for repository " + repository + " and reference " + gitReference + "\n" + generateMessageFromException(ex);
             LOG.info(msg, ex);
-            logMessageWriter.println(msg);
-            logMessageWriter.println("Terminated processing of .dockstore.yml.");
+            messageWriter.println(msg);
+            messageWriter.println("Terminated processing of .dockstore.yml.");
 
             throw new CustomWebApplicationException(msg, statusCodeForLambda(ex));
 
@@ -383,7 +382,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             new TransactionHelper(sessionFactory).transaction(() -> {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
                 lambdaEvent.setSuccess(finalIsSuccessful);
-                setEventMessage(lambdaEvent, stringLogMessageWriter.toString());
+                setEventMessage(lambdaEvent, stringMessageWriter.toString());
                 lambdaEventDAO.create(lambdaEvent);
             });
             
@@ -468,11 +467,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
-    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
-            final SourceFile dockstoreYml, boolean isTool, PrintWriter messageWriter) {
+    private void createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
+            final SourceFile dockstoreYml, Class workflowType, PrintWriter messageWriter) {
 
         if (hasDuplicateNames(yamlWorkflows)) {
-            String message = String.format("Duplicate %s names in .dockstore.yml", isTool ? "tool" : "workflow");
+            String message = String.format("Duplicate %s names in .dockstore.yml", computeTermFromClass(workflowType));
             LOG.error(message);
             messageWriter.println(message);
             return;
@@ -490,7 +489,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         return;
                     }
                     String subclass = wf.getSubclass().toString();
-                    if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
+                    if (workflowType == AppTool.class && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
                         throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
                     }
 
@@ -502,7 +501,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
                     User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
 
-                    Class workflowType = isTool ? AppTool.class : BioWorkflow.class;
                     Workflow workflow = createOrGetWorkflow(workflowType, repository, user, workflowName, subclass, gitHubSourceCodeRepo);
                     WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
 
@@ -522,12 +520,26 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                 });
             } catch (RuntimeException ex) {
                 transactionHelper.rethrow();
-                final String message = String.format("Error processing entry %s in .dockstore.yml:\n%s", computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
+                final String message = String.format("Error processing %s %s in .dockstore.yml:\n%s",
+                    computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);
                 messageWriter.println("Entry skipped.");
             }
         }
+    }
+
+    private String computeTermFromClass(Class workflowType) {
+        if (workflowType == AppTool.class) {
+            return "tool";
+        }
+        if (workflowType == BioWorkflow.class) {
+            return "workflow";
+        }
+        if (workflowType == Service.class) {
+            return "service";
+        }
+        return "entry";
     }
 
     private void addValidationsToMessage(Workflow workflow, WorkflowVersion version, PrintWriter messageWriter) {
@@ -563,64 +575,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             return "unexpected input encountered";
         }
         return ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
-    }
-
-    /**
-     * Create or retrieve services based on Dockstore.yml, add or update tag version
-     * ONLY WORKS FOR v1.1
-     * @param repository Repository path (ex. dockstore/dockstore-ui2)
-     * @param gitReference Git reference from GitHub (ex. refs/tags/1.0)
-     * @param installationId installation id needed to set up GitHub Apps
-     * @param user User that triggered action
-     * @param dockstoreYml
-     */
-    @SuppressWarnings("lgtm[java/path-injection]")
-    private void createServicesAndVersionsFromDockstoreYml(Service12 service, String repository, String gitReference, String installationId,
-            String username, final SourceFile dockstoreYml, PrintWriter messageWriter) {
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
-        final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
-
-        TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
-
-        if (service != null) {
-            try {
-                transactionHelper.transaction(() -> {
-                    if (!DockstoreYamlHelper.filterGitReference(gitRefPath, service.getFilters())) {
-                        return;
-                    }
-                    final DescriptorLanguageSubclass subclass = service.getSubclass();
-                    final Boolean publish = service.getPublish();
-                    final var defaultVersion = service.getLatestTagAsDefault();
-                    final List<YamlAuthor> yamlAuthors = service.getAuthors();
-
-                    // Retrieve the user who triggered the call (must exist on Dockstore if workflow is not already present)
-                    User user = GitHubHelper.findUserByGitHubUsername(this.tokenDAO, this.userDAO, username, false);
-
-                    Workflow workflow = createOrGetWorkflow(Service.class, repository, user, "", subclass.getShortName(), gitHubSourceCodeRepo);
-                    WorkflowVersion version = addDockstoreYmlVersionToWorkflow(repository, gitReference, dockstoreYml, gitHubSourceCodeRepo, workflow, defaultVersion, yamlAuthors);
-
-                    addValidationsToMessage(workflow, version, messageWriter);
-
-                    if (publish != null && workflow.getIsPublished() != publish) {
-                        LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, user.getUsername(), LambdaEvent.LambdaEventType.PUBLISH);
-                        try {
-                            publishWorkflow(workflow, publish, user);
-                        } catch (CustomWebApplicationException ex) {
-                            LOG.warn("Could not set publish state from YML.", ex);
-                            lambdaEvent.setSuccess(false);
-                            lambdaEvent.setMessage(ex.getMessage());
-                        }
-                        lambdaEventDAO.create(lambdaEvent);
-                    }
-                });
-            } catch (Exception ex) {
-                transactionHelper.rethrow();
-                final String message = String.format("Error processing service in .dockstore.yml:\n%s", generateMessageFromException(ex));
-                LOG.error(message, ex);
-                messageWriter.println(message);
-                messageWriter.println("Entry skipped.");
-            }
-        }
     }
 
     /**
@@ -679,7 +633,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             workflowToUpdate.getUsers().add(user);
         }
 
-        return  workflowToUpdate;
+        return workflowToUpdate;
     }
 
     /**

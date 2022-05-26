@@ -4,10 +4,10 @@ import java.util.List;
 
 public interface Workflowish {
 
-    public String getName();
-    public List<YamlAuthor> getAuthors();
-    public Boolean getPublish();
-    public boolean getLatestTagAsDefault();
-    public Object getSubclass();
-    public Filters getFilters();
+    String getName();
+    List<YamlAuthor> getAuthors();
+    Boolean getPublish();
+    boolean getLatestTagAsDefault();
+    Object getSubclass();
+    Filters getFilters();
 }
