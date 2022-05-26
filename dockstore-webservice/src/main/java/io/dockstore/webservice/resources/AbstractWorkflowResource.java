@@ -492,7 +492,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
                     }
 
-                    final String workflowName = wf.getName();
+                    final String workflowName = workflowType == Service.class ? "" : wf.getName();
                     final Boolean publish = wf.getPublish();
                     final var defaultVersion = wf.getLatestTagAsDefault();
                     final List<YamlAuthor> yamlAuthors = wf.getAuthors();
