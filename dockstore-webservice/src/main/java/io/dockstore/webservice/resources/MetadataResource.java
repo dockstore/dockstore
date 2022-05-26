@@ -203,6 +203,7 @@ public class MetadataResource {
         try {
             return rssListener.getCache().get(RSS_KEY, (k) -> getRSS());
         } catch (RuntimeException e) {
+            LOG.error("runtime exception on rss call:", e);
             throw new CustomWebApplicationException("RSS cache problems: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -261,6 +262,7 @@ public class MetadataResource {
             RSSWriter.write(feed, byteArrayOutputStream);
             return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
         } catch (Exception e) {
+            LOG.error("exception on rss call:", e);
             throw new CustomWebApplicationException("Could not write RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
