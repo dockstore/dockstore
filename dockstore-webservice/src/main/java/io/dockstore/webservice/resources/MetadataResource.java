@@ -203,7 +203,7 @@ public class MetadataResource {
         try {
             return rssListener.getCache().get(RSS_KEY, (k) -> getRSS());
         } catch (RuntimeException e) {
-            throw new CustomWebApplicationException("RSS cache problems", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("RSS cache problems: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
