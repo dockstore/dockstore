@@ -27,7 +27,7 @@ executors:
           - network.host: 127.0.0.1
           - http.port: 9200
           - discovery.type: single-node
-    resource_class: medium+
+    resource_class: large
   machine_integration_test_exec:
     machine: # run the steps with Ubuntu VM, warning this VM does not have a Java 17 equivalent (yet)
       image: ubuntu-2004:202104-01
