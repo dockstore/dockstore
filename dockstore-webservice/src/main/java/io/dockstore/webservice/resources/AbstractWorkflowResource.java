@@ -380,7 +380,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         } finally {
 
             final boolean finalIsSuccessful = isSuccessful;
-            TransactionHelper.transaction(sessionFactory, () -> {
+            new TransactionHelper(sessionFactory).transaction(() -> {
                 LambdaEvent lambdaEvent = createBasicEvent(repository, gitReference, username, LambdaEvent.LambdaEventType.PUSH);
                 lambdaEvent.setSuccess(finalIsSuccessful);
                 setEventMessage(lambdaEvent, stringLogMessageWriter.toString());
@@ -481,20 +481,21 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
 
+        TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
+
         for (YamlWorkflow wf : yamlWorkflows) {
             try {
-                TransactionHelper.transaction(sessionFactory, () -> {
+                transactionHelper.transaction(() -> {
                     if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                         return;
                     }
-
                     String subclass = wf.getSubclass();
                     if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
                         throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
                     }
 
-                    String workflowName = wf.getName();
-                    Boolean publish = wf.getPublish();
+                    final String workflowName = wf.getName();
+                    final Boolean publish = wf.getPublish();
                     final var defaultVersion = wf.getLatestTagAsDefault();
                     final List<YamlAuthor> yamlAuthors = wf.getAuthors();
 
@@ -519,7 +520,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                         lambdaEventDAO.create(lambdaEvent);
                     }
                 });
-            } catch (Exception ex) {
+            } catch (RuntimeException ex) {
+                transactionHelper.rethrow();
                 final String message = String.format("Error processing entry %s in .dockstore.yml:\n%s", wf.getName(), generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);
@@ -576,9 +578,11 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
 
+        TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
+
         if (service != null) {
             try {
-                TransactionHelper.transaction(sessionFactory, () -> {
+                transactionHelper.transaction(() -> {
                     if (!DockstoreYamlHelper.filterGitReference(gitRefPath, service.getFilters())) {
                         return;
                     }
@@ -608,6 +612,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                 });
             } catch (Exception ex) {
+                transactionHelper.rethrow();
                 final String message = String.format("Error processing service in .dockstore.yml:\n%s", generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);

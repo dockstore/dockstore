@@ -13,106 +13,113 @@ import org.slf4j.LoggerFactory;
 public final class TransactionHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionHelper.class);
+    private Session session;
+    private RuntimeException thrown;
 
-    private TransactionHelper() {
+    public TransactionHelper(Session session) {
+        this.session = session;
+        this.thrown = null;
     }
 
-    public static boolean transaction(SessionFactory sessionFactory, Runnable runnable) {
-        boolean completed = false;
-        clear(sessionFactory);
-        begin(sessionFactory);
+    public TransactionHelper(SessionFactory factory) {
+        this(factory.getCurrentSession());
+    }
+
+    public boolean transaction(Runnable runnable) {
+        boolean ran = false;
+        clear();
+        begin();
         try {
             runnable.run();
-            completed = true;
-        } catch (RollbackTransactionException e) {
-            // keeps the RollbackTransactionException from propagating
+            ran = true;
+        } catch (RollbackException e) {
+            // keep the RollbackException from propagating
         } finally {
-            if (completed) {
-                commit(sessionFactory);
+            if (ran) {
+                commit();
             } else {
-                rollback(sessionFactory);
+                rollback();
             }
         }
-        return completed;
+        return ran;
     }
 
-    public static void clear(SessionFactory sessionFactory) {
+    public void clear() {
         check();
         try {
-            currentSession(sessionFactory).clear();
-        } catch (Exception ex) {
-            handleException("clear", ex);
+            session.clear();
+        } catch (RuntimeException ex) {
+            handle("clear", ex);
         }
     }
 
-    public static void begin(SessionFactory sessionFactory) {
+    public void begin() {
         check();
         try {
-            currentSession(sessionFactory).beginTransaction();
-        } catch (Exception ex) {
-            handleException("begin", ex);
+            session.beginTransaction();
+        } catch (RuntimeException ex) {
+            handle("begin", ex);
         }
     }
 
-    public static void rollback(SessionFactory sessionFactory) {
+    public void rollback() {
         check();
         try {
-            Transaction transaction = currentTransaction(sessionFactory);
+            Transaction transaction = session.getTransaction();
             if (isActive(transaction) && transaction.getStatus().canRollback()) {
                 transaction.rollback();
             }
-        } catch (Exception ex) {
-            handleException("rollback", ex);
+        } catch (RuntimeException ex) {
+            handle("rollback", ex);
         }
     }
 
-    public static void commit(SessionFactory sessionFactory) {
+    public void commit() {
         check();
         try {
-            Transaction transaction = currentTransaction(sessionFactory);
+            Transaction transaction = session.getTransaction();
             if (isActive(transaction)) {
                 transaction.commit();
             }
-        } catch (Exception ex) {
-            handleException("commit", ex);
+        } catch (RuntimeException ex) {
+            handle("commit", ex);
         }
     }
 
-    public static boolean isClosed(SessionFactory sessionFactory) {
-        return !currentSession(sessionFactory).isOpen();
+    public boolean hasThrown() {
+        return thrown != null;
     }
 
-    private static void check() {
-        if (isClosed(sessionFactory)) {
-            LOG.error("TransactionHelper: operation on closed session");
-            throw new RuntimeException("operation on closed session");
+    public void rethrow() {
+        if (thrown != null) {
+            throw thrown;
         }
     }
 
-    private static void handleException(String operation, Exception ex) throws Exception {
-        LOG.error(String.format("TransactionHelper: %s failed", operation), ex);
-        // The docs instruct us to immediately close the session if it throws an error.
+    private void check() {
+        if (hasThrown()) {
+            LOG.error("operation on session that has thrown");
+            throw new RuntimeException("operation on session that has thrown");
+        }
+    }
+
+    private void handle(String operation, RuntimeException ex) {
+        thrown = ex;
+        LOG.error(operation + " failed", ex);
+        // The Hibernate docs instruct us to immediately close the session if it throws.
         // This will keep us from using foobar-ed state.
         try {
-            currentSession(sessionFactory).close();
-        } catch (Exception closeEx) {
-            LOG.error("TransactionHelper: close after exception failed", closeEx);
+            session.close();
+        } catch (RuntimeException closeEx) {
+            LOG.error("post-Exception close failed", closeEx);
         }
         throw ex;
     }
 
-    private static Session currentSession(SessionFactory sessionFactory) {
-        return sessionFactory.getCurrentSession();
-    }
-
-    private static Transaction currentTransaction(SessionFactory sessionFactory) {
-        return currentSession(sessionFactory).getTransaction();
-    }
-
-    private static boolean isActive(Transaction transaction) {
+    private boolean isActive(Transaction transaction) {
         return transaction != null && transaction.isActive();
     }
 
-    public static class RollbackTransactionException extends RuntimeException {
+    public static class RollbackException extends RuntimeException {
     }
 }
