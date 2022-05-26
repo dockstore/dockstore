@@ -15,6 +15,7 @@ import io.dockstore.common.Utilities;
 import io.dockstore.common.yaml.DockstoreYaml12;
 import io.dockstore.common.yaml.DockstoreYamlHelper;
 import io.dockstore.common.yaml.Service12;
+import io.dockstore.common.yaml.Workflowish;
 import io.dockstore.common.yaml.YamlAuthor;
 import io.dockstore.common.yaml.YamlWorkflow;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -447,9 +448,9 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return lambdaEvent;
     }
 
-    private boolean hasDuplicateNames(List<YamlWorkflow> yamlWorkflows) {
+    private boolean hasDuplicateNames(List<? extends Workflowish> yamlWorkflows) {
         Set<String> names = new HashSet<>();
-        for (YamlWorkflow yamlWorkflow: yamlWorkflows) {
+        for (Workflowish yamlWorkflow: yamlWorkflows) {
             if (!names.add(yamlWorkflow.getName())) {
                 return (true);
             }
@@ -467,7 +468,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
      * @param dockstoreYml
      */
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
-    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<YamlWorkflow> yamlWorkflows, String repository, String gitReference, String installationId, String username,
+    private void createBioWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
             final SourceFile dockstoreYml, boolean isTool, PrintWriter messageWriter) {
 
         if (hasDuplicateNames(yamlWorkflows)) {
@@ -482,13 +483,13 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
 
         TransactionHelper transactionHelper = new TransactionHelper(sessionFactory);
 
-        for (YamlWorkflow wf : yamlWorkflows) {
+        for (Workflowish wf : yamlWorkflows) {
             try {
                 transactionHelper.transaction(() -> {
                     if (!DockstoreYamlHelper.filterGitReference(gitRefPath, wf.getFilters())) {
                         return;
                     }
-                    String subclass = wf.getSubclass();
+                    String subclass = wf.getSubclass().toString();
                     if (isTool && subclass.equals(DescriptorLanguage.WDL.toString().toLowerCase())) {
                         throw new CustomWebApplicationException("Dockstore does not support WDL for tools registered using GitHub Apps.", HttpStatus.SC_BAD_REQUEST);
                     }
