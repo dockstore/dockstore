@@ -24,7 +24,6 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartDocument;
 import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 
 public final class RSSWriter {
 
@@ -36,8 +35,6 @@ public final class RSSWriter {
         XMLOutputFactory output = XMLOutputFactory.newInstance();
         XMLEventWriter writer = output.createXMLEventWriter(byteArrayOutputStream);
         XMLEventFactory eventFactory = XMLEventFactory.newInstance();
-        String xmlBlock = "\n";
-        XMLEvent endSection = eventFactory.createDTD(xmlBlock);
 
         StartDocument startDocument = eventFactory.createStartDocument();
         writer.add(startDocument);
