@@ -91,7 +91,7 @@ public final class TransactionHelper {
         return thrown != null;
     }
 
-    public void rethrowIfMatches(Exception ex) {
+    public void rethrow(Exception ex) {
         if (ex == thrown) {
             throw thrown;
         }
@@ -100,7 +100,9 @@ public final class TransactionHelper {
     private void check() {
         if (hasThrown()) {
             LOG.error("operation on session that has thrown");
-            throw new RuntimeException("operation on session that has thrown");
+            RuntimeException ex = new RuntimeException("operation on session that has thrown", thrown);
+            thrown = ex;
+            throw thrown;
         }
     }
 

@@ -62,6 +62,7 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -360,6 +361,8 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
             // It also converts a .dockstore.yml 1.1 file to a 1.2 object, if necessary.
             final DockstoreYaml12 dockstoreYaml12 = DockstoreYamlHelper.readAsDockstoreYaml12(dockstoreYml.getContent());
 
+            checkDuplicateNames(dockstoreYaml12.getWorkflows(), dockstoreYaml12.getTools());
+
             List<Service12> services = dockstoreYaml12.getService() != null ? List.of(dockstoreYaml12.getService()) : List.of();
             createWorkflowsAndVersionsFromDockstoreYml(services, repository, gitReference, installationId, username, dockstoreYml, Service.class, messageWriter);
             createWorkflowsAndVersionsFromDockstoreYml(dockstoreYaml12.getWorkflows(), repository, gitReference, installationId, username, dockstoreYml, BioWorkflow.class, messageWriter);
@@ -446,14 +449,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         return lambdaEvent;
     }
 
-    private boolean hasDuplicateNames(List<? extends Workflowish> yamlWorkflows) {
+    private void checkDuplicateNames(List<? extends Workflowish> workflows, List<? extends Workflowish> tools) {
+        List<Workflowish> entries = new ArrayList<>();
+        entries.addAll(workflows);
+        entries.addAll(tools);
         Set<String> names = new HashSet<>();
-        for (Workflowish yamlWorkflow: yamlWorkflows) {
-            if (!names.add(yamlWorkflow.getName())) {
-                return (true);
+        for (Workflowish entry: entries) {
+            String name = entry.getName();
+            if (name == null) {
+                name = "";
+            }
+            if (!names.add(name)) {
+                String msg = "".equals(name) ? "At least two workflows or tools have no name." : 
+                    String.format("At least two workflows or tools have the same name '%s'.", name);
+                throw new CustomWebApplicationException(msg, LAMBDA_FAILURE);
             }
         }
-        return (false);
     }
 
     /**
@@ -468,13 +479,6 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
     @SuppressWarnings({"lgtm[java/path-injection]", "checkstyle:ParameterNumber"})
     private void createWorkflowsAndVersionsFromDockstoreYml(List<? extends Workflowish> yamlWorkflows, String repository, String gitReference, String installationId, String username,
             final SourceFile dockstoreYml, Class workflowType, PrintWriter messageWriter) {
-
-        if (hasDuplicateNames(yamlWorkflows)) {
-            String message = String.format("Duplicate %s names in .dockstore.yml", computeTermFromClass(workflowType));
-            LOG.error(message);
-            messageWriter.println(message);
-            return;
-        }
 
         GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createGitHubAppRepo(gitHubAppSetup(installationId));
         final Path gitRefPath = Path.of(gitReference); // lgtm[java/path-injection]
@@ -518,12 +522,22 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
                     }
                 });
             } catch (RuntimeException ex) {
-                transactionHelper.rethrowIfMatches(ex);
+                rethrowIfNecessary(ex, transactionHelper);  // emerge from the loop early on certain exceptions
                 final String message = String.format("Error processing %s %s in .dockstore.yml:\n%s",
                     computeTermFromClass(workflowType), computeFullWorkflowName(wf.getName(), repository), generateMessageFromException(ex));
                 LOG.error(message, ex);
                 messageWriter.println(message);
                 messageWriter.println("Entry skipped.");
+            }
+        }
+    }
+
+    private void rethrowIfNecessary(RuntimeException ex, TransactionHelper transactionHelper) {
+        transactionHelper.rethrow(ex);
+        if (ex instanceof CustomWebApplicationException) {
+            int code = ((CustomWebApplicationException)ex).getResponse().getStatus();
+            if (code == LAMBDA_FAILURE || code == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+                throw ex;
             }
         }
     }
@@ -571,7 +585,7 @@ public abstract class AbstractWorkflowResource<T extends Workflow> implements So
         // The message for #4431 is not user-friendly (class wom.callable.MetaValueElement$MetaValueElementBoolean cannot be cast...),
         // so return a generic one.
         if (ex instanceof ClassCastException) {
-            return "unexpected input encountered";
+            return "Unexpected input encountered";
         }
         return ex instanceof CustomWebApplicationException ? ((CustomWebApplicationException)ex).getErrorMessage() : ex.getMessage();
     }
