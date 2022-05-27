@@ -1138,7 +1138,7 @@ public class WebhookIT extends BaseIT {
             client.handleGitHubRelease(toolAndWorkflowRepo, BasicIT.USER_2_USERNAME, "refs/heads/duplicate-paths", installationId);
             fail("Should not be able to create a workflow and apptool with the same path.");
         } catch (ApiException ex) {
-            assertTrue(ex.getMessage().contains("same name"));
+            assertTrue(ex.getMessage().contains("have no name"));
         }
 
         // Check that the database trigger created an entry in fullworkflowpath table
