@@ -212,6 +212,7 @@
                     <skipTests>${skipITs}</skipTests>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
             <plugin>
