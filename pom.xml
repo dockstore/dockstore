@@ -47,7 +47,7 @@
         <postgresql.version>42.2.23</postgresql.version>
         <swagger-ui.version>3.25.0</swagger-ui.version>
         <maven-surefire.version>3.0.0-M5</maven-surefire.version>
-        <maven-failsafe.version>3.0.0-M5</maven-failsafe.version>
+        <maven-failsafe.version>2.22.2</maven-failsafe.version>
 
         <skipTests>false</skipTests>
         <skipITs>true</skipITs>
