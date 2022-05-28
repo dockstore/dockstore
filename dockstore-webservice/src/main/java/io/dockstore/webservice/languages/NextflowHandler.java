@@ -281,7 +281,11 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      * @return Input channel name
      */
     private String getInputChannelNameForEXPR(GroovySourceAST exprAST) {
-        return exprAST == null ? null : exprAST.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
+        try {
+            return exprAST.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     /**
@@ -292,7 +296,7 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      */
     private String getProcessValue(GroovySourceAST processAST) {
         try {
-            return processAST == null ? null : processAST.getNextSibling().getFirstChild().getFirstChild().getText();
+            return processAST.getNextSibling().getFirstChild().getFirstChild().getText();
         } catch (NullPointerException e) {
             return null;
         }
@@ -462,6 +466,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         try {
             StringBuilder builder = new StringBuilder();
             final List<GroovySourceAST> process = getGroovySourceASTList(mainDescriptor, "helpMessage");
+            if (process == null) {
+                return null;
+            }
             process.forEach(ast -> getHelpMessage(ast, builder, new HashSet<GroovySourceAST>()));
             return builder.toString();
         } catch (IOException | TokenStreamException | RecognitionException e) {
@@ -510,6 +517,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
      */
     private List<GroovySourceAST> getGroovySourceASTList(String mainDescriptor, String keyword)
         throws RecognitionException, TokenStreamException, IOException {
+        if (mainDescriptor == null) {
+            return null;
+        }
         try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
             GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
             make.compilationUnit();
@@ -530,6 +540,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         if (mainDescriptor != null) {
             try {
                 List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
+                if (processList == null) {
+                    return map;
+                }
                 Map<String, List<String>> processNameToInputChannels = new HashMap<>();
                 Map<String, List<String>> processNameToOutputChannels = new HashMap<>();
 
@@ -572,6 +585,9 @@ public class NextflowHandler extends AbstractLanguageHandler implements Language
         if (mainDescriptor != null) {
             try {
                 List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
+                if (processList == null) {
+                    return map;
+                }
 
                 for (GroovySourceAST processAST : processList) {
                     String processName = getProcessValue(processAST);
