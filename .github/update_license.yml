@@ -1,9 +1,6 @@
 name: Update license file
 
-on:
-  push:
-    branches:
-      - 'snyk-upgrade-*'
+on: [push]
 
 jobs:
   update_license_file:
