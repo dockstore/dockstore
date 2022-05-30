@@ -48,7 +48,7 @@
     <dependency>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java-api</artifactId>
-      <version>3.2.8</version>
+      <version>3.2.13</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
