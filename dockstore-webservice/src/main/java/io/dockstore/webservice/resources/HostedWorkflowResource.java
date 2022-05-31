@@ -67,6 +67,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -81,6 +82,8 @@ import org.slf4j.LoggerFactory;
  */
 @Api("hosted")
 @Path("/workflows")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "hosted", description = ResourceConstants.HOSTED)
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);

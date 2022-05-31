@@ -84,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -108,6 +109,7 @@ import org.slf4j.LoggerFactory;
  */
 @Path("/auth/tokens")
 @Api(value = "/auth/tokens", tags = "tokens")
+@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "tokens", description = ResourceConstants.TOKENS)
 public class TokenResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {

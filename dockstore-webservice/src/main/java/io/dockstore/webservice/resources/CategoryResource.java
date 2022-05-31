@@ -33,6 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -47,6 +48,7 @@ import org.hibernate.SessionFactory;
  * Category endpoints
  */
 @Path("/categories")
+@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "categories", description = ResourceConstants.CATEGORIES)
 public class CategoryResource implements AuthenticatedResourceInterface {

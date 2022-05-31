@@ -72,6 +72,7 @@ import org.slf4j.LoggerFactory;
  */
 @Path("/organizations")
 @Api("/organizations")
+@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS)
 @SecuritySchemes({@SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer")})
@@ -353,7 +354,6 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @PUT
     @Timed
     @UnitOfWork
-    @Consumes(MediaType.APPLICATION_JSON)
     @UsernameRenameRequired
     @Path("/{organizationId}/star")
     @ApiOperation(value = "Star an organization.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
@@ -502,7 +502,6 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @POST
     @Timed
     @UnitOfWork
-    @Consumes("application/json")
     @UsernameRenameRequired
     @ApiOperation(value = "Create an organization.", notes = "Organization requires approval by an admin before being made public.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Organization.class)
@@ -564,7 +563,6 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork
     @Path("{organizationId}")
-    @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Update an organization.", notes = "Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Organization.class)
     @Operation(operationId = "updateOrganization", summary = "Update an organization.", description = "Update an organization. Currently only name, display name, description, topic, email, link, avatarUrl, and location can be updated.", security = @SecurityRequirement(name = "bearer"))

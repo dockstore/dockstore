@@ -31,6 +31,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -47,6 +48,7 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
  */
 @Api("/toolTester")
 @Path("/toolTester")
+@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "toolTester", description = ResourceConstants.TOOLTESTER)
 public class ToolTesterResource {
