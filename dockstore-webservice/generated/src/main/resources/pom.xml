@@ -832,7 +832,7 @@
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-client</artifactId>
-      <version>7.10.2</version>
+      <version>7.17.3</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
