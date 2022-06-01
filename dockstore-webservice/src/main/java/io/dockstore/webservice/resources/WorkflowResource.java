@@ -679,6 +679,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateWorkflowPath", description = "Reset the workflow paths.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Reset the workflow paths.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Resets the workflow paths of all versions to match the default workflow path from the workflow object passed.", response = Workflow.class)
@@ -984,6 +985,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "addWorkflowPermission", description = "Set the specified permission for a user on a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Set the specified permission for a user on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
@@ -1327,6 +1329,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/workflowVersions")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateWorkflowVersion", description = "Update the workflow versions linked to a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the workflow versions linked to a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Updates workflow path, reference, and hidden attributes.", response = WorkflowVersion.class, responseContainer = "List")

@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -124,6 +125,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateTags", description = "Update the tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Update the tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> updateTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,
@@ -167,6 +169,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface, En
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "addTags", description = "Add new tags linked to a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Add new tags linked to a tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> addTags(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user")@Auth User user,

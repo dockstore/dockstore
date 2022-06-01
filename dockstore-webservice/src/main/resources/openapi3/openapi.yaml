@@ -1536,7 +1536,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/PublishRequest'
       responses:
@@ -1707,7 +1707,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: array
               items:
@@ -1738,7 +1738,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: array
               items:
@@ -1976,7 +1976,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -4986,7 +4986,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Limits'
       responses:
@@ -6057,7 +6057,7 @@ paths:
           default: false
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Permission'
       responses:
@@ -6777,7 +6777,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Workflow'
       responses:
@@ -7094,7 +7094,7 @@ paths:
           format: int64
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: array
               items:

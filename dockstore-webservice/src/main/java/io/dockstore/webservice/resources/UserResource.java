@@ -945,6 +945,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork
     @RolesAllowed({"admin", "curator"})
     @Path("/user/{userId}/limits")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "setUserLimits", description = "Update the specified user's limits. ADMIN or CURATOR only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully updated the user's limits", content = @Content(schema = @Schema(implementation = Limits.class)))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
