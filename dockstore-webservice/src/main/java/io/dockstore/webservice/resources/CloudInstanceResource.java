@@ -32,7 +32,6 @@ import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 
 @Path("/cloudInstances")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Cloud Instances")
 public class CloudInstanceResource implements AuthenticatedResourceInterface {
@@ -74,6 +73,7 @@ public class CloudInstanceResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @RolesAllowed({ "admin" })
     @Operation(operationId = "postCloudInstance", summary = "Add a new public cloud instance, admin only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "No Content")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = "Forbidden")
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = "Unauthorized")

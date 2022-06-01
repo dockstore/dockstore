@@ -72,8 +72,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getWorkflowVersionPathInfoByAlias"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -97,8 +95,6 @@ paths:
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "addAliases"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1104,8 +1100,6 @@ paths:
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
       operationId: "addBitbucketToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1128,8 +1122,6 @@ paths:
         \ login, can create new users."
       description: "A post method is required by satellizer to send the GitHub token"
       operationId: "addToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1155,8 +1147,6 @@ paths:
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
       operationId: "addGithubToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1180,8 +1170,6 @@ paths:
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
       operationId: "addGitlabToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1203,8 +1191,6 @@ paths:
       summary: "Allow satellizer to post a new Google token to Dockstore."
       description: "A post method is required by satellizer to send the Google token"
       operationId: "addGoogleToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1229,8 +1215,6 @@ paths:
       description: "Using OAuth code from ORCID, request and store tokens from ORCID\
         \ API"
       operationId: "addOrcidToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1254,8 +1238,6 @@ paths:
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
       operationId: "addQuayToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1279,8 +1261,6 @@ paths:
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
       operationId: "addZenodoToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1302,8 +1282,6 @@ paths:
       summary: "Get information about a specific token by id."
       description: ""
       operationId: "listToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1330,8 +1308,6 @@ paths:
       summary: "Delete a token."
       description: ""
       operationId: "deleteToken"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1353,8 +1329,6 @@ paths:
       summary: "Create a hosted tool."
       description: ""
       operationId: "createHostedTool"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1405,8 +1379,6 @@ paths:
       summary: "Delete a revision of a hosted tool."
       description: ""
       operationId: "deleteHostedToolVersion"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1468,8 +1440,6 @@ paths:
       summary: "List all published tools belonging to the specified namespace."
       description: "NO authentication"
       operationId: "getPublishedContainersByNamespace"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1492,8 +1462,6 @@ paths:
       summary: "Get a tool by the specific tool path"
       description: "Requires full path (including tool name if applicable)."
       operationId: "getContainerByToolPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1521,8 +1489,6 @@ paths:
       summary: "Get a published tool by the specific tool path."
       description: "Requires full path (including tool name if applicable)."
       operationId: "getPublishedContainerByToolPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1548,8 +1514,6 @@ paths:
       summary: "Get tags for a tool by id."
       description: ""
       operationId: "getTagsByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1576,8 +1540,6 @@ paths:
       summary: "Get a list of tools by path."
       description: "Do not include tool name."
       operationId: "getContainerByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1602,8 +1564,6 @@ paths:
       summary: "Get a list of published tools by path."
       description: "NO authentication. Do not include tool name."
       operationId: "getPublishedContainerByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1626,8 +1586,6 @@ paths:
       summary: "List all published tools."
       description: "NO authentication"
       operationId: "allPublishedContainers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1682,8 +1640,6 @@ paths:
       summary: "Get a published tool."
       description: "NO authentication"
       operationId: "getPublishedContainer"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1735,8 +1691,6 @@ paths:
       summary: "Get a published tool's schema by ID."
       description: "NO authentication"
       operationId: "getPublishedContainerSchema"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1763,8 +1717,6 @@ paths:
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "getToolByAlias"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1788,8 +1740,6 @@ paths:
       description: "This is one of the few endpoints that returns the user object\
         \ with populated properties (minus the userProfiles property)"
       operationId: "getContainer"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1849,8 +1799,6 @@ paths:
       summary: "Delete a tool."
       description: ""
       operationId: "deleteContainer"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1873,8 +1821,6 @@ paths:
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "secondaryDescriptorPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1911,8 +1857,6 @@ paths:
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "dockerfile"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1941,8 +1885,6 @@ paths:
       description: "Labels are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "updateLabels"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -1979,8 +1921,6 @@ paths:
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "primaryDescriptor"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2012,8 +1952,6 @@ paths:
       summary: "Publish or unpublish a tool."
       description: ""
       operationId: "publish"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2043,8 +1981,6 @@ paths:
       summary: "Refresh one particular tool."
       description: ""
       operationId: "refresh"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2068,8 +2004,6 @@ paths:
       summary: "Request a DOI for this version of a tool."
       description: ""
       operationId: "requestDOIForToolTag"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2102,8 +2036,6 @@ paths:
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "secondaryDescriptors"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2174,8 +2106,6 @@ paths:
       summary: "Returns list of users who starred a tool."
       description: ""
       operationId: "getStarredUsers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2199,8 +2129,6 @@ paths:
       summary: "Add new tags linked to a tool."
       description: ""
       operationId: "addTags"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2233,8 +2161,6 @@ paths:
       summary: "Update the tags linked to a tool."
       description: ""
       operationId: "updateTags"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2268,8 +2194,6 @@ paths:
       summary: "Delete tag linked to a tool."
       description: ""
       operationId: "deleteTags"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2298,8 +2222,6 @@ paths:
       description: "Does not require authentication for published tools, authentication\
         \ can be provided for restricted tools"
       operationId: "getTestParameterFiles"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2341,8 +2263,6 @@ paths:
       summary: "Add test parameter files to a tag."
       description: ""
       operationId: "addTestParameterFiles"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2395,8 +2315,6 @@ paths:
       summary: "Delete test parameter files to a tag."
       description: ""
       operationId: "deleteTestParameterFiles"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2444,8 +2362,6 @@ paths:
       description: "Resets the descriptor paths and dockerfile path of all versions\
         \ to match the default paths from the tool object passed."
       operationId: "updateTagContainerPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2475,8 +2391,6 @@ paths:
       summary: "Get users of a tool."
       description: ""
       operationId: "getUsers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2502,8 +2416,6 @@ paths:
       summary: "Update the default version of the given tool."
       description: ""
       operationId: "updateToolDefaultVersion"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2533,8 +2445,6 @@ paths:
       summary: "Download a ZIP file of a tool and all associated files."
       description: ""
       operationId: "getToolZip"
-      consumes:
-      - "application/json"
       produces:
       - "application/zip"
       parameters:
@@ -2562,8 +2472,6 @@ paths:
       summary: "Return all active notifications"
       description: "NO Authentication"
       operationId: "getActiveNotifications"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -2605,8 +2513,6 @@ paths:
       summary: "Return the notification with given id"
       description: "NO Authentication"
       operationId: "getNotification"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2658,8 +2564,6 @@ paths:
       summary: "Delete a notification"
       description: "Curator/admin only"
       operationId: "deleteNotification"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2681,8 +2585,6 @@ paths:
       summary: "Retrieve metrics on the description of an entry"
       description: ""
       operationId: "calculateDescriptionMetrics"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2714,8 +2616,6 @@ paths:
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "addAliases"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2744,8 +2644,6 @@ paths:
       summary: "Get the collections and organizations that contain the published entry"
       description: "Entry must be published"
       operationId: "entryCollections"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2769,8 +2667,6 @@ paths:
       summary: "Create a discourse topic for an entry."
       description: ""
       operationId: "setDiscourseTopic"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2794,8 +2690,6 @@ paths:
       summary: "Get events based on filters."
       description: "Optional authentication."
       operationId: "getEvents"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2837,8 +2731,6 @@ paths:
       summary: "List recent events for a user."
       description: "No authentication."
       operationId: "getUserEvents"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2884,8 +2776,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "getLambdaEventsByOrganization"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3100,8 +2990,6 @@ paths:
       summary: "List all available organizations."
       description: "NO Authentication"
       operationId: "getApprovedOrganizations"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -3143,8 +3031,6 @@ paths:
       summary: "List all organizations."
       description: "Admin/curator only"
       operationId: "getAllOrganizations"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3174,8 +3060,6 @@ paths:
       summary: "Retrieve a collection by alias."
       description: ""
       operationId: "getCollectionByAlias"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3197,8 +3081,6 @@ paths:
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "addCollectionAliases"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3228,8 +3110,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationByName"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3252,8 +3132,6 @@ paths:
       summary: "Retrieve an organization by alias."
       description: ""
       operationId: "getOrganizationByAlias"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3275,8 +3153,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationById"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3332,8 +3208,6 @@ paths:
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "addOrganizationAliases"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3362,8 +3236,6 @@ paths:
       summary: "Approve an organization."
       description: "Admin/curator only"
       operationId: "approveOrganization"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3388,8 +3260,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionsFromOrganization"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3451,8 +3321,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionById"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3521,8 +3389,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionDescription"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3551,8 +3417,6 @@ paths:
       summary: "Update a collection's description."
       description: "Description in markdown"
       operationId: "updateCollectionDescription"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3588,8 +3452,6 @@ paths:
       summary: "Add an entry to a collection."
       description: ""
       operationId: "addEntryToCollection"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3630,8 +3492,6 @@ paths:
       summary: "Delete an entry from a collection."
       description: ""
       operationId: "deleteEntryFromCollection"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3673,8 +3533,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationDescription"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3697,8 +3555,6 @@ paths:
       summary: "Update an organization's description."
       description: "Description in markdown"
       operationId: "updateOrganizationDescription"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3729,8 +3585,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationEvents"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3774,8 +3628,6 @@ paths:
       summary: "Accept or reject an organization invitation."
       description: "True accepts the invitation, false rejects the invitation."
       operationId: "acceptOrRejectInvitation"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3803,8 +3655,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getOrganizationMembers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3831,8 +3681,6 @@ paths:
       summary: "Reject an organization."
       description: "Admin/curator only"
       operationId: "rejectOrganization"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3856,8 +3704,6 @@ paths:
       summary: "Re-request an organization approval."
       description: "Only for rejected organizations"
       operationId: "requestOrganizationReview"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3910,8 +3756,6 @@ paths:
       summary: "Return list of users who starred the given approved organization."
       description: ""
       operationId: "getStarredUsersForApprovedOrganization"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3935,8 +3779,6 @@ paths:
       summary: "Update a user role in an organization."
       description: ""
       operationId: "updateUserRole"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -3974,8 +3816,6 @@ paths:
       summary: "Add a user role to an organization."
       description: ""
       operationId: "addUserToOrg"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4020,8 +3860,6 @@ paths:
       summary: "Remove a user from an organization."
       description: ""
       operationId: "deleteUserRole"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4049,8 +3887,6 @@ paths:
       summary: "Add a user role to an organization."
       description: ""
       operationId: "addUserToOrgByUsername"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4086,8 +3922,6 @@ paths:
       description: "Does not require authentication for approved organizations, authentication\
         \ can be provided for unapproved organizations"
       operationId: "getCollectionByName"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4113,8 +3947,6 @@ paths:
       tags:
       - "toolTester"
       operationId: "getToolTesterLog"
-      consumes:
-      - "application/json"
       produces:
       - "text/plain"
       parameters:
@@ -4156,8 +3988,6 @@ paths:
       tags:
       - "toolTester"
       operationId: "search"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4184,8 +4014,6 @@ paths:
       summary: "Check if user with some username exists."
       description: ""
       operationId: "checkUserExists"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4208,8 +4036,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "getUserGitHubEvents"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4242,8 +4068,6 @@ paths:
       tags:
       - "users"
       operationId: "getMyGitHubOrgs"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4262,8 +4086,6 @@ paths:
       summary: "Syncs Dockstore account with GitHub App Installations."
       description: ""
       operationId: "syncUserWithGitHub"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4283,8 +4105,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "getUserRegistries"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4307,8 +4127,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "getUserOrganizations"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4336,8 +4154,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "getUserOrganizationRepositories"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4368,8 +4184,6 @@ paths:
       summary: "Get the authenticated user's starred organizations."
       description: ""
       operationId: "getStarredOrganizations"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4389,8 +4203,6 @@ paths:
       summary: "Get the authenticated user's starred services."
       description: ""
       operationId: "getStarredServices"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4410,8 +4222,6 @@ paths:
       summary: "Get the authenticated user's starred tools."
       description: ""
       operationId: "getStarredTools"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4431,8 +4241,6 @@ paths:
       summary: "Get the authenticated user's starred workflows."
       description: ""
       operationId: "getStarredWorkflows"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4452,8 +4260,6 @@ paths:
       summary: "Update metadata of all users."
       description: "Admin only."
       operationId: "updateUserMetadata"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4473,8 +4279,6 @@ paths:
       summary: "Get the logged-in user."
       description: ""
       operationId: "getUser"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4491,8 +4295,6 @@ paths:
       summary: "Delete user if possible."
       description: ""
       operationId: "selfDestruct"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4517,8 +4319,6 @@ paths:
       summary: "Change username if possible."
       description: ""
       operationId: "changeUsername"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4541,8 +4341,6 @@ paths:
       summary: "Get additional information about the authenticated user."
       description: ""
       operationId: "getExtendedUserData"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4560,8 +4358,6 @@ paths:
       summary: "Get the logged-in user's memberships."
       description: ""
       operationId: "getUserMemberships"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -4582,8 +4378,6 @@ paths:
       summary: "Update metadata for logged in user."
       description: ""
       operationId: "updateLoggedInUserMetadata"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4638,8 +4432,6 @@ paths:
       summary: "Returns the specified user's limits. ADMIN or CURATOR only"
       description: ""
       operationId: "getUserLimits"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4662,8 +4454,6 @@ paths:
       summary: "Update the specified user's limits. ADMIN or CURATOR only"
       description: ""
       operationId: "setUserLimits"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4693,8 +4483,6 @@ paths:
       summary: "Get a user by username."
       description: ""
       operationId: "listUser"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4722,8 +4510,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "getUserEntries"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4750,8 +4536,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "getUserDockstoreOrganizations"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4778,8 +4562,6 @@ paths:
       summary: "Get user by id."
       description: ""
       operationId: "getSpecificUser"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4801,8 +4583,6 @@ paths:
       tags:
       - "users"
       operationId: "userAppTools"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4827,8 +4607,6 @@ paths:
       summary: "List all tools owned by the authenticated user."
       description: ""
       operationId: "userContainers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4854,8 +4632,6 @@ paths:
       summary: "List all published tools from a user."
       description: ""
       operationId: "userPublishedContainers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4881,8 +4657,6 @@ paths:
       summary: "Refresh all tools owned by the authenticated user with specified organization."
       description: ""
       operationId: "refreshToolsByOrganization"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4918,8 +4692,6 @@ paths:
       summary: "List all services owned by the authenticated user."
       description: ""
       operationId: "userServices"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4945,8 +4717,6 @@ paths:
       summary: "Get information about tokens with user id."
       description: ""
       operationId: "getUserTokens"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4972,8 +4742,6 @@ paths:
       summary: "List all workflows owned by the authenticated user."
       description: ""
       operationId: "userWorkflows"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4999,8 +4767,6 @@ paths:
         \ to."
       description: ""
       operationId: "addUserToDockstoreWorkflows"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5033,8 +4799,6 @@ paths:
       summary: "List all published workflows from a user."
       description: ""
       operationId: "userPublishedWorkflows"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5061,8 +4825,6 @@ paths:
         \ versions that match in all workflows that share the same repository."
       description: ""
       operationId: "handleGitHubBranchDeletion"
-      consumes:
-      - "application/x-www-form-urlencoded"
       produces:
       - "application/json"
       parameters:
@@ -5161,8 +4923,6 @@ paths:
       summary: "Create a hosted workflow."
       description: ""
       operationId: "createHostedWorkflow"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5242,8 +5002,6 @@ paths:
       summary: "Delete a revision of a hosted workflow"
       description: ""
       operationId: "deleteHostedWorkflowVersion"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5305,8 +5063,6 @@ paths:
       summary: "Manually register a workflow."
       description: "Manually register workflow (public or private)."
       operationId: "manualRegister"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5354,8 +5110,6 @@ paths:
       summary: "List all published workflows of an organization."
       description: "NO authentication"
       operationId: "getPublishedWorkflowsByOrganization"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5378,8 +5132,6 @@ paths:
       summary: "Get an entry by path."
       description: "Requires full path (including entry name if applicable)."
       operationId: "getEntryByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5402,8 +5154,6 @@ paths:
       summary: "Get a published entry by path."
       description: "Requires full path (including entry name if applicable)."
       operationId: "getPublishedEntryByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5424,8 +5174,6 @@ paths:
       summary: "Get a workflow by path."
       description: "Requires full path (including workflow name if applicable)."
       operationId: "getWorkflowByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5463,8 +5211,6 @@ paths:
       summary: "Gets all actions a user can perform on a workflow."
       description: ""
       operationId: "getWorkflowActions"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5503,8 +5249,6 @@ paths:
       summary: "Get all permissions for a workflow."
       description: "The user must be the workflow owner."
       operationId: "getWorkflowPermissions"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5534,8 +5278,6 @@ paths:
       summary: "Remove the specified user role for a workflow."
       description: "The user must be the workflow owner."
       operationId: "removeWorkflowRole"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5580,8 +5322,6 @@ paths:
       description: "The user must be the workflow owner. Currently only supported\
         \ on hosted workflows."
       operationId: "addWorkflowPermission"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5618,8 +5358,6 @@ paths:
       summary: "Get a published workflow by path"
       description: "Does not require workflow name."
       operationId: "getPublishedWorkflowByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5660,8 +5398,6 @@ paths:
       summary: "Get a list of workflows by path."
       description: "Do not include workflow name."
       operationId: "getAllWorkflowByPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5686,8 +5422,6 @@ paths:
       summary: "List all published workflows."
       description: "NO authentication"
       operationId: "allPublishedWorkflows"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5760,8 +5494,6 @@ paths:
       summary: "Get a published workflow."
       description: "Hidden versions will not be visible. NO authentication"
       operationId: "getPublishedWorkflow"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5789,8 +5521,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "addWorkflow"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5822,8 +5552,6 @@ paths:
       summary: "See OpenApi for details"
       description: ""
       operationId: "deleteWorkflow"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5854,8 +5582,6 @@ paths:
       summary: "Retrieve all workflows shared with user."
       description: ""
       operationId: "sharedWorkflows"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters: []
@@ -5876,8 +5602,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getWorkflowByAlias"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5900,8 +5624,6 @@ paths:
       summary: "Register a checker workflow and associates it with the given tool/workflow."
       description: ""
       operationId: "registerCheckerWorkflow"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5951,8 +5673,6 @@ paths:
       description: "This is one of the few endpoints that returns the user object\
         \ with populated properties (minus the userProfiles property)"
       operationId: "getWorkflow"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5982,8 +5702,6 @@ paths:
       description: "Updates descriptor type (if stub), default workflow path, default\
         \ file path, and default version"
       operationId: "updateWorkflow"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6014,8 +5732,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getWorkflowDag"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6045,8 +5761,6 @@ paths:
       summary: "Update the default version of a workflow."
       description: ""
       operationId: "updateWorkflowDefaultVersion"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6077,8 +5791,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryDescriptorPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6123,8 +5835,6 @@ paths:
       description: "Labels are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "updateLabels"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6161,8 +5871,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "primaryDescriptor"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6225,8 +5933,6 @@ paths:
       summary: "Refresh one particular workflow."
       description: "Full refresh"
       operationId: "refresh"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6256,8 +5962,6 @@ paths:
       summary: "Refresh one particular workflow version."
       description: "Refresh existing or new version of a workflow."
       operationId: "refreshVersion"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6292,8 +5996,6 @@ paths:
       summary: "Request a DOI for this version of a workflow."
       description: ""
       operationId: "requestDOIForWorkflowVersion"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6333,8 +6035,6 @@ paths:
       description: "Resets the workflow paths of all versions to match the default\
         \ workflow path from the workflow object passed."
       operationId: "updateWorkflowPath"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6364,8 +6064,6 @@ paths:
       summary: "Restub a workflow"
       description: "Restubs a full, unpublished workflow."
       operationId: "restub"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6390,8 +6088,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryDescriptors"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6462,8 +6158,6 @@ paths:
       summary: "Returns list of users who starred the given workflow."
       description: ""
       operationId: "getStarredUsers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6488,8 +6182,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getTestParameterFiles"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6518,8 +6210,6 @@ paths:
       summary: "Add test parameter files for a given version."
       description: ""
       operationId: "addTestParameterFiles"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6564,8 +6254,6 @@ paths:
       summary: "Delete test parameter files for a given version."
       description: ""
       operationId: "deleteTestParameterFiles"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6605,8 +6293,6 @@ paths:
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getTableToolContent"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6636,8 +6322,6 @@ paths:
       summary: "Get users of a workflow."
       description: ""
       operationId: "getUsers"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6663,8 +6347,6 @@ paths:
       summary: "Return first 200 versions in an entry"
       description: ""
       operationId: "getWorkflowVersions"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6689,8 +6371,6 @@ paths:
       summary: "Update the workflow versions linked to a workflow."
       description: "Updates workflow path, reference, and hidden attributes."
       operationId: "updateWorkflowVersion"
-      consumes:
-      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6724,8 +6404,6 @@ paths:
       summary: "Download a ZIP file of a workflow and all associated files."
       description: ""
       operationId: "getWorkflowZip"
-      consumes:
-      - "application/json"
       produces:
       - "application/zip"
       parameters:

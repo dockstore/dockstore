@@ -612,7 +612,7 @@ paths:
       operationId: addToken
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -690,7 +690,7 @@ paths:
       operationId: addGoogleToken
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -1479,7 +1479,7 @@ paths:
           type: string
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -1536,7 +1536,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: '#/components/schemas/PublishRequest'
       responses:
@@ -1707,7 +1707,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: array
               items:
@@ -1738,7 +1738,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: array
               items:
@@ -1946,7 +1946,7 @@ paths:
           type: string
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -1976,7 +1976,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: '#/components/schemas/DockstoreTool'
       responses:
@@ -2027,7 +2027,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -3780,7 +3780,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
         description: Collections's description in markdown.
@@ -3922,7 +3922,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
         description: Organization's description in markdown.
@@ -4243,7 +4243,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
         description: "This is here to appease Swagger. It requires PUT methods to\
@@ -4280,7 +4280,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
               enum:
@@ -4986,7 +4986,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: '#/components/schemas/Limits'
       responses:
@@ -5508,7 +5508,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
         description: "This is here to appease Swagger. It requires PATCH methods to\
@@ -6057,7 +6057,7 @@ paths:
           default: false
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: '#/components/schemas/Permission'
       responses:
@@ -6433,7 +6433,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: '#/components/schemas/Workflow'
       responses:
@@ -6488,7 +6488,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -6598,7 +6598,7 @@ paths:
           type: string
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -6747,7 +6747,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -6777,7 +6777,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: '#/components/schemas/Workflow'
       responses:
@@ -6986,7 +6986,7 @@ paths:
           type: string
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: string
       responses:
@@ -7094,7 +7094,7 @@ paths:
           format: int64
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: array
               items:

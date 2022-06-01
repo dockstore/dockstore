@@ -84,7 +84,6 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 @Api("hosted")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U extends Version<U>, W extends EntryDAO<T>, X extends VersionDAO<U>>
         implements AuthenticatedResourceInterface, EntryVersionHelper {
@@ -176,6 +175,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
+    @Consumes(MediaType.APPLICATION_JSON)
     public T editHosted(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @Parameter(description = "Entry to modify", name = "entryId", in = ParameterIn.PATH) @PathParam("entryId") Long entryId,
         @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true)

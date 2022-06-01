@@ -149,7 +149,6 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "workflows", description = ResourceConstants.WORKFLOWS)
 public class WorkflowResource extends AbstractWorkflowResource<Workflow>
@@ -755,6 +754,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/publish")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "publish", description = "Publish or unpublish a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "publish", value = "Publish or unpublish a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
@@ -1584,6 +1584,7 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @UnitOfWork
     @UsernameRenameRequired
     @Path("/{workflowId}/star")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "starEntry", description = "Star a workflow.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(nickname = "starEntry", value = "Star a workflow.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void starEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,
@@ -2132,7 +2133,6 @@ public class WorkflowResource extends AbstractWorkflowResource<Workflow>
     @DELETE
     @Path("/github")
     @Timed
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @UnitOfWork
     @RolesAllowed({"curator", "admin"})
     @Operation(description = "Handles the deletion of a branch on GitHub. Will delete all workflow versions that match in all workflows that share the same repository.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME), responses = @ApiResponse(responseCode = "418", description = "This code tells AWS Lambda not to retry."))

@@ -25,7 +25,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Optional;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -40,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 @Path("/aliases")
 @Api("/aliases")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "aliases", description = ResourceConstants.ALIASES)
 public class AliasResource implements AliasableResourceInterface<WorkflowVersion> {

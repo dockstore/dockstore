@@ -137,7 +137,6 @@ import org.slf4j.LoggerFactory;
  */
 @Path("/users")
 @Api("/users")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "users", description = ResourceConstants.USERS)
 public class UserResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
@@ -431,6 +430,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork
     @Path("/user/{userId}/bannedStatus")
     @RolesAllowed("admin")
+    @Consumes("application/json")
     @Operation(operationId = "banUser", description = "Update banned status of user. Removes all tokens for banned users.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = "Successfully banned/unbanned user")
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
@@ -1044,6 +1044,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork
     @RolesAllowed({"admin"})
     @Path("/{userId}/privileges")
+    @Consumes("application/json")
     @Operation(operationId = "setUserPrivileges", description = "Updates the provided userID to admin or curator status, usable by ADMINs only", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiResponse(responseCode = HttpStatus.SC_OK + "", description = "Successfully updated user to admin or curator status", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
@@ -1165,6 +1166,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork()
     @Path("/{userId}/cloudInstances")
     @Operation(operationId = "postUserCloudInstance", description = "Create a new cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = HttpStatusMessageConstants.NO_CONTENT)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)
     @ApiResponse(responseCode = HttpStatus.SC_UNAUTHORIZED + "", description = HttpStatusMessageConstants.UNAUTHORIZED)
@@ -1217,6 +1219,7 @@ public class UserResource implements AuthenticatedResourceInterface, SourceContr
     @UnitOfWork()
     @Path("/{userId}/cloudInstances/{cloudInstanceId}")
     @Operation(operationId = "putUserCloudInstance", description = "Update a cloud instance belonging to the user", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
+    @Consumes(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "See OpenApi for details", hidden = true)
     @ApiResponse(responseCode = HttpStatus.SC_NO_CONTENT + "", description = HttpStatusMessageConstants.NO_CONTENT)
     @ApiResponse(responseCode = HttpStatus.SC_FORBIDDEN + "", description = HttpStatusMessageConstants.FORBIDDEN)

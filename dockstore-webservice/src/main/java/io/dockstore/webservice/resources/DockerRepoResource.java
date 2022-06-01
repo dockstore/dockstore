@@ -114,7 +114,6 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/containers")
 @Api("containers")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @io.swagger.v3.oas.annotations.tags.Tag(name = "containers", description = ResourceConstants.CONTAINERS)
 public class DockerRepoResource
@@ -327,6 +326,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "updateContainer", summary = "Update the tool with the given tool.",
         description = "Updates default descriptor paths, default Dockerfile paths, default test parameter paths, git url,"
             + " and default version. Also updates tool maintainer email, and private access for manual tools.",
@@ -510,6 +510,7 @@ public class DockerRepoResource
     @UnitOfWork
     @UsernameRenameRequired
     @Path("/registerManual")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "registerManual", description = "Register a tool manually, along with tags.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Register a tool manually, along with tags.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Tool.class)
@@ -1046,6 +1047,7 @@ public class DockerRepoResource
     @UnitOfWork
     @UsernameRenameRequired
     @Path("/{containerId}/star")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "starEntry", description = "Star a tool.", security = @SecurityRequirement(name = OPENAPI_JWT_SECURITY_DEFINITION_NAME))
     @ApiOperation(value = "Star a tool.", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
     public void starEntry(@ApiParam(hidden = true) @Parameter(hidden = true, name = "user") @Auth User user,

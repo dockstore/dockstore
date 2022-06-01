@@ -74,7 +74,6 @@ import org.slf4j.LoggerFactory;
  */
 @Path("/organizations")
 @Api("/organizations")
-@Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "organizations", description = ResourceConstants.ORGANIZATIONS)
 @SecuritySchemes({@SecurityScheme(type = SecuritySchemeType.HTTP, name = "bearer", scheme = "bearer")})
@@ -421,6 +420,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @POST
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections")
     @ApiOperation(value = "Create a collection in the given organization.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
@@ -495,6 +495,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @PUT
     @Timed
     @UnitOfWork
+    @Consumes("application/json")
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name, display name, description, and topic can be updated.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Collection.class)
