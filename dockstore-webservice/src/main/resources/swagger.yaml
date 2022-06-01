@@ -2917,7 +2917,7 @@ paths:
       parameters:
       - name: "client_version"
         in: "query"
-        description: "The Dockstore client version"
+        description: "The Dockstore client version (e.g. 1.13.0)"
         required: false
         type: "string"
       - name: "python_version"

@@ -14,9 +14,8 @@ import java.util.regex.Pattern;
  */
 public final class PipHelper {
     public static final String DEV_SEM_VER = "development-build";
-
-    // If changing the value below, search for cases where the compiled string is used in-place of the attribute.
-    public static final Pattern SEM_VER_PATTERN = Pattern.compile(String.format("^(\\d+)\\.(\\d+)\\.(\\d+)$|(^%s$)", DEV_SEM_VER));
+    public static final String SEM_VER_STRING = "(^(\\d+)\\.(\\d+)\\.(\\d+)$)|(^" + DEV_SEM_VER + "$)";
+    public static final Pattern SEM_VER_PATTERN = Pattern.compile(SEM_VER_STRING);
 
     private PipHelper() { }
 
@@ -80,6 +79,6 @@ public final class PipHelper {
      * @return true if the semantic version is valid else false.
      */
     public static boolean validateSemVer(String semVer) {
-        return Pattern.matches(SEM_VER_PATTERN.pattern(), semVer);
+        return SEM_VER_PATTERN.matcher(semVer).matches();
     }
 }

@@ -3191,7 +3191,7 @@ paths:
       description: "Returns the file containing runner dependencies, NO authentication"
       operationId: getRunnerDependencies
       parameters:
-      - description: The Dockstore client version
+      - description: The Dockstore client version (e.g. 1.13.0)
         in: query
         name: client_version
         schema:
