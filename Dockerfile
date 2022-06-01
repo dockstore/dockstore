@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17.0.2_8-jdk-focal
+FROM eclipse-temurin:17.0.3_7-jdk-focal
 
 # wipe them out, all of them, to reduce CVEs
 RUN apt-get purge -y -- *python*  && apt-get -y autoremove

@@ -16,7 +16,6 @@
 package io.dockstore.webservice.resources.rss;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Iterator;
 import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
@@ -25,11 +24,8 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartDocument;
 import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 
 public final class RSSWriter {
-    private static String xmlBlock = "\n";
-    private static String xmlIndent = "\t";
 
     private RSSWriter() {
 
@@ -39,18 +35,14 @@ public final class RSSWriter {
         XMLOutputFactory output = XMLOutputFactory.newInstance();
         XMLEventWriter writer = output.createXMLEventWriter(byteArrayOutputStream);
         XMLEventFactory eventFactory = XMLEventFactory.newInstance();
-        XMLEvent endSection = eventFactory.createDTD(xmlBlock);
 
         StartDocument startDocument = eventFactory.createStartDocument();
         writer.add(startDocument);
-        writer.add(endSection);
         StartElement rssStart = eventFactory.createStartElement("", "", "rss");
         writer.add(rssStart);
         writer.add(eventFactory.createAttribute("version", "2.0"));
-        writer.add(endSection);
 
         writer.add(eventFactory.createStartElement("", "", "channel"));
-        writer.add(endSection);
 
         RSSHeader header = rssfeed.getHeader();
         createNode(writer, "title", header.getTitle());
@@ -59,37 +51,27 @@ public final class RSSWriter {
         createNode(writer, "language", header.getLanguage());
         createNode(writer, "copyright", header.getCopyright());
         createNode(writer, "pubDate", header.getPubDate());
-        Iterator<RSSEntry> iterator = rssfeed.getEntries().iterator();
-        while (iterator.hasNext()) {
-            RSSEntry entry = iterator.next();
+        for (RSSEntry entry : rssfeed.getEntries()) {
             writer.add(eventFactory.createStartElement("", "", "item"));
-            writer.add(endSection);
             createNode(writer, "title", entry.getTitle());
-            createNode(writer, "description", entry.getDescription());
+            createNode(writer, "description", entry.getDescription() == null ? "" : entry.getDescription());
             createNode(writer, "link", entry.getLink());
             createNode(writer, "guid", entry.getGuid());
             createNode(writer, "pubDate", entry.getPubDate());
             writer.add(eventFactory.createEndElement("", "", "item"));
-            writer.add(endSection);
         }
 
-        writer.add(endSection);
         writer.add(eventFactory.createEndElement("", "", "channel"));
-        writer.add(endSection);
         writer.add(eventFactory.createEndElement("", "", "rss"));
 
-        writer.add(endSection);
         writer.add(eventFactory.createEndDocument());
         writer.close();
     }
 
     private static void createNode(XMLEventWriter eventWriter, String name, String value) throws XMLStreamException {
         XMLEventFactory eventFactory = XMLEventFactory.newInstance();
-        XMLEvent endSection = eventFactory.createDTD(xmlBlock);
-        XMLEvent tabSection = eventFactory.createDTD(xmlIndent);
 
         StartElement sElement = eventFactory.createStartElement("", "", name);
-        eventWriter.add(tabSection);
         eventWriter.add(sElement);
 
         Characters characters = eventFactory.createCharacters(value);
@@ -97,6 +79,5 @@ public final class RSSWriter {
 
         EndElement eElement = eventFactory.createEndElement("", "", name);
         eventWriter.add(eElement);
-        eventWriter.add(endSection);
     }
 }

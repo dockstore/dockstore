@@ -35,12 +35,6 @@
             <groupId>io.specto</groupId>
             <artifactId>hoverfly-java</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.woodstox</groupId>
-                    <artifactId>woodstox-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java-transport-httpclient5 -->
         <dependency>
@@ -218,6 +212,7 @@
                     <skipTests>${skipITs}</skipTests>
                     <!-- seems like some form of Jackson fork issue for this module with random order -->
                     <runOrder>filesystem</runOrder>
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
             <plugin>
