@@ -5702,6 +5702,8 @@ paths:
       description: "Updates descriptor type (if stub), default workflow path, default\
         \ file path, and default version"
       operationId: "updateWorkflow"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
