@@ -3191,11 +3191,12 @@ paths:
       description: "Returns the file containing runner dependencies, NO authentication"
       operationId: getRunnerDependencies
       parameters:
-      - description: The Dockstore client version
+      - description: The Dockstore client version (e.g. 1.13.0)
         in: query
         name: client_version
         schema:
           type: string
+          pattern: (^(\d+)\.(\d+)\.(\d+)$)|(^development-build$)
       - description: "Python version, only relevant for the cwltool runner"
         in: query
         name: python_version

@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * @author gluu
@@ -13,6 +14,8 @@ import java.util.Map;
  */
 public final class PipHelper {
     public static final String DEV_SEM_VER = "development-build";
+    public static final String SEM_VER_STRING = "(^(\\d+)\\.(\\d+)\\.(\\d+)$)|(^" + DEV_SEM_VER + "$)";
+    public static final Pattern SEM_VER_PATTERN = Pattern.compile(SEM_VER_STRING);
 
     private PipHelper() { }
 
@@ -68,5 +71,14 @@ public final class PipHelper {
             pipDepMap.put(key, mapValue);
         });
         return pipDepMap;
+    }
+
+    /**
+     * Validates a string that represents a semantic version.
+     * @param semVer String representing a semantic version.
+     * @return true if the semantic version is valid else false.
+     */
+    public static boolean validateSemVer(String semVer) {
+        return SEM_VER_PATTERN.matcher(semVer).matches();
     }
 }
