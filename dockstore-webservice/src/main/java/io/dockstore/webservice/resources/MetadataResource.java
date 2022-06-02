@@ -288,7 +288,7 @@ public class MetadataResource {
         }
         boolean unwrap = !("json").equals(output);
         if (!PipHelper.validateSemVer(clientVersion)) {
-            throw new CustomWebApplicationException(String.format("Invalid value for client version: `%s`. Value must be like `1.13.0`)", clientVersion, PipHelper.SEM_VER_STRING),
+            throw new CustomWebApplicationException(String.format("Invalid value for client version: `%s`. Value must be like `1.13.0`)", clientVersion),
                                                     HttpStatus.SC_BAD_REQUEST);
         }
         String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
