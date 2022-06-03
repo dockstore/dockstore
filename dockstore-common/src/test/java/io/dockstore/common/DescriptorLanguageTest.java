@@ -56,9 +56,9 @@ public class DescriptorLanguageTest {
 
     @Test
     public void testgetDescriptorLanguage() {
-        Assert.assertEquals(DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.DOCKSTORE_CWL), DescriptorLanguage.CWL);
-        Assert.assertEquals(DescriptorLanguage.getDescriptorLanguage(FileType.CWL_TEST_JSON), DescriptorLanguage.CWL);
-        Assert.assertEquals(DescriptorLanguage.getDescriptorLanguage(FileType.DOCKSTORE_SERVICE_OTHER), DescriptorLanguage.SERVICE);
-        Assert.assertEquals(DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.NEXTFLOW), DescriptorLanguage.NEXTFLOW);
+        Assert.assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.DOCKSTORE_CWL));
+        Assert.assertEquals(DescriptorLanguage.CWL, DescriptorLanguage.getDescriptorLanguage(FileType.CWL_TEST_JSON));
+        Assert.assertEquals(DescriptorLanguage.SERVICE, DescriptorLanguage.getDescriptorLanguage(FileType.DOCKSTORE_SERVICE_OTHER));
+        Assert.assertEquals(DescriptorLanguage.NEXTFLOW, DescriptorLanguage.getDescriptorLanguage(DescriptorLanguage.FileType.NEXTFLOW));
     }
 }
