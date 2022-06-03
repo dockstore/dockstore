@@ -212,6 +212,15 @@ public enum DescriptorLanguage {
             if (lang.getFileType() == fileType || lang.getTestParamType() == fileType) {
                 return lang;
             }
+            // include FileTypes that aren't primary descriptors or test param files
+            switch (fileType) {
+            case NEXTFLOW:
+                return DescriptorLanguage.NEXTFLOW;
+            case DOCKSTORE_SERVICE_OTHER:
+                return DescriptorLanguage.SERVICE;
+            default:
+                break;
+            }
         }
         throw new UnsupportedOperationException("Unknown language");
     }
