@@ -551,21 +551,21 @@ public class ToolsImplCommonTest {
 
     @Test
     public void getDescriptorTypeFromFileTypeTest() {
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_CWL).get(), io.openapi.model.DescriptorType.CWL);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.CWL_TEST_JSON).get(), io.openapi.model.DescriptorType.CWL);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_GXFORMAT2).get(), io.openapi.model.DescriptorType.GALAXY);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.GXFORMAT2_TEST_FILE).get(), io.openapi.model.DescriptorType.GALAXY);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_SERVICE_OTHER).get(), io.openapi.model.DescriptorType.SERVICE);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_CONFIG).get(), io.openapi.model.DescriptorType.NFL);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_TEST_PARAMS).get(), io.openapi.model.DescriptorType.NFL);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW).get(), io.openapi.model.DescriptorType.NFL);
+        Assert.assertEquals(io.openapi.model.DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_CWL).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.CWL_TEST_JSON).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_GXFORMAT2).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.GXFORMAT2_TEST_FILE).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.SERVICE, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.DOCKSTORE_SERVICE_OTHER).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_CONFIG).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW_TEST_PARAMS).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromFileType(FileType.NEXTFLOW).get());
     }
 
     @Test
     public void getDescriptorTypeFromDescriptorLanguageTest() {
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.SMK).get(), io.openapi.model.DescriptorType.SMK);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.CWL).get(), io.openapi.model.DescriptorType.CWL);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.GXFORMAT2).get(), io.openapi.model.DescriptorType.GALAXY);
-        Assert.assertEquals(ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.NEXTFLOW).get(), io.openapi.model.DescriptorType.NFL);
+        Assert.assertEquals(io.openapi.model.DescriptorType.SMK, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.SMK).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.CWL, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.CWL).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.GALAXY, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.GXFORMAT2).get());
+        Assert.assertEquals(io.openapi.model.DescriptorType.NFL, ToolsImplCommon.getDescriptorTypeFromDescriptorLanguage(DescriptorLanguage.NEXTFLOW).get());
     }
 }
