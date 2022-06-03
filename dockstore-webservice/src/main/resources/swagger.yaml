@@ -1952,6 +1952,8 @@ paths:
       summary: "Publish or unpublish a tool."
       description: ""
       operationId: "publish"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2129,6 +2131,8 @@ paths:
       summary: "Add new tags linked to a tool."
       description: ""
       operationId: "addTags"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2161,6 +2165,8 @@ paths:
       summary: "Update the tags linked to a tool."
       description: ""
       operationId: "updateTags"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -2362,6 +2368,8 @@ paths:
       description: "Resets the descriptor paths and dockerfile path of all versions\
         \ to match the default paths from the tool object passed."
       operationId: "updateTagContainerPath"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -4454,6 +4462,8 @@ paths:
       summary: "Update the specified user's limits. ADMIN or CURATOR only"
       description: ""
       operationId: "setUserLimits"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5322,6 +5332,8 @@ paths:
       description: "The user must be the workflow owner. Currently only supported\
         \ on hosted workflows."
       operationId: "addWorkflowPermission"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -5702,6 +5714,8 @@ paths:
       description: "Updates descriptor type (if stub), default workflow path, default\
         \ file path, and default version"
       operationId: "updateWorkflow"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6035,6 +6049,8 @@ paths:
       description: "Resets the workflow paths of all versions to match the default\
         \ workflow path from the workflow object passed."
       operationId: "updateWorkflowPath"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -6371,6 +6387,8 @@ paths:
       summary: "Update the workflow versions linked to a workflow."
       description: "Updates workflow path, reference, and hidden attributes."
       operationId: "updateWorkflowVersion"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
